@@ -25,7 +25,7 @@ use url::Url;
 fn create_addon_descriptor(transport_url: &str) -> Descriptor {
     Descriptor {
         manifest: Manifest {
-            id: "id".to_owned(),
+            id: "id".into(),
             version: Version::new(0, 0, 1),
             name: "name".to_owned(),
             contact_email: None,
@@ -77,7 +77,7 @@ fn actionctx_uninstalladdon() {
     }
     let addon = Descriptor {
         manifest: Manifest {
-            id: "id".to_owned(),
+            id: "id".into(),
             version: Version::new(0, 0, 1),
             name: "name".to_owned(),
             contact_email: None,
@@ -171,7 +171,7 @@ fn actionctx_uninstalladdon_with_user() {
     }
     let addon = Descriptor {
         manifest: Manifest {
-            id: "id".to_owned(),
+            id: "id".into(),
             version: Version::new(0, 0, 1),
             name: "name".to_owned(),
             contact_email: None,
@@ -192,7 +192,7 @@ fn actionctx_uninstalladdon_with_user() {
         auth: Some(Auth {
             key: AuthKey("auth_key".to_owned()),
             user: User {
-                id: "user_id".to_owned(),
+                id: "user_id".into(),
                 email: "user_email".to_owned(),
                 fb_id: None,
                 apple_id: None,
@@ -207,6 +207,7 @@ fn actionctx_uninstalladdon_with_user() {
                     marketing: true,
                     from: Some("tests".to_owned()),
                 },
+                ..Default::default()
             },
         }),
         addons: vec![addon.to_owned()],
@@ -283,7 +284,7 @@ fn actionctx_uninstalladdon_protected() {
     }
     let addon = Descriptor {
         manifest: Manifest {
-            id: "id".to_owned(),
+            id: "id".into(),
             version: Version::new(0, 0, 1),
             name: "name".to_owned(),
             contact_email: None,
@@ -363,7 +364,7 @@ fn actionctx_uninstalladdon_not_installed() {
     }
     let addon = Descriptor {
         manifest: Manifest {
-            id: "id".to_owned(),
+            id: "id".into(),
             version: Version::new(0, 0, 1),
             name: "name".to_owned(),
             contact_email: None,

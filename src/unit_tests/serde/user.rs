@@ -8,7 +8,7 @@ fn user() {
     assert_tokens(
         &vec![
             User {
-                id: "id".to_owned(),
+                id: "id".into(),
                 email: "email".to_owned(),
                 fb_id: Some("fb_id".to_owned()),
                 apple_id: Some("apple_id".to_owned()),
@@ -18,9 +18,10 @@ fn user() {
                 trakt: None,
                 premium_expire: None,
                 gdpr_consent: GDPRConsent::default(),
+                ..Default::default()
             },
             User {
-                id: "id".to_owned(),
+                id: "id".into(),
                 email: "email".to_owned(),
                 fb_id: None,
                 apple_id: None,
@@ -30,6 +31,7 @@ fn user() {
                 trakt: None,
                 premium_expire: None,
                 gdpr_consent: GDPRConsent::default(),
+                ..Default::default()
             },
         ]
         .compact(),
@@ -97,7 +99,7 @@ fn user() {
     );
     assert_de_tokens(
         &User {
-            id: "id".to_owned(),
+            id: "id".into(),
             email: "email".to_owned(),
             fb_id: None,
             apple_id: None,
@@ -107,6 +109,7 @@ fn user() {
             trakt: None,
             premium_expire: None,
             gdpr_consent: GDPRConsent::default(),
+            ..Default::default()
         },
         &[
             vec![

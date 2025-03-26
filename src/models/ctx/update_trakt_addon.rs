@@ -5,14 +5,14 @@ use crate::models::common::{
 use crate::models::ctx::{CtxError, CtxStatus, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effects, Env};
-use crate::types::profile::Profile;
+use crate::types::profile::{Profile, UserId};
 use percent_encoding::utf8_percent_encode;
 use url::Url;
 
-pub fn build_track_addon_url(uid: &str) -> Result<Url, url::ParseError> {
+pub fn build_track_addon_url(uid: &UserId) -> Result<Url, url::ParseError> {
     Url::parse(&format!(
         "https://www.strem.io/trakt/addon/{}/manifest.json",
-        utf8_percent_encode(uid, URI_COMPONENT_ENCODE_SET)
+        utf8_percent_encode(uid.as_ref(), URI_COMPONENT_ENCODE_SET)
     ))
 }
 

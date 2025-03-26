@@ -24,7 +24,7 @@ use stremio_derive::Model;
 
 fn user_fixture() -> User {
     User {
-        id: "user_id".to_owned(),
+        id: "user_id".into(),
         email: "user_email".to_owned(),
         fb_id: None,
         apple_id: None,
@@ -39,6 +39,7 @@ fn user_fixture() -> User {
             marketing: true,
             from: Some("tests".to_owned()),
         },
+        ..Default::default()
     }
 }
 
@@ -133,7 +134,7 @@ fn actionctx_authenticate_login() {
     assert_eq!(
         runtime.model().unwrap().ctx.library,
         LibraryBucket {
-            uid: Some("user_id".to_string()),
+            uid: Some("user_id".into()),
             ..Default::default()
         },
         "library updated successfully in memory"
@@ -153,7 +154,7 @@ fn actionctx_authenticate_login() {
                 .unwrap()
         )
         .unwrap(),
-        LibraryBucket::new(Some("user_id".to_owned()), vec![]),
+        LibraryBucket::new(Some("user_id".into()), vec![]),
         "recent library updated successfully in storage"
     );
     assert_eq!(
@@ -161,7 +162,7 @@ fn actionctx_authenticate_login() {
             STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
         )
         .unwrap(),
-        LibraryBucket::new(Some("user_id".to_owned()), vec![]),
+        LibraryBucket::new(Some("user_id".into()), vec![]),
         "library updated successfully in storage"
     );
     assert_eq!(
@@ -273,7 +274,7 @@ fn actionctx_authenticate_login_with_token() {
     assert_eq!(
         runtime.model().unwrap().ctx.library,
         LibraryBucket {
-            uid: Some("user_id".to_string()),
+            uid: Some("user_id".into()),
             ..Default::default()
         },
         "library updated successfully in memory"
@@ -293,7 +294,7 @@ fn actionctx_authenticate_login_with_token() {
                 .unwrap()
         )
         .unwrap(),
-        LibraryBucket::new(Some("user_id".to_owned()), vec![]),
+        LibraryBucket::new(Some("user_id".into()), vec![]),
         "recent library updated successfully in storage"
     );
     assert_eq!(
@@ -301,7 +302,7 @@ fn actionctx_authenticate_login_with_token() {
             STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
         )
         .unwrap(),
-        LibraryBucket::new(Some("user_id".to_owned()), vec![]),
+        LibraryBucket::new(Some("user_id".into()), vec![]),
         "library updated successfully in storage"
     );
     assert_eq!(
@@ -414,7 +415,7 @@ fn actionctx_authenticate_facebook() {
     assert_eq!(
         runtime.model().unwrap().ctx.library,
         LibraryBucket {
-            uid: Some("user_id".to_string()),
+            uid: Some("user_id".into()),
             ..Default::default()
         },
         "library updated successfully in memory"
@@ -434,7 +435,7 @@ fn actionctx_authenticate_facebook() {
                 .unwrap()
         )
         .unwrap(),
-        LibraryBucket::new(Some("user_id".to_owned()), vec![]),
+        LibraryBucket::new(Some("user_id".into()), vec![]),
         "recent library updated successfully in storage"
     );
     assert_eq!(
@@ -442,7 +443,7 @@ fn actionctx_authenticate_facebook() {
             STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
         )
         .unwrap(),
-        LibraryBucket::new(Some("user_id".to_owned()), vec![]),
+        LibraryBucket::new(Some("user_id".into()), vec![]),
         "library updated successfully in storage"
     );
     assert_eq!(
@@ -705,7 +706,7 @@ fn actionctx_authenticate_register() {
     assert_eq!(
         runtime.model().unwrap().ctx.library,
         LibraryBucket {
-            uid: Some("user_id".to_string()),
+            uid: Some("user_id".into()),
             ..Default::default()
         },
         "library updated successfully in memory"
@@ -725,7 +726,7 @@ fn actionctx_authenticate_register() {
                 .unwrap()
         )
         .unwrap(),
-        LibraryBucket::new(Some("user_id".to_owned()), vec![]),
+        LibraryBucket::new(Some("user_id".into()), vec![]),
         "recent library updated successfully in storage"
     );
     assert_eq!(
@@ -733,7 +734,7 @@ fn actionctx_authenticate_register() {
             STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
         )
         .unwrap(),
-        LibraryBucket::new(Some("user_id".to_owned()), vec![]),
+        LibraryBucket::new(Some("user_id".into()), vec![]),
         "library updated successfully in storage"
     );
     assert_eq!(

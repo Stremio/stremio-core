@@ -44,7 +44,7 @@ pub fn update_streaming_server_urls<E: Env + 'static>(
 fn push_server_urls_to_storage<E: Env + 'static>(
     streaming_server_urls: &ServerUrlsBucket,
 ) -> Effect {
-    let uid: Option<String> = streaming_server_urls.uid.clone();
+    let uid = streaming_server_urls.uid.clone();
 
     EffectFuture::Sequential(
         E::set_storage(
