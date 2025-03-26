@@ -73,7 +73,7 @@ fn actionctx_authenticate_login() {
                 url, method, body, ..
             } if url == "https://api.strem.io/api/login"
                 && method == "POST"
-                && body == "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\",\"facebook\":false,\"apple\":false}" =>
+                && body == "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\",\"facebook\":false}" =>
             {
                 future::ok(Box::new(APIResult::Ok(auth_response_fixture())) as Box<dyn Any + Send>).boxed_env()
             }
@@ -122,7 +122,6 @@ fn actionctx_authenticate_login() {
                 email: "user_email".into(),
                 password: "user_password".into(),
                 facebook: false,
-                apple: false,
             })),
         })
     });
@@ -175,7 +174,7 @@ fn actionctx_authenticate_login() {
         Request {
             url: "https://api.strem.io/api/login".to_owned(),
             method: "POST".to_owned(),
-            body: "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\",\"facebook\":false,\"apple\":false}".to_owned(),
+            body: "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\",\"facebook\":false}".to_owned(),
             ..Default::default()
         },
         "Login request has been sent"
@@ -544,6 +543,9 @@ fn actionctx_authenticate_apple() {
             field: None,
             action: Action::Ctx(ActionCtx::Authenticate(AuthRequest::Apple {
                 token: "access_token".into(),
+                sub: "sub_id".into(),
+                email: "user_email".into(),
+                name: "user_name".into(),
             })),
         })
     });
@@ -596,7 +598,7 @@ fn actionctx_authenticate_apple() {
         Request {
             url: "https://api.strem.io/api/authWithApple".to_owned(),
             method: "POST".to_owned(),
-            body: "{\"type\":\"Auth\",\"type\":\"Apple\",\"token\":\"access_token\"}".to_owned(),
+            body: "{\"type\":\"Auth\",\"type\":\"Apple\",\"token\":\"access_token\",\"sub\":\"sub_id\",\"email\":\"user_email\",\"name\":\"user_name\"}".to_owned(),
             ..Default::default()
         },
         "Login request has been sent"

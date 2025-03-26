@@ -193,8 +193,6 @@ pub enum AuthRequest {
         password: String,
         #[serde(default)]
         facebook: bool,
-        #[serde(default)]
-        apple: bool,
     },
     Register {
         email: String,
@@ -206,6 +204,9 @@ pub enum AuthRequest {
     },
     Apple {
         token: String,
+        sub: String,
+        email: String,
+        name: String,
     },
     LoginWithToken {
         token: String,
@@ -219,13 +220,11 @@ impl fmt::Debug for AuthRequest {
                 email,
                 password: _,
                 facebook,
-                apple,
             } => f
                 .debug_struct("Login")
                 .field("email", email)
                 .field("password", &"<SENSITIVE>")
                 .field("facebook", facebook)
-                .field("apple", apple)
                 .finish(),
             Self::Register {
                 email,
@@ -241,9 +240,17 @@ impl fmt::Debug for AuthRequest {
                 .debug_struct("Facebook")
                 .field("token", &"<SENSITIVE>")
                 .finish(),
-            Self::Apple { token: _ } => f
+            Self::Apple {
+                token: _,
+                sub,
+                email,
+                name,
+            } => f
                 .debug_struct("Apple")
                 .field("token", &"<SENSITIVE>")
+                .field("sub", sub)
+                .field("email", email)
+                .field("name", name)
                 .finish(),
             Self::LoginWithToken { token: _ } => f
                 .debug_struct("LoginWithToken")
