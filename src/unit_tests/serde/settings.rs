@@ -132,7 +132,7 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 27,
+                len: 32,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
