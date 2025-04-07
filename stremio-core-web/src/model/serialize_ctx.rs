@@ -77,6 +77,7 @@ mod model {
         #[serde(flatten)]
         pub user: &'a stremio_core::types::profile::User,
         pub is_new_user: bool,
+        pub has_trakt: bool,
     }
 
     impl<'a> From<&'a stremio_core::models::ctx::Ctx> for Ctx<'a> {
@@ -89,6 +90,7 @@ mod model {
                         user: User {
                             user: &auth.user,
                             is_new_user: auth.user.is_new_user::<WebEnv>(),
+                            has_trakt: ctx.profile.has_trakt::<WebEnv>(),
                         },
                     }),
                 },
