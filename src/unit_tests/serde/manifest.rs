@@ -9,7 +9,7 @@ fn manifest() {
     assert_ser_tokens(
         &vec![
             Manifest {
-                id: "id".to_owned(),
+                id: "id".into(),
                 version: Version::new(0, 0, 1),
                 name: "name".to_owned(),
                 contact_email: Some("contact_email".to_owned()),
@@ -24,7 +24,7 @@ fn manifest() {
                 behavior_hints: ManifestBehaviorHints::default(),
             },
             Manifest {
-                id: "id".to_owned(),
+                id: "id".into(),
                 version: Version::new(0, 0, 1),
                 name: "name".to_owned(),
                 contact_email: None,
@@ -130,7 +130,7 @@ fn manifest() {
     assert_de_tokens(
         &vec![
             Manifest {
-                id: "id".to_owned(),
+                id: "id".into(),
                 version: Version::new(0, 0, 1),
                 name: "name".to_owned(),
                 contact_email: Some("contact_email".to_owned()),
@@ -145,7 +145,7 @@ fn manifest() {
                 behavior_hints: ManifestBehaviorHints::default(),
             },
             Manifest {
-                id: "id".to_owned(),
+                id: "id".into(),
                 version: Version::new(0, 0, 1),
                 name: "name".to_owned(),
                 contact_email: None,

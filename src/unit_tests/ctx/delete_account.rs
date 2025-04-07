@@ -52,7 +52,7 @@ fn actionctx_delete_account() {
         auth: Some(Auth {
             key: AuthKey("auth_key".to_owned()),
             user: User {
-                id: "user_id".to_owned(),
+                id: "user_id".into(),
                 email: "user_email".to_owned(),
                 fb_id: None,
                 avatar: None,
@@ -66,6 +66,7 @@ fn actionctx_delete_account() {
                     marketing: true,
                     from: Some("tests".to_owned()),
                 },
+                ..Default::default()
             },
         }),
         ..Default::default()

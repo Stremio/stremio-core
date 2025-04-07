@@ -12,7 +12,7 @@ fn meta_item_preview_serialize() {
     assert_ser_tokens(
         &vec![
             MetaItemPreview {
-                id: "id".to_owned(),
+                id: "id".into(),
                 r#type: "type".to_owned(),
                 name: "name".to_owned(),
                 poster: Some(Url::parse("http://poster/").unwrap()),
@@ -28,7 +28,7 @@ fn meta_item_preview_serialize() {
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
             MetaItemPreview {
-                id: "id".to_owned(),
+                id: "id".into(),
                 r#type: "type".to_owned(),
                 name: "name".to_owned(),
                 poster: None,
@@ -142,7 +142,7 @@ fn meta_item_preview_de() {
     assert_de_tokens(
         &vec![
             MetaItemPreview {
-                id: "id".to_owned(),
+                id: "id".into(),
                 r#type: "type".to_owned(),
                 name: "name".to_owned(),
                 poster: Some(Url::parse("http://poster/").unwrap()),
@@ -158,7 +158,7 @@ fn meta_item_preview_de() {
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
             MetaItemPreview {
-                id: "id".to_owned(),
+                id: "id".into(),
                 r#type: "type".to_owned(),
                 name: "name".to_owned(),
                 poster: None,
@@ -266,7 +266,7 @@ fn meta_item_preview_de() {
 fn meta_item_preview_de_minimal() {
     assert_de_tokens(
         &MetaItemPreview {
-            id: "id".to_owned(),
+            id: "id".into(),
             r#type: "type".to_owned(),
             name: "".to_owned(),
             poster: None,
@@ -354,7 +354,7 @@ fn meta_item_preview_de_null() {
 fn meta_item_preview_de_numeric_imdb() {
     assert_de_tokens(
         &MetaItemPreview {
-            id: "id".to_owned(),
+            id: "id".into(),
             r#type: "type".to_owned(),
             name: "".to_owned(),
             poster: None,
@@ -395,7 +395,7 @@ fn meta_item_preview_de_numeric_imdb() {
 fn meta_item_preview_de_legacy_links() {
     assert_de_tokens(
         &MetaItemPreview {
-            id: "id".to_owned(),
+            id: "id".into(),
             r#type: "type".to_owned(),
             name: "".to_owned(),
             poster: None,
@@ -487,7 +487,7 @@ fn meta_item_preview_de_legacy_links() {
 fn meta_item_preview_de_ignore_legacy_when_links() {
     assert_de_tokens(
         &MetaItemPreview {
-            id: "id".to_owned(),
+            id: "id".into(),
             r#type: "type".to_owned(),
             name: "".to_owned(),
             poster: None,

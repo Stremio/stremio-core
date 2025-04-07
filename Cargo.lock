@@ -1148,7 +1148,7 @@ dependencies = [
 
 [[package]]
 name = "stremio-core-web"
-version = "0.49.1"
+version = "0.49.2"
 dependencies = [
  "boolinator",
  "chrono",
@@ -1203,8 +1203,7 @@ dependencies = [
 [[package]]
 name = "stremio-serde-hex"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a5600c4d6b97a1e6b4c0a9fa6e14d94eba885f2aa7610fc52a1557a9a140e69"
+source = "git+https://github.com/Stremio/serde-hex?branch=fix/zero-sized-chunks-panic#e06baea18dc14efeeb88b6545b33238d85b9fb71"
 dependencies = [
  "array-init",
  "serde",

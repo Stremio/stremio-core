@@ -154,7 +154,7 @@ fn meta_item() {
         &[
             MetaItem {
                 preview: MetaItemPreview {
-                    id: "id".to_owned(),
+                    id: "id".into(),
                     r#type: "type".to_owned(),
                     name: "".to_owned(),
                     poster: None,
@@ -173,7 +173,7 @@ fn meta_item() {
             },
             MetaItem {
                 preview: MetaItemPreview {
-                    id: "id".to_owned(),
+                    id: "id".into(),
                     r#type: "type".to_owned(),
                     name: "".to_owned(),
                     poster: None,
@@ -234,7 +234,7 @@ fn meta_item_de_urls_none_when_empty() {
     assert_de_tokens(
         &MetaItem {
             preview: MetaItemPreview {
-                id: "id".to_owned(),
+                id: "id".into(),
                 r#type: "type".to_owned(),
                 name: "".to_owned(),
                 poster: None,
