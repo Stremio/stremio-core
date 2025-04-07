@@ -43,7 +43,7 @@ itertools = "0.14.*"
 boolinator = "2.4.*"
 
 # WASM
-wasm-bindgen = { version = "=0.2.78", features = ["serde-serialize"], optional = true }
+wasm-bindgen = { version = "=0.2.98", features = ["serde-serialize"], optional = true }
 wasm-bindgen-futures = { version = "0.4", optional = true }
 gloo-utils = { version = "0.2", features = ["serde"], optional = true }
 
