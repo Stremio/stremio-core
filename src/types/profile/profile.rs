@@ -58,6 +58,16 @@ impl Profile {
             .map(|trakt| E::now() < trakt.created_at + trakt.expires_in)
             .unwrap_or_default()
     }
+    
+    /// check if the Trakt token exists but has expired
+    /// will return `true` if the token has expired
+    pub fn is_trakt_token_expired<E: Env>(&self) -> bool {
+        self.auth
+            .as_ref()
+            .and_then(|auth| auth.user.trakt.as_ref())
+            .map(|trakt| E::now() >= trakt.created_at + trakt.expires_in)
+            .unwrap_or_default()
+    }
 }
 
 struct DescriptorUniqueVecAdapter;

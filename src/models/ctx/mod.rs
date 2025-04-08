@@ -8,7 +8,7 @@ mod update_notifications;
 use update_notifications::*;
 
 mod update_profile;
-use update_profile::*;
+pub use update_profile::*;
 
 mod update_streams;
 use update_streams::*;

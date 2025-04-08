@@ -15,7 +15,7 @@ use crate::models::common::{
     resources_update_with_vector_content, Loadable, ResourceAction, ResourceLoadable,
     ResourcesAction,
 };
-use crate::models::ctx::{Ctx, CtxError};
+use crate::models::ctx::{Ctx, CtxError, check_trakt_token_expiration};
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, ResourceRequest};
@@ -439,14 +439,24 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
 
                     // on seeking we want to make sure we send the correct Trakt events
                     let trakt_event_effects = match (self.loaded, self.paused) {
-                        (true, Some(true)) => Effects::msg(Msg::Event(Event::TraktPaused {
-                            context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
-                        }))
-                        .unchanged(),
-                        (true, Some(false)) => Effects::msg(Msg::Event(Event::TraktPlaying {
-                            context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
-                        }))
-                        .unchanged(),
+                        (true, Some(true)) => {
+                            let token_check = check_trakt_token_expiration::<E>(&ctx.profile);
+                            
+                            Effects::msg(Msg::Event(Event::TraktPaused {
+                                context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                            }))
+                            .unchanged()
+                            .join(token_check)
+                        },
+                        (true, Some(false)) => {
+                            let token_check = check_trakt_token_expiration::<E>(&ctx.profile);
+                            
+                            Effects::msg(Msg::Event(Event::TraktPlaying {
+                                context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                            }))
+                            .unchanged()
+                            .join(token_check)
+                        },
                         _ => Effects::none(),
                     };
 

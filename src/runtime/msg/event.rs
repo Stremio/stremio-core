@@ -36,6 +36,9 @@ pub enum Event {
     TraktPaused {
         context: PlayerAnalyticsContext,
     },
+    TraktTokenExpired {
+        uid: UID,
+    },
     ProfilePushedToStorage {
         uid: UID,
     },
