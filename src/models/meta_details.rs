@@ -289,10 +289,10 @@ fn library_item_sync(library_item: &Option<LibraryItem>, profile: &Profile) -> E
 ///
 /// 1. We find the first `MetaItem` that's successfully loaded from the addons.
 /// 2. Selecting the video id for the stream request:
-///     2.1 If there's a `MetaItem.preview.behavior_hints.default_video_id`
-///         we use it for the request
-///     2.2 If there's no `default_video_id` and no `MetaItem.videos` returned by the addon,
-///         we use the `MetaItem.preview.id`
+///    2.1 If there's a `MetaItem.preview.behavior_hints.default_video_id`
+///    we use it for the request
+///    2.2 If there's no `default_video_id` and no `MetaItem.videos` returned by the addon,
+///    we use the `MetaItem.preview.id`
 ///
 /// If we haven't found a suitable `video_id`, then we do not override the `Selected::stream_path`.
 fn selected_guess_stream_update(

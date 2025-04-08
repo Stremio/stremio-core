@@ -10,7 +10,7 @@ fn library_item() {
     assert_ser_tokens(
         &vec![
             LibraryItem {
-                id: "id".to_owned(),
+                id: "id".into(),
                 name: "name".to_owned(),
                 r#type: "type".to_owned(),
                 poster: Some(Url::parse("http://poster/").unwrap()),
@@ -23,7 +23,7 @@ fn library_item() {
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
             LibraryItem {
-                id: "id".to_owned(),
+                id: "id".into(),
                 name: "name".to_owned(),
                 r#type: "type".to_owned(),
                 poster: None,
@@ -109,7 +109,7 @@ fn library_item() {
     assert_de_tokens(
         &vec![
             LibraryItem {
-                id: "id".to_owned(),
+                id: "id".into(),
                 name: "name".to_owned(),
                 r#type: "type".to_owned(),
                 poster: None,
@@ -122,7 +122,7 @@ fn library_item() {
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
             LibraryItem {
-                id: "id".to_owned(),
+                id: "id".into(),
                 name: "name".to_owned(),
                 r#type: "type".to_owned(),
                 poster: None,
@@ -135,7 +135,7 @@ fn library_item() {
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
             LibraryItem {
-                id: "id".to_owned(),
+                id: "id".into(),
                 name: "name".to_owned(),
                 r#type: "type".to_owned(),
                 poster: None,
@@ -148,7 +148,7 @@ fn library_item() {
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
             LibraryItem {
-                id: "id".to_owned(),
+                id: "id".into(),
                 name: "name".to_owned(),
                 r#type: "type".to_owned(),
                 poster: None,
@@ -161,7 +161,7 @@ fn library_item() {
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
             LibraryItem {
-                id: "id".to_owned(),
+                id: "id".into(),
                 name: "name".to_owned(),
                 r#type: "type".to_owned(),
                 poster: Some(Url::parse("http://poster/").unwrap()),

@@ -40,7 +40,7 @@ pub struct Link<T> {
 
 impl<T, E> UpdateWithCtx<E> for Link<T>
 where
-    T: PartialEq + TryFrom<LinkDataResponse, Error = &'static str>,
+    T: PartialEq + TryFrom<LinkDataResponse, Error = derive_more::TryIntoError<LinkDataResponse>>,
     E: Env + 'static,
 {
     fn update(&mut self, msg: &Msg, _: &Ctx) -> Effects {
@@ -96,7 +96,7 @@ where
                             Ok(data) => match T::try_from(data.to_owned()) {
                                 Ok(data) => Loadable::Ready(data),
                                 Err(error) => {
-                                    Loadable::Err(LinkError::UnexpectedResponse(error.to_owned()))
+                                    Loadable::Err(LinkError::UnexpectedResponse(error.to_string()))
                                 }
                             },
                             Err(error) => Loadable::Err(error.to_owned()),

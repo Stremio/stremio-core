@@ -7,7 +7,7 @@ fn resource_path() {
         &ResourcePath {
             resource: "resource".to_owned(),
             r#type: "type".to_owned(),
-            id: "id".to_owned(),
+            id: "id".into(),
             extra: vec![],
         },
         &[

@@ -65,9 +65,7 @@ impl BitField8 {
 
     /// get the last index where the value is `true` or `false` (`val`)
     pub fn last_index_of(&self, val: bool) -> Option<usize> {
-        (0..self.length.saturating_sub(1))
-            .rev()
-            .find(|&i| self.get(i) == val)
+        (0..self.length).rev().find(|&i| self.get(i) == val)
     }
 }
 
