@@ -15,7 +15,7 @@ use crate::models::common::{
     resources_update_with_vector_content, Loadable, ResourceAction, ResourceLoadable,
     ResourcesAction,
 };
-use crate::models::ctx::{Ctx, CtxError, check_trakt_token_expiration};
+use crate::models::ctx::{check_trakt_token_expiration, Ctx, CtxError};
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, ResourceRequest};
@@ -441,22 +441,30 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     let trakt_event_effects = match (self.loaded, self.paused) {
                         (true, Some(true)) => {
                             let token_check = check_trakt_token_expiration::<E>(&ctx.profile);
-                            
+
                             Effects::msg(Msg::Event(Event::TraktPaused {
-                                context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                                context: self
+                                    .analytics_context
+                                    .as_ref()
+                                    .cloned()
+                                    .unwrap_or_default(),
                             }))
                             .unchanged()
                             .join(token_check)
-                        },
+                        }
                         (true, Some(false)) => {
                             let token_check = check_trakt_token_expiration::<E>(&ctx.profile);
-                            
+
                             Effects::msg(Msg::Event(Event::TraktPlaying {
-                                context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                                context: self
+                                    .analytics_context
+                                    .as_ref()
+                                    .cloned()
+                                    .unwrap_or_default(),
                             }))
                             .unchanged()
                             .join(token_check)
-                        },
+                        }
                         _ => Effects::none(),
                     };
 

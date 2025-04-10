@@ -54,7 +54,7 @@ pub fn update_profile<E: Env + 'static>(
                 Effects::one(pull_user_from_api::<E>(auth_key))
                     .unchanged()
                     .join(token_check)
-            },
+            }
             _ => Effects::msg(Msg::Event(Event::Error {
                 error: CtxError::from(OtherError::UserNotLoggedIn),
                 source: Box::new(Event::UserPulledFromAPI { uid: profile.uid() }),
@@ -577,9 +577,7 @@ fn addon_action_error_effects(error: OtherError, source: Event) -> Effects {
 /// Check if the Trakt token is expired and emit an event if it is
 pub fn check_trakt_token_expiration<E: Env + 'static>(profile: &Profile) -> Effects {
     if profile.is_trakt_token_expired::<E>() {
-        Effects::msg(Msg::Event(Event::TraktTokenExpired {
-            uid: profile.uid(),
-        }))
+        Effects::msg(Msg::Event(Event::TraktTokenExpired { uid: profile.uid() }))
     } else {
         Effects::none().unchanged()
     }
