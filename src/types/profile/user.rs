@@ -50,14 +50,6 @@ pub struct GDPRConsent {
 #[serde(transparent)]
 pub struct UserId(pub String);
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum AuthMethod {
-    #[serde(rename = "fbId")]
-    Facebook(String),
-    #[serde(rename = "appleId")]
-    Apple(String),
-}
-
 impl std::str::FromStr for UserId {
     type Err = ();
 
@@ -103,8 +95,11 @@ pub struct User {
     pub id: UserId,
     pub email: String,
     #[serde(default)]
-    #[serde(flatten)]
-    pub auth_id: Option<AuthMethod>,
+    #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
+    pub fb_id: Option<String>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
+    pub apple_id: Option<String>,
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub avatar: Option<String>,
