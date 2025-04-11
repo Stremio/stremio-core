@@ -27,8 +27,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Rust setup (stable)
-      uses: dtolnay/rust-toolchain@stable
+    # we use older stable version because our old version of `wasm-bindgen` is not compatible with >= 1.86
+    - name: Rust setup (stable, 1.85)
+      uses: dtolnay/rust-toolchain@1.85
+      with:
+        components: rustfmt, clippy
 
     - uses: Swatinem/rust-cache@v2
 
