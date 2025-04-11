@@ -158,6 +158,7 @@ impl FetchRequestParams<APIRequest> for APIRequest {
             APIRequest::Auth(AuthRequest::Login { .. }) => "login".to_owned(),
             APIRequest::Auth(AuthRequest::LoginWithToken { .. }) => "loginWithToken".to_owned(),
             APIRequest::Auth(AuthRequest::Facebook { .. }) => "authWithFacebook".to_owned(),
+            APIRequest::Auth(AuthRequest::Apple { .. }) => "authWithApple".to_owned(),
             APIRequest::Auth(AuthRequest::Register { .. }) => "register".to_owned(),
             APIRequest::Logout { .. } => "logout".to_owned(),
             APIRequest::DeleteAccount { .. } => "deleteUser".to_owned(),
@@ -201,6 +202,12 @@ pub enum AuthRequest {
     Facebook {
         token: String,
     },
+    Apple {
+        token: String,
+        sub: String,
+        email: String,
+        name: String,
+    },
     LoginWithToken {
         token: String,
     },
@@ -232,6 +239,18 @@ impl fmt::Debug for AuthRequest {
             Self::Facebook { token: _ } => f
                 .debug_struct("Facebook")
                 .field("token", &"<SENSITIVE>")
+                .finish(),
+            Self::Apple {
+                token: _,
+                sub,
+                email,
+                name,
+            } => f
+                .debug_struct("Apple")
+                .field("token", &"<SENSITIVE>")
+                .field("sub", sub)
+                .field("email", email)
+                .field("name", name)
                 .finish(),
             Self::LoginWithToken { token: _ } => f
                 .debug_struct("LoginWithToken")
