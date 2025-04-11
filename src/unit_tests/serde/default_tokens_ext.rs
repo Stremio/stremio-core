@@ -323,13 +323,15 @@ impl DefaultTokens for User {
             vec![
                 Token::Struct {
                     name: "User",
-                    len: 9,
+                    len: 10,
                 },
                 Token::Str("_id"),
                 Token::Str(""),
                 Token::Str("email"),
                 Token::Str(""),
-                Token::Str("authId"),
+                Token::Str("fbId"),
+                Token::None,
+                Token::Str("appleId"),
                 Token::None,
                 Token::Str("avatar"),
                 Token::None,

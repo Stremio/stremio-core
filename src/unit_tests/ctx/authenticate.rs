@@ -26,7 +26,8 @@ fn user_fixture() -> User {
     User {
         id: "user_id".into(),
         email: "user_email".to_owned(),
-        auth_id: None,
+        fb_id: None,
+        apple_id: None,
         avatar: None,
         last_modified: TestEnv::now(),
         date_registered: TestEnv::now(),

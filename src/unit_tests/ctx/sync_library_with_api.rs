@@ -248,7 +248,8 @@ fn actionctx_synclibrarywithapi_with_user() {
                         user: User {
                             id: "user_id".into(),
                             email: "user_email".to_owned(),
-                            auth_id: None,
+                            fb_id: None,
+                            apple_id: None,
                             avatar: None,
                             last_modified: TestEnv::now(),
                             date_registered: TestEnv::now(),
@@ -414,7 +415,8 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
                         user: User {
                             id: "user_id".into(),
                             email: "user_email".to_owned(),
-                            auth_id: None,
+                            fb_id: None,
+                            apple_id: None,
                             avatar: None,
                             last_modified: TestEnv::now(),
                             date_registered: TestEnv::now(),
