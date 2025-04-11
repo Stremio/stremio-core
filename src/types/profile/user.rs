@@ -51,9 +51,10 @@ pub struct GDPRConsent {
 pub struct UserId(pub String);
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(untagged)]
 pub enum AuthMethod {
+    #[serde(rename = "fbId")]
     Facebook(String),
+    #[serde(rename = "appleId")]
     Apple(String),
 }
 
@@ -102,6 +103,7 @@ pub struct User {
     pub id: UserId,
     pub email: String,
     #[serde(default)]
+    #[serde(flatten)]
     pub auth_id: Option<AuthMethod>,
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
