@@ -206,7 +206,7 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
                     // renames the subtitle id to avoid conflicts
                     .map(move |(position, subtitles)| model::Subtitles {
                         subtitles,
-                        id: format!("{}_{}", addon.transport_url, position),
+                        id: format!("Sub {} ID: {}", position, subtitles.id.clone()),
                         origin: &addon.manifest.name,
                     })
             })
