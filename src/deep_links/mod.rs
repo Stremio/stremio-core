@@ -125,8 +125,11 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
                        ..Default::default()
                     }),
                     "iina" => Some(OpenPlayerLink {
-                        macos: Some(format!("iina://weblink?url={url}")),
-                       ..Default::default()
+                        macos: Some(format!(
+                            "iina://weblink?url={}",
+                            utf8_percent_encode(&url, URI_COMPONENT_ENCODE_SET)
+                        )),
+                        ..Default::default()
                     }),
                     "mpv" => Some(OpenPlayerLink {
                         macos: Some(format!("mpv://{url}")),
