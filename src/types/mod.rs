@@ -9,6 +9,7 @@ pub mod resource;
 pub mod search_history;
 pub mod server_urls;
 pub mod streaming_server;
+pub mod user_recommendations;
 pub mod streams;
 pub mod torrent;
 
