@@ -401,11 +401,7 @@ pub fn serialize_meta_details<E: Env + 'static>(
         rating: meta_details
             .rating
             .as_ref()
-            .and_then(|(_request, loadable)| {
-                loadable
-                    .ready()
-                    .and_then(|response| response.status)
-            }),
+            .and_then(|(_request, loadable)| loadable.ready().and_then(|response| response.status)),
     })
     .expect("JsValue from model::MetaDetails")
 }

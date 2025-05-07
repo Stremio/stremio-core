@@ -106,7 +106,6 @@ impl RequestParameters<Option<serde_json::Value>> for APIRequest {
             }
             APIRequest::Retrieve => None,
         }
-        .into()
     }
     fn body(self) -> Option<serde_json::Value> {
         match self {

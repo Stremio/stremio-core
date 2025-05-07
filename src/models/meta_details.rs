@@ -185,7 +185,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
 
                 let rating_status_effects = rating_status_update::<E>(
                     &mut self.rating,
-                    self.meta_items.get(0),
+                    self.meta_items.first(),
                     ctx.profile.auth.as_ref(),
                 );
                 let selected_override_effects =
@@ -241,13 +241,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
             }
             // update status
             Msg::Internal(Internal::GetUserRecommendationStatusResult(request, result)) => {
-                let rating_update_effects = if self
+                if self
                     .rating
                     .as_ref()
                     .map(|(current_request, _loadable)| request == current_request)
                     .unwrap_or(true)
                 {
-                    tracing::info!("User recomendation status result: {:?}", result);
                     eq_update(
                         &mut self.rating,
                         Some((
@@ -260,9 +259,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     )
                 } else {
                     Effects::none().unchanged()
-                };
-
-                rating_update_effects
+                }
             }
             Msg::Internal(Internal::LibraryChanged(_)) => {
                 let library_item_effects = library_item_update::<E>(

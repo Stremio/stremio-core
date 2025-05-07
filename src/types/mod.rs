@@ -9,9 +9,9 @@ pub mod resource;
 pub mod search_history;
 pub mod server_urls;
 pub mod streaming_server;
-pub mod user_recommendations;
 pub mod streams;
 pub mod torrent;
+pub mod user_recommendations;
 
 // Re-export of stremio_watched_bitfield crate
 pub mod watched_bitfield {
