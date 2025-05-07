@@ -22,6 +22,8 @@ use stremio_core::{
 };
 
 mod model {
+    use stremio_core::types::user_recommendations::rating;
+
     use super::*;
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -95,6 +97,8 @@ mod model {
         pub streams: Vec<ResourceLoadable<'a, Vec<Stream<'a>>>>,
         pub meta_extensions: Vec<MetaExtension<'a>>,
         pub title: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub rating: Option<rating::Status>,
     }
 }
 
@@ -393,6 +397,14 @@ pub fn serialize_meta_details<E: Env + 'static>(
                         }
                     })
                     .unwrap_or_else(|| meta_item.preview.name.to_owned())
+            }),
+        rating: meta_details
+            .rating
+            .as_ref()
+            .and_then(|(_request, loadable)| {
+                loadable
+                    .ready()
+                    .and_then(|response| response.status)
             }),
     })
     .expect("JsValue from model::MetaDetails")

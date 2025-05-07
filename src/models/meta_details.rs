@@ -1,5 +1,6 @@
 use std::{borrow::Cow, marker::PhantomData};
 
+use futures::FutureExt;
 use serde::{Deserialize, Serialize};
 
 use stremio_watched_bitfield::WatchedBitField;
@@ -15,17 +16,20 @@ use crate::{
     },
     runtime::{
         msg::{Action, ActionLoad, ActionMetaDetails, Internal, Msg},
-        Effects, Env, UpdateWithCtx,
+        EffectFuture, Effects, Env, EnvFutureExt, UpdateWithCtx,
     },
     types::{
         addon::{AggrRequest, ResourcePath, ResourceRequest},
         api::{DatastoreCommand, DatastoreRequest},
         library::{LibraryBucket, LibraryItem},
-        profile::Profile,
+        profile::{Auth, Profile},
         resource::{MetaItem, Stream},
         streams::StreamsBucket,
+        user_recommendations::{self, FetchApi},
     },
 };
+
+use super::ctx::CtxError;
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -51,6 +55,11 @@ pub struct MetaDetails {
     /// Finds a proper stream for the binge watching group and matching stream source.
     pub last_used_stream: Option<ResourceLoadable<Option<Stream>>>,
     pub library_item: Option<LibraryItem>,
+    #[serde(skip)]
+    pub rating: Option<(
+        user_recommendations::APIRequest,
+        Loadable<user_recommendations::GetStatusResponse, CtxError>,
+    )>,
     #[serde(skip_serializing)]
     pub watched: Option<WatchedBitField>,
 }
@@ -85,11 +94,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_items, &self.library_item);
                 let library_item_sync_effects = library_item_sync(&self.library_item, &ctx.profile);
+
+                let rating_effects = eq_update(&mut self.rating, None);
+
                 library_item_sync_effects
                     .join(selected_effects)
                     .join(selected_override_effects)
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
+                    .join(rating_effects)
                     .join(streams_effects)
                     .join(last_used_stream_effects)
                     .join(library_item_effects)
@@ -169,6 +182,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &mut self.meta_items,
                     ResourcesAction::ResourceRequestResult { request, result },
                 );
+
+                let rating_status_effects = rating_status_update::<E>(
+                    &mut self.rating,
+                    self.meta_items.get(0),
+                    ctx.profile.auth.as_ref(),
+                );
                 let selected_override_effects =
                     selected_guess_stream_update(&mut self.selected, &self.meta_items);
                 let streams_effects = if selected_override_effects.has_changed {
@@ -197,6 +216,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 selected_override_effects
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
+                    .join(rating_status_effects)
                     .join(streams_effects)
                     .join(last_used_stream_effects)
                     .join(library_item_effects)
@@ -218,6 +238,31 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &ctx.streams,
                 );
                 streams_effects.join(last_used_stream_effects)
+            }
+            // update status
+            Msg::Internal(Internal::GetUserRecommendationStatusResult(request, result)) => {
+                let rating_update_effects = if self
+                    .rating
+                    .as_ref()
+                    .map(|(current_request, _loadable)| request == current_request)
+                    .unwrap_or(true)
+                {
+                    tracing::info!("User recomendation status result: {:?}", result);
+                    eq_update(
+                        &mut self.rating,
+                        Some((
+                            request.to_owned(),
+                            match result.clone() {
+                                Ok(x) => Loadable::Ready(x),
+                                Err(err) => Loadable::Err(CtxError::from(err)),
+                            },
+                        )),
+                    )
+                } else {
+                    Effects::none().unchanged()
+                };
+
+                rating_update_effects
             }
             Msg::Internal(Internal::LibraryChanged(_)) => {
                 let library_item_effects = library_item_update::<E>(
@@ -371,6 +416,64 @@ fn meta_items_update<E: Env + 'static>(
         _ => eq_update(meta_items, vec![]),
     }
 }
+
+fn rating_status_update<E: Env + 'static>(
+    rating: &mut Option<(
+        user_recommendations::APIRequest,
+        Loadable<user_recommendations::GetStatusResponse, CtxError>,
+    )>,
+    meta_item: Option<&ResourceLoadable<MetaItem>>,
+    auth: Option<&Auth>,
+) -> Effects {
+    let meta_item = meta_item.and_then(|item| match item.content.as_ref() {
+        Some(Loadable::Ready(x)) => Some(x),
+        _ => None,
+    });
+
+    match (auth, meta_item) {
+        (Some(auth), Some(meta_item)) => {
+            let media_id = meta_item.preview.id.clone();
+            let media_type = meta_item.preview.r#type.clone();
+
+            let api_request = user_recommendations::APIRequest::GetStatus {
+                query: user_recommendations::GetStatusQuery {
+                    user_auth: user_recommendations::UserAuthentication::AuthToken(
+                        auth.key.clone(),
+                    ),
+                    media_id: media_id.clone(),
+                    media_type: media_type.clone(),
+                },
+            };
+
+            let rating_effects = eq_update(rating, Some((api_request.clone(), Loadable::Loading)));
+            tracing::trace!(request = ?api_request, "Request rating status for item {}", media_id);
+            let get_rating_status = {
+                Effects::one(
+                    EffectFuture::Concurrent(
+                        api_request
+                            .fetch_api::<E, user_recommendations::GetStatusResponse>()
+                            .map(move |result| {
+                                tracing::trace!(result = ?result, "Rating status response received for item {}", media_id);
+                                Msg::Internal(Internal::GetUserRecommendationStatusResult(
+                                    api_request,
+                                    result,
+                                ))
+                            })
+                            .boxed_env(),
+                    )
+                    .into(),
+                )
+                .unchanged()
+            };
+
+            rating_effects.join(get_rating_status)
+        }
+        _ => Effects::none().unchanged(),
+    }
+}
+
+// /// Makes API call to get the rating of the user for that particular MetaItem.id
+// fn get_rating_status<E: Env + 'static>(auth: &Auth, meta_item: &MetaItem) -> Effect {}
 
 fn meta_streams_update(
     meta_streams: &mut Vec<ResourceLoadable<Vec<Stream>>>,

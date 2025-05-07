@@ -21,6 +21,7 @@ use crate::types::streams::StreamItemState;
 use crate::types::{
     resource::{MetaItem, Stream},
     torrent::InfoHash,
+    user_recommendations,
 };
 
 pub type CtxStorageResponse = (
@@ -157,4 +158,8 @@ pub enum Internal {
     ),
     /// When dismissed events changed
     DismissedEventsChanged,
+    GetUserRecommendationStatusResult(
+        user_recommendations::APIRequest,
+        Result<user_recommendations::GetStatusResponse, EnvError>,
+    ),
 }

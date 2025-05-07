@@ -1,12 +1,11 @@
-use core::fmt;
+use http::{Method, Request};
+use serde::{Deserialize, Serialize};
+use url::Url;
 
 use crate::{
     constants::USER_RECOMMENDATIONS_API_URL,
     types::profile::{AuthKey, UserId},
 };
-use http::{Method, Request};
-use serde::{Deserialize, Serialize};
-use url::Url;
 
 pub trait RequestParameters<T> {
     /// Version path prefix for the request
