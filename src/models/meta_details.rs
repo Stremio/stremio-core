@@ -228,7 +228,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                                     ),
                                     media_id: meta_item.preview.id.clone(),
                                     media_type: meta_item.preview.r#type.clone(),
-                                    status: status.clone(),
+                                    status: *status,
                                 };
 
                                 send_rating::<E>(&mut self.sent_rating, send_request).unchanged()
@@ -342,7 +342,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     (Ok(SendResult::Ok(ok)), Some((get_status_request, mut loadable))) => {
                         // update status in the loadable
                         loadable = loadable.map_ready(|mut response| {
-                            response.status = request.status.clone();
+                            response.status = request.status;
                             tracing::trace!(
                                 "New Rating status set to {:?} for IMDb {}",
                                 request.status,
@@ -353,7 +353,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                         (
                             Effects::msg(Msg::Event(Event::MetaItemRatingSentStatus {
                                 id: ok.imdb_id.clone(),
-                                status: request.status.clone(),
+                                status: request.status,
                             }))
                             .unchanged(),
                             Some((get_status_request, loadable)),
@@ -389,7 +389,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                             ))),
                             source: Event::MetaItemRatingSentStatus {
                                 id: get_status_request.query.media_id.clone(),
-                                status: request.status.clone(),
+                                status: request.status,
                             }
                             .into(),
                         }))
@@ -405,7 +405,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                             error: CtxError::Env(err.to_owned()),
                             source: Event::MetaItemRatingSentStatus {
                                 id: request.media_id.clone(),
-                                status: request.status.clone(),
+                                status: request.status,
                             }
                             .into(),
                         }))
