@@ -22,10 +22,7 @@ use stremio_core::{
 };
 
 mod model {
-    use stremio_core::{
-        models::ctx::CtxError,
-        types::user_recommendations::{self, rating},
-    };
+    use stremio_core::{models::ctx::CtxError, types::user_recommendations::rating};
 
     use super::*;
     #[derive(Serialize)]
@@ -91,6 +88,7 @@ mod model {
         pub name: &'a String,
         pub addon: DescriptorPreview<'a>,
     }
+
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct MetaDetails<'a> {
@@ -101,10 +99,7 @@ mod model {
         pub meta_extensions: Vec<MetaExtension<'a>>,
         pub title: Option<String>,
         pub rating: Option<Loadable<Option<rating::Status>, CtxError>>,
-        pub sent_rating: Option<&'a (
-            user_recommendations::SendRequest,
-            Loadable<user_recommendations::SendResult, CtxError>,
-        )>,
+        pub sent_rating: Option<Loadable<Option<&'a rating::Status>, &'a CtxError>>,
     }
 }
 
@@ -408,7 +403,10 @@ pub fn serialize_meta_details<E: Env + 'static>(
             .get_rating
             .as_ref()
             .map(|(_request, loadable)| loadable.clone().map_ready(|response| response.status)),
-        sent_rating: meta_details.sent_rating.as_ref(),
+        sent_rating: meta_details
+            .sent_rating
+            .as_ref()
+            .map(|(request, loadable)| loadable.as_ref().map_ready(|_| request.status.as_ref())),
     })
     .expect("JsValue from model::MetaDetails")
 }
