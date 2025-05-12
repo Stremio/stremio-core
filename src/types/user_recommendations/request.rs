@@ -1,4 +1,4 @@
-use http::{Method, Request};
+use http::{header::CONTENT_TYPE, Method, Request};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -45,7 +45,6 @@ pub trait RequestParameters<T> {
 
 /// `userId` - The user's ID
 /// `authToken` - Either auth token or user id must be provided
-///
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub enum UserAuthentication {
@@ -70,12 +69,13 @@ pub struct GetStatusQuery {
 pub enum APIRequest {
     /// `/api/send` - Record user ratings (watched, liked, very liked)
     Send(SendRequest),
-    /// `/api/sync` - Batch update multiple items to "watched" status (one-time operation per user)
-    Sync,
     /// `/api/get_status` - Get the status of a specific item for a user
-    GetStatus { query: GetStatusQuery },
-    /// `/api/retrieve` - Get a user's media lists by type and status
-    Retrieve,
+    GetStatus(GetStatusRequest),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GetStatusRequest {
+    pub query: GetStatusQuery,
 }
 
 impl RequestParameters<Option<serde_json::Value>> for APIRequest {
@@ -91,20 +91,16 @@ impl RequestParameters<Option<serde_json::Value>> for APIRequest {
     fn path(&self) -> String {
         match self {
             APIRequest::Send(_request) => "send",
-            APIRequest::Sync => "sync",
-            APIRequest::GetStatus { .. } => "get_status",
-            APIRequest::Retrieve => "retrieve",
+            APIRequest::GetStatus(_) => "get_status",
         }
         .into()
     }
     fn query(&self) -> Option<String> {
         match self {
             APIRequest::Send(..) => None,
-            APIRequest::Sync => None,
-            APIRequest::GetStatus { query } => {
-                Some(serde_url_params::to_string(query).expect("Serialize query params failed"))
-            }
-            APIRequest::Retrieve => None,
+            APIRequest::GetStatus(request) => Some(
+                serde_url_params::to_string(&request.query).expect("Serialize query params failed"),
+            ),
         }
     }
     fn body(self) -> Option<serde_json::Value> {
@@ -125,28 +121,54 @@ impl RequestParameters<Option<serde_json::Value>> for APIRequest {
             .expect("url builder failed");
         url.set_query(self.query().as_deref());
 
-        Ok(Request::builder()
+        let req = Request::builder()
             .method(self.method())
             .uri(url.as_str())
-            .body(self.body())?)
+            .header(CONTENT_TYPE, "application/json")
+            .body(self.body())?;
+
+        Ok(req)
     }
 }
 
+/// ```
+/// 
+/// use stremio_core::types::{user_recommendations::{rating, SendRequest, UserAuthentication}, profile::AuthKey};
+///
+/// let json = serde_json::json!({
+///   "authToken": "token123",
+///   "mediaId": "tt0111161",
+///   "mediaType": "movie",
+///   "status": "loved"
+/// });
+///
+/// let request = SendRequest {
+///     user_auth: UserAuthentication::AuthToken(AuthKey("token123".to_string())),
+///     media_id: "tt0111161".to_string(),
+///     media_type: "movie".to_string(),
+///     status: Some(rating::Status::Loved),
+/// };
+///
+/// let value_actual = serde_json::to_value(&request).expect("Should serialize");
+/// assert_eq!(value_actual, json);
+///
+/// let de_actual = serde_json::from_value::<SendRequest>(json).expect("Should deserialize");
+/// assert_eq!(de_actual, request);
+/// ```
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SendRequest {
     // - `userId` - The user's ID
     // - `authToken` - Either auth token or user id must be provided
-    user_auth: UserAuthentication,
+    #[serde(flatten)]
+    pub user_auth: UserAuthentication,
     /// The IMDb ID, TMDB ID or Kitsu ID of the movie or series (examples: `tt30988739`, `kitsu:7442`, `tmdb:1197306`)
-    media_id: String,
+    pub media_id: String,
     /// `movie`, `series`, `anime`, etc
-    media_type: String,
+    pub media_type: String,
     /// To clear a rating, omit the status field entirely
     #[serde(skip_serializing_if = "Option::is_none")]
-    status: Option<rating::Status>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    country_code: Option<String>,
+    pub status: Option<rating::Status>,
 }
 
 pub mod rating {
@@ -169,8 +191,8 @@ pub mod rating {
         Watched,
         #[display("liked")]
         Liked,
-        #[display("very liked")]
-        VeryLiked,
+        #[display("loved")]
+        Loved,
     }
 
     impl TryFrom<String> for Status {
@@ -187,37 +209,3 @@ pub mod rating {
         }
     }
 }
-// #[cfg(test)]
-// mod tests {
-//     use http::Method;
-
-//     use crate::types::api::FetchRequestParams;
-
-//     #[test]
-//     fn test_versioning_of_api_fetch_request_params() {
-//         struct V2Request;
-//         impl FetchRequestParams<()> for V2Request {
-//             const VERSION: &'static str = "v2";
-//             fn endpoint(&self) -> url::Url {
-//                 "https://example.com/".parse().unwrap()
-//             }
-
-//             fn method(&self) -> Method {
-//                 Method::POST
-//             }
-
-//             fn path(&self) -> String {
-//                 "create".into()
-//             }
-
-//             fn query(&self) -> Option<String> {
-//                 None
-//             }
-
-//             fn body(self) {}
-//         }
-
-//         let v2 = V2Request;
-//         assert_eq!("v2/create", v2.version_path());
-//     }
-// }

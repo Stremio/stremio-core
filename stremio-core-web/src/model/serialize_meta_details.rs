@@ -22,7 +22,10 @@ use stremio_core::{
 };
 
 mod model {
-    use stremio_core::types::user_recommendations::rating;
+    use stremio_core::{
+        models::ctx::CtxError,
+        types::user_recommendations::{self, rating},
+    };
 
     use super::*;
     #[derive(Serialize)]
@@ -97,8 +100,11 @@ mod model {
         pub streams: Vec<ResourceLoadable<'a, Vec<Stream<'a>>>>,
         pub meta_extensions: Vec<MetaExtension<'a>>,
         pub title: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub rating: Option<rating::Status>,
+        pub rating: Option<Loadable<Option<rating::Status>, CtxError>>,
+        pub sent_rating: Option<&'a (
+            user_recommendations::SendRequest,
+            Loadable<user_recommendations::SendResult, CtxError>,
+        )>,
     }
 }
 
@@ -399,9 +405,10 @@ pub fn serialize_meta_details<E: Env + 'static>(
                     .unwrap_or_else(|| meta_item.preview.name.to_owned())
             }),
         rating: meta_details
-            .rating
+            .get_rating
             .as_ref()
-            .and_then(|(_request, loadable)| loadable.ready().and_then(|response| response.status)),
+            .map(|(_request, loadable)| loadable.clone().map_ready(|response| response.status)),
+        sent_rating: meta_details.sent_rating.as_ref(),
     })
     .expect("JsValue from model::MetaDetails")
 }

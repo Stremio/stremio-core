@@ -3,8 +3,6 @@ use std::ops::Range;
 use serde::Deserialize;
 use url::Url;
 
-use crate::types::profile::Password;
-use crate::types::streams::StreamItemState;
 use crate::{
     models::{
         addon_details::Selected as AddonDetailsSelected,
@@ -21,12 +19,14 @@ use crate::{
         addon::Descriptor,
         api::AuthRequest,
         library::LibraryItemId,
-        profile::Settings as ProfileSettings,
+        profile::{Password, Settings as ProfileSettings},
         resource::{MetaItemId, MetaItemPreview, Video},
         streaming_server::{
             Settings as StreamingServerSettings,
             StatisticsRequest as StreamingServerStatisticsRequest,
         },
+        streams::StreamItemState,
+        user_recommendations,
     },
 };
 
@@ -119,6 +119,14 @@ pub enum ActionMetaDetails {
     MarkVideoAsWatched(Video, bool),
     /// Mark all videos from given season as watched
     MarkSeasonAsWatched(u32, bool),
+    Rate {
+        /// the MetaItem id
+        id: String,
+        /// The status which the user gave.
+        ///
+        /// If None, status will be cleared.
+        status: Option<user_recommendations::rating::Status>,
+    },
 }
 
 #[derive(Clone, Deserialize, Debug)]

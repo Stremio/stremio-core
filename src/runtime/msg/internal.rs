@@ -159,7 +159,11 @@ pub enum Internal {
     /// When dismissed events changed
     DismissedEventsChanged,
     GetUserRecommendationStatusResult(
-        user_recommendations::APIRequest,
+        user_recommendations::GetStatusRequest,
         Result<user_recommendations::GetStatusResponse, EnvError>,
+    ),
+    UserRecommendationSendRequestResult(
+        user_recommendations::SendRequest,
+        Result<user_recommendations::SendResult, EnvError>,
     ),
 }
