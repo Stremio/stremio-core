@@ -76,7 +76,7 @@ pub static CINEMETA_URL: Lazy<Url> = Lazy::new(|| {
     Url::parse("https://v3-cinemeta.strem.io/manifest.json").expect("CINEMETA_URL parse failed")
 });
 pub static USER_RECOMMENDATIONS_API_URL: Lazy<Url> =
-    Lazy::new(|| Url::parse("https://localhost:8090").expect("API_URL parse failed"));
+    Lazy::new(|| Url::parse("http://localhost:8090").expect("API_URL parse failed"));
 pub static API_URL: Lazy<Url> =
     Lazy::new(|| Url::parse("https://api.strem.io").expect("API_URL parse failed"));
 pub static LINK_API_URL: Lazy<Url> =
