@@ -259,38 +259,6 @@ impl WebEnv {
         global().clear_interval_with_handle(id);
     }
 
-    /// Timeout: in milliseconds
-    ///
-    /// ```js
-    /// const controller = new AbortController()
-    ///
-    /// // 5 second timeout:
-    ///
-    /// const timeoutId = setTimeout(() => controller.abort(), 5000)
-    ///
-    /// fetch(url, { signal: controller.signal }).then(response => {
-    /// // completed request before timeout fired
-    ///
-    /// // If you only wanted to timeout the request, not the response, add:
-    /// // clearTimeout(timeoutId)
-    /// })
-    /// ```
-    pub fn set_timeout(timeout: Duration) -> i32 {
-        pub const DEFAULT: Duration = Duration::from_secs(3);
-
-        let abort_controller = AbortController::new().expect("AbortController should be enabled");
-
-        let func = Closure::wrap(Box::new(move || abort_controller.abort()) as Box<dyn FnMut()>);
-        let timeout_id = global()
-            .set_timeout_with_callback_and_timeout_and_arguments_0(
-                func.as_ref().unchecked_ref(),
-                i32::try_from(timeout.as_millis()).unwrap_or(DEFAULT.as_millis() as i32),
-            )
-            .expect("set interval failed");
-        func.forget();
-        timeout_id
-    }
-
     #[allow(dead_code)]
     pub fn clear_timeout(id: i32) {
         global().clear_timeout_with_handle(id);
