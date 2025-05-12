@@ -14,7 +14,7 @@ use url::Url;
 
 use wasm_bindgen::{closure::Closure, prelude::wasm_bindgen, JsCast, JsValue};
 use wasm_bindgen_futures::{spawn_local, JsFuture};
-use web_sys::{AbortController, WorkerGlobalScope};
+use web_sys::WorkerGlobalScope;
 
 use stremio_core::{
     analytics::Analytics,
@@ -337,9 +337,6 @@ impl Env for WebEnv {
         let request = web_sys::Request::new_with_str_and_init(&url, &request_options)
             .expect("request builder failed");
 
-        // let abort_signal_timeout = web_sys::AbortSignal::set_onabort(&self, value);
-        // let request_init = web_sys::RequestInit::new().signal(Some(abort_signal_timeout));
-        // let promise = global().fetch_with_request_and_init(&request, request_init);
         let promise = global().fetch_with_request(&request);
         async {
             let resp = JsFuture::from(promise).await.map_err(|error| {
