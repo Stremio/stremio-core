@@ -97,6 +97,9 @@ pub enum Event {
     TraktAddonFetched {
         uid: UID,
     },
+    TraktTokenRefreshed {
+        uid: UID,
+    },
     TraktLoggedOut {
         uid: UID,
     },
