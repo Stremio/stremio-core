@@ -15,12 +15,13 @@ use crate::{
     types::{
         api::{
             fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
-            DatastoreCommand, DatastoreRequest, LibraryItemsResponse, SuccessResponse,
+            DatastoreCommand, DatastoreRequest, LibraryItemsResponse, RefreshTraktToken,
+            SuccessResponse,
         },
         events::{DismissedEventsBucket, Events},
         library::LibraryBucket,
         notifications::NotificationsBucket,
-        profile::{Auth, AuthKey, Profile},
+        profile::{Auth, AuthKey, Profile, User},
         resource::MetaItem,
         search_history::SearchHistoryBucket,
         server_urls::ServerUrlsBucket,
@@ -75,6 +76,8 @@ pub struct Ctx {
     pub notification_catalogs: Vec<ResourceLoadable<Vec<MetaItem>>>,
 
     pub events: Events,
+    #[serde(skip)]
+    pub refresh_trakt: Option<(RefreshTraktToken, Loadable<User, CtxError>)>,
 }
 
 impl Ctx {
@@ -103,6 +106,7 @@ impl Ctx {
                 modal: Loadable::Loading,
                 notification: Loadable::Loading,
             },
+            refresh_trakt: None,
         }
     }
 }
@@ -125,8 +129,13 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     }
                     _ => Effects::none().unchanged(),
                 };
-                let profile_effects =
-                    update_profile::<E>(&mut self.profile, &mut self.streams, &self.status, msg);
+                let profile_effects = update_profile::<E>(
+                    &mut self.profile,
+                    &mut self.streams,
+                    &mut self.refresh_trakt,
+                    &self.status,
+                    msg,
+                );
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
@@ -167,8 +176,13 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(notifications_effects)
             }
             Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => {
-                let profile_effects =
-                    update_profile::<E>(&mut self.profile, &mut self.streams, &self.status, msg);
+                let profile_effects = update_profile::<E>(
+                    &mut self.profile,
+                    &mut self.streams,
+                    &mut self.refresh_trakt,
+                    &self.status,
+                    msg,
+                );
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let trakt_addon_effects = update_trakt_addon::<E>(
@@ -267,8 +281,13 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(ctx_effects)
             }
             _ => {
-                let profile_effects =
-                    update_profile::<E>(&mut self.profile, &mut self.streams, &self.status, msg);
+                let profile_effects = update_profile::<E>(
+                    &mut self.profile,
+                    &mut self.streams,
+                    &mut self.refresh_trakt,
+                    &self.status,
+                    msg,
+                );
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
