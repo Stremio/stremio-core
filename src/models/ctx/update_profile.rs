@@ -425,7 +425,7 @@ pub fn update_profile<E: Env + 'static>(
         }
         Msg::Internal(Internal::UserRefreshTraktTokenAPIResult(request, result)) => {
             match profile.auth.as_ref() {
-                Some(auth) if &auth.key == &request.auth_key => {
+                Some(auth) if auth.key == request.auth_key => {
                     let profile_user_effects = match result {
                         Ok(new_user) => {
                             let mut new_profile = profile.clone();
