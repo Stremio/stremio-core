@@ -16,7 +16,7 @@ use crate::types::api::{
     fetch_api, APIError, APIRequest, APIResult, CollectionResponse, RefreshTraktToken,
     SuccessResponse,
 };
-use crate::types::profile::{Auth, AuthKey, Password, Profile, Settings, User, UserId};
+use crate::types::profile::{Auth, AuthKey, Password, Profile, Settings, User};
 use crate::types::streams::StreamsBucket;
 
 pub fn update_profile<E: Env + 'static>(
@@ -389,7 +389,7 @@ pub fn update_profile<E: Env + 'static>(
                                 if trakt_info.created_at + trakt_info.expires_in < E::now() =>
                             {
                                 let (request, refresh_effect) =
-                                    refresh_trakt_token_api::<E>(auth.user.id.clone());
+                                    refresh_trakt_token_api::<E>(auth_key.clone());
                                 let api_request_effects = Effects::one(refresh_effect).unchanged();
 
                                 let refresh_trakt_effects = eq_update(
@@ -425,7 +425,7 @@ pub fn update_profile<E: Env + 'static>(
         }
         Msg::Internal(Internal::UserRefreshTraktTokenAPIResult(request, result)) => {
             match profile.auth.as_ref() {
-                Some(auth) if auth.user.id == request.user_id => {
+                Some(auth) if &auth.key == &request.auth_key => {
                     let profile_user_effects = match result {
                         Ok(new_user) => {
                             let mut new_profile = profile.clone();
@@ -515,8 +515,8 @@ fn push_addons_to_api<E: Env + 'static>(addons: Vec<Descriptor>, auth_key: &Auth
     .into()
 }
 
-fn refresh_trakt_token_api<E: Env + 'static>(user_id: UserId) -> (RefreshTraktToken, Effect) {
-    let request = RefreshTraktToken { user_id };
+fn refresh_trakt_token_api<E: Env + 'static>(auth_key: AuthKey) -> (RefreshTraktToken, Effect) {
+    let request = RefreshTraktToken { auth_key };
 
     let request2 = request.clone();
     let request_effect = EffectFuture::Concurrent(

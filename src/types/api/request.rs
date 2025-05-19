@@ -3,7 +3,7 @@ use core::fmt;
 use crate::constants::{API_URL, LINK_API_URL};
 use crate::types::addon::Descriptor;
 use crate::types::library::LibraryItem;
-use crate::types::profile::{AuthKey, GDPRConsent, Password, User, UserId};
+use crate::types::profile::{AuthKey, GDPRConsent, Password, User};
 use crate::types::resource::SeriesInfo;
 use chrono::{DateTime, Local};
 #[cfg(test)]
@@ -346,23 +346,25 @@ pub enum DatastoreCommand {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct RefreshTraktToken {
-    pub user_id: UserId,
+    pub auth_key: AuthKey,
 }
 
-impl FetchRequestParams<()> for RefreshTraktToken {
+impl FetchRequestParams<RefreshTraktToken> for RefreshTraktToken {
     fn endpoint(&self) -> Url {
         API_URL.to_owned()
     }
     fn method(&self) -> Method {
-        Method::GET
+        Method::POST
     }
     fn path(&self) -> String {
         "traktRefresh".to_string()
     }
     fn query(&self) -> Option<String> {
-        Some(serde_url_params::to_string(&self).expect("Serialize query params failed"))
+        None
     }
-    fn body(self) {}
+    fn body(self) -> Self {
+        self
+    }
 }
 
 #[cfg(test)]
