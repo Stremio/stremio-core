@@ -27,6 +27,7 @@ fn user_fixture() -> User {
         id: "user_id".into(),
         email: "user_email".to_owned(),
         fb_id: None,
+        apple_id: None,
         avatar: None,
         last_modified: TestEnv::now(),
         date_registered: TestEnv::now(),
@@ -456,6 +457,149 @@ fn actionctx_authenticate_facebook() {
             url: "https://api.strem.io/api/authWithFacebook".to_owned(),
             method: "POST".to_owned(),
             body: "{\"type\":\"Auth\",\"type\":\"Facebook\",\"token\":\"access_token\"}".to_owned(),
+            ..Default::default()
+        },
+        "Login request has been sent"
+    );
+    assert_eq!(
+        REQUESTS.read().unwrap().get(1).unwrap().to_owned(),
+        Request {
+            url: "https://api.strem.io/api/addonCollectionGet".to_owned(),
+            method: "POST".to_owned(),
+            body: "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}"
+                .to_owned(),
+            ..Default::default()
+        },
+        "AddonCollectionGet request has been sent"
+    );
+    assert_eq!(
+        REQUESTS.read().unwrap().get(2).unwrap().to_owned(),
+        Request {
+            url: "https://api.strem.io/api/datastoreGet".to_owned(),
+            method: "POST".to_owned(),
+            body:
+                "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}"
+                    .to_owned(),
+            ..Default::default()
+        },
+        "DatastoreGet request has been sent"
+    );
+}
+
+#[test]
+fn actionctx_authenticate_apple() {
+    #[derive(Model, Clone, Default)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+    }
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
+        match request {
+            Request {
+                url, method, body, ..
+            } if url == "https://api.strem.io/api/authWithApple"
+                && method == "POST"
+                && body == "{\"type\":\"Auth\",\"type\":\"Apple\",\"token\":\"access_token\",\"sub\":\"sub_id\",\"email\":\"user_email\",\"name\":\"user_name\"}" =>
+            {
+                future::ok(Box::new(APIResult::Ok(auth_response_fixture())) as Box<dyn Any + Send>).boxed_env()
+            }
+            Request {
+                url, method, body, ..
+            } if url == "https://api.strem.io/api/addonCollectionGet"
+                && method == "POST"
+                && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
+            {
+                future::ok(Box::new(APIResult::Ok(
+                    CollectionResponse {
+                        addons: vec![],
+                        last_modified: TestEnv::now(),
+                    },)
+                ) as Box<dyn Any + Send>).boxed_env()
+            }
+            Request {
+                url, method, body, ..
+            } if url == "https://api.strem.io/api/datastoreGet"
+                && method == "POST"
+                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
+            {
+                future::ok(Box::new(APIResult::Ok(LibraryItemsResponse::new(),)) as Box<dyn Any + Send>).boxed_env()
+            }
+            _ => default_fetch_handler(request),
+        }
+    }
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
+    let ctx = Ctx::new(
+        Profile::default(),
+        LibraryBucket::default(),
+        StreamsBucket::default(),
+        ServerUrlsBucket::new::<TestEnv>(None),
+        NotificationsBucket::new::<TestEnv>(None, vec![]),
+        SearchHistoryBucket::default(),
+        DismissedEventsBucket::default(),
+    );
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::Authenticate(AuthRequest::Apple {
+                token: "access_token".into(),
+                sub: "sub_id".into(),
+                email: "user_email".into(),
+                name: "user_name".into(),
+            })),
+        })
+    });
+    assert_eq!(
+        runtime.model().unwrap().ctx.profile,
+        profile_fixture(),
+        "profile updated successfully in memory"
+    );
+    assert_eq!(
+        runtime.model().unwrap().ctx.library,
+        LibraryBucket {
+            uid: Some("user_id".into()),
+            ..Default::default()
+        },
+        "library updated successfully in memory"
+    );
+    assert_eq!(
+        serde_json::from_str::<Profile>(STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
+            .unwrap(),
+        profile_fixture(),
+        "profile updated successfully in storage"
+    );
+    assert_eq!(
+        serde_json::from_str::<LibraryBucket>(
+            STORAGE
+                .read()
+                .unwrap()
+                .get(LIBRARY_RECENT_STORAGE_KEY)
+                .unwrap()
+        )
+        .unwrap(),
+        LibraryBucket::new(Some("user_id".into()), vec![]),
+        "recent library updated successfully in storage"
+    );
+    assert_eq!(
+        serde_json::from_str::<LibraryBucket>(
+            STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
+        )
+        .unwrap(),
+        LibraryBucket::new(Some("user_id".into()), vec![]),
+        "library updated successfully in storage"
+    );
+    assert_eq!(
+        REQUESTS.read().unwrap().len(),
+        3,
+        "Three requests have been sent"
+    );
+    assert_eq!(
+        REQUESTS.read().unwrap().first().unwrap().to_owned(),
+        Request {
+            url: "https://api.strem.io/api/authWithApple".to_owned(),
+            method: "POST".to_owned(),
+            body: "{\"type\":\"Auth\",\"type\":\"Apple\",\"token\":\"access_token\",\"sub\":\"sub_id\",\"email\":\"user_email\",\"name\":\"user_name\"}".to_owned(),
             ..Default::default()
         },
         "Login request has been sent"

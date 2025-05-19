@@ -99,6 +99,9 @@ pub struct User {
     pub fb_id: Option<String>,
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
+    pub apple_id: Option<String>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub avatar: Option<String>,
     #[cfg_attr(test, derivative(Default(value = "Utc.timestamp_opt(0, 0).unwrap()")))]
     pub last_modified: DateTime<Utc>,
