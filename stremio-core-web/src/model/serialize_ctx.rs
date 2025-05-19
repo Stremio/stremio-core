@@ -15,9 +15,10 @@ mod model {
     use itertools::Itertools;
     use serde::Serialize;
 
-    use stremio_core::deep_links::SearchHistoryItemDeepLinks;
-    use stremio_core::types::{
-        events::Events, notifications::NotificationItem, resource::MetaItemId,
+    use stremio_core::{
+        deep_links::SearchHistoryItemDeepLinks,
+        models::{common::Loadable, ctx::CtxError},
+        types::{events::Events, notifications::NotificationItem, resource::MetaItemId},
     };
     use url::Url;
 
@@ -31,6 +32,8 @@ mod model {
         pub search_history: Vec<SearchHistoryItem<'a>>,
         pub events: &'a Events,
         pub streaming_server_urls: Vec<StreamingServerUrlItem>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub trakt_refreshed: Option<Loadable<(), CtxError>>,
     }
 
     #[derive(Serialize)]
@@ -125,6 +128,10 @@ mod model {
                     })
                     .sorted_by(|a, b| Ord::cmp(&a.mtime, &b.mtime))
                     .collect(),
+                trakt_refreshed: ctx
+                    .refresh_trakt
+                    .as_ref()
+                    .map(|(_request, loadable)| loadable.clone().map_ready(drop)),
             }
         }
     }
