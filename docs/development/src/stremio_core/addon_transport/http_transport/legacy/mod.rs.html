@@ -609,7 +609,7 @@
         serde_json::to_string(<span class="kw-2">&amp;</span>q_json).map_err(|error| EnvError::Serde(error.to_string()))<span class="question-mark">?</span>,
     );
     <span class="kw">let </span>url = <span class="macro">format!</span>(<span class="string">"{transport_url}/q.json?b={param_str}"</span>);
-    <span class="prelude-val">Ok</span>(Request::get(<span class="kw-2">&amp;</span>url).body(()).expect(<span class="string">"request builder failed"</span>))
+    <span class="prelude-val">Ok</span>(Request::get(url).body(()).expect(<span class="string">"request builder failed"</span>))
 }
 
 <span class="kw">fn </span>build_jsonrpc(method: <span class="kw-2">&amp;</span>str, params: serde_json::Value) -&gt; serde_json::Value {

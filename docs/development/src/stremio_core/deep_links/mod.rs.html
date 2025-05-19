@@ -686,7 +686,17 @@
 <a href="#685" id="685">685</a>
 <a href="#686" id="686">686</a>
 <a href="#687" id="687">687</a>
-<a href="#688" id="688">688</a></pre></div><pre class="rust"><code><span class="kw">use </span>percent_encoding::utf8_percent_encode;
+<a href="#688" id="688">688</a>
+<a href="#689" id="689">689</a>
+<a href="#690" id="690">690</a>
+<a href="#691" id="691">691</a>
+<a href="#692" id="692">692</a>
+<a href="#693" id="693">693</a>
+<a href="#694" id="694">694</a>
+<a href="#695" id="695">695</a>
+<a href="#696" id="696">696</a>
+<a href="#697" id="697">697</a>
+<a href="#698" id="698">698</a></pre></div><pre class="rust"><code><span class="kw">use </span>percent_encoding::utf8_percent_encode;
 <span class="kw">use </span>regex::Regex;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>url::Url;
@@ -771,71 +781,81 @@
         <span class="kw">let </span>playlist = stream.m3u_data_uri(streaming_server_url);
         <span class="kw">let </span>file_name = playlist.as_ref().map(|<span class="kw">_</span>| <span class="string">"playlist.m3u"</span>.to_owned());
         <span class="kw">let </span>open_player = <span class="kw">match </span><span class="kw-2">&amp;</span>streaming {
-            <span class="prelude-val">Some</span>(url) =&gt; <span class="kw">match </span>settings.player_type.as_ref() {
-                <span class="prelude-val">Some</span>(player_type) =&gt; <span class="kw">match </span>player_type.as_str() {
-                    <span class="string">"choose" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
-                        android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
-                            <span class="string">"{}#Intent;type=video/any;scheme=https;end"</span>,
-                            http_regex.replace(url.as_str(), <span class="string">"intent://"</span>),
-                        )),
+            <span class="prelude-val">Some</span>(url) =&gt; {
+                <span class="comment">// `x-callback-url` schema urls need to be encoded
+                // &gt;(Note: callback URLs in parameters should be encoded. They were left decoded for legibility)
+                // https://x-callback-url.com/examples/
+                </span><span class="kw">let </span>url_encoded = utf8_percent_encode(url.as_str(), URI_COMPONENT_ENCODE_SET);
+
+                <span class="kw">match </span>settings.player_type.as_ref() {
+                    <span class="prelude-val">Some</span>(player_type) =&gt; <span class="kw">match </span>player_type.as_str() {
+                        <span class="string">"choose" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                            android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
+                                <span class="string">"{}#Intent;type=video/any;scheme=https;end"</span>,
+                                http_regex.replace(url.as_str(), <span class="string">"intent://"</span>),
+                            )),
+                            ..Default::default()
+                        }),
+                        <span class="string">"vlc" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                            ios: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"vlc-x-callback://x-callback-url/stream?url={url_encoded}"</span>)),
+                            visionos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"vlc-x-callback://x-callback-url/stream?url={url_encoded}"</span>)),
+                            android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
+                                <span class="string">"{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end"</span>,
+                                http_regex.replace(url.as_str(), <span class="string">"intent://"</span>),
+                            )),
+                            ..Default::default()
+                        }),
+                        <span class="string">"mxplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                            android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
+                                <span class="string">"{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end"</span>,
+                                http_regex.replace(url.as_str(), <span class="string">"intent://"</span>),
+                            )),
+                            ..Default::default()
+                        }),
+                        <span class="string">"justplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                            android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
+                                <span class="string">"{}#Intent;package=com.brouken.player;type=video;scheme=https;end"</span>,
+                                http_regex.replace(url.as_str(), <span class="string">"intent://"</span>),
+                            )),
+                            ..Default::default()
+                        }),
+                        <span class="string">"outplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                            ios: <span class="prelude-val">Some</span>(http_regex.replace(url.as_str(), <span class="string">"outplayer://"</span>).to_string()),
+                            visionos: <span class="prelude-val">Some</span>(http_regex.replace(url.as_str(), <span class="string">"outplayer://"</span>).to_string()),
+                            ..Default::default()
+                        }),
+                        <span class="comment">// Either a query that's url-safe or encoded.
+                        // https://support.firecore.com/hc/en-us/articles/215090997-API-for-Third-Party-Apps-Services#h_01HDS4GZEG00ME3VJJ77SEFF5V
+                        </span><span class="string">"infuse" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                            ios: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"infuse://x-callback-url/play?url={url_encoded}"</span>)),
                         ..Default::default()
-                    }),
-                    <span class="string">"vlc" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
-                        ios: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"vlc-x-callback://x-callback-url/stream?url={url}"</span>)),
-                        visionos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"vlc-x-callback://x-callback-url/stream?url={url}"</span>)),
-                        android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
-                            <span class="string">"{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end"</span>,
-                            http_regex.replace(url.as_str(), <span class="string">"intent://"</span>),
-                        )),
+                        }),
+
+                        <span class="string">"iina" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                            macos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"iina://weblink?url={url_encoded}"</span>)),
                         ..Default::default()
-                    }),
-                    <span class="string">"mxplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
-                        android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
-                            <span class="string">"{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end"</span>,
-                            http_regex.replace(url.as_str(), <span class="string">"intent://"</span>),
-                        )),
+                        }),
+                        <span class="string">"mpv" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                            macos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"mpv://{url}"</span>)),
                         ..Default::default()
-                    }),
-                    <span class="string">"justplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
-                        android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
-                            <span class="string">"{}#Intent;package=com.brouken.player;type=video;scheme=https;end"</span>,
-                            http_regex.replace(url.as_str(), <span class="string">"intent://"</span>),
-                        )),
+                        }),
+                        <span class="string">"moonplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                            visionos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"moonplayer://open?url={url}"</span>)),
+                            ..Default::default()
+                        }),
+                        <span class="string">"m3u" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                            linux: playlist.to_owned(),
+                            windows: playlist.to_owned(),
+                            macos: playlist.to_owned(),
+                            android: playlist.to_owned(),
+                            ios: playlist.to_owned(),
                         ..Default::default()
-                    }),
-                    <span class="string">"outplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
-                        ios: <span class="prelude-val">Some</span>(http_regex.replace(url.as_str(), <span class="string">"outplayer://"</span>).to_string()),
-                        visionos: <span class="prelude-val">Some</span>(http_regex.replace(url.as_str(), <span class="string">"outplayer://"</span>).to_string()),
-                        ..Default::default()
-                    }),
-                    <span class="string">"infuse" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
-                        ios: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"infuse://x-callback-url/play?url={url}"</span>)),
-                       ..Default::default()
-                    }),
-                    <span class="string">"iina" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
-                        macos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"iina://weblink?url={url}"</span>)),
-                       ..Default::default()
-                    }),
-                    <span class="string">"mpv" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
-                        macos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"mpv://{url}"</span>)),
-                       ..Default::default()
-                    }),
-                    <span class="string">"moonplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
-                        visionos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"moonplayer://open?url={url}"</span>)),
-                        ..Default::default()
-                    }),
-                    <span class="string">"m3u" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
-                        linux: playlist.to_owned(),
-                        windows: playlist.to_owned(),
-                        macos: playlist.to_owned(),
-                        android: playlist.to_owned(),
-                        ios: playlist.to_owned(),
-                       ..Default::default()
-                    }),
-                    <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
-                },
-                <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
-            },
+                        }),
+                        <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+                    },
+                    <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
+                }
+            }
             <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
         };
         <span class="kw">let </span>(web, android_tv, tizen, webos) = <span class="kw">match </span><span class="kw-2">&amp;</span>stream.source {

@@ -136,7 +136,7 @@
             </span>.transport_url
             .as_str()
             .replace(ADDON_MANIFEST_PATH, <span class="kw-2">&amp;</span>path);
-        <span class="kw">let </span>request = Request::get(<span class="kw-2">&amp;</span>url).body(()).expect(<span class="string">"request builder failed"</span>);
+        <span class="kw">let </span>request = Request::get(url).body(()).expect(<span class="string">"request builder failed"</span>);
         E::fetch(request)
     }
     <span class="kw">fn </span>manifest(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; TryEnvFuture&lt;Manifest&gt; {
