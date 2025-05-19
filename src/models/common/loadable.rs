@@ -92,12 +92,3 @@ impl<R, E> From<Result<R, E>> for Loadable<R, E> {
         }
     }
 }
-
-impl<R,E> From<Result<R, E>> for Loadable<R, E> {
-    fn from(result: Result<R, E>) -> Self {
-        match result {
-            Ok(x) => Loadable::Ready(x),
-            Err(err) => Loadable::Err(err),
-        }
-    }
-}
