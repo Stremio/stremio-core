@@ -16,7 +16,7 @@ mod model {
 
     use super::*;
 
-    /// Descriptor Preview serializing the [`ManifestPreview`] and
+    /// Descriptor Preview serializing the [`Manifest`] and
     /// [`DescriptorFlags`] of an addon.
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
