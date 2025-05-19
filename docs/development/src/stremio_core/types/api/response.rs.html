@@ -321,7 +321,22 @@
 <a href="#320" id="320">320</a>
 <a href="#321" id="321">321</a>
 <a href="#322" id="322">322</a>
-<a href="#323" id="323">323</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
 
 <span class="kw">use </span>std::collections::HashMap;
 
@@ -352,6 +367,21 @@
 </span><span class="kw">pub struct </span>APIError {
     <span class="kw">pub </span>message: String,
     <span class="kw">pub </span>code: u64,
+}
+
+<span class="kw">impl</span>&lt;T&gt; APIResult&lt;T&gt; {
+    <span class="kw">pub fn </span>into_result(<span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;T, APIError&gt; {
+        <span class="self">self</span>.into()
+    }
+}
+
+<span class="kw">impl</span>&lt;T&gt; From&lt;APIResult&lt;T&gt;&gt; <span class="kw">for </span><span class="prelude-ty">Result</span>&lt;T, APIError&gt; {
+    <span class="kw">fn </span>from(api_result: APIResult&lt;T&gt;) -&gt; <span class="self">Self </span>{
+        <span class="kw">match </span>api_result {
+            APIResult::Ok(x) =&gt; Result::Ok(x),
+            APIResult::Err(err) =&gt; Result::Err(err),
+        }
+    }
 }
 
 <span class="attr">#[derive(Debug, Serialize, Deserialize)]
