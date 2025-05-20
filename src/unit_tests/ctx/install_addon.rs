@@ -82,7 +82,7 @@ fn actionctx_installaddon_install() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap().addons == vec![addon.to_owned()]
             }),
         "addon updated successfully in storage"
@@ -190,7 +190,7 @@ fn actionctx_installaddon_install_with_user() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap().addons == vec![addon.to_owned()]
             }),
         "addon updated successfully in storage"
@@ -314,7 +314,7 @@ fn actionctx_installaddon_update() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap().addons
                     == vec![addon.to_owned(), addon2.to_owned()]
             }),
@@ -392,7 +392,7 @@ fn actionctx_installaddon_already_installed() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap().addons == vec![addon.to_owned()]
             }),
         "addons in storage not updated"
