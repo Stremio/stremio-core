@@ -120,7 +120,7 @@ fn actionctx_logout() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap() == Default::default()
             }),
         "profile updated successfully in storage"
@@ -130,7 +130,7 @@ fn actionctx_logout() {
             .read()
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<LibraryBucket>(data).unwrap() == Default::default()
             }),
         "recent library updated successfully in storage"
@@ -140,7 +140,7 @@ fn actionctx_logout() {
             .read()
             .unwrap()
             .get(LIBRARY_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<LibraryBucket>(data).unwrap() == Default::default()
             }),
         "library updated successfully in storage"

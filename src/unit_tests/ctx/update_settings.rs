@@ -51,7 +51,7 @@ fn actionctx_updatesettings() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap().settings == settings
             }),
         "Settings updated successfully in storage"
@@ -114,7 +114,7 @@ fn actionctx_updatesettings_not_changed() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap().settings == settings
             }),
         "Settings not updated in storage"

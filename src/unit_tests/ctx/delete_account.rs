@@ -115,7 +115,7 @@ fn actionctx_delete_account() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap() == Default::default()
             }),
         "profile updated successfully in storage"
@@ -128,7 +128,7 @@ fn actionctx_delete_account() {
     );
 
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
+        REQUESTS.read().unwrap().first().unwrap().to_owned(),
         Request {
             url: "https://api.strem.io/api/deleteUser".to_owned(),
             method: "POST".to_owned(),
