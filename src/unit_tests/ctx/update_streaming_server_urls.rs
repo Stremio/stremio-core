@@ -48,7 +48,7 @@ fn test_add_server_url() {
             .read()
             .unwrap()
             .get(STREAMING_SERVER_URLS_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 let stored_bucket: ServerUrlsBucket = serde_json::from_str(data).unwrap();
                 stored_bucket.items.contains_key(&new_url)
             }),

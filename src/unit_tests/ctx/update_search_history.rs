@@ -82,7 +82,7 @@ fn test_search_history_update() {
             .read()
             .unwrap()
             .get(SEARCH_HISTORY_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<SearchHistoryBucket>(data)
                     .unwrap()
                     .items
