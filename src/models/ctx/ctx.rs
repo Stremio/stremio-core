@@ -1,7 +1,7 @@
 use crate::{
     constants::LIBRARY_COLLECTION_NAME,
     models::{
-        common::{DescriptorLoadable, Loadable, ResourceLoadable},
+        common::{eq_update, DescriptorLoadable, Loadable, ResourceLoadable},
         ctx::{
             update_events, update_library, update_notifications, update_profile,
             update_search_history, update_streaming_server_urls, update_streams,
@@ -29,6 +29,7 @@ use crate::{
     },
 };
 
+use chrono::{DateTime, Utc};
 #[cfg(test)]
 use derivative::Derivative;
 use enclose::enclose;
@@ -77,7 +78,14 @@ pub struct Ctx {
 
     pub events: Events,
     #[serde(skip)]
-    pub refresh_trakt: Option<(RefreshTraktToken, Loadable<User, CtxError>)>,
+    pub refresh_trakt: Option<RefreshTrakt>,
+}
+
+#[derive(Serialize, Clone, Debug, PartialEq, Eq)]
+pub struct RefreshTrakt {
+    pub request: RefreshTraktToken,
+    pub last_requested: DateTime<Utc>,
+    pub response: Loadable<User, CtxError>,
 }
 
 impl Ctx {
@@ -154,6 +162,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     &self.status,
                     msg,
                 );
+                let refresh_trakt_effects = eq_update(&mut self.refresh_trakt, None);
+
                 let notifications_effects = update_notifications::<E>(
                     &mut self.notifications,
                     &mut self.notification_catalogs,
@@ -173,6 +183,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(search_history_effects)
                     .join(events_effects)
                     .join(trakt_addon_effects)
+                    .join(refresh_trakt_effects)
                     .join(notifications_effects)
             }
             Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => {

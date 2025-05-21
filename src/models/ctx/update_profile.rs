@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+use chrono::TimeZone;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 
@@ -19,10 +20,12 @@ use crate::types::api::{
 use crate::types::profile::{Auth, AuthKey, Password, Profile, Settings, User};
 use crate::types::streams::StreamsBucket;
 
+use super::RefreshTrakt;
+
 pub fn update_profile<E: Env + 'static>(
     profile: &mut Profile,
     streams: &mut StreamsBucket,
-    refresh_trakt: &mut Option<(RefreshTraktToken, Loadable<User, CtxError>)>,
+    refresh_trakt: &mut Option<RefreshTrakt>,
     status: &CtxStatus,
     msg: &Msg,
 ) -> Effects {
@@ -388,16 +391,51 @@ pub fn update_profile<E: Env + 'static>(
                             Some(trakt_info)
                                 if trakt_info.created_at + trakt_info.expires_in < E::now() =>
                             {
-                                let (request, refresh_effect) =
-                                    refresh_trakt_token_api::<E>(auth_key.clone());
-                                let api_request_effects = Effects::one(refresh_effect).unchanged();
+                                // in case of success, trakt token won't be expired so checking for only error + 24h have passed is sufficient
+                                let new_refresh_trakt_effects = match &*refresh_trakt {
+                                    Some(RefreshTrakt {
+                                        last_requested,
+                                        response: loadable,
+                                        ..
+                                    }) if loadable.is_err()
+                                        && E::now() - *last_requested
+                                            > chrono::TimeDelta::hours(24) =>
+                                    {
+                                        let (new_request, refresh_effect) =
+                                            refresh_trakt_token_api::<E>(auth_key.clone());
+                                        let api_request_effects =
+                                            Effects::one(refresh_effect).unchanged();
 
-                                let refresh_trakt_effects = eq_update(
-                                    refresh_trakt,
-                                    Some((request.to_owned(), Loadable::Loading)),
-                                );
+                                        eq_update(
+                                            refresh_trakt,
+                                            Some(RefreshTrakt {
+                                                request: new_request,
+                                                last_requested: E::now(),
+                                                response: Loadable::Loading,
+                                            }),
+                                        )
+                                        .join(api_request_effects)
+                                    }
+                                    None => {
+                                        let (request, refresh_effect) =
+                                            refresh_trakt_token_api::<E>(auth_key.clone());
+                                        let api_request_effects =
+                                            Effects::one(refresh_effect).unchanged();
 
-                                api_request_effects.join(refresh_trakt_effects)
+                                        eq_update(
+                                            refresh_trakt,
+                                            Some(RefreshTrakt {
+                                                request: request.to_owned(),
+                                                last_requested: E::now(),
+                                                response: Loadable::Loading,
+                                            }),
+                                        )
+                                        .join(api_request_effects)
+                                    }
+                                    _ => Effects::none().unchanged(),
+                                };
+
+                                new_refresh_trakt_effects
                             }
                             _ => Effects::none().unchanged(),
                         };
@@ -442,7 +480,9 @@ pub fn update_profile<E: Env + 'static>(
 
                             let profile_effects = eq_update(profile, new_profile);
 
-                            profile_effects.join(token_refreshed_effects)
+                            profile_effects
+                                .join(token_refreshed_effects)
+                                .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                         }
                         Err(err) => {
                             let event = Event::TraktTokenRefreshed { uid: profile.uid() };
@@ -460,10 +500,20 @@ pub fn update_profile<E: Env + 'static>(
                             }))
                         }
                     };
+                    // use the same last requested or use the now()
+                    // the request that resulted in this result should have set the last_requested field
+                    let last_requested = refresh_trakt
+                        .as_ref()
+                        .map(|refresh_trakt| refresh_trakt.last_requested.to_owned())
+                        .unwrap_or_else(E::now);
 
                     let refresh_trakt_effects = eq_update(
                         refresh_trakt,
-                        Some((request.to_owned(), result.to_owned().into())),
+                        Some(RefreshTrakt {
+                            request: request.to_owned(),
+                            last_requested,
+                            response: result.to_owned().into(),
+                        }),
                     );
 
                     profile_user_effects.join(refresh_trakt_effects)
