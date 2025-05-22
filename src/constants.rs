@@ -68,7 +68,9 @@ pub static BASE64: base64::engine::general_purpose::GeneralPurpose =
     base64::engine::general_purpose::STANDARD;
 
 pub static CINEMETA_CATALOGS_URL: Lazy<Url> = Lazy::new(|| {
-    Url::parse("https://cinemeta-catalogs.strem.io").expect("CINEMETA_URL parse failed")
+    let url = option_env!("CINEMETA_CATALOGS_URL").unwrap_or("https://cinemeta-catalogs.strem.io");
+
+    Url::parse(url).expect("CINEMETA_CATALOGS_URL parse failed")
 });
 
 /// Manifest URL for Cinemeta V3
