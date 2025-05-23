@@ -25,7 +25,7 @@ use crate::{
         profile::{Auth, Profile},
         resource::{MetaItem, Stream},
         streams::StreamsBucket,
-        user_recommendations::{self, FetchApi, SendResult},
+        user_likes::{self, FetchApi, SendResult},
     },
 };
 
@@ -57,13 +57,13 @@ pub struct MetaDetails {
     pub library_item: Option<LibraryItem>,
     #[serde(skip)]
     pub get_rating: Option<(
-        user_recommendations::GetStatusRequest,
-        Loadable<user_recommendations::GetStatusResponse, CtxError>,
+        user_likes::GetStatusRequest,
+        Loadable<user_likes::GetStatusResponse, CtxError>,
     )>,
     #[serde(skip)]
-    pub sent_rating: Option<(
-        user_recommendations::SendRequest,
-        Loadable<user_recommendations::SendResult, CtxError>,
+    pub sent_like: Option<(
+        user_likes::SendRequest,
+        Loadable<user_likes::SendResult, CtxError>,
     )>,
     #[serde(skip_serializing)]
     pub watched: Option<WatchedBitField>,
@@ -214,7 +214,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                             && starts_with(&meta_item.preview.id)
                         {
                             let perform_update = self
-                                .sent_rating
+                                .sent_like
                                 .as_ref()
                                 .map(|(request, loading)| {
                                     request.status != current_status || loading.is_loading()
@@ -222,8 +222,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                                 .unwrap_or(true);
 
                             if perform_update {
-                                let send_request = user_recommendations::SendRequest {
-                                    user_auth: user_recommendations::UserAuthentication::AuthToken(
+                                let send_request = user_likes::SendRequest {
+                                    user_auth: user_likes::UserAuthentication::AuthToken(
                                         auth.key.clone(),
                                     ),
                                     media_id: meta_item.preview.id.clone(),
@@ -231,7 +231,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                                     status: *status,
                                 };
 
-                                send_rating::<E>(&mut self.sent_rating, send_request).unchanged()
+                                send_rating::<E>(&mut self.sent_like, send_request).unchanged()
                             } else {
                                 Effects::none().unchanged()
                             }
@@ -574,8 +574,8 @@ fn meta_items_update<E: Env + 'static>(
 
 fn rating_status_update<E: Env + 'static>(
     rating: &mut Option<(
-        user_recommendations::GetStatusRequest,
-        Loadable<user_recommendations::GetStatusResponse, CtxError>,
+        user_likes::GetStatusRequest,
+        Loadable<user_likes::GetStatusResponse, CtxError>,
     )>,
     meta_item: Option<&ResourceLoadable<MetaItem>>,
     auth: Option<&Auth>,
@@ -590,16 +590,16 @@ fn rating_status_update<E: Env + 'static>(
             let media_id = meta_item.preview.id.clone();
             let media_type = meta_item.preview.r#type.clone();
 
-            let request = user_recommendations::GetStatusRequest {
-                query: user_recommendations::GetStatusQuery {
-                    user_auth: user_recommendations::UserAuthentication::AuthToken(
+            let request = user_likes::GetStatusRequest {
+                query: user_likes::GetStatusQuery {
+                    user_auth: user_likes::UserAuthentication::AuthToken(
                         auth.key.clone(),
                     ),
                     media_id: media_id.clone(),
                     media_type: media_type.clone(),
                 },
             };
-            let api_request = user_recommendations::APIRequest::GetStatus(request.clone());
+            let api_request = user_likes::APIRequest::GetStatus(request.clone());
 
             let rating_effects = eq_update(rating, Some((request.clone(), Loadable::Loading)));
             tracing::trace!(request = ?api_request, "Request rating status for item {}", media_id);
@@ -607,7 +607,7 @@ fn rating_status_update<E: Env + 'static>(
                 Effects::one(
                     EffectFuture::Concurrent(
                         api_request
-                            .fetch_api::<E, user_recommendations::GetStatusResponse>()
+                            .fetch_api::<E, user_likes::GetStatusResponse>()
                             .map(move |result| {
                                 tracing::trace!(result = ?result, "Rating status response received for item {}", media_id);
                                 Msg::Internal(Internal::GetUserRecommendationStatusResult(
@@ -631,14 +631,14 @@ fn rating_status_update<E: Env + 'static>(
 /// Makes API call to get the rating of the user for that particular MetaItem.id
 fn send_rating<E: Env + 'static>(
     send_rate: &mut Option<(
-        user_recommendations::SendRequest,
-        Loadable<user_recommendations::SendResult, CtxError>,
+        user_likes::SendRequest,
+        Loadable<user_likes::SendResult, CtxError>,
     )>,
-    send_request: user_recommendations::SendRequest,
+    send_request: user_likes::SendRequest,
 ) -> Effects {
     let media_id = send_request.media_id.clone();
 
-    let api_request = user_recommendations::APIRequest::Send(send_request.clone());
+    let api_request = user_likes::APIRequest::Send(send_request.clone());
 
     let send_rate_effects = eq_update(send_rate, Some((send_request.clone(), Loadable::Loading)));
     tracing::trace!(request = ?api_request, "Request rating status for item {media_id}");
@@ -646,7 +646,7 @@ fn send_rating<E: Env + 'static>(
         Effects::one(
                     EffectFuture::Concurrent(
                         api_request
-                            .fetch_api::<E, user_recommendations::SendResult>()
+                            .fetch_api::<E, user_likes::SendResult>()
                             .map(move |result| {
                                 tracing::trace!(result = ?result, "Rating status response received for item {media_id}");
                                 Msg::Internal(Internal::UserRecommendationSendRequestResult(

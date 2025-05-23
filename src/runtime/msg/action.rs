@@ -26,7 +26,7 @@ use crate::{
             StatisticsRequest as StreamingServerStatisticsRequest,
         },
         streams::StreamItemState,
-        user_recommendations,
+        user_likes,
     },
 };
 
@@ -125,7 +125,7 @@ pub enum ActionMetaDetails {
         /// The status which the user gave.
         ///
         /// If None, status will be cleared.
-        status: Option<user_recommendations::rating::Status>,
+        status: Option<user_likes::like::Status>,
     },
 }
 

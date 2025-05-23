@@ -3,12 +3,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::types::profile::UserId;
 
-use super::rating::{self, Status};
+use super::like::{self, Status};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetStatusResponse {
-    pub status: Option<rating::Status>,
+    pub status: Option<like::Status>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -145,7 +145,7 @@ impl RequestParameters<Option<serde_json::Value>> for APIRequest {
 ///     user_auth: UserAuthentication::AuthToken(AuthKey("token123".to_string())),
 ///     media_id: "tt0111161".to_string(),
 ///     media_type: "movie".to_string(),
-///     status: Some(rating::Status::Loved),
+///     status: Some(like::Status::Loved),
 /// };
 ///
 /// let value_actual = serde_json::to_value(&request).expect("Should serialize");
@@ -167,10 +167,10 @@ pub struct SendRequest {
     pub media_type: String,
     /// To clear a rating, omit the status field entirely
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub status: Option<rating::Status>,
+    pub status: Option<like::Status>,
 }
 
-pub mod rating {
+pub mod like {
     use serde::{Deserialize, Serialize};
 
     #[derive(

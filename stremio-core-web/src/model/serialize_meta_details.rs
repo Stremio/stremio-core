@@ -22,7 +22,7 @@ use stremio_core::{
 };
 
 mod model {
-    use stremio_core::{models::ctx::CtxError, types::user_recommendations::rating};
+    use stremio_core::{models::ctx::CtxError, types::user_likes::like};
 
     use super::*;
     #[derive(Serialize)]
@@ -98,8 +98,8 @@ mod model {
         pub streams: Vec<ResourceLoadable<'a, Vec<Stream<'a>>>>,
         pub meta_extensions: Vec<MetaExtension<'a>>,
         pub title: Option<String>,
-        pub rating: Option<Loadable<Option<rating::Status>, CtxError>>,
-        pub sent_rating: Option<Loadable<Option<&'a rating::Status>, &'a CtxError>>,
+        pub like: Option<Loadable<Option<like::Status>, CtxError>>,
+        pub sent_like: Option<Loadable<Option<&'a like::Status>, &'a CtxError>>,
     }
 }
 
@@ -399,12 +399,12 @@ pub fn serialize_meta_details<E: Env + 'static>(
                     })
                     .unwrap_or_else(|| meta_item.preview.name.to_owned())
             }),
-        rating: meta_details
-            .get_rating
+        like: meta_details
+            .get_like
             .as_ref()
             .map(|(_request, loadable)| loadable.clone().map_ready(|response| response.status)),
-        sent_rating: meta_details
-            .sent_rating
+        sent_like: meta_details
+            .sent_like
             .as_ref()
             .map(|(request, loadable)| loadable.as_ref().map_ready(|_| request.status.as_ref())),
     })
