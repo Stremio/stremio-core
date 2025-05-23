@@ -67,7 +67,7 @@ impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
             .as_str()
             .replace(ADDON_MANIFEST_PATH, &path);
 
-        const CINEMETA_ADDONS_CATALOG_URL: Lazy<String> = Lazy::new(|| {
+        static CINEMETA_ADDONS_CATALOG_URL: Lazy<String> = Lazy::new(|| {
             CINEMETA_URL
                 .as_str()
                 .replace(ADDON_MANIFEST_PATH, "/addon_catalog/all/community.json")
