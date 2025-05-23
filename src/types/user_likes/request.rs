@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::{
-    constants::USER_RECOMMENDATIONS_API_URL,
+    constants::USER_LIKES_API_URL,
     types::profile::{AuthKey, UserId},
 };
 
@@ -80,7 +80,7 @@ pub struct GetStatusRequest {
 
 impl RequestParameters<Option<serde_json::Value>> for APIRequest {
     fn endpoint(&self) -> Url {
-        USER_RECOMMENDATIONS_API_URL.to_owned()
+        USER_LIKES_API_URL.to_owned()
     }
     fn method(&self) -> Method {
         match self {
