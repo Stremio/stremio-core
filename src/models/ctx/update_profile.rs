@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 
-use chrono::TimeZone;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 
@@ -392,7 +391,9 @@ pub fn update_profile<E: Env + 'static>(
                                 if trakt_info.created_at + trakt_info.expires_in < E::now() =>
                             {
                                 // in case of success, trakt token won't be expired so checking for only error + 24h have passed is sufficient
-                                let new_refresh_trakt_effects = match &*refresh_trakt {
+                                
+
+                                match &*refresh_trakt {
                                     Some(RefreshTrakt {
                                         last_requested,
                                         response: loadable,
@@ -433,9 +434,7 @@ pub fn update_profile<E: Env + 'static>(
                                         .join(api_request_effects)
                                     }
                                     _ => Effects::none().unchanged(),
-                                };
-
-                                new_refresh_trakt_effects
+                                }
                             }
                             _ => Effects::none().unchanged(),
                         };
