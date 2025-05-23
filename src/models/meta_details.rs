@@ -56,7 +56,7 @@ pub struct MetaDetails {
     pub last_used_stream: Option<ResourceLoadable<Option<Stream>>>,
     pub library_item: Option<LibraryItem>,
     #[serde(skip)]
-    pub get_rating: Option<(
+    pub get_like: Option<(
         user_likes::GetStatusRequest,
         Loadable<user_likes::GetStatusResponse, CtxError>,
     )>,
@@ -100,7 +100,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     watched_update(&mut self.watched, &self.meta_items, &self.library_item);
                 let library_item_sync_effects = library_item_sync(&self.library_item, &ctx.profile);
 
-                let rating_effects = eq_update(&mut self.get_rating, None);
+                let rating_effects = eq_update(&mut self.get_like, None);
 
                 library_item_sync_effects
                     .join(selected_effects)
@@ -193,7 +193,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                         .iter()
                         .find(|meta_item| matches!(&meta_item.content, Some(Loadable::Ready(_))))
                         .and_then(|resource_loadable| resource_loadable.content.as_ref()),
-                    self.get_rating.as_ref(),
+                    self.get_like.as_ref(),
                     ctx.profile.auth.as_ref(),
                 ) {
                     (Some(Loadable::Ready(meta_item)), Some((_request, loadable)), Some(auth)) => {
@@ -251,7 +251,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 );
 
                 let rating_status_effects = rating_status_update::<E>(
-                    &mut self.get_rating,
+                    &mut self.get_like,
                     self.meta_items.first(),
                     ctx.profile.auth.as_ref(),
                 );
@@ -309,13 +309,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
             // update status
             Msg::Internal(Internal::GetUserRecommendationStatusResult(request, result)) => {
                 if self
-                    .get_rating
+                    .get_like
                     .as_ref()
                     .map(|(current_request, _loadable)| request == current_request)
                     .unwrap_or(true)
                 {
                     eq_update(
-                        &mut self.get_rating,
+                        &mut self.get_like,
                         Some((
                             request.to_owned(),
                             match result.clone() {
@@ -329,8 +329,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 }
             }
             Msg::Internal(Internal::UserRecommendationSendRequestResult(request, result)) => {
-                let new_get_rating = self
-                    .get_rating
+                let new_get_like = self
+                    .get_like
                     .as_ref()
                     // update the rating only if it's related to the same media id
                     .filter(|(current_request, _loadable)| {
@@ -338,7 +338,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     })
                     .cloned();
 
-                let (send_result_effects, new_get_rating) = match (result, new_get_rating) {
+                let (send_result_effects, new_get_like) = match (result, new_get_like) {
                     (Ok(SendResult::Ok(ok)), Some((get_status_request, mut loadable))) => {
                         // update status in the loadable
                         loadable = loadable.map_ready(|mut response| {
@@ -400,7 +400,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                         // rating is not fetched yet, skip
                         (Effects::none().unchanged(), None)
                     }
-                    (Err(err), get_rating) => (
+                    (Err(err), get_like) => (
                         Effects::msg(Msg::Event(Event::Error {
                             error: CtxError::Env(err.to_owned()),
                             source: Event::MetaItemRatingSentStatus {
@@ -410,14 +410,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                             .into(),
                         }))
                         .unchanged(),
-                        // leave the same get_rating
-                        get_rating,
+                        // leave the same get_like
+                        get_like,
                     ),
                 };
 
-                let get_rating_effects = eq_update(&mut self.get_rating, new_get_rating);
+                let get_like_effects = eq_update(&mut self.get_like, new_get_like);
 
-                get_rating_effects.join(send_result_effects)
+                get_like_effects.join(send_result_effects)
             }
             Msg::Internal(Internal::LibraryChanged(_)) => {
                 let library_item_effects = library_item_update::<E>(
@@ -592,9 +592,7 @@ fn rating_status_update<E: Env + 'static>(
 
             let request = user_likes::GetStatusRequest {
                 query: user_likes::GetStatusQuery {
-                    user_auth: user_likes::UserAuthentication::AuthToken(
-                        auth.key.clone(),
-                    ),
+                    user_auth: user_likes::UserAuthentication::AuthToken(auth.key.clone()),
                     media_id: media_id.clone(),
                     media_type: media_type.clone(),
                 },
@@ -603,7 +601,7 @@ fn rating_status_update<E: Env + 'static>(
 
             let rating_effects = eq_update(rating, Some((request.clone(), Loadable::Loading)));
             tracing::trace!(request = ?api_request, "Request rating status for item {}", media_id);
-            let get_rating_status = {
+            let get_like_status = {
                 Effects::one(
                     EffectFuture::Concurrent(
                         api_request
@@ -622,7 +620,7 @@ fn rating_status_update<E: Env + 'static>(
                 .unchanged()
             };
 
-            rating_effects.join(get_rating_status)
+            rating_effects.join(get_like_status)
         }
         _ => Effects::none().unchanged(),
     }
