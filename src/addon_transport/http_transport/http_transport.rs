@@ -60,7 +60,7 @@ impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
             .transport_url
             .as_str()
             .replace(ADDON_MANIFEST_PATH, &path);
-        let request = Request::get(&url).body(()).expect("request builder failed");
+        let request = Request::get(url).body(()).expect("request builder failed");
         E::fetch(request)
     }
     fn manifest(&self) -> TryEnvFuture<Manifest> {

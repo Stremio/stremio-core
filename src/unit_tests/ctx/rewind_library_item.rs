@@ -143,7 +143,7 @@ fn actionctx_rewindlibraryitem() {
             .read()
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<LibraryBucket>(data).unwrap()
                     == LibraryBucket::new(Some("id".into()), vec![library_item_rewinded])
             }),
@@ -235,7 +235,7 @@ fn actionctx_rewindlibraryitem_not_added() {
             .read()
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<LibraryBucket>(data).unwrap()
                     == LibraryBucket::new(None, vec![library_item])
             }),

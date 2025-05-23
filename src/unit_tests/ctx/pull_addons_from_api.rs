@@ -70,7 +70,7 @@ fn actionctx_pulladdonsfromapi() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap().addons
                     == vec![official_addon.to_owned()]
             }),
@@ -181,7 +181,7 @@ fn actionctx_pulladdonsfromapi_with_user() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap().addons == OFFICIAL_ADDONS.to_owned()
             }),
         "addons updated successfully in storage"
