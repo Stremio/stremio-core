@@ -391,7 +391,6 @@ pub fn update_profile<E: Env + 'static>(
                                 if trakt_info.created_at + trakt_info.expires_in < E::now() =>
                             {
                                 // in case of success, trakt token won't be expired so checking for only error + 24h have passed is sufficient
-                                
 
                                 match &*refresh_trakt {
                                     Some(RefreshTrakt {
