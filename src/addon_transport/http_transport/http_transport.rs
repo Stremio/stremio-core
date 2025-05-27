@@ -74,11 +74,18 @@ impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
         });
 
         match (
-            &url,
+            url.clone(),
             option_env!("CINEMETA_ADDONS_CATALOG_URL").filter(|v| !v.is_empty()),
         ) {
             (current_url, Some(replace_url)) if url.contains(&*CINEMETA_ADDONS_CATALOG_URL) => {
-                url = current_url.replace(&*CINEMETA_ADDONS_CATALOG_URL, replace_url)
+                let new_url = current_url.replace(&*CINEMETA_ADDONS_CATALOG_URL, replace_url);
+                url = new_url.clone();
+                tracing::warn!(
+                    current_url = current_url,
+                    replace_url = replace_url,
+                    new_url = new_url,
+                    "Custom cinemeta addons catalog url will be used",
+                );
             }
             _ => {}
         }
