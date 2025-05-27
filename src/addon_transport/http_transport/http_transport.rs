@@ -75,10 +75,13 @@ impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
 
         match (
             url.clone(),
-            option_env!("CINEMETA_ADDONS_CATALOG_URL").filter(|v| !v.is_empty()),
+            std::env::var("CINEMETA_ADDONS_CATALOG_URL")
+                .ok()
+                .or(option_env!("CINEMETA_ADDONS_CATALOG_URL").map(|slice| slice.to_string()))
+                .filter(|env| !env.is_empty()),
         ) {
             (current_url, Some(replace_url)) if url.contains(&*CINEMETA_ADDONS_CATALOG_URL) => {
-                let new_url = current_url.replace(&*CINEMETA_ADDONS_CATALOG_URL, replace_url);
+                let new_url = current_url.replace(&*CINEMETA_ADDONS_CATALOG_URL, &replace_url);
                 url = new_url.clone();
                 tracing::warn!(
                     current_url = current_url,
