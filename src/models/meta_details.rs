@@ -100,14 +100,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     watched_update(&mut self.watched, &self.meta_items, &self.library_item);
                 let library_item_sync_effects = library_item_sync(&self.library_item, &ctx.profile);
 
-                let rating_effects = eq_update(&mut self.get_like, None);
+                let like_effects = eq_update(&mut self.get_like, None);
 
                 library_item_sync_effects
                     .join(selected_effects)
                     .join(selected_override_effects)
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
-                    .join(rating_effects)
+                    .join(like_effects)
                     .join(streams_effects)
                     .join(last_used_stream_effects)
                     .join(library_item_effects)
@@ -250,7 +250,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     ResourcesAction::ResourceRequestResult { request, result },
                 );
 
-                let rating_status_effects = rating_status_update::<E>(
+                let like_status_effects = like_status_update::<E>(
                     &mut self.get_like,
                     self.meta_items.first(),
                     ctx.profile.auth.as_ref(),
@@ -283,7 +283,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 selected_override_effects
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
-                    .join(rating_status_effects)
+                    .join(like_status_effects)
                     .join(streams_effects)
                     .join(last_used_stream_effects)
                     .join(library_item_effects)
@@ -572,7 +572,7 @@ fn meta_items_update<E: Env + 'static>(
     }
 }
 
-fn rating_status_update<E: Env + 'static>(
+fn like_status_update<E: Env + 'static>(
     rating: &mut Option<(
         user_likes::GetStatusRequest,
         Loadable<user_likes::GetStatusResponse, CtxError>,
@@ -599,7 +599,7 @@ fn rating_status_update<E: Env + 'static>(
             };
             let api_request = user_likes::APIRequest::GetStatus(request.clone());
 
-            let rating_effects = eq_update(rating, Some((request.clone(), Loadable::Loading)));
+            let like_effects = eq_update(rating, Some((request.clone(), Loadable::Loading)));
             tracing::trace!(request = ?api_request, "Request rating status for item {}", media_id);
             let get_like_status = {
                 Effects::one(
@@ -620,7 +620,7 @@ fn rating_status_update<E: Env + 'static>(
                 .unchanged()
             };
 
-            rating_effects.join(get_like_status)
+            like_effects.join(get_like_status)
         }
         _ => Effects::none().unchanged(),
     }
