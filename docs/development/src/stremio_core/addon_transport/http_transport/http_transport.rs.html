@@ -74,17 +74,55 @@
 <a href="#73" id="73">73</a>
 <a href="#74" id="74">74</a>
 <a href="#75" id="75">75</a>
-<a href="#76" id="76">76</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::addon_transport::http_transport::legacy::AddonLegacyTransport;
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+
+<span class="kw">use </span>futures::future;
+<span class="kw">use </span>http::Request;
+<span class="kw">use </span>once_cell::sync::Lazy;
+<span class="kw">use </span>percent_encoding::utf8_percent_encode;
+<span class="kw">use </span>url::Url;
+
+<span class="kw">use </span><span class="kw">crate</span>::addon_transport::http_transport::legacy::AddonLegacyTransport;
 <span class="kw">use </span><span class="kw">crate</span>::addon_transport::AddonTransport;
-<span class="kw">use </span><span class="kw">crate</span>::constants::{ADDON_LEGACY_PATH, ADDON_MANIFEST_PATH, URI_COMPONENT_ENCODE_SET};
+<span class="kw">use </span><span class="kw">crate</span>::constants::{
+    ADDON_LEGACY_PATH, ADDON_MANIFEST_PATH, CINEMETA_URL, URI_COMPONENT_ENCODE_SET,
+};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::{Env, EnvError, EnvFutureExt, TryEnvFuture};
 <span class="kw">use </span><span class="kw">crate</span>::types::addon::{Manifest, ResourcePath, ResourceResponse};
 <span class="kw">use </span><span class="kw">crate</span>::types::query_params_encode;
-<span class="kw">use </span>futures::future;
-<span class="kw">use </span>http::Request;
-<span class="kw">use </span>percent_encoding::utf8_percent_encode;
-<span class="kw">use </span>std::marker::PhantomData;
-<span class="kw">use </span>url::Url;
 
 <span class="kw">pub struct </span>AddonHTTPTransport&lt;E: Env&gt; {
     transport_url: Url,
@@ -132,10 +170,38 @@
                 query_params_encode(path.extra.iter().map(|ev| (<span class="kw-2">&amp;</span>ev.name, <span class="kw-2">&amp;</span>ev.value)))
             )
         };
-        <span class="kw">let </span>url = <span class="self">self
+
+        <span class="kw">let </span><span class="kw-2">mut </span>url = <span class="self">self
             </span>.transport_url
             .as_str()
             .replace(ADDON_MANIFEST_PATH, <span class="kw-2">&amp;</span>path);
+
+        <span class="kw">static </span>CINEMETA_ADDONS_CATALOG_URL: Lazy&lt;String&gt; = Lazy::new(|| {
+            CINEMETA_URL
+                .as_str()
+                .replace(ADDON_MANIFEST_PATH, <span class="string">"/addon_catalog/all/community.json"</span>)
+        });
+
+        <span class="kw">match </span>(
+            url.clone(),
+            std::env::var(<span class="string">"CINEMETA_ADDONS_CATALOG_URL"</span>)
+                .ok()
+                .or(<span class="macro">option_env!</span>(<span class="string">"CINEMETA_ADDONS_CATALOG_URL"</span>).map(|slice| slice.to_string()))
+                .filter(|env| !env.is_empty()),
+        ) {
+            (current_url, <span class="prelude-val">Some</span>(replace_url)) <span class="kw">if </span>url.contains(<span class="kw-2">&amp;*</span>CINEMETA_ADDONS_CATALOG_URL) =&gt; {
+                <span class="kw">let </span>new_url = current_url.replace(<span class="kw-2">&amp;*</span>CINEMETA_ADDONS_CATALOG_URL, <span class="kw-2">&amp;</span>replace_url);
+                url = new_url.clone();
+                <span class="macro">tracing::warn!</span>(
+                    current_url = current_url,
+                    replace_url = replace_url,
+                    new_url = new_url,
+                    <span class="string">"Custom cinemeta addons catalog url will be used"</span>,
+                );
+            }
+            <span class="kw">_ </span>=&gt; {}
+        }
+
         <span class="kw">let </span>request = Request::get(url).body(()).expect(<span class="string">"request builder failed"</span>);
         E::fetch(request)
     }
