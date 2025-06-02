@@ -133,10 +133,6 @@ pub enum Event {
         id: LibraryItemId,
         is_watched: bool,
     },
-    // MetaItemRatingGetStatus {
-    //     media_id: String,
-    //     status: Option<user_recommendations::like::Status>,
-    // },
     MetaItemRatingSentStatus {
         // Either the query id or the response imdb id
         id: String,

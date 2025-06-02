@@ -132,7 +132,7 @@ impl RequestParameters<Option<serde_json::Value>> for APIRequest {
 }
 
 /// ```
-/// use stremio_core::types::{user_recommendations::{rating, SendRequest, UserAuthentication}, profile::AuthKey};
+/// use stremio_core::types::{user_likes::{like, SendRequest, UserAuthentication}, profile::AuthKey};
 ///
 /// let json = serde_json::json!({
 ///   "authToken": "token123",
