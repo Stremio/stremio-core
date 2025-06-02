@@ -49,9 +49,8 @@ serde_path_to_error = "0.1"
 serde_url_params = "0.2"
 serde_bencode = "0.2.*"
 # keep track of https://github.com/fspmarshall/serde-hex/pull/8
-# stremio-serde-hex = "0.1.*"
 # Keep track of https://github.com/fspmarshall/serde-hex/pull/19
-stremio-serde-hex = { version = "0.1.*", git = "https://github.com/Stremio/serde-hex", branch = "fix/zero-sized-chunks-panic" }
+stremio-serde-hex = "0.1"
 
 serde_with = { version = "3.5", features = ["macros", "chrono_0_4"] }
 
