@@ -333,14 +333,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     .get_like
                     .as_ref()
                     // update the rating only if it's related to the same media id
-                    .filter(|(current_request, _loadable)| {
+                    .filter(|(current_request, _)| {
                         request.media_id == current_request.query.media_id
                     })
                     .cloned();
 
                 let (send_result_effects, new_get_like) = match (result, new_get_like) {
                     (Ok(SendResult::Ok(ok)), Some((get_status_request, mut loadable))) => {
-                        // update status in the loadable
+                        // Update both get_like and sent_like states
                         loadable = loadable.map_ready(|mut response| {
                             response.status = request.status;
                             tracing::trace!(
@@ -350,11 +350,18 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                             );
                             response
                         });
+
+                        let sent_like_effects = eq_update(
+                            &mut self.sent_like,
+                            Some((request.clone(), Loadable::Ready(SendResult::Ok(ok.clone())))),
+                        );
+
                         (
                             Effects::msg(Msg::Event(Event::MetaItemRatingSentStatus {
                                 id: ok.imdb_id.clone(),
                                 status: request.status,
                             }))
+                            .join(sent_like_effects)
                             .unchanged(),
                             Some((get_status_request, loadable)),
                         )
@@ -363,7 +370,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                         Ok(SendResult::Created(created)),
                         Some((get_status_request, mut loadable)),
                     ) => {
-                        // update status in the loadable
+                        // Update both get_like and sent_like states
                         loadable = loadable.map_ready(|mut response| {
                             response.status = Some(created.rating.status);
                             tracing::trace!(
@@ -373,46 +380,71 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                             );
                             response
                         });
+
+                        let sent_like_effects = eq_update(
+                            &mut self.sent_like,
+                            Some((
+                                request.clone(),
+                                Loadable::Ready(SendResult::Created(created.clone())),
+                            )),
+                        );
+
                         (
                             Effects::msg(Msg::Event(Event::MetaItemRatingSentStatus {
                                 id: created.rating.imdb_id.clone(),
                                 status: Some(created.rating.status),
                             }))
+                            .join(sent_like_effects)
                             .unchanged(),
                             Some((get_status_request, loadable)),
                         )
                     }
-                    (Ok(SendResult::Error { message }), Some((get_status_request, loadable))) => (
-                        Effects::msg(Msg::Event(Event::Error {
-                            error: CtxError::Env(EnvError::Other(format!(
-                                "Failed to set rating: {message}"
-                            ))),
-                            source: Event::MetaItemRatingSentStatus {
-                                id: get_status_request.query.media_id.clone(),
-                                status: request.status,
-                            }
-                            .into(),
-                        }))
-                        .unchanged(),
-                        Some((get_status_request, loadable)),
-                    ),
-                    (Ok(_), None) => {
-                        // rating is not fetched yet, skip
-                        (Effects::none().unchanged(), None)
+                    (Ok(SendResult::Error { message }), Some((get_status_request, loadable))) => {
+                        let sent_like_effects = eq_update(
+                            &mut self.sent_like,
+                            Some((
+                                request.clone(),
+                                Loadable::Err(CtxError::Env(EnvError::Other(message.clone()))),
+                            )),
+                        );
+
+                        (
+                            Effects::msg(Msg::Event(Event::Error {
+                                error: CtxError::Env(EnvError::Other(format!(
+                                    "Failed to set rating: {message}"
+                                ))),
+                                source: Event::MetaItemRatingSentStatus {
+                                    id: get_status_request.query.media_id.clone(),
+                                    status: request.status,
+                                }
+                                .into(),
+                            }))
+                            .join(sent_like_effects)
+                            .unchanged(),
+                            Some((get_status_request, loadable)),
+                        )
                     }
-                    (Err(err), get_like) => (
-                        Effects::msg(Msg::Event(Event::Error {
-                            error: CtxError::Env(err.to_owned()),
-                            source: Event::MetaItemRatingSentStatus {
-                                id: request.media_id.clone(),
-                                status: request.status,
-                            }
-                            .into(),
-                        }))
-                        .unchanged(),
-                        // leave the same get_like
-                        get_like,
-                    ),
+                    (Ok(_), None) => (Effects::none().unchanged(), None),
+                    (Err(err), get_like) => {
+                        let sent_like_effects = eq_update(
+                            &mut self.sent_like,
+                            Some((request.clone(), Loadable::Err(CtxError::Env(err.clone())))),
+                        );
+
+                        (
+                            Effects::msg(Msg::Event(Event::Error {
+                                error: CtxError::Env(err.to_owned()),
+                                source: Event::MetaItemRatingSentStatus {
+                                    id: request.media_id.clone(),
+                                    status: request.status,
+                                }
+                                .into(),
+                            }))
+                            .join(sent_like_effects)
+                            .unchanged(),
+                            get_like,
+                        )
+                    }
                 };
 
                 let get_like_effects = eq_update(&mut self.get_like, new_get_like);
