@@ -217,7 +217,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                                 .sent_like
                                 .as_ref()
                                 .map(|(request, loading)| {
-                                    request.status != current_status || loading.is_loading()
+                                    request.status != current_status || !loading.is_loading()
                                 })
                                 .unwrap_or(true);
 
