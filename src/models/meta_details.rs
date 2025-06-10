@@ -180,68 +180,58 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 }
                 _ => Effects::none().unchanged(),
             },
-            Msg::Action(Action::MetaDetails(ActionMetaDetails::Rate { id, status }))
-                if self
-                    .selected
-                    .as_ref()
-                    .filter(|selected| &selected.meta_path.id == id)
-                    .is_some() =>
-            {
-                match (
-                    &self
-                        .meta_items
-                        .iter()
-                        .find(|meta_item| matches!(&meta_item.content, Some(Loadable::Ready(_))))
-                        .and_then(|resource_loadable| resource_loadable.content.as_ref()),
-                    self.get_like.as_ref(),
-                    ctx.profile.auth.as_ref(),
-                ) {
-                    (Some(Loadable::Ready(meta_item)), Some((_request, loadable)), Some(auth)) => {
-                        let current_status = match loadable {
-                            // we need to wait for the get request first
-                            // TODO: add an event with message that current rating is not fetched yet
-                            Loadable::Loading => return Effects::none().unchanged(),
-                            Loadable::Ready(response) => response.status,
-                            // if there's an error fetching the status, just use None (no set status)
-                            Loadable::Err(_err) => None,
-                        };
-                        let starts_with = |id: &str| {
-                            id.starts_with("tt")
-                                || id.starts_with("tmdb")
-                                || id.starts_with("kitsu")
-                        };
-                        if ["series", "movie"].contains(&meta_item.preview.r#type.as_str())
-                            && starts_with(&meta_item.preview.id)
-                        {
-                            let perform_update = self
-                                .sent_like
-                                .as_ref()
-                                .map(|(request, loading)| {
-                                    request.status != current_status || !loading.is_loading()
-                                })
-                                .unwrap_or(true);
+            Msg::Action(Action::MetaDetails(ActionMetaDetails::Rate(status))) => match (
+                &self
+                    .meta_items
+                    .iter()
+                    .find(|meta_item| matches!(&meta_item.content, Some(Loadable::Ready(_))))
+                    .and_then(|resource_loadable| resource_loadable.content.as_ref()),
+                self.get_like.as_ref(),
+                ctx.profile.auth.as_ref(),
+            ) {
+                (Some(Loadable::Ready(meta_item)), Some((_request, loadable)), Some(auth)) => {
+                    let current_status = match loadable {
+                        // we need to wait for the get request first
+                        // TODO: add an event with message that current rating is not fetched yet
+                        Loadable::Loading => return Effects::none().unchanged(),
+                        Loadable::Ready(response) => response.status,
+                        // if there's an error fetching the status, just use None (no set status)
+                        Loadable::Err(_err) => None,
+                    };
+                    let starts_with = |id: &str| {
+                        id.starts_with("tt") || id.starts_with("tmdb") || id.starts_with("kitsu")
+                    };
+                    if ["series", "movie"].contains(&meta_item.preview.r#type.as_str())
+                        && starts_with(&meta_item.preview.id)
+                    {
+                        let perform_update = self
+                            .sent_like
+                            .as_ref()
+                            .map(|(request, loading)| {
+                                request.status != current_status || !loading.is_loading()
+                            })
+                            .unwrap_or(true);
 
-                            if perform_update {
-                                let send_request = user_likes::SendRequest {
-                                    user_auth: user_likes::UserAuthentication::AuthToken(
-                                        auth.key.clone(),
-                                    ),
-                                    media_id: meta_item.preview.id.clone(),
-                                    media_type: meta_item.preview.r#type.clone(),
-                                    status: *status,
-                                };
+                        if perform_update {
+                            let send_request = user_likes::SendRequest {
+                                user_auth: user_likes::UserAuthentication::AuthToken(
+                                    auth.key.clone(),
+                                ),
+                                media_id: meta_item.preview.id.clone(),
+                                media_type: meta_item.preview.r#type.clone(),
+                                status: *status,
+                            };
 
-                                send_rating::<E>(&mut self.sent_like, send_request).unchanged()
-                            } else {
-                                Effects::none().unchanged()
-                            }
+                            send_rating::<E>(&mut self.sent_like, send_request).unchanged()
                         } else {
                             Effects::none().unchanged()
                         }
+                    } else {
+                        Effects::none().unchanged()
                     }
-                    _ => Effects::none().unchanged(),
                 }
-            }
+                _ => Effects::none().unchanged(),
+            },
             Msg::Internal(Internal::ResourceRequestResult(request, result))
                 if request.path.resource == META_RESOURCE_NAME =>
             {

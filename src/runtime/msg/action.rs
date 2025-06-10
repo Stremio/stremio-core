@@ -119,14 +119,8 @@ pub enum ActionMetaDetails {
     MarkVideoAsWatched(Video, bool),
     /// Mark all videos from given season as watched
     MarkSeasonAsWatched(u32, bool),
-    Rate {
-        /// the MetaItem id
-        id: String,
-        /// The status which the user gave.
-        ///
-        /// If None, status will be cleared.
-        status: Option<user_likes::like::Status>,
-    },
+    /// Rate the current meta item
+    Rate(Option<user_likes::like::Status>),
 }
 
 #[derive(Clone, Deserialize, Debug)]
