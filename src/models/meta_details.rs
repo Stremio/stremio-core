@@ -1,35 +1,40 @@
 use std::{borrow::Cow, marker::PhantomData};
 
+use enclose::enclose;
 use futures::FutureExt;
 use serde::{Deserialize, Serialize};
 
 use stremio_watched_bitfield::WatchedBitField;
 
 use crate::{
-    constants::{LIBRARY_COLLECTION_NAME, META_RESOURCE_NAME, STREAM_RESOURCE_NAME},
+    constants::{
+        LIBRARY_COLLECTION_NAME, META_RESOURCE_NAME, STREAM_RESOURCE_NAME,
+        USER_LIKES_SUPPORTED_ID_PREFIXES, USER_LIKES_SUPPORTED_TYPES,
+    },
     models::{
         common::{
             eq_update, resources_update, resources_update_with_vector_content, Loadable,
             ResourceLoadable, ResourcesAction,
         },
-        ctx::Ctx,
+        ctx::{Ctx, CtxError},
     },
     runtime::{
         msg::{Action, ActionLoad, ActionMetaDetails, Event, Internal, Msg},
-        EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx,
+        Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx,
     },
     types::{
         addon::{AggrRequest, ResourcePath, ResourceRequest},
         api::{DatastoreCommand, DatastoreRequest},
         library::{LibraryBucket, LibraryItem},
-        profile::{Auth, Profile},
+        profile::{AuthKey, Profile},
+        rating::{
+            Rating, RatingGetStatusRequest, RatingGetStatusResponse, RatingSendRequest,
+            RatingSendResponse,
+        },
         resource::{MetaItem, Stream},
         streams::StreamsBucket,
-        user_likes::{self, FetchApi, SendResult},
     },
 };
-
-use super::ctx::CtxError;
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -56,15 +61,7 @@ pub struct MetaDetails {
     pub last_used_stream: Option<ResourceLoadable<Option<Stream>>>,
     pub library_item: Option<LibraryItem>,
     #[serde(skip)]
-    pub get_like: Option<(
-        user_likes::GetStatusRequest,
-        Loadable<user_likes::GetStatusResponse, CtxError>,
-    )>,
-    #[serde(skip)]
-    pub sent_like: Option<(
-        user_likes::SendRequest,
-        Loadable<user_likes::SendResult, CtxError>,
-    )>,
+    pub rating: Option<Loadable<Option<Rating>, EnvError>>,
     #[serde(skip_serializing)]
     pub watched: Option<WatchedBitField>,
 }
@@ -100,14 +97,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     watched_update(&mut self.watched, &self.meta_items, &self.library_item);
                 let library_item_sync_effects = library_item_sync(&self.library_item, &ctx.profile);
 
-                let like_effects = eq_update(&mut self.get_like, None);
+                let rating_effects =
+                    rating_update::<E>(&mut self.rating, &self.selected, &ctx.profile);
 
                 library_item_sync_effects
                     .join(selected_effects)
                     .join(selected_override_effects)
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
-                    .join(like_effects)
+                    .join(rating_effects)
                     .join(streams_effects)
                     .join(last_used_stream_effects)
                     .join(library_item_effects)
@@ -121,6 +119,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 let library_item_effects = eq_update(&mut self.library_item, None);
                 let last_used_stream_effects = eq_update(&mut self.last_used_stream, None);
                 let watched_effects = eq_update(&mut self.watched, None);
+                let rating_effects = eq_update(&mut self.rating, None);
+
                 selected_effects
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
@@ -128,6 +128,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     .join(last_used_stream_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+                    .join(rating_effects)
             }
             Msg::Action(Action::MetaDetails(ActionMetaDetails::MarkAsWatched(is_watched))) => {
                 match &self.library_item {
@@ -180,47 +181,24 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 }
                 _ => Effects::none().unchanged(),
             },
-            Msg::Action(Action::MetaDetails(ActionMetaDetails::Rate(status))) => match (
-                &self
-                    .meta_items
-                    .iter()
-                    .find(|meta_item| matches!(&meta_item.content, Some(Loadable::Ready(_))))
-                    .and_then(|resource_loadable| resource_loadable.content.as_ref()),
-                ctx.profile.auth.as_ref(),
-            ) {
-                (Some(Loadable::Ready(meta_item)), Some(auth)) => {
-                    let starts_with = |id: &str| {
-                        id.starts_with("tt") || id.starts_with("tmdb") || id.starts_with("kitsu")
-                    };
-                    if ["series", "movie"].contains(&meta_item.preview.r#type.as_str())
-                        && starts_with(&meta_item.preview.id)
-                    {
-                        let send_request = user_likes::SendRequest {
-                            user_auth: user_likes::UserAuthentication::AuthToken(auth.key.clone()),
-                            media_id: meta_item.preview.id.clone(),
-                            media_type: meta_item.preview.r#type.clone(),
-                            status: *status,
-                        };
-
-                        send_rating::<E>(&mut self.sent_like, send_request).unchanged()
-                    } else {
-                        Effects::none().unchanged()
+            Msg::Action(Action::MetaDetails(ActionMetaDetails::Rate(rating)))
+                if self.rating.is_some() =>
+            {
+                match (self.selected.as_ref(), ctx.profile.auth.as_ref()) {
+                    (Some(selected), Some(auth)) => {
+                        eq_update(&mut self.rating, Some(Loadable::Loading)).join(Effects::one(
+                            send_rating::<E>(auth.key.to_owned(), &selected.meta_path, rating),
+                        ))
                     }
+                    _ => Effects::none().unchanged(),
                 }
-                _ => Effects::none().unchanged(),
-            },
+            }
             Msg::Internal(Internal::ResourceRequestResult(request, result))
                 if request.path.resource == META_RESOURCE_NAME =>
             {
                 let meta_items_effects = resources_update::<E, _>(
                     &mut self.meta_items,
                     ResourcesAction::ResourceRequestResult { request, result },
-                );
-
-                let like_status_effects = like_status_update::<E>(
-                    &mut self.get_like,
-                    self.meta_items.first(),
-                    ctx.profile.auth.as_ref(),
                 );
                 let selected_override_effects =
                     selected_guess_stream_update(&mut self.selected, &self.meta_items);
@@ -250,7 +228,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 selected_override_effects
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
-                    .join(like_status_effects)
                     .join(streams_effects)
                     .join(last_used_stream_effects)
                     .join(library_item_effects)
@@ -273,150 +250,42 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 );
                 streams_effects.join(last_used_stream_effects)
             }
-            // update status
-            Msg::Internal(Internal::GetUserRecommendationStatusResult(request, result)) => {
+            Msg::Internal(Internal::RatingGetStatusResult(meta_item_id, result))
                 if self
-                    .get_like
+                    .selected
                     .as_ref()
-                    .map(|(current_request, _loadable)| request == current_request)
-                    .unwrap_or(true)
-                {
-                    eq_update(
-                        &mut self.get_like,
-                        Some((
-                            request.to_owned(),
-                            match result.clone() {
-                                Ok(x) => Loadable::Ready(x),
-                                Err(err) => Loadable::Err(CtxError::from(err)),
-                            },
-                        )),
-                    )
-                } else {
-                    Effects::none().unchanged()
+                    .is_some_and(|selected| selected.meta_path.id == *meta_item_id) =>
+            {
+                match result {
+                    Ok(rating) => eq_update(
+                        &mut self.rating,
+                        Some(Loadable::Ready(rating.status.to_owned())),
+                    ),
+                    Err(e) => eq_update(&mut self.rating, Some(Loadable::Err(e.to_owned()))),
                 }
             }
-            Msg::Internal(Internal::UserRecommendationSendRequestResult(request, result)) => {
-                let new_get_like = self
-                    .get_like
+            Msg::Internal(Internal::RatingSendResult(meta_item_id, result))
+                if self
+                    .selected
                     .as_ref()
-                    // update the rating only if it's related to the same media id
-                    .filter(|(current_request, _)| {
-                        request.media_id == current_request.query.media_id
-                    })
-                    .cloned();
-
-                let (send_result_effects, new_get_like) = match (result, new_get_like) {
-                    (Ok(SendResult::Ok(ok)), Some((get_status_request, mut loadable))) => {
-                        // Update both get_like and sent_like states
-                        loadable = loadable.map_ready(|mut response| {
-                            response.status = request.status;
-                            tracing::trace!(
-                                "New Rating status set to {:?} for IMDb {}",
-                                request.status,
-                                ok.imdb_id
-                            );
-                            response
-                        });
-
-                        let sent_like_effects = eq_update(
-                            &mut self.sent_like,
-                            Some((request.clone(), Loadable::Ready(SendResult::Ok(ok.clone())))),
-                        );
-
-                        (
-                            Effects::msg(Msg::Event(Event::MetaItemRatingSentStatus {
-                                id: ok.imdb_id.clone(),
-                                status: request.status,
-                            }))
-                            .join(sent_like_effects)
-                            .unchanged(),
-                            Some((get_status_request, loadable)),
-                        )
+                    .is_some_and(|selected| selected.meta_path.id == *meta_item_id) =>
+            {
+                match result {
+                    Ok(response) => {
+                        let rating = response
+                            .rating
+                            .as_ref()
+                            .map(|rating| rating.status.to_owned());
+                        eq_update(&mut self.rating, Some(Loadable::Ready(rating)))
                     }
-                    (
-                        Ok(SendResult::Created(created)),
-                        Some((get_status_request, mut loadable)),
-                    ) => {
-                        // Update both get_like and sent_like states
-                        loadable = loadable.map_ready(|mut response| {
-                            response.status = Some(created.rating.status);
-                            tracing::trace!(
-                                "New Rating status set to {} for IMDb {}",
-                                created.rating.status,
-                                created.rating.imdb_id
-                            );
-                            response
-                        });
-
-                        let sent_like_effects = eq_update(
-                            &mut self.sent_like,
-                            Some((
-                                request.clone(),
-                                Loadable::Ready(SendResult::Created(created.clone())),
-                            )),
-                        );
-
-                        (
-                            Effects::msg(Msg::Event(Event::MetaItemRatingSentStatus {
-                                id: created.rating.imdb_id.clone(),
-                                status: Some(created.rating.status),
-                            }))
-                            .join(sent_like_effects)
-                            .unchanged(),
-                            Some((get_status_request, loadable)),
-                        )
-                    }
-                    (Ok(SendResult::Error { message }), Some((get_status_request, loadable))) => {
-                        let sent_like_effects = eq_update(
-                            &mut self.sent_like,
-                            Some((
-                                request.clone(),
-                                Loadable::Err(CtxError::Env(EnvError::Other(message.clone()))),
-                            )),
-                        );
-
-                        (
-                            Effects::msg(Msg::Event(Event::Error {
-                                error: CtxError::Env(EnvError::Other(format!(
-                                    "Failed to set rating: {message}"
-                                ))),
-                                source: Event::MetaItemRatingSentStatus {
-                                    id: get_status_request.query.media_id.clone(),
-                                    status: request.status,
-                                }
-                                .into(),
-                            }))
-                            .join(sent_like_effects)
-                            .unchanged(),
-                            Some((get_status_request, loadable)),
-                        )
-                    }
-                    (Ok(_), None) => (Effects::none().unchanged(), None),
-                    (Err(err), get_like) => {
-                        let sent_like_effects = eq_update(
-                            &mut self.sent_like,
-                            Some((request.clone(), Loadable::Err(CtxError::Env(err.clone())))),
-                        );
-
-                        (
-                            Effects::msg(Msg::Event(Event::Error {
-                                error: CtxError::Env(err.to_owned()),
-                                source: Event::MetaItemRatingSentStatus {
-                                    id: request.media_id.clone(),
-                                    status: request.status,
-                                }
-                                .into(),
-                            }))
-                            .join(sent_like_effects)
-                            .unchanged(),
-                            get_like,
-                        )
-                    }
-                };
-
-                let get_like_effects = eq_update(&mut self.get_like, new_get_like);
-
-                get_like_effects.join(send_result_effects)
+                    Err(_) => Effects::msg(Msg::Event(Event::Error {
+                        error: CtxError::Env(EnvError::Other("Failed to sent rating".to_owned())),
+                        source: Event::MetaItemRated {
+                            id: meta_item_id.to_owned(),
+                        }
+                        .into(),
+                    })),
+                }
             }
             Msg::Internal(Internal::LibraryChanged(_)) => {
                 let library_item_effects = library_item_update::<E>(
@@ -452,12 +321,16 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 );
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_items, &self.library_item);
+                let rating_effects =
+                    rating_update::<E>(&mut self.rating, &self.selected, &ctx.profile);
+
                 meta_items_effects
                     .join(meta_streams_effects)
                     .join(streams_effects)
                     .join(last_used_stream_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+                    .join(rating_effects)
             }
             _ => Effects::none().unchanged(),
         }
@@ -571,94 +444,83 @@ fn meta_items_update<E: Env + 'static>(
     }
 }
 
-fn like_status_update<E: Env + 'static>(
-    rating: &mut Option<(
-        user_likes::GetStatusRequest,
-        Loadable<user_likes::GetStatusResponse, CtxError>,
-    )>,
-    meta_item: Option<&ResourceLoadable<MetaItem>>,
-    auth: Option<&Auth>,
+fn supported_rating_id(id: &str) -> bool {
+    USER_LIKES_SUPPORTED_ID_PREFIXES
+        .iter()
+        .any(|prefix| id.starts_with(prefix))
+}
+
+fn supported_rating_type(r#type: &str) -> bool {
+    USER_LIKES_SUPPORTED_TYPES.iter().any(|t| r#type == *t)
+}
+
+fn rating_update<E: Env + 'static>(
+    rating: &mut Option<Loadable<Option<Rating>, EnvError>>,
+    selected: &Option<Selected>,
+    profile: &Profile,
 ) -> Effects {
-    let meta_item = meta_item.and_then(|item| match item.content.as_ref() {
-        Some(Loadable::Ready(x)) => Some(x),
-        _ => None,
-    });
-
-    match (auth, meta_item) {
-        (Some(auth), Some(meta_item)) => {
-            let media_id = meta_item.preview.id.clone();
-            let media_type = meta_item.preview.r#type.clone();
-
-            let request = user_likes::GetStatusRequest {
-                query: user_likes::GetStatusQuery {
-                    user_auth: user_likes::UserAuthentication::AuthToken(auth.key.clone()),
-                    media_id: media_id.clone(),
-                    media_type: media_type.clone(),
-                },
-            };
-            let api_request = user_likes::APIRequest::GetStatus(request.clone());
-
-            let like_effects = eq_update(rating, Some((request.clone(), Loadable::Loading)));
-            tracing::trace!(request = ?api_request, "Request rating status for item {}", media_id);
-            let get_like_status = {
-                Effects::one(
-                    EffectFuture::Concurrent(
-                        api_request
-                            .fetch_api::<E, user_likes::GetStatusResponse>()
-                            .map(move |result| {
-                                tracing::trace!(result = ?result, "Rating status response received for item {}", media_id);
-                                Msg::Internal(Internal::GetUserRecommendationStatusResult(
-                                    request,
-                                    result,
-                                ))
-                            })
-                            .boxed_env(),
-                    )
-                    .into(),
-                )
-                .unchanged()
-            };
-
-            like_effects.join(get_like_status)
+    match (selected, profile.auth.as_ref()) {
+        (Some(selected), Some(auth)) => {
+            if supported_rating_id(&selected.meta_path.id)
+                && supported_rating_type(&selected.meta_path.r#type)
+            {
+                eq_update(rating, Some(Loadable::Loading)).join(Effects::one(get_rating::<E>(
+                    auth.key.to_owned(),
+                    &selected.meta_path,
+                )))
+            } else {
+                eq_update(rating, None)
+            }
         }
-        _ => Effects::none().unchanged(),
+        _ => eq_update(rating, None),
     }
 }
 
-/// Makes API call to get the rating of the user for that particular MetaItem.id
-fn send_rating<E: Env + 'static>(
-    send_rate: &mut Option<(
-        user_likes::SendRequest,
-        Loadable<user_likes::SendResult, CtxError>,
-    )>,
-    send_request: user_likes::SendRequest,
-) -> Effects {
-    let media_id = send_request.media_id.clone();
+fn get_rating<E: Env + 'static>(auth_key: AuthKey, meta_path: &ResourcePath) -> Effect {
+    let meta_id = meta_path.id.to_owned();
 
-    let api_request = user_likes::APIRequest::Send(send_request.clone());
-
-    let send_rate_effects = eq_update(send_rate, Some((send_request.clone(), Loadable::Loading)));
-    tracing::trace!(request = ?api_request, "Request rating status for item {media_id}");
-    let send_rate_request_effects = {
-        Effects::one(
-                    EffectFuture::Concurrent(
-                        api_request
-                            .fetch_api::<E, user_likes::SendResult>()
-                            .map(move |result| {
-                                tracing::trace!(result = ?result, "Rating status response received for item {media_id}");
-                                Msg::Internal(Internal::UserRecommendationSendRequestResult(
-                                    send_request,
-                                    result,
-                                ))
-                            })
-                            .boxed_env(),
-                    )
-                    .into(),
-                )
-                .unchanged()
+    let request = RatingGetStatusRequest {
+        auth_key,
+        meta_item_id: meta_id.to_owned(),
+        meta_item_type: meta_path.r#type.to_owned(),
     };
 
-    send_rate_effects.join(send_rate_request_effects)
+    EffectFuture::Concurrent(
+        E::fetch::<_, RatingGetStatusResponse>(request.into())
+            .map(enclose!((meta_id) move |result| {
+                Msg::Internal(Internal::RatingGetStatusResult(
+                    meta_id, result,
+                ))
+            }))
+            .boxed_env(),
+    )
+    .into()
+}
+
+fn send_rating<E: Env + 'static>(
+    auth_key: AuthKey,
+    meta_path: &ResourcePath,
+    rating: &Option<Rating>,
+) -> Effect {
+    let meta_id = meta_path.id.to_owned();
+
+    let request = RatingSendRequest {
+        auth_key,
+        meta_item_id: meta_id.to_owned(),
+        meta_item_type: meta_path.r#type.to_owned(),
+        rating: rating.to_owned(),
+    };
+
+    EffectFuture::Concurrent(
+        E::fetch::<_, RatingSendResponse>(request.into())
+            .map(enclose!((meta_id) move |result| {
+                Msg::Internal(Internal::RatingSendResult(
+                    meta_id, result,
+                ))
+            }))
+            .boxed_env(),
+    )
+    .into()
 }
 
 fn meta_streams_update(

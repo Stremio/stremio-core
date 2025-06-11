@@ -61,6 +61,10 @@ pub const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b'(')
     .remove(b')');
 
+pub const USER_LIKES_SUPPORTED_ID_PREFIXES: &[&str] = &["tt", "tmdb", "kitsu"];
+
+pub const USER_LIKES_SUPPORTED_TYPES: &[&str] = &["movie", "series"];
+
 /// In milliseconds
 pub const PLAYER_IGNORE_SEEK_AFTER: u64 = 600_000;
 

@@ -14,6 +14,8 @@ use crate::types::api::{
 };
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
+use crate::types::rating::{RatingGetStatusResponse, RatingSendResponse};
+use crate::types::resource::MetaItemId;
 use crate::types::streaming_server::{
     DeviceInfo, GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics, StatisticsRequest,
 };
@@ -21,7 +23,6 @@ use crate::types::streams::StreamItemState;
 use crate::types::{
     resource::{MetaItem, Stream},
     torrent::InfoHash,
-    user_likes,
 };
 
 pub type CtxStorageResponse = (
@@ -158,12 +159,6 @@ pub enum Internal {
     ),
     /// When dismissed events changed
     DismissedEventsChanged,
-    GetUserRecommendationStatusResult(
-        user_likes::GetStatusRequest,
-        Result<user_likes::GetStatusResponse, EnvError>,
-    ),
-    UserRecommendationSendRequestResult(
-        user_likes::SendRequest,
-        Result<user_likes::SendResult, EnvError>,
-    ),
+    RatingGetStatusResult(MetaItemId, Result<RatingGetStatusResponse, EnvError>),
+    RatingSendResult(MetaItemId, Result<RatingSendResponse, EnvError>),
 }

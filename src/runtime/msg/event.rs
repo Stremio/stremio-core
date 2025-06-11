@@ -3,7 +3,7 @@ use crate::models::player::AnalyticsContext as PlayerAnalyticsContext;
 use crate::types::api::AuthRequest;
 use crate::types::library::LibraryItemId;
 use crate::types::profile::{AuthKey, Settings, UID};
-use crate::types::user_likes;
+use crate::types::resource::MetaItemId;
 use serde::Serialize;
 use url::Url;
 
@@ -133,10 +133,8 @@ pub enum Event {
         id: LibraryItemId,
         is_watched: bool,
     },
-    MetaItemRatingSentStatus {
-        // Either the query id or the response imdb id
-        id: String,
-        status: Option<user_likes::like::Status>,
+    MetaItemRated {
+        id: MetaItemId,
     },
     /// The notifications for the given LibraryItemId have been dismissed
     NotificationsDismissed {

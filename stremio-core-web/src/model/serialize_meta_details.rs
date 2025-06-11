@@ -9,6 +9,7 @@ use url::Url;
 #[cfg(feature = "wasm")]
 use {gloo_utils::format::JsValueSerdeExt, stremio_core::runtime::Env, wasm_bindgen::JsValue};
 
+use stremio_core::runtime::EnvError;
 use stremio_core::{
     constants::META_RESOURCE_NAME,
     deep_links::{MetaItemDeepLinks, StreamDeepLinks, VideoDeepLinks},
@@ -18,12 +19,10 @@ use stremio_core::{
         meta_details::{MetaDetails, Selected as MetaDetailsSelected},
         streaming_server::StreamingServer,
     },
-    types::library::LibraryItem,
+    types::{library::LibraryItem, rating::Rating},
 };
 
 mod model {
-    use stremio_core::{models::ctx::CtxError, types::user_likes::like};
-
     use super::*;
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -98,8 +97,7 @@ mod model {
         pub streams: Vec<ResourceLoadable<'a, Vec<Stream<'a>>>>,
         pub meta_extensions: Vec<MetaExtension<'a>>,
         pub title: Option<String>,
-        pub like: Option<Loadable<Option<like::Status>, CtxError>>,
-        pub sent_like: Option<Loadable<Option<&'a like::Status>, &'a CtxError>>,
+        pub rating: &'a Option<Loadable<Option<Rating>, EnvError>>,
     }
 }
 
@@ -399,14 +397,7 @@ pub fn serialize_meta_details<E: Env + 'static>(
                     })
                     .unwrap_or_else(|| meta_item.preview.name.to_owned())
             }),
-        like: meta_details
-            .get_like
-            .as_ref()
-            .map(|(_request, loadable)| loadable.clone().map_ready(|response| response.status)),
-        sent_like: meta_details
-            .sent_like
-            .as_ref()
-            .map(|(request, loadable)| loadable.as_ref().map_ready(|_| request.status.as_ref())),
+        rating: &meta_details.rating,
     })
     .expect("JsValue from model::MetaDetails")
 }
