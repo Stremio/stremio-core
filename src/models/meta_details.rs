@@ -186,9 +186,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
             {
                 match (self.selected.as_ref(), ctx.profile.auth.as_ref()) {
                     (Some(selected), Some(auth)) => {
-                        eq_update(&mut self.rating, Some(Loadable::Loading)).join(Effects::one(
-                            send_rating::<E>(auth.key.to_owned(), &selected.meta_path, rating),
+                        let rating_effects = eq_update(&mut self.rating, Some(Loadable::Loading));
+
+                        Effects::one(send_rating::<E>(
+                            auth.key.to_owned(),
+                            &selected.meta_path,
+                            rating,
                         ))
+                        .unchanged()
+                        .join(rating_effects)
                     }
                     _ => Effects::none().unchanged(),
                 }
@@ -480,10 +486,10 @@ fn rating_update<E: Env + 'static>(
             if supported_rating_id(&selected.meta_path.id)
                 && supported_rating_type(&selected.meta_path.r#type)
             {
-                eq_update(rating, Some(Loadable::Loading)).join(Effects::one(get_rating::<E>(
-                    auth.key.to_owned(),
-                    &selected.meta_path,
-                )))
+                let rating_effect = eq_update(rating, Some(Loadable::Loading));
+                Effects::one(get_rating::<E>(auth.key.to_owned(), &selected.meta_path))
+                    .unchanged()
+                    .join(rating_effect)
             } else {
                 eq_update(rating, None)
             }
