@@ -275,7 +275,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                             .rating
                             .as_ref()
                             .map(|rating| rating.status.to_owned());
-                        eq_update(&mut self.rating, Some(Loadable::Ready(rating)))
+
+                        let rating_effets =
+                            eq_update(&mut self.rating, Some(Loadable::Ready(rating)));
+
+                        Effects::one(Effect::Msg(Box::new(Msg::Event(Event::MetaItemRated {
+                            id: meta_item_id.to_owned(),
+                        }))))
+                        .unchanged()
+                        .join(rating_effets)
                     }
                     Err(_) => Effects::msg(Msg::Event(Event::Error {
                         error: CtxError::Env(EnvError::Other("Failed to sent rating".to_owned())),
