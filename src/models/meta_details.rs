@@ -285,13 +285,22 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                         .unchanged()
                         .join(rating_effets)
                     }
-                    Err(_) => Effects::msg(Msg::Event(Event::Error {
-                        error: CtxError::Env(EnvError::Other("Failed to sent rating".to_owned())),
-                        source: Event::MetaItemRated {
-                            id: meta_item_id.to_owned(),
-                        }
-                        .into(),
-                    })),
+                    Err(error) => {
+                        let rating_effets =
+                            eq_update(&mut self.rating, Some(Loadable::Err(error.to_owned())));
+
+                        Effects::msg(Msg::Event(Event::Error {
+                            error: CtxError::Env(EnvError::Other(
+                                "Failed to sent rating".to_owned(),
+                            )),
+                            source: Event::MetaItemRated {
+                                id: meta_item_id.to_owned(),
+                            }
+                            .into(),
+                        }))
+                        .unchanged()
+                        .join(rating_effets)
+                    }
                 }
             }
             Msg::Internal(Internal::LibraryChanged(_)) => {
