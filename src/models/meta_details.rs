@@ -256,13 +256,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     .as_ref()
                     .is_some_and(|selected| selected.meta_path.id == *meta_item_id) =>
             {
-                match result {
-                    Ok(rating) => eq_update(
-                        &mut self.rating,
-                        Some(Loadable::Ready(rating.status.to_owned())),
-                    ),
-                    Err(e) => eq_update(&mut self.rating, Some(Loadable::Err(e.to_owned()))),
-                }
+                let rating_loadable = match result {
+                    Ok(rating) => Loadable::Ready(rating.status.to_owned()),
+                    Err(e) => Loadable::Err(e.to_owned()),
+                };
+
+                eq_update(&mut self.rating, Some(rating_loadable))
             }
             Msg::Internal(Internal::RatingSendResult(meta_item_id, result))
                 if self
