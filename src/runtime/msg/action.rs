@@ -20,7 +20,7 @@ use crate::{
         api::AuthRequest,
         library::LibraryItemId,
         profile::{Password, Settings as ProfileSettings},
-        rating::Rating,
+        rating::Status,
         resource::{MetaItemId, MetaItemPreview, Video},
         streaming_server::{
             Settings as StreamingServerSettings,
@@ -120,7 +120,7 @@ pub enum ActionMetaDetails {
     /// Mark all videos from given season as watched
     MarkSeasonAsWatched(u32, bool),
     /// Rate the current meta item
-    Rate(Option<Rating>),
+    Rate(Option<Status>),
 }
 
 #[derive(Clone, Deserialize, Debug)]

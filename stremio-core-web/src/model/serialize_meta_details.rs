@@ -19,7 +19,7 @@ use stremio_core::{
         meta_details::{MetaDetails, Selected as MetaDetailsSelected},
         streaming_server::StreamingServer,
     },
-    types::{library::LibraryItem, rating::Rating},
+    types::{library::LibraryItem, rating::RatingInfo},
 };
 
 mod model {
@@ -97,7 +97,7 @@ mod model {
         pub streams: Vec<ResourceLoadable<'a, Vec<Stream<'a>>>>,
         pub meta_extensions: Vec<MetaExtension<'a>>,
         pub title: Option<String>,
-        pub rating: &'a Option<Loadable<Option<Rating>, EnvError>>,
+        pub rating_info: &'a Option<Loadable<RatingInfo, EnvError>>,
     }
 }
 
@@ -397,7 +397,7 @@ pub fn serialize_meta_details<E: Env + 'static>(
                     })
                     .unwrap_or_else(|| meta_item.preview.name.to_owned())
             }),
-        rating: &meta_details.rating,
+        rating_info: &meta_details.rating_info,
     })
     .expect("JsValue from model::MetaDetails")
 }

@@ -5,7 +5,7 @@ use crate::{
     constants::USER_LIKES_API_URL,
     types::{
         profile::AuthKey,
-        rating::Rating,
+        rating::Status,
         resource::{MetaItemId, MetaItemType},
     },
 };
@@ -40,7 +40,7 @@ pub struct RatingSendRequestBody {
     pub auth_token: AuthKey,
     pub media_id: MetaItemId,
     pub media_type: MetaItemType,
-    pub status: Option<Rating>,
+    pub status: Option<Status>,
 }
 
 #[derive(Serialize)]
@@ -49,7 +49,7 @@ pub struct RatingSendRequest {
     pub auth_key: AuthKey,
     pub meta_item_id: MetaItemId,
     pub meta_item_type: MetaItemType,
-    pub rating: Option<Rating>,
+    pub rating: Option<Status>,
 }
 
 impl From<RatingSendRequest> for Request<RatingSendRequestBody> {
