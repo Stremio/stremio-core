@@ -291,7 +291,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
 
                         Effects::msg(Msg::Event(Event::Error {
                             error: CtxError::Env(EnvError::Other(
-                                "Failed to sent rating".to_owned(),
+                                "Failed to send rating".to_owned(),
                             )),
                             source: Event::MetaItemRated {
                                 id: meta_item_id.to_owned(),
