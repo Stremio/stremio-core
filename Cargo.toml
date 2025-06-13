@@ -76,8 +76,6 @@ derivative = "2.2"
 derive_more = { version = "2", features = ["from", "into", "into_iterator", "try_into", "deref"] }
 boolinator = "2.4"
 strum = { version = "0.27", features = ["derive"] }
-# MSRV ;( we run on an old Rust compiler version because of wasm build
-parse-display = "0.9"
 
 lazysort = "0.2"
 
