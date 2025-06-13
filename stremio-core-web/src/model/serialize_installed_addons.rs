@@ -1,6 +1,6 @@
 #[cfg(feature = "wasm")]
 use {
-    crate::model::deep_links_ext::DeepLinksExt, gloo_utils::format::JsValueSerdeExt,
+    crate::model::deep_links_ext::DeepLinksExt, serde::Serialize,
     stremio_core::deep_links::AddonsDeepLinks, wasm_bindgen::JsValue,
 };
 
@@ -61,7 +61,7 @@ mod model {
 pub fn serialize_installed_addons(
     installed_addons: &stremio_core::models::installed_addons_with_filters::InstalledAddonsWithFilters,
 ) -> JsValue {
-    <JsValue as JsValueSerdeExt>::from_serde(&model::InstalledAddonsWithFilters {
+    model::InstalledAddonsWithFilters {
         selected: &installed_addons.selected,
         selectable: model::Selectable {
             types: installed_addons
@@ -96,6 +96,7 @@ pub fn serialize_installed_addons(
                 installed: true,
             })
             .collect(),
-    })
+    }
+    .serialize(&crate::SERIALIZER)
     .expect("JsValue from model::InstalledAddonsWithFilters")
 }

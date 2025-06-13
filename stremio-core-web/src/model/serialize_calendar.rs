@@ -1,4 +1,3 @@
-use gloo_utils::format::JsValueSerdeExt;
 use itertools::Itertools;
 use serde::Serialize;
 use stremio_core::{
@@ -60,7 +59,7 @@ mod model {
 
 #[cfg(feature = "wasm")]
 pub fn serialize_calendar(calendar: &stremio_core::models::calendar::Calendar) -> JsValue {
-    <JsValue as JsValueSerdeExt>::from_serde(&model::Calendar {
+    model::Calendar {
         selected: &calendar.selected,
         selectable: model::Selectable {
             prev: model::SelectableDate {
@@ -96,6 +95,7 @@ pub fn serialize_calendar(calendar: &stremio_core::models::calendar::Calendar) -
                     .collect_vec(),
             })
             .collect_vec(),
-    })
+    }
+    .serialize(&crate::SERIALIZER)
     .expect("JsValue from model::Calendar")
 }

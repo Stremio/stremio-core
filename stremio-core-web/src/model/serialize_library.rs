@@ -1,7 +1,6 @@
 use crate::model::deep_links_ext::DeepLinksExt;
-#[cfg(feature = "wasm")]
-use gloo_utils::format::JsValueSerdeExt;
 use serde::Serialize;
+
 use stremio_core::deep_links::{LibraryDeepLinks, LibraryItemDeepLinks};
 use stremio_core::models::ctx::Ctx;
 use stremio_core::models::library_with_filters::{LibraryWithFilters, Selected, Sort};
@@ -68,7 +67,7 @@ pub fn serialize_library<F>(
     streaming_server_url: Option<&Url>,
     root: String,
 ) -> JsValue {
-    <JsValue as JsValueSerdeExt>::from_serde(&model::LibraryWithFilters {
+    model::LibraryWithFilters {
         selected: &library.selected,
         selectable: model::Selectable {
             types: library
@@ -135,6 +134,7 @@ pub fn serialize_library<F>(
                 }
             })
             .collect(),
-    })
+    }
+    .serialize(&crate::SERIALIZER)
     .expect("JsValue from model::LibraryWithFilters")
 }

@@ -2,8 +2,8 @@ use std::sync::RwLock;
 
 use enclose::enclose;
 use futures::{future, try_join, FutureExt, StreamExt};
-use gloo_utils::format::JsValueSerdeExt;
 use once_cell::sync::Lazy;
+use serde::Serialize;
 use tracing::{info, Level};
 use tracing_wasm::WASMLayerConfigBuilder;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
@@ -28,6 +28,9 @@ use crate::{
     event::WebEvent,
     model::{WebModel, WebModelField},
 };
+
+pub(crate) const SERIALIZER: serde_wasm_bindgen::Serializer =
+    serde_wasm_bindgen::Serializer::json_compatible();
 
 #[allow(clippy::type_complexity)]
 static RUNTIME: Lazy<RwLock<Option<Loadable<Runtime<WebEnv, WebModel>, EnvError>>>> =
@@ -138,7 +141,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                             ));
                         };
                         emit_to_ui
-                            .call1(&JsValue::NULL, &<JsValue as JsValueSerdeExt>::from_serde(&event).expect("Event handler: JsValue from Event"))
+                            .call1(&JsValue::NULL, &event.serialize(&SERIALIZER).expect("Event handler: JsValue from Event"))
                             .expect("emit event failed");
                         future::ready(())
                     }));
@@ -149,14 +152,15 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                 Err(error) => {
                     *RUNTIME.write().expect("runtime write failed") =
                         Some(Loadable::Err(error.to_owned()));
-                    Err(<JsValue as JsValueSerdeExt>::from_serde(&error)
+                    Err(error
+                        .serialize(&SERIALIZER)
                         .expect("Storage: JsValue from Event"))
                 }
             }
         }
         Err(error) => {
             *RUNTIME.write().expect("runtime write failed") = Some(Loadable::Err(error.to_owned()));
-            Err(<JsValue as JsValueSerdeExt>::from_serde(&error).expect("JsValue from Event"))
+            Err(error.serialize(&SERIALIZER).expect("JsValue from Event"))
         }
     }
 }
@@ -169,14 +173,15 @@ pub fn get_debug_state() -> JsValue {
         .as_ref()
         .expect("runtime is not ready")
         .as_ref()
-        .expect("runtime is not ready");
+        .expect("runtime is not re  ady");
     let model = runtime.model().expect("model read failed");
-    <JsValue as JsValueSerdeExt>::from_serde(&*model).expect("JsValue from WebModel")
+    model.serialize(&SERIALIZER).expect("JsValue from WebModel")
 }
 
 #[wasm_bindgen]
 pub fn get_state(field: JsValue) -> JsValue {
-    let field = JsValueSerdeExt::into_serde(&field).expect("get state failed");
+    // JsValue::NULL
+    let field = serde_wasm_bindgen::from_value(field).expect("get state failed");
     let runtime = RUNTIME.read().expect("runtime read failed");
     let runtime = runtime
         .as_ref()
@@ -190,9 +195,9 @@ pub fn get_state(field: JsValue) -> JsValue {
 #[wasm_bindgen]
 pub fn dispatch(action: JsValue, field: JsValue, location_hash: JsValue) {
     let action: Action =
-        JsValueSerdeExt::into_serde(&action).expect("dispatch failed because of Action");
+        serde_wasm_bindgen::from_value(action).expect("dispatch failed because of Action");
     let field: Option<WebModelField> =
-        JsValueSerdeExt::into_serde(&field).expect("dispatch failed because of Field");
+        serde_wasm_bindgen::from_value(field).expect("dispatch failed because of Field");
     let runtime = RUNTIME.read().expect("runtime read failed");
     let runtime = runtime
         .as_ref()
@@ -216,8 +221,8 @@ pub fn dispatch(action: JsValue, field: JsValue, location_hash: JsValue) {
 
 #[wasm_bindgen]
 pub fn analytics(event: JsValue, location_hash: JsValue) {
-    let event =
-        JsValueSerdeExt::into_serde(&event).expect("UIEvent deserialization for analytics failed");
+    let event = serde_wasm_bindgen::from_value(event)
+        .expect("UIEvent deserialization for analytics failed");
     let runtime = RUNTIME.read().expect("runtime read failed");
     let runtime = runtime
         .as_ref()
@@ -236,9 +241,7 @@ pub fn analytics(event: JsValue, location_hash: JsValue) {
 pub fn decode_stream(stream: JsValue) -> JsValue {
     let stream = stream.as_string().map(Stream::decode);
     match stream {
-        Some(Ok(stream)) => {
-            <JsValue as JsValueSerdeExt>::from_serde(&stream).expect("JsValue from Stream")
-        }
+        Some(Ok(stream)) => stream.serialize(&SERIALIZER).expect("JsValue from Stream"),
         _ => JsValue::NULL,
     }
 }

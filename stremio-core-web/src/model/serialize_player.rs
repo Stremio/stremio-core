@@ -1,8 +1,9 @@
 use semver::Version;
 use serde::Serialize;
+
 use url::Url;
 #[cfg(feature = "wasm")]
-use {gloo_utils::format::JsValueSerdeExt, wasm_bindgen::JsValue};
+use wasm_bindgen::JsValue;
 
 use stremio_core::deep_links::{StreamDeepLinks, VideoDeepLinks};
 use stremio_core::models::common::{Loadable, ResourceError, ResourceLoadable};
@@ -116,7 +117,7 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
     ctx: &Ctx,
     streaming_server: &StreamingServer,
 ) -> JsValue {
-    <JsValue as JsValueSerdeExt>::from_serde(&model::Player {
+    model::Player {
         selected: player.selected.as_ref().map(|selected| model::Selected {
             stream: model::Stream {
                 stream: &selected.stream,
@@ -359,6 +360,7 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
                     types: &addon.manifest.types,
                 },
             }),
-    })
+    }
+    .serialize(&crate::SERIALIZER)
     .expect("JsValue from model::Player")
 }

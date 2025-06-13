@@ -1,6 +1,6 @@
 #[cfg(feature = "wasm")]
-use gloo_utils::format::JsValueSerdeExt;
 use serde::Serialize;
+
 use stremio_core::deep_links::MetaItemDeepLinks;
 use stremio_core::models::common::Loadable;
 use stremio_core::models::streaming_server::{PlaybackDevice, Selected};
@@ -36,7 +36,7 @@ pub fn serialize_streaming_server(
 ) -> JsValue {
     use crate::model::deep_links_ext::DeepLinksExt;
 
-    <JsValue as JsValueSerdeExt>::from_serde(&model::StreamingServer {
+    model::StreamingServer {
         selected: &streaming_server.selected,
         settings: &streaming_server.settings,
         base_url: &streaming_server.base_url,
@@ -59,6 +59,7 @@ pub fn serialize_streaming_server(
                 (info_hash, loadable)
             }),
         statistics: streaming_server.statistics.as_ref(),
-    })
+    }
+    .serialize(&crate::SERIALIZER)
     .expect("JsValue from model::StreamingServer")
 }

@@ -2,7 +2,6 @@ use std::{collections::HashMap, sync::RwLock};
 
 use chrono::{offset::TimeZone, DateTime, Utc};
 use futures::{future, Future, FutureExt, TryFutureExt};
-use gloo_utils::format::JsValueSerdeExt;
 use http::{Method, Request};
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -36,9 +35,9 @@ const INSTALLATION_ID_STORAGE_KEY: &str = "installation_id";
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(js_namespace = ["self"], js_name = app_version)]
+    #[wasm_bindgen(thread_local_v2, js_namespace = ["self"], js_name = app_version)]
     static APP_VERSION: String;
-    #[wasm_bindgen(js_namespace = ["self"], js_name = shell_version)]
+    #[wasm_bindgen(thread_local_v2, js_namespace = ["self"], js_name = shell_version)]
     static SHELL_VERSION: Option<String>;
     #[wasm_bindgen(catch, js_namespace = ["self"])]
     async fn get_location_hash() -> Result<JsValue, JsValue>;
@@ -276,7 +275,7 @@ impl Env for WebEnv {
                 let value = String::from_utf8_lossy(value.as_bytes()).into_owned();
                 headers.entry(key).or_insert_with(Vec::new).push(value);
             }
-            <JsValue as JsValueSerdeExt>::from_serde(&headers)
+            serde_wasm_bindgen::to_value(&headers)
                 .expect("WebEnv::fetch: JsValue from Headers failed to be built")
         };
         let body = match serde_json::to_string(&body) {
@@ -285,11 +284,14 @@ impl Env for WebEnv {
             }
             _ => None,
         };
-        let mut request_options = web_sys::RequestInit::new();
-        request_options
-            .method(method)
-            .headers(&headers)
-            .body(body.as_ref());
+
+        let request_options = web_sys::RequestInit::new();
+        request_options.set_method(method);
+        request_options.set_headers(&headers);
+
+        if let Some(body) = body {
+            request_options.set_body(&body);
+        }
 
         let request = web_sys::Request::new_with_str_and_init(&url, &request_options)
             .expect("request builder failed");
@@ -431,13 +433,14 @@ impl Env for WebEnv {
     ) -> serde_json::Value {
         serde_json::to_value(AnalyticsContext {
             app_type: "stremio-web".to_owned(),
-            app_version: APP_VERSION.to_owned(),
+            app_version: APP_VERSION.with(|version| version.to_string()),
             server_version: streaming_server
                 .settings
                 .as_ref()
                 .ready()
                 .map(|settings| settings.server_version.to_owned()),
-            shell_version: SHELL_VERSION.to_owned(),
+            shell_version: SHELL_VERSION
+                .with(|version| version.as_ref().map(|version| version.to_string())),
             system_language: global()
                 .navigator()
                 .language()
