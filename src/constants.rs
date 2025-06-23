@@ -84,7 +84,19 @@ pub static STREAMING_SERVER_URL: Lazy<Url> =
 pub static IMDB_URL: Lazy<Url> =
     Lazy::new(|| Url::parse("https://imdb.com").expect("IMDB_URL parse failed"));
 pub static OFFICIAL_ADDONS: Lazy<Vec<Descriptor>> = Lazy::new(|| {
-    serde_json::from_slice(stremio_official_addons::ADDONS).expect("OFFICIAL_ADDONS parse failed")
+    #[cfg(target_vendor = "apple")]
+    {
+        let path = option_env!("OFFICIAL_ADDONS_PATH")
+            .expect("OFFICIAL_ADDONS_PATH environment variable not set");
+        let content = std::fs::read(path).expect("Failed to read OFFICIAL_ADDONS file");
+        serde_json::from_slice(&content).expect("OFFICIAL_ADDONS parse failed")
+    }
+
+    #[cfg(not(target_vendor = "apple"))]
+    {
+        serde_json::from_slice(stremio_official_addons::ADDONS)
+            .expect("OFFICIAL_ADDONS parse failed")
+    }
 });
 pub static SKIP_EXTRA_PROP: Lazy<ExtraProp> = Lazy::new(|| ExtraProp {
     name: "skip".to_owned(),

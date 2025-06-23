@@ -13,11 +13,7 @@ opt-level = 's'
 
 [workspace]
 resolver = "2"
-members = [
-    "stremio-core-web",
-    "stremio-derive",
-    "stremio-watched-bitfield",
-]
+members = ["stremio-core-web", "stremio-derive", "stremio-watched-bitfield"]
 
 [features]
 # TODO: env-future-send should be enabled by default
@@ -40,10 +36,12 @@ analytics = []
 [dependencies]
 stremio-derive = { path = "stremio-derive" }
 stremio-watched-bitfield = { path = "stremio-watched-bitfield" }
+[target.'cfg(not(target_vendor = "apple"))'.dependencies]
 stremio-official-addons = "=2.0.13"
 
+[target.'cfg(all())'.dependencies]
 # (De)Serialization
-serde = { version = "1", features = ["derive"]}
+serde = { version = "1", features = ["derive"] }
 serde_json = "1.0.*"
 serde_path_to_error = "0.1"
 serde_url_params = "0.2"
@@ -72,7 +70,13 @@ sha2 = "0.10"
 either = "1.6"
 enclose = "1.1"
 derivative = "2.2"
-derive_more = { version = "2", features = ["from", "into", "into_iterator", "try_into", "deref"] }
+derive_more = { version = "2", features = [
+	"from",
+	"into",
+	"into_iterator",
+	"try_into",
+	"deref",
+] }
 boolinator = "2.4"
 strum = { version = "0.27", features = ["derive"] }
 
