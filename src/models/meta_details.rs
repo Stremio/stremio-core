@@ -1,27 +1,36 @@
 use std::{borrow::Cow, marker::PhantomData};
 
+use enclose::enclose;
+use futures::FutureExt;
 use serde::{Deserialize, Serialize};
 
 use stremio_watched_bitfield::WatchedBitField;
 
 use crate::{
-    constants::{LIBRARY_COLLECTION_NAME, META_RESOURCE_NAME, STREAM_RESOURCE_NAME},
+    constants::{
+        LIBRARY_COLLECTION_NAME, META_RESOURCE_NAME, STREAM_RESOURCE_NAME,
+        USER_LIKES_SUPPORTED_ID_PREFIXES, USER_LIKES_SUPPORTED_TYPES,
+    },
     models::{
         common::{
             eq_update, resources_update, resources_update_with_vector_content, Loadable,
             ResourceLoadable, ResourcesAction,
         },
-        ctx::Ctx,
+        ctx::{Ctx, CtxError},
     },
     runtime::{
-        msg::{Action, ActionLoad, ActionMetaDetails, Internal, Msg},
-        Effects, Env, UpdateWithCtx,
+        msg::{Action, ActionLoad, ActionMetaDetails, Event, Internal, Msg},
+        Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx,
     },
     types::{
         addon::{AggrRequest, ResourcePath, ResourceRequest},
         api::{DatastoreCommand, DatastoreRequest},
         library::{LibraryBucket, LibraryItem},
-        profile::Profile,
+        profile::{AuthKey, Profile},
+        rating::{
+            Rating, RatingGetStatusRequest, RatingGetStatusResponse, RatingInfo, RatingSendRequest,
+            RatingSendResponse,
+        },
         resource::{MetaItem, Stream},
         streams::StreamsBucket,
     },
@@ -51,6 +60,7 @@ pub struct MetaDetails {
     /// Finds a proper stream for the binge watching group and matching stream source.
     pub last_used_stream: Option<ResourceLoadable<Option<Stream>>>,
     pub library_item: Option<LibraryItem>,
+    pub rating_info: Option<Loadable<RatingInfo, EnvError>>,
     #[serde(skip_serializing)]
     pub watched: Option<WatchedBitField>,
 }
@@ -85,11 +95,16 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_items, &self.library_item);
                 let library_item_sync_effects = library_item_sync(&self.library_item, &ctx.profile);
+
+                let rating_info_effects =
+                    rating_info_update::<E>(&mut self.rating_info, &self.selected, &ctx.profile);
+
                 library_item_sync_effects
                     .join(selected_effects)
                     .join(selected_override_effects)
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
+                    .join(rating_info_effects)
                     .join(streams_effects)
                     .join(last_used_stream_effects)
                     .join(library_item_effects)
@@ -103,6 +118,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 let library_item_effects = eq_update(&mut self.library_item, None);
                 let last_used_stream_effects = eq_update(&mut self.last_used_stream, None);
                 let watched_effects = eq_update(&mut self.watched, None);
+                let rating_info_effects = eq_update(&mut self.rating_info, None);
+
                 selected_effects
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
@@ -110,6 +127,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     .join(last_used_stream_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+                    .join(rating_info_effects)
             }
             Msg::Action(Action::MetaDetails(ActionMetaDetails::MarkAsWatched(is_watched))) => {
                 match &self.library_item {
@@ -162,6 +180,25 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 }
                 _ => Effects::none().unchanged(),
             },
+            Msg::Action(Action::MetaDetails(ActionMetaDetails::Rate(rating)))
+                if self.rating_info.is_some() =>
+            {
+                match (self.selected.as_ref(), ctx.profile.auth.as_ref()) {
+                    (Some(selected), Some(auth)) => {
+                        let rating_info_effects =
+                            eq_update(&mut self.rating_info, Some(Loadable::Loading));
+
+                        Effects::one(send_rating::<E>(
+                            auth.key.to_owned(),
+                            &selected.meta_path,
+                            rating,
+                        ))
+                        .unchanged()
+                        .join(rating_info_effects)
+                    }
+                    _ => Effects::none().unchanged(),
+                }
+            }
             Msg::Internal(Internal::ResourceRequestResult(request, result))
                 if request.path.resource == META_RESOURCE_NAME =>
             {
@@ -219,6 +256,67 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 );
                 streams_effects.join(last_used_stream_effects)
             }
+            Msg::Internal(Internal::RatingGetStatusResult(meta_id, result))
+                if self
+                    .selected
+                    .as_ref()
+                    .is_some_and(|selected| selected.meta_path.id == *meta_id) =>
+            {
+                let rating_info_loadable = match result {
+                    Ok(rating) => Loadable::Ready(RatingInfo {
+                        meta_id: meta_id.to_owned(),
+                        status: rating.status.to_owned(),
+                    }),
+                    Err(e) => Loadable::Err(e.to_owned()),
+                };
+
+                eq_update(&mut self.rating_info, Some(rating_info_loadable))
+            }
+            Msg::Internal(Internal::RatingSendResult(meta_id, result))
+                if self
+                    .selected
+                    .as_ref()
+                    .is_some_and(|selected| selected.meta_path.id == *meta_id) =>
+            {
+                match result {
+                    Ok(response) => {
+                        let status = response
+                            .rating
+                            .as_ref()
+                            .map(|rating| rating.status.to_owned());
+
+                        let rating_info_effets = eq_update(
+                            &mut self.rating_info,
+                            Some(Loadable::Ready(RatingInfo {
+                                meta_id: meta_id.to_owned(),
+                                status: status.to_owned(),
+                            })),
+                        );
+
+                        Effects::one(Effect::Msg(Box::new(Msg::Event(Event::MetaItemRated {
+                            id: meta_id.to_owned(),
+                        }))))
+                        .unchanged()
+                        .join(rating_info_effets)
+                    }
+                    Err(error) => {
+                        let rating_info_effets =
+                            eq_update(&mut self.rating_info, Some(Loadable::Err(error.to_owned())));
+
+                        Effects::msg(Msg::Event(Event::Error {
+                            error: CtxError::Env(EnvError::Other(
+                                "Failed to send rating".to_owned(),
+                            )),
+                            source: Event::MetaItemRated {
+                                id: meta_id.to_owned(),
+                            }
+                            .into(),
+                        }))
+                        .unchanged()
+                        .join(rating_info_effets)
+                    }
+                }
+            }
             Msg::Internal(Internal::LibraryChanged(_)) => {
                 let library_item_effects = library_item_update::<E>(
                     &mut self.library_item,
@@ -253,12 +351,16 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 );
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_items, &self.library_item);
+                let rating_info_effects =
+                    rating_info_update::<E>(&mut self.rating_info, &self.selected, &ctx.profile);
+
                 meta_items_effects
                     .join(meta_streams_effects)
                     .join(streams_effects)
                     .join(last_used_stream_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+                    .join(rating_info_effects)
             }
             _ => Effects::none().unchanged(),
         }
@@ -370,6 +472,94 @@ fn meta_items_update<E: Env + 'static>(
         ),
         _ => eq_update(meta_items, vec![]),
     }
+}
+
+fn supported_rating_id(id: &str) -> bool {
+    USER_LIKES_SUPPORTED_ID_PREFIXES
+        .iter()
+        .any(|prefix| id.starts_with(prefix))
+}
+
+fn supported_rating_type(r#type: &str) -> bool {
+    USER_LIKES_SUPPORTED_TYPES.iter().any(|t| r#type == *t)
+}
+
+fn rating_info_update<E: Env + 'static>(
+    rating_info: &mut Option<Loadable<RatingInfo, EnvError>>,
+    selected: &Option<Selected>,
+    profile: &Profile,
+) -> Effects {
+    match (selected, profile.auth.as_ref()) {
+        (Some(selected), Some(auth)) => {
+            if supported_rating_id(&selected.meta_path.id)
+                && supported_rating_type(&selected.meta_path.r#type)
+            {
+                let should_update = match rating_info {
+                    Some(Loadable::Ready(info)) => info.meta_id != selected.meta_path.id,
+                    _ => true,
+                };
+
+                if should_update {
+                    let rating_info_effect = eq_update(rating_info, Some(Loadable::Loading));
+                    Effects::one(get_rating::<E>(auth.key.to_owned(), &selected.meta_path))
+                        .unchanged()
+                        .join(rating_info_effect)
+                } else {
+                    Effects::none().unchanged()
+                }
+            } else {
+                eq_update(rating_info, None)
+            }
+        }
+        _ => eq_update(rating_info, None),
+    }
+}
+
+fn get_rating<E: Env + 'static>(auth_key: AuthKey, meta_path: &ResourcePath) -> Effect {
+    let meta_id = meta_path.id.to_owned();
+
+    let request = RatingGetStatusRequest {
+        auth_key,
+        meta_item_id: meta_id.to_owned(),
+        meta_item_type: meta_path.r#type.to_owned(),
+    };
+
+    EffectFuture::Concurrent(
+        E::fetch::<_, RatingGetStatusResponse>(request.into())
+            .map(enclose!((meta_id) move |result| {
+                Msg::Internal(Internal::RatingGetStatusResult(
+                    meta_id, result,
+                ))
+            }))
+            .boxed_env(),
+    )
+    .into()
+}
+
+fn send_rating<E: Env + 'static>(
+    auth_key: AuthKey,
+    meta_path: &ResourcePath,
+    rating: &Option<Rating>,
+) -> Effect {
+    let meta_id = meta_path.id.to_owned();
+
+    let request = RatingSendRequest {
+        auth_key,
+        meta_item_id: meta_id.to_owned(),
+        meta_item_type: meta_path.r#type.to_owned(),
+        rating: rating.to_owned(),
+    };
+
+    EffectFuture::Concurrent(
+        E::fetch::<_, RatingSendResponse>(request.into())
+            .map(enclose!((meta_id) move |result| {
+                Msg::Internal(Internal::RatingSendResult(
+                    meta_id, result,
+                ))
+            }))
+            .boxed_env(),
+    )
+    .into()
 }
 
 fn meta_streams_update(

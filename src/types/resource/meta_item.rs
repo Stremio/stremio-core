@@ -28,6 +28,8 @@ use crate::types::{NumberAsString, SortedVec, SortedVecAdapter, UniqueVec, Uniqu
 /// For example when using the id as key in a [`HashMap`].
 pub type MetaItemId = String;
 
+pub type MetaItemType = String;
+
 #[derive(Clone, PartialEq, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]
 struct Trailer {

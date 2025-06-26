@@ -14,6 +14,8 @@ use crate::types::api::{
 };
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
+use crate::types::rating::{RatingGetStatusResponse, RatingSendResponse};
+use crate::types::resource::MetaItemId;
 use crate::types::streaming_server::{
     DeviceInfo, GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics, StatisticsRequest,
 };
@@ -157,4 +159,6 @@ pub enum Internal {
     ),
     /// When dismissed events changed
     DismissedEventsChanged,
+    RatingGetStatusResult(MetaItemId, Result<RatingGetStatusResponse, EnvError>),
+    RatingSendResult(MetaItemId, Result<RatingSendResponse, EnvError>),
 }

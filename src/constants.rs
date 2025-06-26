@@ -61,6 +61,10 @@ pub const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b'(')
     .remove(b')');
 
+pub const USER_LIKES_SUPPORTED_ID_PREFIXES: &[&str] = &["tt", "tmdb", "kitsu"];
+
+pub const USER_LIKES_SUPPORTED_TYPES: &[&str] = &["movie", "series"];
+
 /// In milliseconds
 pub const PLAYER_IGNORE_SEEK_AFTER: u64 = 600_000;
 
@@ -75,6 +79,8 @@ pub static CINEMETA_CATALOGS_URL: Lazy<Url> = Lazy::new(|| {
 pub static CINEMETA_URL: Lazy<Url> = Lazy::new(|| {
     Url::parse("https://v3-cinemeta.strem.io/manifest.json").expect("CINEMETA_URL parse failed")
 });
+pub static USER_LIKES_API_URL: Lazy<Url> =
+    Lazy::new(|| Url::parse("https://likes.stremio.com").expect("API_URL parse failed"));
 pub static API_URL: Lazy<Url> =
     Lazy::new(|| Url::parse("https://api.strem.io").expect("API_URL parse failed"));
 pub static LINK_API_URL: Lazy<Url> =

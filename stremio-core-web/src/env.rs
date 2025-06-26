@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::RwLock};
+use std::{collections::HashMap, sync::RwLock, time::Duration};
 
 use chrono::{offset::TimeZone, DateTime, Utc};
 use futures::{future, Future, FutureExt, TryFutureExt};
@@ -99,7 +99,7 @@ impl WebEnv {
             .inspect_ok(|_| {
                 WebEnv::set_interval(
                     || WebEnv::exec_concurrent(WebEnv::send_next_analytics_batch()),
-                    30 * 1000,
+                    Duration::from_secs(30),
                 );
             })
             .boxed_local()
@@ -238,21 +238,32 @@ impl WebEnv {
     pub fn send_next_analytics_batch() -> impl Future<Output = ()> {
         ANALYTICS.send_next_batch()
     }
-    pub fn set_interval<F: FnMut() + 'static>(func: F, timeout: i32) -> i32 {
+
+    /// Timeout: in milliseconds
+    pub fn set_interval<F: FnMut() + 'static>(func: F, timeout: Duration) -> i32 {
+        pub const DEFAULT_MILLISECONDS: i32 = 30 * 1000;
+
         let func = Closure::wrap(Box::new(func) as Box<dyn FnMut()>);
         let interval_id = global()
             .set_interval_with_callback_and_timeout_and_arguments_0(
                 func.as_ref().unchecked_ref(),
-                timeout,
+                i32::try_from(timeout.as_millis()).unwrap_or(DEFAULT_MILLISECONDS),
             )
             .expect("set interval failed");
         func.forget();
         interval_id
     }
+
     #[allow(dead_code)]
     pub fn clear_interval(id: i32) {
         global().clear_interval_with_handle(id);
     }
+
+    #[allow(dead_code)]
+    pub fn clear_timeout(id: i32) {
+        global().clear_timeout_with_handle(id);
+    }
+
     pub fn random_buffer(len: usize) -> Vec<u8> {
         let mut buffer = vec![0u8; len];
         getrandom::getrandom(buffer.as_mut_slice()).expect("generate random buffer failed");
@@ -293,6 +304,7 @@ impl Env for WebEnv {
 
         let request = web_sys::Request::new_with_str_and_init(&url, &request_options)
             .expect("request builder failed");
+
         let promise = global().fetch_with_request(&request);
         async {
             let resp = JsFuture::from(promise).await.map_err(|error| {
@@ -308,7 +320,7 @@ impl Env for WebEnv {
                 .dyn_into::<web_sys::Response>()
                 .expect("WebEnv::fetch: Response into web_sys::Response failed to be built");
             // status check and JSON extraction from response.
-            let resp = if resp.status() != 200 {
+            let resp = if ![200, 201].contains(&resp.status()) {
                 return Err(EnvError::Fetch(format!(
                     "Unexpected HTTP status code {}",
                     resp.status(),
