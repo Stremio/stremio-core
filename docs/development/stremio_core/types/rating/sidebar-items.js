@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Rating"],"mod":["rating","rating_info","request","response"],"struct":["RatingGetStatusRequest","RatingGetStatusResponse","RatingInfo","RatingSendRequest","RatingSendRequestBody","RatingSendResponse","RatingSendResponseRating"]};

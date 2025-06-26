@@ -406,7 +406,9 @@
 <a href="#405" id="405">405</a>
 <a href="#406" id="406">406</a>
 <a href="#407" id="407">407</a>
-<a href="#408" id="408">408</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::cmp::Ordering;
+<a href="#408" id="408">408</a>
+<a href="#409" id="409">409</a>
+<a href="#410" id="410">410</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::cmp::Ordering;
 
 <span class="kw">use </span>std::borrow::Cow;
 <span class="kw">use </span>std::collections::HashMap;
@@ -435,6 +437,8 @@
 ///
 /// For example when using the id as key in a [`HashMap`].
 </span><span class="kw">pub type </span>MetaItemId = String;
+
+<span class="kw">pub type </span>MetaItemType = String;
 
 <span class="attr">#[derive(Clone, PartialEq, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]

@@ -134,7 +134,13 @@
 <a href="#133" id="133">133</a>
 <a href="#134" id="134">134</a>
 <a href="#135" id="135">135</a>
-<a href="#136" id="136">136</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
 
 <span class="kw">use </span>once_cell::sync::Lazy;
 <span class="kw">use </span>percent_encoding::{AsciiSet, NON_ALPHANUMERIC};
@@ -197,6 +203,10 @@
     .remove(<span class="string">b'('</span>)
     .remove(<span class="string">b')'</span>);
 
+<span class="kw">pub const </span>USER_LIKES_SUPPORTED_ID_PREFIXES: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">"tt"</span>, <span class="string">"tmdb"</span>, <span class="string">"kitsu"</span>];
+
+<span class="kw">pub const </span>USER_LIKES_SUPPORTED_TYPES: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">"movie"</span>, <span class="string">"series"</span>];
+
 <span class="doccomment">/// In milliseconds
 </span><span class="kw">pub const </span>PLAYER_IGNORE_SEEK_AFTER: u64 = <span class="number">600_000</span>;
 
@@ -211,6 +221,8 @@
 </span><span class="kw">pub static </span>CINEMETA_URL: Lazy&lt;Url&gt; = Lazy::new(|| {
     Url::parse(<span class="string">"https://v3-cinemeta.strem.io/manifest.json"</span>).expect(<span class="string">"CINEMETA_URL parse failed"</span>)
 });
+<span class="kw">pub static </span>USER_LIKES_API_URL: Lazy&lt;Url&gt; =
+    Lazy::new(|| Url::parse(<span class="string">"https://likes.stremio.com"</span>).expect(<span class="string">"API_URL parse failed"</span>));
 <span class="kw">pub static </span>API_URL: Lazy&lt;Url&gt; =
     Lazy::new(|| Url::parse(<span class="string">"https://api.strem.io"</span>).expect(<span class="string">"API_URL parse failed"</span>));
 <span class="kw">pub static </span>LINK_API_URL: Lazy&lt;Url&gt; =

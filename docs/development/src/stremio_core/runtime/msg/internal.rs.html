@@ -158,7 +158,11 @@
 <a href="#157" id="157">157</a>
 <a href="#158" id="158">158</a>
 <a href="#159" id="159">159</a>
-<a href="#160" id="160">160</a></pre></div><pre class="rust"><code><span class="kw">use </span>url::Url;
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a></pre></div><pre class="rust"><code><span class="kw">use </span>url::Url;
 
 <span class="kw">use </span><span class="kw">crate</span>::models::common::ResourceLoadable;
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::CtxError;
@@ -174,6 +178,8 @@
 };
 <span class="kw">use </span><span class="kw">crate</span>::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 <span class="kw">use </span><span class="kw">crate</span>::types::profile::{Auth, AuthKey, Profile, User};
+<span class="kw">use </span><span class="kw">crate</span>::types::rating::{RatingGetStatusResponse, RatingSendResponse};
+<span class="kw">use </span><span class="kw">crate</span>::types::resource::MetaItemId;
 <span class="kw">use </span><span class="kw">crate</span>::types::streaming_server::{
     DeviceInfo, GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics, StatisticsRequest,
 };
@@ -317,5 +323,7 @@
     ),
     <span class="doccomment">/// When dismissed events changed
     </span>DismissedEventsChanged,
+    RatingGetStatusResult(MetaItemId, <span class="prelude-ty">Result</span>&lt;RatingGetStatusResponse, EnvError&gt;),
+    RatingSendResult(MetaItemId, <span class="prelude-ty">Result</span>&lt;RatingSendResponse, EnvError&gt;),
 }
 </code></pre></div></section></main></body></html>

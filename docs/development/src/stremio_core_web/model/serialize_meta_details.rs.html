@@ -397,7 +397,11 @@
 <a href="#396" id="396">396</a>
 <a href="#397" id="397">397</a>
 <a href="#398" id="398">398</a>
-<a href="#399" id="399">399</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::iter;
+<a href="#399" id="399">399</a>
+<a href="#400" id="400">400</a>
+<a href="#401" id="401">401</a>
+<a href="#402" id="402">402</a>
+<a href="#403" id="403">403</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::iter;
 
 <span class="kw">use </span><span class="kw">crate</span>::model::deep_links_ext::DeepLinksExt;
 
@@ -408,6 +412,7 @@
 <span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
 </span><span class="kw">use </span>{gloo_utils::format::JsValueSerdeExt, stremio_core::runtime::Env, wasm_bindgen::JsValue};
 
+<span class="kw">use </span>stremio_core::runtime::EnvError;
 <span class="kw">use </span>stremio_core::{
     constants::META_RESOURCE_NAME,
     deep_links::{MetaItemDeepLinks, StreamDeepLinks, VideoDeepLinks},
@@ -417,7 +422,7 @@
         meta_details::{MetaDetails, Selected <span class="kw">as </span>MetaDetailsSelected},
         streaming_server::StreamingServer,
     },
-    types::library::LibraryItem,
+    types::{library::LibraryItem, rating::RatingInfo},
 };
 
 <span class="kw">mod </span>model {
@@ -485,6 +490,7 @@
         <span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>String,
         <span class="kw">pub </span>addon: DescriptorPreview&lt;<span class="lifetime">'a</span>&gt;,
     }
+
     <span class="attr">#[derive(Serialize)]
     #[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span><span class="kw">pub struct </span>MetaDetails&lt;<span class="lifetime">'a</span>&gt; {
@@ -494,6 +500,7 @@
         <span class="kw">pub </span>streams: Vec&lt;ResourceLoadable&lt;<span class="lifetime">'a</span>, Vec&lt;Stream&lt;<span class="lifetime">'a</span>&gt;&gt;&gt;&gt;,
         <span class="kw">pub </span>meta_extensions: Vec&lt;MetaExtension&lt;<span class="lifetime">'a</span>&gt;&gt;,
         <span class="kw">pub </span>title: <span class="prelude-ty">Option</span>&lt;String&gt;,
+        <span class="kw">pub </span>rating_info: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;Loadable&lt;RatingInfo, EnvError&gt;&gt;,
     }
 }
 
@@ -793,6 +800,7 @@
                     })
                     .unwrap_or_else(|| meta_item.preview.name.to_owned())
             }),
+        rating_info: <span class="kw-2">&amp;</span>meta_details.rating_info,
     })
     .expect(<span class="string">"JsValue from model::MetaDetails"</span>)
 }

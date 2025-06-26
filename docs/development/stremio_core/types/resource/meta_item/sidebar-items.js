@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["PosterShape"],"struct":["Link","MetaItem","MetaItemBehaviorHints","MetaItemPreview","MetaItemPreviewLegacy","SeriesInfo","Trailer","Video","VideoSortedVecAdapter","VideoUniqueVecAdapter"],"type":["MetaItemId","VideoId"]};
+window.SIDEBAR_ITEMS = {"enum":["PosterShape"],"struct":["Link","MetaItem","MetaItemBehaviorHints","MetaItemPreview","MetaItemPreviewLegacy","SeriesInfo","Trailer","Video","VideoSortedVecAdapter","VideoUniqueVecAdapter"],"type":["MetaItemId","MetaItemType","VideoId"]};

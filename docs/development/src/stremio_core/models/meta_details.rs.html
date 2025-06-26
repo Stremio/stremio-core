@@ -576,30 +576,229 @@
 <a href="#575" id="575">575</a>
 <a href="#576" id="576">576</a>
 <a href="#577" id="577">577</a>
-<a href="#578" id="578">578</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{borrow::Cow, marker::PhantomData};
+<a href="#578" id="578">578</a>
+<a href="#579" id="579">579</a>
+<a href="#580" id="580">580</a>
+<a href="#581" id="581">581</a>
+<a href="#582" id="582">582</a>
+<a href="#583" id="583">583</a>
+<a href="#584" id="584">584</a>
+<a href="#585" id="585">585</a>
+<a href="#586" id="586">586</a>
+<a href="#587" id="587">587</a>
+<a href="#588" id="588">588</a>
+<a href="#589" id="589">589</a>
+<a href="#590" id="590">590</a>
+<a href="#591" id="591">591</a>
+<a href="#592" id="592">592</a>
+<a href="#593" id="593">593</a>
+<a href="#594" id="594">594</a>
+<a href="#595" id="595">595</a>
+<a href="#596" id="596">596</a>
+<a href="#597" id="597">597</a>
+<a href="#598" id="598">598</a>
+<a href="#599" id="599">599</a>
+<a href="#600" id="600">600</a>
+<a href="#601" id="601">601</a>
+<a href="#602" id="602">602</a>
+<a href="#603" id="603">603</a>
+<a href="#604" id="604">604</a>
+<a href="#605" id="605">605</a>
+<a href="#606" id="606">606</a>
+<a href="#607" id="607">607</a>
+<a href="#608" id="608">608</a>
+<a href="#609" id="609">609</a>
+<a href="#610" id="610">610</a>
+<a href="#611" id="611">611</a>
+<a href="#612" id="612">612</a>
+<a href="#613" id="613">613</a>
+<a href="#614" id="614">614</a>
+<a href="#615" id="615">615</a>
+<a href="#616" id="616">616</a>
+<a href="#617" id="617">617</a>
+<a href="#618" id="618">618</a>
+<a href="#619" id="619">619</a>
+<a href="#620" id="620">620</a>
+<a href="#621" id="621">621</a>
+<a href="#622" id="622">622</a>
+<a href="#623" id="623">623</a>
+<a href="#624" id="624">624</a>
+<a href="#625" id="625">625</a>
+<a href="#626" id="626">626</a>
+<a href="#627" id="627">627</a>
+<a href="#628" id="628">628</a>
+<a href="#629" id="629">629</a>
+<a href="#630" id="630">630</a>
+<a href="#631" id="631">631</a>
+<a href="#632" id="632">632</a>
+<a href="#633" id="633">633</a>
+<a href="#634" id="634">634</a>
+<a href="#635" id="635">635</a>
+<a href="#636" id="636">636</a>
+<a href="#637" id="637">637</a>
+<a href="#638" id="638">638</a>
+<a href="#639" id="639">639</a>
+<a href="#640" id="640">640</a>
+<a href="#641" id="641">641</a>
+<a href="#642" id="642">642</a>
+<a href="#643" id="643">643</a>
+<a href="#644" id="644">644</a>
+<a href="#645" id="645">645</a>
+<a href="#646" id="646">646</a>
+<a href="#647" id="647">647</a>
+<a href="#648" id="648">648</a>
+<a href="#649" id="649">649</a>
+<a href="#650" id="650">650</a>
+<a href="#651" id="651">651</a>
+<a href="#652" id="652">652</a>
+<a href="#653" id="653">653</a>
+<a href="#654" id="654">654</a>
+<a href="#655" id="655">655</a>
+<a href="#656" id="656">656</a>
+<a href="#657" id="657">657</a>
+<a href="#658" id="658">658</a>
+<a href="#659" id="659">659</a>
+<a href="#660" id="660">660</a>
+<a href="#661" id="661">661</a>
+<a href="#662" id="662">662</a>
+<a href="#663" id="663">663</a>
+<a href="#664" id="664">664</a>
+<a href="#665" id="665">665</a>
+<a href="#666" id="666">666</a>
+<a href="#667" id="667">667</a>
+<a href="#668" id="668">668</a>
+<a href="#669" id="669">669</a>
+<a href="#670" id="670">670</a>
+<a href="#671" id="671">671</a>
+<a href="#672" id="672">672</a>
+<a href="#673" id="673">673</a>
+<a href="#674" id="674">674</a>
+<a href="#675" id="675">675</a>
+<a href="#676" id="676">676</a>
+<a href="#677" id="677">677</a>
+<a href="#678" id="678">678</a>
+<a href="#679" id="679">679</a>
+<a href="#680" id="680">680</a>
+<a href="#681" id="681">681</a>
+<a href="#682" id="682">682</a>
+<a href="#683" id="683">683</a>
+<a href="#684" id="684">684</a>
+<a href="#685" id="685">685</a>
+<a href="#686" id="686">686</a>
+<a href="#687" id="687">687</a>
+<a href="#688" id="688">688</a>
+<a href="#689" id="689">689</a>
+<a href="#690" id="690">690</a>
+<a href="#691" id="691">691</a>
+<a href="#692" id="692">692</a>
+<a href="#693" id="693">693</a>
+<a href="#694" id="694">694</a>
+<a href="#695" id="695">695</a>
+<a href="#696" id="696">696</a>
+<a href="#697" id="697">697</a>
+<a href="#698" id="698">698</a>
+<a href="#699" id="699">699</a>
+<a href="#700" id="700">700</a>
+<a href="#701" id="701">701</a>
+<a href="#702" id="702">702</a>
+<a href="#703" id="703">703</a>
+<a href="#704" id="704">704</a>
+<a href="#705" id="705">705</a>
+<a href="#706" id="706">706</a>
+<a href="#707" id="707">707</a>
+<a href="#708" id="708">708</a>
+<a href="#709" id="709">709</a>
+<a href="#710" id="710">710</a>
+<a href="#711" id="711">711</a>
+<a href="#712" id="712">712</a>
+<a href="#713" id="713">713</a>
+<a href="#714" id="714">714</a>
+<a href="#715" id="715">715</a>
+<a href="#716" id="716">716</a>
+<a href="#717" id="717">717</a>
+<a href="#718" id="718">718</a>
+<a href="#719" id="719">719</a>
+<a href="#720" id="720">720</a>
+<a href="#721" id="721">721</a>
+<a href="#722" id="722">722</a>
+<a href="#723" id="723">723</a>
+<a href="#724" id="724">724</a>
+<a href="#725" id="725">725</a>
+<a href="#726" id="726">726</a>
+<a href="#727" id="727">727</a>
+<a href="#728" id="728">728</a>
+<a href="#729" id="729">729</a>
+<a href="#730" id="730">730</a>
+<a href="#731" id="731">731</a>
+<a href="#732" id="732">732</a>
+<a href="#733" id="733">733</a>
+<a href="#734" id="734">734</a>
+<a href="#735" id="735">735</a>
+<a href="#736" id="736">736</a>
+<a href="#737" id="737">737</a>
+<a href="#738" id="738">738</a>
+<a href="#739" id="739">739</a>
+<a href="#740" id="740">740</a>
+<a href="#741" id="741">741</a>
+<a href="#742" id="742">742</a>
+<a href="#743" id="743">743</a>
+<a href="#744" id="744">744</a>
+<a href="#745" id="745">745</a>
+<a href="#746" id="746">746</a>
+<a href="#747" id="747">747</a>
+<a href="#748" id="748">748</a>
+<a href="#749" id="749">749</a>
+<a href="#750" id="750">750</a>
+<a href="#751" id="751">751</a>
+<a href="#752" id="752">752</a>
+<a href="#753" id="753">753</a>
+<a href="#754" id="754">754</a>
+<a href="#755" id="755">755</a>
+<a href="#756" id="756">756</a>
+<a href="#757" id="757">757</a>
+<a href="#758" id="758">758</a>
+<a href="#759" id="759">759</a>
+<a href="#760" id="760">760</a>
+<a href="#761" id="761">761</a>
+<a href="#762" id="762">762</a>
+<a href="#763" id="763">763</a>
+<a href="#764" id="764">764</a>
+<a href="#765" id="765">765</a>
+<a href="#766" id="766">766</a>
+<a href="#767" id="767">767</a>
+<a href="#768" id="768">768</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{borrow::Cow, marker::PhantomData};
 
+<span class="kw">use </span>enclose::enclose;
+<span class="kw">use </span>futures::FutureExt;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 
 <span class="kw">use </span>stremio_watched_bitfield::WatchedBitField;
 
 <span class="kw">use crate</span>::{
-    constants::{LIBRARY_COLLECTION_NAME, META_RESOURCE_NAME, STREAM_RESOURCE_NAME},
+    constants::{
+        LIBRARY_COLLECTION_NAME, META_RESOURCE_NAME, STREAM_RESOURCE_NAME,
+        USER_LIKES_SUPPORTED_ID_PREFIXES, USER_LIKES_SUPPORTED_TYPES,
+    },
     models::{
         common::{
             eq_update, resources_update, resources_update_with_vector_content, Loadable,
             ResourceLoadable, ResourcesAction,
         },
-        ctx::Ctx,
+        ctx::{Ctx, CtxError},
     },
     runtime::{
-        msg::{Action, ActionLoad, ActionMetaDetails, Internal, Msg},
-        Effects, Env, UpdateWithCtx,
+        msg::{Action, ActionLoad, ActionMetaDetails, Event, Internal, Msg},
+        Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx,
     },
     types::{
         addon::{AggrRequest, ResourcePath, ResourceRequest},
         api::{DatastoreCommand, DatastoreRequest},
         library::{LibraryBucket, LibraryItem},
-        profile::Profile,
+        profile::{AuthKey, Profile},
+        rating::{
+            Rating, RatingGetStatusRequest, RatingGetStatusResponse, RatingInfo, RatingSendRequest,
+            RatingSendResponse,
+        },
         resource::{MetaItem, Stream},
         streams::StreamsBucket,
     },
@@ -629,6 +828,7 @@
     /// Finds a proper stream for the binge watching group and matching stream source.
     </span><span class="kw">pub </span>last_used_stream: <span class="prelude-ty">Option</span>&lt;ResourceLoadable&lt;<span class="prelude-ty">Option</span>&lt;Stream&gt;&gt;&gt;,
     <span class="kw">pub </span>library_item: <span class="prelude-ty">Option</span>&lt;LibraryItem&gt;,
+    <span class="kw">pub </span>rating_info: <span class="prelude-ty">Option</span>&lt;Loadable&lt;RatingInfo, EnvError&gt;&gt;,
     <span class="attr">#[serde(skip_serializing)]
     </span><span class="kw">pub </span>watched: <span class="prelude-ty">Option</span>&lt;WatchedBitField&gt;,
 }
@@ -663,11 +863,16 @@
                 <span class="kw">let </span>watched_effects =
                     watched_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.watched, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_items, <span class="kw-2">&amp;</span><span class="self">self</span>.library_item);
                 <span class="kw">let </span>library_item_sync_effects = library_item_sync(<span class="kw-2">&amp;</span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span>ctx.profile);
+
+                <span class="kw">let </span>rating_info_effects =
+                    rating_info_update::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.rating_info, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span>ctx.profile);
+
                 library_item_sync_effects
                     .join(selected_effects)
                     .join(selected_override_effects)
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
+                    .join(rating_info_effects)
                     .join(streams_effects)
                     .join(last_used_stream_effects)
                     .join(library_item_effects)
@@ -681,6 +886,8 @@
                 <span class="kw">let </span>library_item_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="prelude-val">None</span>);
                 <span class="kw">let </span>last_used_stream_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.last_used_stream, <span class="prelude-val">None</span>);
                 <span class="kw">let </span>watched_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.watched, <span class="prelude-val">None</span>);
+                <span class="kw">let </span>rating_info_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.rating_info, <span class="prelude-val">None</span>);
+
                 selected_effects
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
@@ -688,6 +895,7 @@
                     .join(last_used_stream_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+                    .join(rating_info_effects)
             }
             Msg::Action(Action::MetaDetails(ActionMetaDetails::MarkAsWatched(is_watched))) =&gt; {
                 <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.library_item {
@@ -740,6 +948,25 @@
                 }
                 <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
             },
+            Msg::Action(Action::MetaDetails(ActionMetaDetails::Rate(rating)))
+                <span class="kw">if </span><span class="self">self</span>.rating_info.is_some() =&gt;
+            {
+                <span class="kw">match </span>(<span class="self">self</span>.selected.as_ref(), ctx.profile.auth.as_ref()) {
+                    (<span class="prelude-val">Some</span>(selected), <span class="prelude-val">Some</span>(auth)) =&gt; {
+                        <span class="kw">let </span>rating_info_effects =
+                            eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.rating_info, <span class="prelude-val">Some</span>(Loadable::Loading));
+
+                        Effects::one(send_rating::&lt;E&gt;(
+                            auth.key.to_owned(),
+                            <span class="kw-2">&amp;</span>selected.meta_path,
+                            rating,
+                        ))
+                        .unchanged()
+                        .join(rating_info_effects)
+                    }
+                    <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
+                }
+            }
             Msg::Internal(Internal::ResourceRequestResult(request, result))
                 <span class="kw">if </span>request.path.resource == META_RESOURCE_NAME =&gt;
             {
@@ -797,6 +1024,67 @@
                 );
                 streams_effects.join(last_used_stream_effects)
             }
+            Msg::Internal(Internal::RatingGetStatusResult(meta_id, result))
+                <span class="kw">if </span><span class="self">self
+                    </span>.selected
+                    .as_ref()
+                    .is_some_and(|selected| selected.meta_path.id == <span class="kw-2">*</span>meta_id) =&gt;
+            {
+                <span class="kw">let </span>rating_info_loadable = <span class="kw">match </span>result {
+                    <span class="prelude-val">Ok</span>(rating) =&gt; Loadable::Ready(RatingInfo {
+                        meta_id: meta_id.to_owned(),
+                        status: rating.status.to_owned(),
+                    }),
+                    <span class="prelude-val">Err</span>(e) =&gt; Loadable::Err(e.to_owned()),
+                };
+
+                eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.rating_info, <span class="prelude-val">Some</span>(rating_info_loadable))
+            }
+            Msg::Internal(Internal::RatingSendResult(meta_id, result))
+                <span class="kw">if </span><span class="self">self
+                    </span>.selected
+                    .as_ref()
+                    .is_some_and(|selected| selected.meta_path.id == <span class="kw-2">*</span>meta_id) =&gt;
+            {
+                <span class="kw">match </span>result {
+                    <span class="prelude-val">Ok</span>(response) =&gt; {
+                        <span class="kw">let </span>status = response
+                            .rating
+                            .as_ref()
+                            .map(|rating| rating.status.to_owned());
+
+                        <span class="kw">let </span>rating_info_effets = eq_update(
+                            <span class="kw-2">&amp;mut </span><span class="self">self</span>.rating_info,
+                            <span class="prelude-val">Some</span>(Loadable::Ready(RatingInfo {
+                                meta_id: meta_id.to_owned(),
+                                status: status.to_owned(),
+                            })),
+                        );
+
+                        Effects::one(Effect::Msg(Box::new(Msg::Event(Event::MetaItemRated {
+                            id: meta_id.to_owned(),
+                        }))))
+                        .unchanged()
+                        .join(rating_info_effets)
+                    }
+                    <span class="prelude-val">Err</span>(error) =&gt; {
+                        <span class="kw">let </span>rating_info_effets =
+                            eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.rating_info, <span class="prelude-val">Some</span>(Loadable::Err(error.to_owned())));
+
+                        Effects::msg(Msg::Event(Event::Error {
+                            error: CtxError::Env(EnvError::Other(
+                                <span class="string">"Failed to send rating"</span>.to_owned(),
+                            )),
+                            source: Event::MetaItemRated {
+                                id: meta_id.to_owned(),
+                            }
+                            .into(),
+                        }))
+                        .unchanged()
+                        .join(rating_info_effets)
+                    }
+                }
+            }
             Msg::Internal(Internal::LibraryChanged(<span class="kw">_</span>)) =&gt; {
                 <span class="kw">let </span>library_item_effects = library_item_update::&lt;E&gt;(
                     <span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item,
@@ -831,12 +1119,16 @@
                 );
                 <span class="kw">let </span>watched_effects =
                     watched_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.watched, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_items, <span class="kw-2">&amp;</span><span class="self">self</span>.library_item);
+                <span class="kw">let </span>rating_info_effects =
+                    rating_info_update::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.rating_info, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span>ctx.profile);
+
                 meta_items_effects
                     .join(meta_streams_effects)
                     .join(streams_effects)
                     .join(last_used_stream_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+                    .join(rating_info_effects)
             }
             <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
         }
@@ -948,6 +1240,94 @@
         ),
         <span class="kw">_ </span>=&gt; eq_update(meta_items, <span class="macro">vec!</span>[]),
     }
+}
+
+<span class="kw">fn </span>supported_rating_id(id: <span class="kw-2">&amp;</span>str) -&gt; bool {
+    USER_LIKES_SUPPORTED_ID_PREFIXES
+        .iter()
+        .any(|prefix| id.starts_with(prefix))
+}
+
+<span class="kw">fn </span>supported_rating_type(r#type: <span class="kw-2">&amp;</span>str) -&gt; bool {
+    USER_LIKES_SUPPORTED_TYPES.iter().any(|t| r#type == <span class="kw-2">*</span>t)
+}
+
+<span class="kw">fn </span>rating_info_update&lt;E: Env + <span class="lifetime">'static</span>&gt;(
+    rating_info: <span class="kw-2">&amp;mut </span><span class="prelude-ty">Option</span>&lt;Loadable&lt;RatingInfo, EnvError&gt;&gt;,
+    selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
+    profile: <span class="kw-2">&amp;</span>Profile,
+) -&gt; Effects {
+    <span class="kw">match </span>(selected, profile.auth.as_ref()) {
+        (<span class="prelude-val">Some</span>(selected), <span class="prelude-val">Some</span>(auth)) =&gt; {
+            <span class="kw">if </span>supported_rating_id(<span class="kw-2">&amp;</span>selected.meta_path.id)
+                &amp;&amp; supported_rating_type(<span class="kw-2">&amp;</span>selected.meta_path.r#type)
+            {
+                <span class="kw">let </span>should_update = <span class="kw">match </span>rating_info {
+                    <span class="prelude-val">Some</span>(Loadable::Ready(info)) =&gt; info.meta_id != selected.meta_path.id,
+                    <span class="kw">_ </span>=&gt; <span class="bool-val">true</span>,
+                };
+
+                <span class="kw">if </span>should_update {
+                    <span class="kw">let </span>rating_info_effect = eq_update(rating_info, <span class="prelude-val">Some</span>(Loadable::Loading));
+                    Effects::one(get_rating::&lt;E&gt;(auth.key.to_owned(), <span class="kw-2">&amp;</span>selected.meta_path))
+                        .unchanged()
+                        .join(rating_info_effect)
+                } <span class="kw">else </span>{
+                    Effects::none().unchanged()
+                }
+            } <span class="kw">else </span>{
+                eq_update(rating_info, <span class="prelude-val">None</span>)
+            }
+        }
+        <span class="kw">_ </span>=&gt; eq_update(rating_info, <span class="prelude-val">None</span>),
+    }
+}
+
+<span class="kw">fn </span>get_rating&lt;E: Env + <span class="lifetime">'static</span>&gt;(auth_key: AuthKey, meta_path: <span class="kw-2">&amp;</span>ResourcePath) -&gt; Effect {
+    <span class="kw">let </span>meta_id = meta_path.id.to_owned();
+
+    <span class="kw">let </span>request = RatingGetStatusRequest {
+        auth_key,
+        meta_item_id: meta_id.to_owned(),
+        meta_item_type: meta_path.r#type.to_owned(),
+    };
+
+    EffectFuture::Concurrent(
+        E::fetch::&lt;<span class="kw">_</span>, RatingGetStatusResponse&gt;(request.into())
+            .map(<span class="macro">enclose!</span>((meta_id) <span class="kw">move </span>|result| {
+                Msg::Internal(Internal::RatingGetStatusResult(
+                    meta_id, result,
+                ))
+            }))
+            .boxed_env(),
+    )
+    .into()
+}
+
+<span class="kw">fn </span>send_rating&lt;E: Env + <span class="lifetime">'static</span>&gt;(
+    auth_key: AuthKey,
+    meta_path: <span class="kw-2">&amp;</span>ResourcePath,
+    rating: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Rating&gt;,
+) -&gt; Effect {
+    <span class="kw">let </span>meta_id = meta_path.id.to_owned();
+
+    <span class="kw">let </span>request = RatingSendRequest {
+        auth_key,
+        meta_item_id: meta_id.to_owned(),
+        meta_item_type: meta_path.r#type.to_owned(),
+        rating: rating.to_owned(),
+    };
+
+    EffectFuture::Concurrent(
+        E::fetch::&lt;<span class="kw">_</span>, RatingSendResponse&gt;(request.into())
+            .map(<span class="macro">enclose!</span>((meta_id) <span class="kw">move </span>|result| {
+                Msg::Internal(Internal::RatingSendResult(
+                    meta_id, result,
+                ))
+            }))
+            .boxed_env(),
+    )
+    .into()
 }
 
 <span class="kw">fn </span>meta_streams_update(

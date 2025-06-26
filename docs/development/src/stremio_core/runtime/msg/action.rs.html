@@ -256,13 +256,13 @@
 <a href="#255" id="255">255</a>
 <a href="#256" id="256">256</a>
 <a href="#257" id="257">257</a>
-<a href="#258" id="258">258</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
 
 <span class="kw">use </span>serde::Deserialize;
 <span class="kw">use </span>url::Url;
 
-<span class="kw">use </span><span class="kw">crate</span>::types::profile::Password;
-<span class="kw">use </span><span class="kw">crate</span>::types::streams::StreamItemState;
 <span class="kw">use crate</span>::{
     models::{
         addon_details::Selected <span class="kw">as </span>AddonDetailsSelected,
@@ -279,12 +279,14 @@
         addon::Descriptor,
         api::AuthRequest,
         library::LibraryItemId,
-        profile::Settings <span class="kw">as </span>ProfileSettings,
+        profile::{Password, Settings <span class="kw">as </span>ProfileSettings},
+        rating::Rating,
         resource::{MetaItemId, MetaItemPreview, Video},
         streaming_server::{
             Settings <span class="kw">as </span>StreamingServerSettings,
             StatisticsRequest <span class="kw">as </span>StreamingServerStatisticsRequest,
         },
+        streams::StreamItemState,
     },
 };
 
@@ -377,6 +379,8 @@
     </span>MarkVideoAsWatched(Video, bool),
     <span class="doccomment">/// Mark all videos from given season as watched
     </span>MarkSeasonAsWatched(u32, bool),
+    <span class="doccomment">/// Rate the current meta item
+    </span>Rate(<span class="prelude-ty">Option</span>&lt;Rating&gt;),
 }
 
 <span class="attr">#[derive(Clone, Deserialize, Debug)]

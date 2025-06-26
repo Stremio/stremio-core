@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["RatingGetStatusResponse","RatingSendResponse","RatingSendResponseRating"]};

@@ -156,11 +156,16 @@
 <a href="#155" id="155">155</a>
 <a href="#156" id="156">156</a>
 <a href="#157" id="157">157</a>
-<a href="#158" id="158">158</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::ctx::CtxError;
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::ctx::CtxError;
 <span class="kw">use </span><span class="kw">crate</span>::models::player::AnalyticsContext <span class="kw">as </span>PlayerAnalyticsContext;
 <span class="kw">use </span><span class="kw">crate</span>::types::api::AuthRequest;
 <span class="kw">use </span><span class="kw">crate</span>::types::library::LibraryItemId;
 <span class="kw">use </span><span class="kw">crate</span>::types::profile::{AuthKey, Settings, UID};
+<span class="kw">use </span><span class="kw">crate</span>::types::resource::MetaItemId;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>url::Url;
 
@@ -289,6 +294,9 @@
     </span>LibraryItemMarkedAsWatched {
         id: LibraryItemId,
         is_watched: bool,
+    },
+    MetaItemRated {
+        id: MetaItemId,
     },
     <span class="doccomment">/// The notifications for the given LibraryItemId have been dismissed
     </span>NotificationsDismissed {

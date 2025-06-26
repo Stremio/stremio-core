@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["last_used_stream_update","library_item_sync","library_item_update","meta_items_update","meta_streams_update","selected_guess_stream_update","streams_update","watched_update"],"struct":["MetaDetails","Selected"]};
+window.SIDEBAR_ITEMS = {"fn":["get_rating","last_used_stream_update","library_item_sync","library_item_update","meta_items_update","meta_streams_update","rating_info_update","selected_guess_stream_update","send_rating","streams_update","supported_rating_id","supported_rating_type","watched_update"],"struct":["MetaDetails","Selected"]};
