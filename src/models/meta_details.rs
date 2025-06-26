@@ -28,8 +28,8 @@ use crate::{
         library::{LibraryBucket, LibraryItem},
         profile::{AuthKey, Profile},
         rating::{
-            RatingGetStatusRequest, RatingGetStatusResponse, RatingInfo, RatingSendRequest,
-            RatingSendResponse, Status,
+            Rating, RatingGetStatusRequest, RatingGetStatusResponse, RatingInfo, RatingSendRequest,
+            RatingSendResponse,
         },
         resource::{MetaItem, Stream},
         streams::StreamsBucket,
@@ -539,7 +539,7 @@ fn get_rating<E: Env + 'static>(auth_key: AuthKey, meta_path: &ResourcePath) -> 
 fn send_rating<E: Env + 'static>(
     auth_key: AuthKey,
     meta_path: &ResourcePath,
-    rating: &Option<Status>,
+    rating: &Option<Rating>,
 ) -> Effect {
     let meta_id = meta_path.id.to_owned();
 

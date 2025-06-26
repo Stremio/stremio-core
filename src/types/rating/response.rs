@@ -1,17 +1,17 @@
 use serde::{Deserialize, Serialize};
 
-use crate::types::rating::status::Status;
+use crate::types::rating::rating::Rating;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RatingGetStatusResponse {
-    pub status: Option<Status>,
+    pub status: Option<Rating>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RatingSendResponseRating {
-    pub status: Status,
+    pub status: Rating,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
