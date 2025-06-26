@@ -81,7 +81,7 @@ impl<T> ResourceLoadable<T> {
     pub fn update<E>(&mut self, action: ResourceAction) -> Effects
     where
         E: Env + 'static,
-        T: TryFrom<ResourceResponse, Error = &'static str>,
+        T: TryFrom<ResourceResponse, Error = derive_more::TryIntoError<ResourceResponse>>,
     {
         resource_update::<E, T>(self, action)
     }
@@ -91,7 +91,7 @@ impl<T> ResourceLoadable<Vec<T>> {
     pub fn update_with_vector_content<E>(&mut self, action: ResourceAction) -> Effects
     where
         E: Env + 'static,
-        Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
+        Vec<T>: TryFrom<ResourceResponse, Error = derive_more::TryIntoError<ResourceResponse>>,
     {
         resource_update_with_vector_content::<E, T>(self, action)
     }
@@ -100,7 +100,7 @@ impl<T> ResourceLoadable<Vec<T>> {
 pub fn resource_update<E, T>(resource: &mut ResourceLoadable<T>, action: ResourceAction) -> Effects
 where
     E: Env + 'static,
-    T: TryFrom<ResourceResponse, Error = &'static str>,
+    T: TryFrom<ResourceResponse, Error = derive_more::TryIntoError<ResourceResponse>>,
 {
     match action {
         ResourceAction::ResourceRequested { request }
@@ -135,7 +135,7 @@ pub fn resource_update_with_vector_content<E, T>(
 ) -> Effects
 where
     E: Env + 'static,
-    Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
+    Vec<T>: TryFrom<ResourceResponse, Error = derive_more::TryIntoError<ResourceResponse>>,
 {
     match action {
         ResourceAction::ResourceRequestResult { request, result }
@@ -155,7 +155,9 @@ pub fn resources_update<E, T>(
 ) -> Effects
 where
     E: Env + 'static,
-    T: TryFrom<ResourceResponse, Error = &'static str> + Clone + PartialEq,
+    T: TryFrom<ResourceResponse, Error = derive_more::TryIntoError<ResourceResponse>>
+        + Clone
+        + PartialEq,
 {
     match action {
         ResourcesAction::ResourcesRequested {
@@ -226,7 +228,7 @@ pub fn resources_update_with_vector_content<E, T>(
 where
     E: Env + 'static,
     T: Clone + PartialEq,
-    Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
+    Vec<T>: TryFrom<ResourceResponse, Error = derive_more::TryIntoError<ResourceResponse>>,
 {
     match action {
         ResourcesAction::ResourceRequestResult { request, result } => {
@@ -248,12 +250,12 @@ fn resource_content_from_result<T>(
     result: &Result<ResourceResponse, EnvError>,
 ) -> Loadable<T, ResourceError>
 where
-    T: TryFrom<ResourceResponse, Error = &'static str>,
+    T: TryFrom<ResourceResponse, Error = derive_more::TryIntoError<ResourceResponse>>,
 {
     match result {
         Ok(result) => match T::try_from(result.to_owned()) {
             Ok(content) => Loadable::Ready(content),
-            Err(error) => Loadable::Err(ResourceError::UnexpectedResponse(error.to_owned())),
+            Err(error) => Loadable::Err(ResourceError::UnexpectedResponse(error.to_string())),
         },
         Err(error) => Loadable::Err(ResourceError::Env(error.to_owned())),
     }
@@ -263,7 +265,7 @@ fn resource_vector_content_from_result<T>(
     result: &Result<ResourceResponse, EnvError>,
 ) -> Loadable<Vec<T>, ResourceError>
 where
-    Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
+    Vec<T>: TryFrom<ResourceResponse, Error = derive_more::TryIntoError<ResourceResponse>>,
 {
     match result {
         Ok(result) => match <Vec<T>>::try_from(result.to_owned()) {
@@ -274,7 +276,7 @@ where
                     Loadable::Ready(content)
                 }
             }
-            Err(error) => Loadable::Err(ResourceError::UnexpectedResponse(error.to_owned())),
+            Err(error) => Loadable::Err(ResourceError::UnexpectedResponse(error.to_string())),
         },
         Err(error) => Loadable::Err(ResourceError::Env(error.to_owned())),
     }

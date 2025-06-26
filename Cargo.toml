@@ -5,7 +5,7 @@ authors = ["Smart Code OOD"]
 edition = "2021"
 
 # When upgrading MSRV make sure to update the msrv.yaml workflow
-rust-version = "1.71"
+rust-version = "1.77"
 
 [profile.release]
 lto = true
@@ -47,13 +47,16 @@ serde_json = "1.0.*"
 serde_path_to_error = "0.1"
 serde_url_params = "0.2"
 serde_bencode = "0.2.*"
-stremio-serde-hex = "0.1.*" # keep track of https://github.com/fspmarshall/serde-hex/pull/8
+# keep track of https://github.com/fspmarshall/serde-hex/pull/8
+# Keep track of https://github.com/fspmarshall/serde-hex/pull/19
+stremio-serde-hex = "0.1"
+
 serde_with = { version = "3.5", features = ["macros", "chrono_0_4"] }
 
-flate2 = "1.0.*"
-futures = "0.3.*"
+flate2 = "1"
+futures = "0.3"
 
-http = "0.2.*"
+http = "1.2"
 url = { version = "2.4", features = ["serde"] }
 percent-encoding = "2.1"
 
@@ -61,28 +64,28 @@ percent-encoding = "2.1"
 chrono = { version = "0.4", features = ["serde"] }
 
 semver = { version = "1", features = ["serde"] }
-base64 = "0.21"
+base64 = "0.22"
 sha1 = "0.10"
 sha2 = "0.10"
 
 either = "1.6"
 enclose = "1.1"
 derivative = "2.2"
-derive_more = "0.99"
+derive_more = { version = "2", features = ["from", "into", "into_iterator", "try_into", "deref"] }
 boolinator = "2.4"
-strum = { version = "0.25", features = ["derive"] }
+strum = { version = "0.27", features = ["derive"] }
 
 lazysort = "0.2"
 
 once_cell = "1"
-itertools = "0.11"
+itertools = "0.14"
 
 magnet-url = "2.0"
 hex = "0.4"
 
 # error handling
 anyhow = "1.0"
-thiserror = "1"
+thiserror = "2"
 
 regex = "1.8"
 

@@ -277,6 +277,18 @@ pub trait Env {
                         .await?;
                     schema_version = 16;
                 }
+                if schema_version == 16 {
+                    migrate_storage_schema_to_v17::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 17;
+                }
+                if schema_version == 17 {
+                    migrate_storage_schema_to_v18::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 18;
+                }
                 if schema_version != SCHEMA_VERSION {
                     panic!(
                         "Storage schema version must be upgraded from {} to {}",
@@ -636,6 +648,46 @@ fn migrate_storage_schema_to_v16<E: Env>() -> TryEnvFuture<()> {
         .boxed_env()
 }
 
+fn migrate_storage_schema_to_v17<E: Env>() -> TryEnvFuture<()> {
+    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
+        .and_then(|mut profile| {
+            match profile
+                .as_mut()
+                .and_then(|profile| profile.as_object_mut())
+                .and_then(|profile| profile.get_mut("settings"))
+                .and_then(|settings| settings.as_object_mut())
+            {
+                Some(settings) => {
+                    settings.insert("quitOnClose".to_owned(), serde_json::Value::Bool(true));
+                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
+                }
+                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+            }
+        })
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&17)))
+        .boxed_env()
+}
+
+fn migrate_storage_schema_to_v18<E: Env>() -> TryEnvFuture<()> {
+    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
+        .and_then(|mut profile| {
+            match profile
+                .as_mut()
+                .and_then(|profile| profile.as_object_mut())
+                .and_then(|profile| profile.get_mut("settings"))
+                .and_then(|settings| settings.as_object_mut())
+            {
+                Some(settings) => {
+                    settings.insert("hideSpoilers".to_owned(), serde_json::Value::Bool(false));
+                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
+                }
+                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+            }
+        })
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&18)))
+        .boxed_env()
+}
+
 #[cfg(test)]
 mod test {
     use serde_json::{json, Value};
@@ -649,7 +701,8 @@ mod test {
                 migrate_storage_schema_to_v10, migrate_storage_schema_to_v11,
                 migrate_storage_schema_to_v12, migrate_storage_schema_to_v13,
                 migrate_storage_schema_to_v14, migrate_storage_schema_to_v15,
-                migrate_storage_schema_to_v16, migrate_storage_schema_to_v6,
+                migrate_storage_schema_to_v16, migrate_storage_schema_to_v17,
+                migrate_storage_schema_to_v18, migrate_storage_schema_to_v6,
                 migrate_storage_schema_to_v7, migrate_storage_schema_to_v8,
                 migrate_storage_schema_to_v9,
             },
@@ -1219,5 +1272,87 @@ mod test {
                 .expect("Should have the profile set"),
             "Profile should match"
         );
+    }
+
+    #[tokio::test]
+    async fn test_migration_from_16_to_17() {
+        {
+            let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+            let profile_before = json!({
+                "settings": {}
+            });
+
+            let migrated_profile = json!({
+                "settings": {
+                    "quitOnClose": true,
+                }
+            });
+
+            // setup storage for migration
+            set_profile_and_schema_version(&profile_before, 16);
+
+            // migrate storage
+            migrate_storage_schema_to_v17::<TestEnv>()
+                .await
+                .expect("Should migrate");
+
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &17.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+            assert_eq!(
+                &migrated_profile.to_string(),
+                storage
+                    .get(PROFILE_STORAGE_KEY)
+                    .expect("Should have the profile set"),
+                "Profile should match"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_migration_from_17_to_18() {
+        {
+            let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+            let profile_before = json!({
+                "settings": {}
+            });
+
+            let migrated_profile = json!({
+                "settings": {
+                    "hideSpoilers": false,
+                }
+            });
+
+            // setup storage for migration
+            set_profile_and_schema_version(&profile_before, 17);
+
+            // migrate storage
+            migrate_storage_schema_to_v18::<TestEnv>()
+                .await
+                .expect("Should migrate");
+
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &18.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+            assert_eq!(
+                &migrated_profile.to_string(),
+                storage
+                    .get(PROFILE_STORAGE_KEY)
+                    .expect("Should have the profile set"),
+                "Profile should match"
+            );
+        }
     }
 }

@@ -9,6 +9,7 @@ use url::Url;
 #[cfg(feature = "wasm")]
 use {gloo_utils::format::JsValueSerdeExt, stremio_core::runtime::Env, wasm_bindgen::JsValue};
 
+use stremio_core::runtime::EnvError;
 use stremio_core::{
     constants::META_RESOURCE_NAME,
     deep_links::{MetaItemDeepLinks, StreamDeepLinks, VideoDeepLinks},
@@ -18,7 +19,7 @@ use stremio_core::{
         meta_details::{MetaDetails, Selected as MetaDetailsSelected},
         streaming_server::StreamingServer,
     },
-    types::library::LibraryItem,
+    types::{library::LibraryItem, rating::RatingInfo},
 };
 
 mod model {
@@ -86,6 +87,7 @@ mod model {
         pub name: &'a String,
         pub addon: DescriptorPreview<'a>,
     }
+
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct MetaDetails<'a> {
@@ -95,6 +97,7 @@ mod model {
         pub streams: Vec<ResourceLoadable<'a, Vec<Stream<'a>>>>,
         pub meta_extensions: Vec<MetaExtension<'a>>,
         pub title: Option<String>,
+        pub rating_info: &'a Option<Loadable<RatingInfo, EnvError>>,
     }
 }
 
@@ -394,6 +397,7 @@ pub fn serialize_meta_details<E: Env + 'static>(
                     })
                     .unwrap_or_else(|| meta_item.preview.name.to_owned())
             }),
+        rating_info: &meta_details.rating_info,
     })
     .expect("JsValue from model::MetaDetails")
 }

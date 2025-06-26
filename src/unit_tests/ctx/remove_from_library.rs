@@ -42,7 +42,7 @@ fn actionctx_removefromlibrary() {
         }
     }
     let library_item = LibraryItem {
-        id: "id".to_owned(),
+        id: "id".into(),
         removed: false,
         temp: false,
         ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
@@ -65,7 +65,7 @@ fn actionctx_removefromlibrary() {
     STORAGE.write().unwrap().insert(
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
         serde_json::to_string(&LibraryBucket::new(
-            Some("id".to_owned()),
+            Some("id".into()),
             vec![library_item.to_owned()],
         ))
         .unwrap(),
@@ -77,9 +77,10 @@ fn actionctx_removefromlibrary() {
                     auth: Some(Auth {
                         key: AuthKey("auth_key".to_owned()),
                         user: User {
-                            id: "user_id".to_owned(),
+                            id: "user_id".into(),
                             email: "user_email".to_owned(),
                             fb_id: None,
+                            apple_id: None,
                             avatar: None,
                             last_modified: TestEnv::now(),
                             date_registered: TestEnv::now(),
@@ -91,12 +92,13 @@ fn actionctx_removefromlibrary() {
                                 marketing: true,
                                 from: Some("tests".to_owned()),
                             },
+                            ..Default::default()
                         },
                     }),
                     ..Default::default()
                 },
                 LibraryBucket {
-                    uid: Some("id".to_owned()),
+                    uid: Some("id".into()),
                     items: vec![("id".to_owned(), library_item.to_owned())]
                         .into_iter()
                         .collect(),
@@ -133,9 +135,9 @@ fn actionctx_removefromlibrary() {
             .read()
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<LibraryBucket>(data).unwrap()
-                    == LibraryBucket::new(Some("id".to_owned()), vec![library_item_removed])
+                    == LibraryBucket::new(Some("id".into()), vec![library_item_removed])
             }),
         "Library recent slot updated successfully in storage"
     );
@@ -163,7 +165,7 @@ fn actionctx_removefromlibrary_not_added() {
         ctx: Ctx,
     }
     let library_item = LibraryItem {
-        id: "id".to_owned(),
+        id: "id".into(),
         removed: false,
         temp: false,
         ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
@@ -222,7 +224,7 @@ fn actionctx_removefromlibrary_not_added() {
             .read()
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<LibraryBucket>(data).unwrap()
                     == LibraryBucket::new(None, vec![library_item])
             }),

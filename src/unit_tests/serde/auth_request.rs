@@ -18,6 +18,12 @@ fn auth_request() {
             AuthRequest::Facebook {
                 token: "token".to_owned(),
             },
+            AuthRequest::Apple {
+                token: "token".to_owned(),
+                sub: "sub".to_owned(),
+                email: "email".to_owned(),
+                name: "name".to_owned(),
+            },
             AuthRequest::Register {
                 email: "email".to_owned(),
                 password: "password".to_owned(),
@@ -26,7 +32,7 @@ fn auth_request() {
         ],
         &[
             vec![
-                Token::Seq { len: Some(4) },
+                Token::Seq { len: Some(5) },
                 Token::Struct {
                     name: "AuthRequest",
                     len: 4,
@@ -57,6 +63,21 @@ fn auth_request() {
                 Token::Str("Facebook"),
                 Token::Str("token"),
                 Token::Str("token"),
+                Token::StructEnd,
+                Token::Struct {
+                    name: "AuthRequest",
+                    len: 5,
+                },
+                Token::Str("type"),
+                Token::Str("Apple"),
+                Token::Str("token"),
+                Token::Str("token"),
+                Token::Str("sub"),
+                Token::Str("sub"),
+                Token::Str("email"),
+                Token::Str("email"),
+                Token::Str("name"),
+                Token::Str("name"),
                 Token::StructEnd,
                 Token::Struct {
                     name: "AuthRequest",

@@ -5,7 +5,7 @@ use serde_test::{assert_ser_tokens, Token};
 fn library_bucket_ref() {
     assert_ser_tokens(
         &LibraryBucketRef {
-            uid: &Some("uid".to_owned()),
+            uid: &Some("uid".into()),
             items: [].iter().cloned().collect(),
         },
         &[

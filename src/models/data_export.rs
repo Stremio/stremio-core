@@ -50,6 +50,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for DataExport {
                     }
                 }
             }
+            Msg::Action(Action::Unload) => eq_update(&mut self.export_url, None),
             Msg::Internal(Internal::DataExportResult(auth_key, result)) => match self.export_url {
                 Some((ref loading_auth_key, Loadable::Loading)) if loading_auth_key == auth_key => {
                     match result {

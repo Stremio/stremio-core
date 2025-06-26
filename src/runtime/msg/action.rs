@@ -3,8 +3,6 @@ use std::ops::Range;
 use serde::Deserialize;
 use url::Url;
 
-use crate::types::profile::Password;
-use crate::types::streams::StreamItemState;
 use crate::{
     models::{
         addon_details::Selected as AddonDetailsSelected,
@@ -21,12 +19,14 @@ use crate::{
         addon::Descriptor,
         api::AuthRequest,
         library::LibraryItemId,
-        profile::Settings as ProfileSettings,
+        profile::{Password, Settings as ProfileSettings},
+        rating::Rating,
         resource::{MetaItemId, MetaItemPreview, Video},
         streaming_server::{
             Settings as StreamingServerSettings,
             StatisticsRequest as StreamingServerStatisticsRequest,
         },
+        streams::StreamItemState,
     },
 };
 
@@ -117,6 +117,10 @@ pub enum ActionMetaDetails {
     ///
     /// [`LibraryItem`]: crate::types::library::LibraryItem
     MarkVideoAsWatched(Video, bool),
+    /// Mark all videos from given season as watched
+    MarkSeasonAsWatched(u32, bool),
+    /// Rate the current meta item
+    Rate(Option<Rating>),
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -199,6 +203,8 @@ pub enum ActionPlayer {
     ///
     /// [`LibraryItem`]: crate::types::library::LibraryItem
     MarkVideoAsWatched(Video, bool),
+    /// Mark all videos from given season as watched
+    MarkSeasonAsWatched(u32, bool),
 }
 
 #[derive(Clone, Deserialize, Debug)]

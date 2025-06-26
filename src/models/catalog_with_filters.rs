@@ -150,7 +150,7 @@ impl<E, T> UpdateWithCtx<E> for CatalogWithFilters<T>
 where
     E: Env + 'static,
     T: CatalogResourceAdapter + PartialEq,
-    Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
+    Vec<T>: TryFrom<ResourceResponse, Error = derive_more::TryIntoError<ResourceResponse>>,
 {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
@@ -279,7 +279,7 @@ fn catalog_update<E, T>(
 where
     E: Env + 'static,
     T: CatalogResourceAdapter + PartialEq,
-    Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
+    Vec<T>: TryFrom<ResourceResponse, Error = derive_more::TryIntoError<ResourceResponse>>,
 {
     let mut page = ResourceLoadable {
         request: request.to_owned(),

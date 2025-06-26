@@ -141,6 +141,7 @@ impl WebModel {
                 crate::model::serialize_catalogs_with_extra::CatalogsWithExtra::new(
                     &self.board,
                     &self.ctx,
+                    &self.streaming_server,
                 )
                 .serialize_model()
                 .expect("JsValue from model::CatalogsWithExtra")
@@ -165,6 +166,7 @@ impl WebModel {
                 crate::model::serialize_catalogs_with_extra::CatalogsWithExtra::new(
                     &self.search,
                     &self.ctx,
+                    &self.streaming_server,
                 )
                 .serialize_model()
                 .expect("JsValue from model::CatalogsWithExtra")

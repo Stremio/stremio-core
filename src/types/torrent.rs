@@ -51,3 +51,25 @@ impl fmt::Display for InfoHash {
         f.write_str(&hex::encode(self.0))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use serde_json::{from_value, json};
+
+    #[test]
+    fn test_info_has_for_zero_sized_chunk() {
+        let empty = json!("");
+        let _err = from_value::<InfoHash>(empty).expect_err("Should error with zero size");
+
+        let prefix_only = json!("0x");
+        let _err = from_value::<InfoHash>(prefix_only).expect_err("Should error");
+
+        let valid_no_prefix = json!("df389295484b3059a4726dc6d8a57f71bb5f4c81");
+        from_value::<InfoHash>(valid_no_prefix).expect("Should be correct");
+
+        let valid_prefix = json!("df389295484b3059a4726dc6d8a57f71bb5f4c81");
+        from_value::<InfoHash>(valid_prefix).expect("Should be correct");
+    }
+}

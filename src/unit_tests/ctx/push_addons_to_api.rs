@@ -32,7 +32,7 @@ fn actionctx_pushaddonstoapi() {
                 Profile {
                     addons: vec![Descriptor {
                         manifest: Manifest {
-                            id: "id".to_owned(),
+                            id: "id".into(),
                             version: Version::new(0, 0, 1),
                             name: "name".to_owned(),
                             contact_email: None,
@@ -105,9 +105,10 @@ fn actionctx_pushaddonstoapi_with_user() {
                     auth: Some(Auth {
                         key: AuthKey("auth_key".to_owned()),
                         user: User {
-                            id: "user_id".to_owned(),
+                            id: "user_id".into(),
                             email: "user_email".to_owned(),
                             fb_id: None,
+                            apple_id: None,
                             avatar: None,
                             last_modified: TestEnv::now(),
                             date_registered: TestEnv::now(),
@@ -119,11 +120,12 @@ fn actionctx_pushaddonstoapi_with_user() {
                                 marketing: true,
                                 from: Some("tests".to_owned()),
                             },
+                            ..Default::default()
                         },
                     }),
                     addons: vec![Descriptor {
                         manifest: Manifest {
-                            id: "id".to_owned(),
+                            id: "id".into(),
                             version: Version::new(0, 0, 1),
                             name: "name".to_owned(),
                             contact_email: None,

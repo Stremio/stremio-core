@@ -35,6 +35,7 @@ use super::player::VideoParams;
 pub struct PlaybackDevice {
     pub id: String,
     pub name: String,
+    /// E.g. `external`
     pub r#type: String,
 }
 

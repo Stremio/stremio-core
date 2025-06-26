@@ -7,7 +7,7 @@ use {gloo_utils::format::JsValueSerdeExt, wasm_bindgen::JsValue};
 use crate::model::deep_links_ext::DeepLinksExt;
 
 pub use stremio_core::{
-    deep_links::{DiscoverDeepLinks, MetaItemDeepLinks},
+    deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks},
     models::{catalogs_with_extra::Selected, common::Loadable, ctx::Ctx},
     types::resource::PosterShape,
 };
@@ -25,11 +25,20 @@ pub struct DescriptorPreview<'a> {
 }
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct Stream<'a> {
+    #[serde(flatten)]
+    pub stream: &'a stremio_core::types::resource::Stream,
+    pub deep_links: StreamDeepLinks,
+}
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MetaItemPreview<'a> {
     #[serde(flatten)]
     pub meta_item: &'a stremio_core::types::resource::MetaItemPreview,
     pub poster_shape: &'a PosterShape,
+    pub trailer_streams: Vec<Stream<'a>>,
     pub watched: bool,
+    pub in_library: bool,
     pub deep_links: MetaItemDeepLinks,
 }
 
@@ -55,6 +64,7 @@ impl<'a> CatalogsWithExtra<'a> {
     pub fn new(
         catalogs_with_extra: &'a stremio_core::models::catalogs_with_extra::CatalogsWithExtra,
         ctx: &'a Ctx,
+        streaming_server: &stremio_core::models::streaming_server::StreamingServer,
     ) -> Self {
         Self {
             selected: &catalogs_with_extra.selected,
@@ -106,11 +116,31 @@ impl<'a> CatalogsWithExtra<'a> {
                                         meta_item,
                                         poster_shape: poster_shape
                                             .unwrap_or(&meta_item.poster_shape),
+                                        trailer_streams: meta_item
+                                            .trailer_streams
+                                            .iter()
+                                            .take(1)
+                                            .map(|stream| Stream {
+                                                stream,
+                                                deep_links: StreamDeepLinks::from((
+                                                    stream,
+                                                    &streaming_server.base_url,
+                                                    &ctx.profile.settings,
+                                                ))
+                                                .into_web_deep_links(),
+                                            })
+                                            .collect::<Vec<_>>(),
                                         watched: ctx
                                             .library
                                             .items
                                             .get(&meta_item.id)
                                             .map(|library_item| library_item.watched())
+                                            .unwrap_or_default(),
+                                        in_library: ctx
+                                            .library
+                                            .items
+                                            .get(&meta_item.id)
+                                            .map(|library_item| !library_item.removed)
                                             .unwrap_or_default(),
                                         deep_links: MetaItemDeepLinks::from((
                                             meta_item,

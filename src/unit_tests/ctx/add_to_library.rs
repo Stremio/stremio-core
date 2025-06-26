@@ -43,7 +43,7 @@ fn actionctx_addtolibrary() {
         }
     }
     let meta_preview = MetaItemPreview {
-        id: "id".to_owned(),
+        id: "id".into(),
         r#type: "type".to_owned(),
         name: "name".to_owned(),
         poster: None,
@@ -59,7 +59,7 @@ fn actionctx_addtolibrary() {
         behavior_hints: Default::default(),
     };
     let library_item = LibraryItem {
-        id: "id".to_owned(),
+        id: "id".into(),
         removed: false,
         temp: false,
         ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
@@ -84,9 +84,10 @@ fn actionctx_addtolibrary() {
                     auth: Some(Auth {
                         key: AuthKey("auth_key".to_owned()),
                         user: User {
-                            id: "user_id".to_owned(),
+                            id: "user_id".into(),
                             email: "user_email".to_owned(),
                             fb_id: None,
+                            apple_id: None,
                             avatar: None,
                             last_modified: TestEnv::now(),
                             date_registered: TestEnv::now(),
@@ -98,12 +99,13 @@ fn actionctx_addtolibrary() {
                                 marketing: true,
                                 from: Some("tests".to_owned()),
                             },
+                            ..Default::default()
                         },
                     }),
                     ..Default::default()
                 },
                 LibraryBucket {
-                    uid: Some("id".to_owned()),
+                    uid: Some("id".into()),
                     ..Default::default()
                 },
                 StreamsBucket::default(),
@@ -143,9 +145,9 @@ fn actionctx_addtolibrary() {
             .read()
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<LibraryBucket>(data).unwrap()
-                    == LibraryBucket::new(Some("id".to_owned()), vec![library_item])
+                    == LibraryBucket::new(Some("id".into()), vec![library_item])
             }),
         "Library recent slot updated successfully in storage"
     );
@@ -173,7 +175,7 @@ fn actionctx_addtolibrary_already_added() {
         ctx: Ctx,
     }
     let meta_preview = MetaItemPreview {
-        id: "id".to_owned(),
+        id: "id".into(),
         r#type: "type".to_owned(),
         name: "name".to_owned(),
         poster: Some(Url::parse("http://poster").unwrap()),
@@ -194,7 +196,7 @@ fn actionctx_addtolibrary_already_added() {
         },
     };
     let library_item = LibraryItem {
-        id: "id".to_owned(),
+        id: "id".into(),
         r#type: "type".to_owned(),
         name: "name".to_owned(),
         poster: Some(Url::parse("http://poster").unwrap()),
@@ -225,7 +227,7 @@ fn actionctx_addtolibrary_already_added() {
                     items: vec![(
                         "id".to_owned(),
                         LibraryItem {
-                            id: "id".to_owned(),
+                            id: "id".into(),
                             r#type: "typename_".to_owned(),
                             name: "name_".to_owned(),
                             poster: None,
@@ -281,7 +283,7 @@ fn actionctx_addtolibrary_already_added() {
             .read()
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<LibraryBucket>(data).unwrap()
                     == LibraryBucket::new(None, vec![library_item])
             }),

@@ -116,7 +116,7 @@ fn actionctx_addon_upgrade() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap().addons == expected
             }),
         "addon upgrade successfully in storage"

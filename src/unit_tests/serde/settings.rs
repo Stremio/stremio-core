@@ -8,6 +8,7 @@ fn settings() {
     assert_tokens(
         &Settings {
             interface_language: "interface_language".to_owned(),
+            hide_spoilers: false,
             streaming_server_url: Url::parse("https://streaming_server_url").unwrap(),
             player_type: Some("player".to_owned()),
             binge_watching: true,
@@ -32,6 +33,7 @@ fn settings() {
             seek_time_duration: 10,
             seek_short_time_duration: 3,
             pause_on_minimize: true,
+            quit_on_close: true,
             surround_sound: false,
             streaming_server_warning_dismissed: Some(
                 Utc.with_ymd_and_hms(2021, 1, 1, 0, 0, 0).unwrap(),
@@ -42,10 +44,12 @@ fn settings() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 29,
+                len: 31,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
+            Token::Str("hideSpoilers"),
+            Token::Bool(false),
             Token::Str("streamingServerUrl"),
             Token::Str("https://streaming_server_url/"),
             Token::Str("playerType"),
@@ -102,6 +106,8 @@ fn settings() {
             Token::U32(3),
             Token::Str("pauseOnMinimize"),
             Token::Bool(true),
+            Token::Str("quitOnClose"),
+            Token::Bool(true),
             Token::Str("surroundSound"),
             Token::Bool(false),
             Token::Str("streamingServerWarningDismissed"),
@@ -123,10 +129,12 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 24,
+                len: 25,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
+            Token::Str("hideSpoilers"),
+            Token::Bool(false),
             Token::Str("streamingServerUrl"),
             Token::Str("http://127.0.0.1:11470/"),
             Token::Str("playerType"),
@@ -176,6 +184,8 @@ fn settings_de() {
             Token::U32(3000),
             Token::Str("pauseOnMinimize"),
             Token::Bool(false),
+            Token::Str("quitOnClose"),
+            Token::Bool(true),
             Token::Str("surroundSound"),
             Token::Bool(false),
             Token::Str("streamingServerWarningDismissed"),

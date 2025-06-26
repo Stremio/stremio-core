@@ -46,9 +46,10 @@ fn actionctx_logout() {
         auth: Some(Auth {
             key: AuthKey("auth_key".to_owned()),
             user: User {
-                id: "user_id".to_owned(),
+                id: "user_id".into(),
                 email: "user_email".to_owned(),
                 fb_id: None,
+                apple_id: None,
                 avatar: None,
                 last_modified: TestEnv::now(),
                 date_registered: TestEnv::now(),
@@ -60,6 +61,7 @@ fn actionctx_logout() {
                     marketing: true,
                     from: Some("tests".to_owned()),
                 },
+                ..Default::default()
             },
         }),
         ..Default::default()
@@ -118,7 +120,7 @@ fn actionctx_logout() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap() == Default::default()
             }),
         "profile updated successfully in storage"
@@ -128,7 +130,7 @@ fn actionctx_logout() {
             .read()
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<LibraryBucket>(data).unwrap() == Default::default()
             }),
         "recent library updated successfully in storage"
@@ -138,7 +140,7 @@ fn actionctx_logout() {
             .read()
             .unwrap()
             .get(LIBRARY_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<LibraryBucket>(data).unwrap() == Default::default()
             }),
         "library updated successfully in storage"

@@ -128,6 +128,34 @@ impl LibraryItem {
             };
         }
     }
+
+    pub fn mark_videos_as_watched<E: Env>(
+        &mut self,
+        watched: &WatchedBitField,
+        videos: Vec<&Video>,
+        is_watched: bool,
+    ) {
+        let mut watched = watched.to_owned();
+
+        for video in &videos {
+            watched.set_video(&video.id, is_watched);
+        }
+
+        self.state.watched = Some(watched.into());
+
+        if is_watched {
+            self.state.last_watched = match (
+                &self.state.last_watched,
+                videos.last().and_then(|last_video| last_video.released),
+            ) {
+                (Some(last_watched), Some(released)) if last_watched < &released => {
+                    Some(released.to_owned())
+                }
+                (None, released) => released.to_owned(),
+                (last_watched, _) => last_watched.to_owned(),
+            };
+        }
+    }
 }
 
 impl<E: Env + 'static> From<(&MetaItemPreview, PhantomData<E>)> for LibraryItem {

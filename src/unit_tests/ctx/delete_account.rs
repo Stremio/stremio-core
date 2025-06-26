@@ -52,9 +52,10 @@ fn actionctx_delete_account() {
         auth: Some(Auth {
             key: AuthKey("auth_key".to_owned()),
             user: User {
-                id: "user_id".to_owned(),
+                id: "user_id".into(),
                 email: "user_email".to_owned(),
                 fb_id: None,
+                apple_id: None,
                 avatar: None,
                 last_modified: TestEnv::now(),
                 date_registered: TestEnv::now(),
@@ -66,6 +67,7 @@ fn actionctx_delete_account() {
                     marketing: true,
                     from: Some("tests".to_owned()),
                 },
+                ..Default::default()
             },
         }),
         ..Default::default()
@@ -113,7 +115,7 @@ fn actionctx_delete_account() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap() == Default::default()
             }),
         "profile updated successfully in storage"
@@ -126,7 +128,7 @@ fn actionctx_delete_account() {
     );
 
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
+        REQUESTS.read().unwrap().first().unwrap().to_owned(),
         Request {
             url: "https://api.strem.io/api/deleteUser".to_owned(),
             method: "POST".to_owned(),

@@ -6,7 +6,8 @@ on:
 
 env:
   NODE_VERSION: 12
-  WASM_PACK_VERSION: 0.12.1
+  WASM_PACK_VERSION: 0.13.1
+  RUST_VERSION: '1.77'
 
 jobs:
   publish-stremio-core-web:
@@ -26,8 +27,9 @@ jobs:
 
       # For releasing we always use stable
       - name: Rust setup
-        uses: dtolnay/rust-toolchain@1.77
+        uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: ${{ env.RUST_VERSION }}
           targets: wasm32-unknown-unknown
       - uses: taiki-e/install-action@v2
         with:
