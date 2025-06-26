@@ -106,7 +106,8 @@
 <a href="#105" id="105">105</a>
 <a href="#106" id="106">106</a>
 <a href="#107" id="107">107</a>
-<a href="#108" id="108">108</a></pre></div><pre class="rust"><code><span class="kw">use </span>futures::{future, FutureExt, TryFutureExt};
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a></pre></div><pre class="rust"><code><span class="kw">use </span>futures::{future, FutureExt, TryFutureExt};
 <span class="kw">use </span>percent_encoding::utf8_percent_encode;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>url::Url;
@@ -158,6 +159,7 @@
                     }
                 }
             }
+            Msg::Action(Action::Unload) =&gt; eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.export_url, <span class="prelude-val">None</span>),
             Msg::Internal(Internal::DataExportResult(auth_key, result)) =&gt; <span class="kw">match </span><span class="self">self</span>.export_url {
                 <span class="prelude-val">Some</span>((<span class="kw-2">ref </span>loading_auth_key, Loadable::Loading)) <span class="kw">if </span>loading_auth_key == auth_key =&gt; {
                     <span class="kw">match </span>result {
