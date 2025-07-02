@@ -351,6 +351,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "flate_macro"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.98",
+]
+
+[[package]]
 name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1175,11 +1185,9 @@ dependencies = [
 [[package]]
 name = "stremio-official-addons"
 version = "2.0.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3e82d97b318000ca095daa19f479fcf4569ecd0ba8e3d10e04bd1a56f768947"
 dependencies = [
- "once_cell",
- "serde_json",
+ "flate2",
+ "flate_macro",
 ]
 
 [[package]]

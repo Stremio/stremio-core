@@ -90,7 +90,8 @@ pub static STREAMING_SERVER_URL: Lazy<Url> =
 pub static IMDB_URL: Lazy<Url> =
     Lazy::new(|| Url::parse("https://imdb.com").expect("IMDB_URL parse failed"));
 pub static OFFICIAL_ADDONS: Lazy<Vec<Descriptor>> = Lazy::new(|| {
-    serde_json::from_slice(stremio_official_addons::ADDONS).expect("OFFICIAL_ADDONS parse failed")
+    serde_json::from_slice(&stremio_official_addons::get_addons_string())
+        .expect("OFFICIAL_ADDONS parse failed")
 });
 pub static SKIP_EXTRA_PROP: Lazy<ExtraProp> = Lazy::new(|| ExtraProp {
     name: "skip".to_owned(),
