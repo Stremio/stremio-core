@@ -37,6 +37,9 @@ derive = []
 # Enable core analytics
 analytics = []
 
+# Enable deflate feature in offical addons
+deflate = ["stremio-official-addons/deflate"]
+
 [dependencies]
 stremio-derive = { path = "stremio-derive" }
 stremio-watched-bitfield = { path = "stremio-watched-bitfield" }
