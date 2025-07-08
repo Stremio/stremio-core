@@ -113,7 +113,7 @@ pub struct SeekLog {
 pub struct SeekLogRequest {
     /// Opensubtitles hash returned by the server
     #[serde(rename = "osId")]
-    pub opensubtitles_hash: String,
+    pub os_hash: String,
     pub item_id: String,
     #[serde(flatten)]
     pub series_info: SeriesInfo,
@@ -135,7 +135,7 @@ pub struct SkipGapsRequest {
     pub auth_key: AuthKey,
     /// Opensubtitles hash returned by the server
     #[serde(rename = "osId")]
-    pub opensubtitles_hash: String,
+    pub os_hash: String,
     pub item_id: String,
     #[serde(flatten)]
     pub series_info: SeriesInfo,
