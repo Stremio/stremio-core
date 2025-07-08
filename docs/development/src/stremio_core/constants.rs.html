@@ -140,7 +140,8 @@
 <a href="#139" id="139">139</a>
 <a href="#140" id="140">140</a>
 <a href="#141" id="141">141</a>
-<a href="#142" id="142">142</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
 
 <span class="kw">use </span>once_cell::sync::Lazy;
 <span class="kw">use </span>percent_encoding::{AsciiSet, NON_ALPHANUMERIC};
@@ -232,7 +233,8 @@
 <span class="kw">pub static </span>IMDB_URL: Lazy&lt;Url&gt; =
     Lazy::new(|| Url::parse(<span class="string">"https://imdb.com"</span>).expect(<span class="string">"IMDB_URL parse failed"</span>));
 <span class="kw">pub static </span>OFFICIAL_ADDONS: Lazy&lt;Vec&lt;Descriptor&gt;&gt; = Lazy::new(|| {
-    serde_json::from_slice(stremio_official_addons::ADDONS).expect(<span class="string">"OFFICIAL_ADDONS parse failed"</span>)
+    <span class="kw">let </span>addons_str = stremio_official_addons::get_addons_string();
+    serde_json::from_slice(<span class="kw-2">&amp;</span>addons_str).expect(<span class="string">"OFFICIAL_ADDONS parse failed"</span>)
 });
 <span class="kw">pub static </span>SKIP_EXTRA_PROP: Lazy&lt;ExtraProp&gt; = Lazy::new(|| ExtraProp {
     name: <span class="string">"skip"</span>.to_owned(),
