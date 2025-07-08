@@ -2812,7 +2812,7 @@
                 selected.stream.name.as_ref(),
                 video_params.hash.clone(),
             ) {
-                (<span class="bool-val">true</span>, <span class="prelude-val">Some</span>(stream_name), <span class="prelude-val">Some</span>(opensubtitles_hash)) =&gt; {
+                (<span class="bool-val">true</span>, <span class="prelude-val">Some</span>(stream_name), <span class="prelude-val">Some</span>(os_hash)) =&gt; {
                     <span class="kw">let </span>stream_name_hash = {
                         <span class="kw">use </span>sha2::Digest;
                         <span class="kw">let </span><span class="kw-2">mut </span>sha256 = sha2::Sha256::new();
@@ -2823,7 +2823,7 @@
                     };
 
                     <span class="kw">let </span>seek_log_req = SeekLogRequest {
-                        opensubtitles_hash,
+                        os_hash,
                         item_id: library_item.id.to_owned(),
                         series_info: series_info.to_owned(),
                         stream_name_hash,
@@ -3001,7 +3001,7 @@
                 selected.stream.name.as_ref(),
                 video_params.hash.clone(),
             ) {
-                (<span class="bool-val">true</span>, <span class="prelude-val">Some</span>(stream_name), <span class="prelude-val">Some</span>(opensubtitles_hash)) =&gt; {
+                (<span class="bool-val">true</span>, <span class="prelude-val">Some</span>(stream_name), <span class="prelude-val">Some</span>(os_hash)) =&gt; {
                     <span class="kw">let </span>stream_name_hash = {
                         <span class="kw">use </span>sha2::Digest;
                         <span class="kw">let </span><span class="kw-2">mut </span>sha256 = sha2::Sha256::new();
@@ -3013,7 +3013,7 @@
 
                     <span class="kw">let </span>skip_gaps_request = SkipGapsRequest {
                         auth_key,
-                        opensubtitles_hash,
+                        os_hash,
                         item_id: library_item.id.to_owned(),
                         series_info: series_info.to_owned(),
                         stream_name_hash,
