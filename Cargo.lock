@@ -266,6 +266,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "deflate-macro"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "057d929c155c091c283fd0d2ebddbb325d2a645a8210dc2efe6185f353f526da"
+dependencies = [
+ "flate2",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.98",
+]
+
+[[package]]
 name = "deranged"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -348,16 +360,6 @@ checksum = "a1b589b4dc103969ad3cf85c950899926ec64300a1a46d76c03a6072957036f0"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
-]
-
-[[package]]
-name = "flate_macro"
-version = "0.1.0"
-dependencies = [
- "flate2",
- "proc-macro2",
- "quote",
- "syn 2.0.98",
 ]
 
 [[package]]
@@ -1184,10 +1186,12 @@ dependencies = [
 
 [[package]]
 name = "stremio-official-addons"
-version = "2.0.13"
+version = "2.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4bb5e344bd639722596917f372885c62b489b8442bca7f75b08f4af19e2230af"
 dependencies = [
+ "deflate-macro",
  "flate2",
- "flate_macro",
 ]
 
 [[package]]
