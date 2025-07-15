@@ -3,7 +3,6 @@ use futures::{FutureExt, TryFutureExt};
 use http::request::Request;
 use magnet_url::{Magnet, MagnetError};
 use serde::{Deserialize, Serialize};
-use serde_with::serde_as;
 use sha1::{Digest, Sha1};
 use url::Url;
 
@@ -18,17 +17,14 @@ use crate::types::addon::ResourcePath;
 use crate::types::api::SuccessResponse;
 use crate::types::empty_string_as_null;
 use crate::types::profile::{AuthKey, Profile};
-use crate::types::resource::{SeriesInfo, Stream, StreamSource};
+use crate::types::resource::{Stream, StreamSource};
 use crate::types::streaming_server::{
     ArchiveCreateResponse, ArchiveStreamOptions, ArchiveStreamRequest, CreateMagnetRequest,
-    CreateTorrentBlobRequest, CreateTorrentRequest, DeviceInfo, FileNameRequest, GetHTTPSResponse,
-    NetworkInfo, OpensubtitlesParamsRequest, OpensubtitlesParamsResponse, PeerSearch, Settings,
+    CreateTorrentBlobRequest, DeviceInfo, GetHTTPSResponse, NetworkInfo, Settings,
     SettingsResponse, Statistics, StatisticsRequest, TorrentStatisticsRequest,
 };
 use crate::types::streams::ConvertedStreamSource;
 use crate::types::torrent::InfoHash;
-
-use super::player::VideoParams;
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]

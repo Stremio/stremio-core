@@ -681,7 +681,7 @@ impl StreamUrls {
         let magnet_url = get_magnet_url(&converted);
 
         let m3u_data_uri = streaming_url.as_ref().map(|url| get_m3u_data_uri(url));
-  
+
         Self {
             magnet_url,
             download_url,
