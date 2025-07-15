@@ -1298,7 +1298,7 @@ fn seek_update<E: Env + 'static>(
                 selected.stream.name.as_ref(),
                 video_params.hash.clone(),
             ) {
-                (true, Some(stream_name), Some(opensubtitles_hash)) => {
+                (true, Some(stream_name), Some(os_hash)) => {
                     let stream_name_hash = {
                         use sha2::Digest;
                         let mut sha256 = sha2::Sha256::new();
@@ -1309,7 +1309,7 @@ fn seek_update<E: Env + 'static>(
                     };
 
                     let seek_log_req = SeekLogRequest {
-                        opensubtitles_hash,
+                        os_hash,
                         item_id: library_item.id.to_owned(),
                         series_info: series_info.to_owned(),
                         stream_name_hash,
@@ -1492,7 +1492,7 @@ fn skip_gaps_update<E: Env + 'static>(
                 selected.stream.name.as_ref(),
                 video_params.hash.clone(),
             ) {
-                (true, Some(stream_name), Some(opensubtitles_hash)) => {
+                (true, Some(stream_name), Some(os_hash)) => {
                     let stream_name_hash = {
                         use sha2::Digest;
                         let mut sha256 = sha2::Sha256::new();
@@ -1504,7 +1504,7 @@ fn skip_gaps_update<E: Env + 'static>(
 
                     let skip_gaps_request = SkipGapsRequest {
                         auth_key,
-                        opensubtitles_hash,
+                        os_hash,
                         item_id: library_item.id.to_owned(),
                         series_info: series_info.to_owned(),
                         stream_name_hash,

@@ -36,10 +36,13 @@ analytics = []
 # enables WASM specific features for core
 wasm = ["uuid/js"]
 
+# Enable deflate feature in official addons
+deflate = ["stremio-official-addons/deflate"]
+
 [dependencies]
 stremio-derive = { path = "stremio-derive" }
 stremio-watched-bitfield = { path = "stremio-watched-bitfield" }
-stremio-official-addons = "=2.0.13"
+stremio-official-addons = "=2.1.1"
 
 # (De)Serialization
 serde = { version = "1", features = ["derive"] }
