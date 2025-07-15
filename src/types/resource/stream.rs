@@ -1,4 +1,7 @@
+use core::fmt;
 use std::{collections::HashMap, io::Write};
+
+use tracing::trace;
 
 use base64::Engine;
 use boolinator::Boolinator;
@@ -630,7 +633,7 @@ fn is_default_value<T: Default + PartialEq>(value: &T) -> bool {
 
 // }
 
-#[derive(Clone, derivative::Derivative, Serialize, Debug, PartialEq, Eq)]
+#[derive(Clone, derivative::Derivative, Serialize, PartialEq, Eq)]
 pub struct StreamUrls {
     #[serde(default)]
     pub magnet_url: Option<Url>,
@@ -646,236 +649,249 @@ pub struct StreamUrls {
     pub stream: Stream<ConvertedStreamSource>,
 }
 
+impl fmt::Debug for StreamUrls {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("StreamUrls")
+            .field(
+                "magnet_url",
+                &self.magnet_url.as_ref().map(ToString::to_string),
+            )
+            .field(
+                "download_url",
+                &self.download_url.as_ref().map(ToString::to_string),
+            )
+            .field(
+                "streaming_url",
+                &self.streaming_url.as_ref().map(ToString::to_string),
+            )
+            .field("m3u_data_uri", &self.m3u_data_uri)
+            .field("stream", &self.stream)
+            .finish()
+    }
+}
+
 impl StreamUrls {
-    // pub fn new(stream: &Stream, streaming_server_url: Option<&Url>) -> Self {
-    //     let streaming_url = stream.streaming_url(streaming_server_url);
-
-    //     let download_url = match &stream.source {
-    //         StreamSource::Url { url } if url.scheme() == "magnet" => stream
-    //             .magnet_url()
-    //             .and_then(|magnet_url| Url::parse(&magnet_url.to_string()).ok()),
-    //         StreamSource::Url { url } => Some(url.to_owned()),
-    //         // at this point, Rar & Zip sources should have been converted to StreamSource::Url
-    //         StreamSource::Rar {
-    //             rar_urls: _,
-    //             file_idx: _,
-    //             file_must_include: _,
-    //         } => None,
-    //         StreamSource::Zip {
-    //             zip_urls: _,
-    //             file_idx: _,
-    //             file_must_include: _,
-    //         } => None,
-    //         StreamSource::Torrent { .. } => {
-    //             streaming_url.clone().map(|mut torrent_stream_url| {
-    //                 {
-    //                     let mut query_pairs = torrent_stream_url.query_pairs_mut();
-    //                     query_pairs
-    //                         // clear any existing query parameters!
-    //                         .clear()
-    //                         .append_pair("external", "1")
-    //                         .append_pair("download", "1");
-    //                 }
-    //                 torrent_stream_url
-    //             })
-    //         }
-    //         StreamSource::YouTube { .. } => stream.youtube_url().and_then(|url| url.parse().ok()),
-    //         StreamSource::External { external_url, .. } => {
-    //             external_url.as_ref().map(|url| url.to_owned())
-    //         }
-    //         StreamSource::PlayerFrame { player_frame_url } => Some(player_frame_url.to_owned()),
-    //     };
-
-    //     let m3u_data_uri = streaming_url.as_ref().map(|url| {
-    //         format!(
-    //             "data:application/octet-stream;charset=utf-8;base64,{}",
-    //             BASE64.encode(format!("#EXTM3U\n#EXTINF:0\n{url}"))
-    //         )
-    //     });
-
-    //     Self {
-    //         magnet_url: None,
-    //         download_url,
-    //         streaming_url,
-    //         m3u_data_uri,
-    //         stream: stream.to_owned(),
-    //     }
-    // }
-
     /// For a stream with an already converted source we can directly use the URL
     pub fn new(
         converted: Stream<ConvertedStreamSource>,
         streaming_server_url: Option<&Url>,
     ) -> Self {
-        let streaming_url = match &converted.source {
-            ConvertedStreamSource::Url { url } => Some(url.to_owned()),
-            ConvertedStreamSource::Torrent { url: _url, .. } => {
-                streaming_server_url.cloned().map(|mut torrent_stream_url| {
-                    {
-                        let mut query_pairs = torrent_stream_url.query_pairs_mut();
-                        query_pairs
-                            // clear any existing query parameters!
-                            .clear()
-                            .append_pair("external", "1")
-                            .append_pair("download", "1");
-                    }
-                    torrent_stream_url
-                })
-            }
-            ConvertedStreamSource::YouTube { url, .. } => Some(url.clone()),
-            ConvertedStreamSource::External { external_url, .. } => {
-                external_url.as_ref().map(|url| url.to_owned())
-            }
-            ConvertedStreamSource::PlayerFrame { player_frame_url } => {
-                Some(player_frame_url.to_owned())
-            }
-        };
+        let streaming_url = get_streaming_url(&converted, streaming_server_url);
+        let download_url = get_download_url(&converted, streaming_server_url);
+        let magnet_url = get_magnet_url(&converted);
 
-        let download_url = match &converted.source {
-            ConvertedStreamSource::Url { url } if url.scheme() == "magnet" => {
-                Magnet::new(url.as_str())
-                    .as_ref()
-                    .map(ToString::to_string)
-                    .ok()
-                    .and_then(|url_string| url_string.parse().ok())
-            }
-            ConvertedStreamSource::Url { url } => Some(url.to_owned()),
-            // StreamSource::Rar {
-            //     rar_urls: _,
-            //     file_idx: _,
-            //     file_must_include: _,
-            // } => None,
-            // StreamSource::Zip {
-            //     zip_urls: _,
-            //     file_idx: _,
-            //     file_must_include: _,
-            // } => None,
-            ConvertedStreamSource::Torrent {
-                info_hash,
-                announce,
-                ..
-            } => {
-                let torrent_magnet = Magnet {
-                    dn: converted.name.to_owned(),
-                    hash_type: Some("btih".to_string()),
-                    xt: Some(hex::encode(info_hash)),
-                    xl: None,
-                    tr: announce
-                        .iter()
-                        // `tracker` and `dht` prefixes are used internally by the server.js
-                        // we need to remove those prefixes when generating the magnet URL
-                        .map(|tracker| {
-                            tracker
-                                .strip_prefix("tracker:")
-                                .map(ToString::to_string)
-                                .unwrap_or_else(|| tracker.to_owned())
-                        })
-                        .map(|tracker| {
-                            tracker
-                                .strip_prefix("dht:")
-                                .map(ToString::to_string)
-                                .unwrap_or_else(|| tracker.to_owned())
-                        })
-                        .map(|tracker| {
-                            utf8_percent_encode(&tracker, URI_COMPONENT_ENCODE_SET).to_string()
-                        })
-                        .collect::<Vec<String>>(),
-                    kt: None,
-                    ws: None,
-                    acceptable_source: None,
-                    mt: None,
-                    xs: None,
-                };
-
-                torrent_magnet.to_string().parse().ok()
-            }
-            ConvertedStreamSource::YouTube { yt_id, .. } => Some(
-                format!(
-                    "https://youtube.com/watch?v={}",
-                    utf8_percent_encode(yt_id.as_str(), URI_COMPONENT_ENCODE_SET)
-                )
-                .parse()
-                .expect("Should always be a valid URL"),
-            ),
-            ConvertedStreamSource::External { external_url, .. } => external_url.as_ref().cloned(),
-            ConvertedStreamSource::PlayerFrame { player_frame_url } => {
-                Some(player_frame_url.to_owned())
-            }
-        };
-
-        // let download_url = match &converted.source {
-        //     ConvertedStreamSource::Url { url } => Some(url.to_owned()),
-        //     ConvertedStreamSource::Torrent { url, .. } => {
-        //         streaming_server_url.cloned().map(|mut torrent_stream_url| {
-        //             {
-        //                 let mut query_pairs = torrent_stream_url.query_pairs_mut();
-        //                 query_pairs
-        //                     // clear any existing query parameters!
-        //                     .clear()
-        //                     .append_pair("external", "1")
-        //                     .append_pair("download", "1");
-        //             }
-        //             torrent_stream_url
-        //         })
-        //     }
-        //     ConvertedStreamSource::YouTube { yt_id, .. } => Some(
-        //         format!(
-        //             "https://youtube.com/watch?v={}",
-        //             utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET)
-        //         )
-        //         .parse()
-        //         .unwrap(),
-        //     ),
-        //     ConvertedStreamSource::External { external_url, .. } => {
-        //         external_url.as_ref().map(|url| url.to_owned())
-        //     }
-        //     ConvertedStreamSource::PlayerFrame { player_frame_url } => {
-        //         Some(player_frame_url.to_owned())
-        //     }
-        // };d.source {
-        //     ConvertedStreamSource::Url { url } => Some(url.to_owned()),
-        //     ConvertedStreamSource::Torrent { url, .. } => {
-        //         streaming_server_url.cloned().map(|mut torrent_stream_url| {
-        //             {
-        //                 let mut query_pairs = torrent_stream_url.query_pairs_mut();
-        //                 query_pairs
-        //                     // clear any existing query parameters!
-        //                     .clear()
-        //                     .append_pair("external", "1")
-        //                     .append_pair("download", "1");
-        //             }
-        //             torrent_stream_url
-        //         })
-        //     }
-        //     ConvertedStreamSource::YouTube { yt_id, .. } => Some(
-        //         format!(
-        //             "https://youtube.com/watch?v={}",
-        //             utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET)
-        //         )
-        //         .parse()
-        //         .unwrap(),
-        //     ),
-        //     ConvertedStreamSource::External { external_url, .. } => {
-        //         external_url.as_ref().map(|url| url.to_owned())
-        //     }
-        //     ConvertedStreamSource::PlayerFrame { player_frame_url } => {
-        //         Some(player_frame_url.to_owned())
-        //     }
-        // };
-
-        let m3u_data_uri = streaming_server_url.as_ref().map(|url| {
-            format!(
-                "data:application/octet-stream;charset=utf-8;base64,{}",
-                BASE64.encode(format!("#EXTM3U\n#EXTINF:0\n{url}"))
-            )
-        });
-
+        let m3u_data_uri = streaming_url.as_ref().map(|url| get_m3u_data_uri(url));
+  
         Self {
-            magnet_url: None,
+            magnet_url,
             download_url,
             streaming_url,
             m3u_data_uri,
             stream: converted.to_owned(),
+        }
+    }
+}
+
+fn get_magnet_url(converted: &Stream<ConvertedStreamSource>) -> Option<Url> {
+    match &converted.source {
+        ConvertedStreamSource::Url { url } if url.scheme() == "magnet" => Magnet::new(url.as_str())
+            .as_ref()
+            .map(ToString::to_string)
+            .ok()
+            .and_then(|url_string| url_string.parse().ok()),
+        //Current Stream::download_url gets the magnet link and returns it as a download_url
+        ConvertedStreamSource::Torrent {
+            info_hash,
+            announce,
+            ..
+        } => {
+            let torrent_magnet = Magnet {
+                dn: converted.name.to_owned(),
+                hash_type: Some("btih".to_string()),
+                xt: Some(hex::encode(info_hash)),
+                xl: None,
+                tr: announce
+                    .iter()
+                    // `tracker` and `dht` prefixes are used internally by the server.js
+                    // we need to remove those prefixes when generating the magnet URL
+                    .map(|tracker| {
+                        tracker
+                            .strip_prefix("tracker:")
+                            .map(ToString::to_string)
+                            .unwrap_or_else(|| tracker.to_owned())
+                    })
+                    .map(|tracker| {
+                        tracker
+                            .strip_prefix("dht:")
+                            .map(ToString::to_string)
+                            .unwrap_or_else(|| tracker.to_owned())
+                    })
+                    .map(|tracker| {
+                        utf8_percent_encode(&tracker, URI_COMPONENT_ENCODE_SET).to_string()
+                    })
+                    .collect::<Vec<String>>(),
+                kt: None,
+                ws: None,
+                acceptable_source: None,
+                mt: None,
+                xs: None,
+            };
+
+            torrent_magnet.to_string().parse().ok()
+        }
+        _ => None,
+    }
+}
+
+fn get_m3u_data_uri(streaming_url: &Url) -> String {
+    format!(
+        "data:application/octet-stream;charset=utf-8;base64,{}",
+        BASE64.encode(format!("#EXTM3U\n#EXTINF:0\n{streaming_url}"))
+    )
+}
+
+fn get_download_url(
+    converted: &Stream<ConvertedStreamSource>,
+    streaming_server_url: Option<&Url>,
+) -> Option<Url> {
+    match &converted.source {
+        ConvertedStreamSource::Url { url } if url.scheme() == "magnet" => Magnet::new(url.as_str())
+            .as_ref()
+            .map(ToString::to_string)
+            .ok()
+            .and_then(|url_string| url_string.parse().ok()),
+        ConvertedStreamSource::Url { url } => Some(url.to_owned()),
+        ConvertedStreamSource::Torrent { url, .. } => {
+            // ConvertedStreamSource::Torrent { url: _url, .. } => {
+
+            // we just need to know that the server is running
+            streaming_server_url.as_ref().map(|_| {
+                let mut torrent_stream_url = url.clone();
+                {
+                    let mut query_pairs = torrent_stream_url.query_pairs_mut();
+                    query_pairs
+                        // clear any existing query parameters!
+                        .clear()
+                        .append_pair("external", "1")
+                        .append_pair("download", "1");
+                }
+                torrent_stream_url
+            })
+        }
+        ConvertedStreamSource::YouTube { yt_id, .. } => Some(
+            format!(
+                "https://youtube.com/watch?v={}",
+                utf8_percent_encode(yt_id.as_str(), URI_COMPONENT_ENCODE_SET)
+            )
+            .parse()
+            .expect("Should always be a valid URL"),
+        ),
+        ConvertedStreamSource::External { external_url, .. } => external_url.as_ref().cloned(),
+        ConvertedStreamSource::PlayerFrame { player_frame_url } => {
+            Some(player_frame_url.to_owned())
+        }
+    }
+}
+
+fn get_streaming_url(
+    converted: &Stream<ConvertedStreamSource>,
+    streaming_server_url: Option<&Url>,
+) -> Option<Url> {
+    trace!(
+        ?converted,
+        "get_streaming_url of Stream with converted StreamSource"
+    );
+    match &converted.source {
+        ConvertedStreamSource::Url { url } if url.scheme() != "magnet" => {
+            // If proxy headers are set and streaming server is available, build the proxied streaming url from streaming server url
+            // Otherwise return the url
+            match (
+                &converted.behavior_hints.proxy_headers,
+                streaming_server_url,
+            ) {
+                (Some(StreamProxyHeaders { request, response }), Some(streaming_server_url)) => {
+                    let mut streaming_url = streaming_server_url.to_owned();
+                    let mut proxy_query = form_urlencoded::Serializer::new(String::new());
+                    let origin = format!("{}://{}", url.scheme(), url.authority());
+                    proxy_query.append_pair("d", origin.as_str());
+                    proxy_query.extend_pairs(
+                        request
+                            .iter()
+                            .map(|header| ("h", format!("{}:{}", header.0, header.1))),
+                    );
+                    proxy_query.extend_pairs(
+                        response
+                            .iter()
+                            .map(|header| ("r", format!("{}:{}", header.0, header.1))),
+                    );
+
+                    streaming_url.set_path(&format!(
+                        "proxy/{query}/{url_path}",
+                        query = proxy_query.finish().as_str(),
+                        url_path = &url.path().strip_prefix('/').unwrap_or(url.path()),
+                    ));
+
+                    streaming_url.set_query(url.query());
+                    Some(streaming_url)
+                }
+                _ => Some(url.to_owned()),
+            }
+        }
+        ConvertedStreamSource::Url { url } => Some(url.to_owned()),
+        ConvertedStreamSource::Torrent {
+            info_hash,
+            file_idx,
+            announce,
+            file_must_include,
+            ..
+        } => {
+            match streaming_server_url {
+                Some(streaming_server_url) => {
+                    let mut url = streaming_server_url.to_owned();
+
+                    match url.path_segments_mut() {
+                        Ok(mut path) => {
+                            path.extend([
+                                &hex::encode(info_hash),
+                                // When fileIndex is not provided use -1, which will tell the
+                                // streaming server to choose the file with the largest size from the torrent
+                                &file_idx.map_or_else(|| "-1".to_string(), |idx| idx.to_string()),
+                            ]);
+                        }
+                        _ => return None,
+                    }
+
+                    // setup query params
+                    {
+                        let mut query_params = url.query_pairs_mut();
+
+                        if !announce.is_empty() {
+                            query_params.extend_pairs(
+                                announce.iter().map(|tracker| ("tr", tracker.to_owned())),
+                            );
+                        }
+
+                        if !file_must_include.is_empty() {
+                            query_params.extend_pairs(
+                                file_must_include
+                                    .iter()
+                                    .map(|file_must_include| ("f", file_must_include.to_owned())),
+                            );
+                        }
+                    }
+
+                    Some(url)
+                }
+                None => None,
+            }
+        }
+
+        ConvertedStreamSource::YouTube { url, .. } => Some(url.clone()),
+        ConvertedStreamSource::External { external_url, .. } => {
+            external_url.as_ref().map(|url| url.to_owned())
+        }
+        ConvertedStreamSource::PlayerFrame { player_frame_url } => {
+            Some(player_frame_url.to_owned())
         }
     }
 }
