@@ -642,7 +642,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
 
                 let item_state_update_effects =
-                    item_state_update(&mut self.library_item, &self.next_video);
+                    item_state_update(&mut self.library_item, self.next_video.as_ref());
 
                 // Set time_offset to 0 as we switch to next video
                 let library_item_effects = self
