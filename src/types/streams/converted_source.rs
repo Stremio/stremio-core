@@ -1,3 +1,5 @@
+use core::fmt;
+
 use url::Url;
 
 use serde::{Deserialize, Serialize};
@@ -23,7 +25,7 @@ mod sealed {
 }
 
 #[serde_as]
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ConvertedStreamSource {
     Url {
@@ -69,4 +71,53 @@ pub enum ConvertedStreamSource {
         #[serde(skip_serializing_if = "Option::is_none")]
         webos_url: Option<String>,
     },
+}
+
+impl fmt::Debug for ConvertedStreamSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Url { url } => f.debug_struct("Url").field("url", &url.as_str()).finish(),
+            Self::YouTube { url, yt_id } => f
+                .debug_struct("YouTube")
+                .field("url", &url.as_str())
+                .field("yt_id", yt_id)
+                .finish(),
+            Self::Torrent {
+                url,
+                info_hash,
+                file_idx,
+                announce,
+                file_must_include,
+            } => f
+                .debug_struct("Torrent")
+                .field("url", &url.as_str())
+                .field("info_hash", info_hash)
+                .field("file_idx", file_idx)
+                .field("announce", announce)
+                .field("file_must_include", file_must_include)
+                .finish(),
+            Self::PlayerFrame { player_frame_url } => f
+                .debug_struct("PlayerFrame")
+                .field("player_frame_url", &player_frame_url.to_string())
+                .finish(),
+            Self::External {
+                external_url,
+                android_tv_url,
+                tizen_url,
+                webos_url,
+            } => f
+                .debug_struct("External")
+                .field(
+                    "external_url",
+                    &external_url.as_ref().map(ToString::to_string),
+                )
+                .field(
+                    "android_tv_url",
+                    &android_tv_url.as_ref().map(ToString::to_string),
+                )
+                .field("tizen_url", tizen_url)
+                .field("webos_url", webos_url)
+                .finish(),
+        }
+    }
 }
