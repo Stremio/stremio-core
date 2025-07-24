@@ -19,7 +19,7 @@ use crate::{
         addon::Descriptor,
         api::AuthRequest,
         library::LibraryItemId,
-        profile::{Password, Settings as ProfileSettings},
+        profile::{AuthKey, Password, Settings as ProfileSettings},
         rating::Rating,
         resource::{MetaItemId, MetaItemPreview, Video},
         streaming_server::{
@@ -55,7 +55,14 @@ pub enum ActionCtx {
     DismissNotificationItem(MetaItemId),
     ClearSearchHistory,
     PushUserToAPI,
-    PullUserFromAPI,
+    PullUserFromAPI {
+        /// Optional auth token of the user to be fetched
+        ///
+        /// if `None` is provided, the `ctx.profile.auth`
+        /// will be used to pull the user (if one exists)
+        #[serde(default)]
+        token: Option<AuthKey>,
+    },
     PushAddonsToAPI,
     PullAddonsFromAPI,
     SyncLibraryWithAPI,
