@@ -78,7 +78,7 @@ impl Stream {
     pub fn magnet_url(&self) -> Option<Magnet> {
         match &self.source {
             StreamSource::Url { url } if url.scheme() == "magnet" => Magnet::new(url.as_str()).ok(),
-            StreamSource::Torrent {
+            StreamSource::Tramvai {
                 info_hash,
                 announce,
                 ..
@@ -160,7 +160,7 @@ impl Stream {
             StreamSource::Url { url } => Some(url.to_string()),
             // we do not support RAR & Zip at this point!
             StreamSource::Rar { .. } | StreamSource::Zip { .. } => None,
-            StreamSource::Torrent { .. } => {
+            StreamSource::Tramvai { .. } => {
                 self.magnet_url().map(|magnet_url| magnet_url.to_string())
             }
             StreamSource::YouTube { .. } => self.youtube_url(),
@@ -218,7 +218,7 @@ impl Stream {
                 }
             }
             (
-                StreamSource::Torrent {
+                StreamSource::Tramvai {
                     info_hash,
                     file_idx,
                     announce,
@@ -455,7 +455,7 @@ pub enum StreamSource {
         file_must_include: Vec<String>,
     },
     #[serde(rename_all = "camelCase")]
-    Torrent {
+    Tramvai {
         #[serde(with = "SerHex::<Strict>")]
         info_hash: [u8; 20],
         #[serde(default)]

@@ -136,7 +136,7 @@ impl WebEnv {
                     "type": match &stream.source {
                         StreamSource::Url { .. } => "Url",
                         StreamSource::YouTube { .. } => "YouTube",
-                        StreamSource::Torrent { .. } => "Torrent",
+                        StreamSource::Tramvai { .. } => "Torrent",
                         StreamSource::Rar { .. } => "Rar",
                         StreamSource::Zip { .. } => "Zip",
                         StreamSource::External { .. } => "External",

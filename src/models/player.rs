@@ -1245,7 +1245,7 @@ fn seek_update<E: Env + 'static>(
             // live streams will not have opensubtitle hash so just relying on URL and Torrent is enough.
             let stream_source_supported = matches!(
                 &selected.stream.source,
-                StreamSource::Url { .. } | StreamSource::Torrent { .. }
+                StreamSource::Url { .. } | StreamSource::Tramvai { .. }
             );
             match (
                 stream_source_supported,
@@ -1433,7 +1433,7 @@ fn skip_gaps_update<E: Env + 'static>(
         ) => {
             let stream_source_supported = matches!(
                 &selected.stream.source,
-                StreamSource::Url { .. } | StreamSource::Torrent { .. }
+                StreamSource::Url { .. } | StreamSource::Tramvai { .. }
             );
             // live streams will not have opensubtitle hash so just relying on URL and Torrent is enough.
             match (
