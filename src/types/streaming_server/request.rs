@@ -41,7 +41,7 @@ pub struct CreateMagnetRequest {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateMagnetBody {
-    pub torrent: CreateMagnetTorrent,
+    pub stream: CreateMagnetTorrent,
     pub peer_search: Option<PeerSearch>,
 }
 
@@ -56,7 +56,7 @@ impl From<CreateMagnetRequest> for Request<CreateMagnetBody> {
         let info_hash = val.info_hash;
 
         let body = CreateMagnetBody {
-            torrent: CreateMagnetTorrent {
+            stream: CreateMagnetTorrent {
                 info_hash: val.info_hash.to_owned(),
             },
             peer_search: if !val.announce.is_empty() {
