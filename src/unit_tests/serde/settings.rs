@@ -40,6 +40,8 @@ fn settings() {
             ),
             server_in_foreground: false,
             send_crash_reports: true,
+            playback_speed: 1000,
+            volume: 100
         },
         &[
             Token::Struct {
