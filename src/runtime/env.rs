@@ -1409,7 +1409,7 @@ mod test {
             let storage = STORAGE.read().expect("Should lock");
 
             assert_eq!(
-                &18.to_string(),
+                &19.to_string(),
                 storage
                     .get(SCHEMA_VERSION_STORAGE_KEY)
                     .expect("Should have the schema set"),
