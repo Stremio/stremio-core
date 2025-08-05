@@ -53,7 +53,7 @@ pub fn update_profile<E: Env + 'static>(
         })) =>
         // the action token will take priority over the profile AuthKey
         {
-            match action_token.or(profile.auth_key()) {
+            match action_token.as_ref().or(profile.auth_key()) {
                 Some(auth_key) => {
                     Effects::one(pull_user_from_api::<E>(auth_key, action_token.is_some()))
                         .unchanged()
