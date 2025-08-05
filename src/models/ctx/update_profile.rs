@@ -374,7 +374,7 @@ pub fn update_profile<E: Env + 'static>(
             request: APIRequest::GetUser { auth_key },
             result,
             overwritten,
-        }) if profile.auth_key() == Some(auth_key) => match result {
+        }) if *overwritten || profile.auth_key() == Some(auth_key) => match result {
             Ok(user) => match &mut profile.auth {
                 Some(auth) if auth.user != *user => {
                     user.clone_into(&mut auth.user);
