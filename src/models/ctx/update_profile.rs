@@ -381,8 +381,20 @@ pub fn update_profile<E: Env + 'static>(
                     Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }))
                         .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                 }
-                _ => Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }))
-                    .unchanged(),
+                _ => {
+                    let effects =
+                        Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }));
+                    if *overwritten {
+                        profile.auth = Some(Auth {
+                            key: auth_key.clone(),
+                            user: user.clone(),
+                        });
+
+                        effects.join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                    } else {
+                        effects.unchanged()
+                    }
+                }
             },
             Err(error) => {
                 let session_expired_effects = match error {
