@@ -343,6 +343,30 @@ pub enum DatastoreCommand {
     },
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RefreshTraktToken {
+    pub auth_key: AuthKey,
+}
+
+impl FetchRequestParams<RefreshTraktToken> for RefreshTraktToken {
+    fn endpoint(&self) -> Url {
+        API_URL.to_owned()
+    }
+    fn method(&self) -> Method {
+        Method::POST
+    }
+    fn path(&self) -> String {
+        "traktRefresh".to_string()
+    }
+    fn query(&self) -> Option<String> {
+        None
+    }
+    fn body(self) -> Self {
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use http::Method;

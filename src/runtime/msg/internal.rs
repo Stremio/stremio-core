@@ -9,8 +9,8 @@ use crate::runtime::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 use crate::types::api::{
     APIRequest, AuthRequest, DataExportResponse, DatastoreRequest, GetModalResponse,
-    GetNotificationResponse, LinkCodeResponse, LinkDataResponse, SeekLogRequest, SkipGapsRequest,
-    SkipGapsResponse, SuccessResponse,
+    GetNotificationResponse, LinkCodeResponse, LinkDataResponse, RefreshTraktToken, SeekLogRequest,
+    SkipGapsRequest, SkipGapsResponse, SuccessResponse,
 };
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
@@ -51,6 +51,8 @@ pub enum Internal {
     AddonsAPIResult(APIRequest, Result<Vec<Descriptor>, CtxError>),
     /// Result for pull user from API.
     UserAPIResult(APIRequest, Result<User, CtxError>),
+    /// Result from refreshing an expired Trakt token
+    UserRefreshTraktTokenAPIResult(RefreshTraktToken, Result<User, CtxError>),
     /// Result for deleting account from API.
     DeleteAccountAPIResult(APIRequest, Result<SuccessResponse, CtxError>),
     /// Result for library sync plan with API.

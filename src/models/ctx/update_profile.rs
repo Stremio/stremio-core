@@ -4,19 +4,27 @@ use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 
 use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
-use crate::models::ctx::{CtxError, CtxStatus, OtherError};
+use crate::models::common::eq_update;
+use crate::models::{
+    common::Loadable,
+    ctx::{CtxError, CtxStatus, OtherError},
+};
 use crate::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg};
-use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
+use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt};
 use crate::types::addon::Descriptor;
 use crate::types::api::{
-    fetch_api, APIError, APIRequest, APIResult, CollectionResponse, SuccessResponse,
+    fetch_api, APIError, APIRequest, APIResult, CollectionResponse, RefreshTraktToken,
+    SuccessResponse,
 };
 use crate::types::profile::{Auth, AuthKey, Password, Profile, Settings, User};
 use crate::types::streams::StreamsBucket;
 
+use super::RefreshTrakt;
+
 pub fn update_profile<E: Env + 'static>(
     profile: &mut Profile,
     streams: &mut StreamsBucket,
+    refresh_trakt: &mut Option<RefreshTrakt>,
     status: &CtxStatus,
     msg: &Msg,
 ) -> Effects {
@@ -48,8 +56,8 @@ pub fn update_profile<E: Env + 'static>(
             }))
             .unchanged(),
         },
-        Msg::Action(Action::Ctx(ActionCtx::PullUserFromAPI)) => match profile.auth_key() {
-            Some(auth_key) => Effects::one(pull_user_from_api::<E>(auth_key)).unchanged(),
+        Msg::Action(Action::Ctx(ActionCtx::PullUserFromAPI)) => match profile.auth.as_ref() {
+            Some(auth) => Effects::one(pull_user_from_api::<E>(&auth.key)).unchanged(),
             _ => Effects::msg(Msg::Event(Event::Error {
                 error: CtxError::from(OtherError::UserNotLoggedIn),
                 source: Box::new(Event::UserPulledFromAPI { uid: profile.uid() }),
@@ -364,12 +372,73 @@ pub fn update_profile<E: Env + 'static>(
         Msg::Internal(Internal::UserAPIResult(APIRequest::GetUser { auth_key }, result))
             if profile.auth_key() == Some(auth_key) =>
         {
+            let uid = profile.uid();
             match result {
                 Ok(user) => match &mut profile.auth {
-                    Some(auth) if auth.user != *user => {
-                        user.clone_into(&mut auth.user);
-                        Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }))
-                            .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                    Some(auth) => {
+                        let profile_effects = if auth.user != *user {
+                            user.clone_into(&mut auth.user);
+
+                            Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: uid.clone() }))
+                                .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                        } else {
+                            Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: uid.clone() }))
+                                .unchanged()
+                        };
+
+                        let refresh_trakt_effects = match user.trakt.as_ref() {
+                            Some(trakt_info)
+                                if trakt_info.created_at + trakt_info.expires_in < E::now() =>
+                            {
+                                // in case of success, trakt token won't be expired so checking for only error + 24h have passed is sufficient
+
+                                match &*refresh_trakt {
+                                    Some(RefreshTrakt {
+                                        last_requested,
+                                        response: loadable,
+                                        ..
+                                    }) if loadable.is_err()
+                                        && E::now() - *last_requested
+                                            > chrono::TimeDelta::hours(24) =>
+                                    {
+                                        let (new_request, refresh_effect) =
+                                            refresh_trakt_token_api::<E>(auth_key.clone());
+                                        let api_request_effects =
+                                            Effects::one(refresh_effect).unchanged();
+
+                                        eq_update(
+                                            refresh_trakt,
+                                            Some(RefreshTrakt {
+                                                request: new_request,
+                                                last_requested: E::now(),
+                                                response: Loadable::Loading,
+                                            }),
+                                        )
+                                        .join(api_request_effects)
+                                    }
+                                    None => {
+                                        let (request, refresh_effect) =
+                                            refresh_trakt_token_api::<E>(auth_key.clone());
+                                        let api_request_effects =
+                                            Effects::one(refresh_effect).unchanged();
+
+                                        eq_update(
+                                            refresh_trakt,
+                                            Some(RefreshTrakt {
+                                                request: request.to_owned(),
+                                                last_requested: E::now(),
+                                                response: Loadable::Loading,
+                                            }),
+                                        )
+                                        .join(api_request_effects)
+                                    }
+                                    _ => Effects::none().unchanged(),
+                                }
+                            }
+                            _ => Effects::none().unchanged(),
+                        };
+
+                        profile_effects.join(refresh_trakt_effects)
                     }
                     _ => Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }))
                         .unchanged(),
@@ -388,6 +457,66 @@ pub fn update_profile<E: Env + 'static>(
                     .unchanged()
                     .join(session_expired_effects)
                 }
+            }
+        }
+        Msg::Internal(Internal::UserRefreshTraktTokenAPIResult(request, result)) => {
+            match profile.auth.as_ref() {
+                Some(auth) if auth.key == request.auth_key => {
+                    let profile_user_effects = match result {
+                        Ok(new_user) => {
+                            let mut new_profile = profile.clone();
+                            new_profile.auth = new_profile.auth.map(|mut auth| {
+                                auth.user = new_user.clone();
+                                auth
+                            });
+
+                            let token_refreshed_effects =
+                                Effects::msg(Msg::Event(Event::TraktTokenRefreshed {
+                                    uid: profile.uid(),
+                                }))
+                                .unchanged();
+
+                            let profile_effects = eq_update(profile, new_profile);
+
+                            profile_effects
+                                .join(token_refreshed_effects)
+                                .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                        }
+                        Err(err) => {
+                            let event = Event::TraktTokenRefreshed { uid: profile.uid() };
+                            // todo: implement Error and Display for the CtxError and all underlying errors
+                            tracing::error!(
+                                "Refreshing trakt token failed for {:?} : {err:?}",
+                                profile.uid(),
+                            );
+
+                            Effects::msg(Msg::Event(Event::Error {
+                                error: CtxError::Env(EnvError::Other(
+                                    "Failed to refresh trakt token, please re-authenticate.".into(),
+                                )),
+                                source: Box::new(event),
+                            }))
+                        }
+                    };
+                    // use the same last requested or use the now()
+                    // the request that resulted in this result should have set the last_requested field
+                    let last_requested = refresh_trakt
+                        .as_ref()
+                        .map(|refresh_trakt| refresh_trakt.last_requested.to_owned())
+                        .unwrap_or_else(E::now);
+
+                    let refresh_trakt_effects = eq_update(
+                        refresh_trakt,
+                        Some(RefreshTrakt {
+                            request: request.to_owned(),
+                            last_requested,
+                            response: result.to_owned().into(),
+                        }),
+                    );
+
+                    profile_user_effects.join(refresh_trakt_effects)
+                }
+                _ => Effects::none().unchanged(),
             }
         }
         Msg::Internal(Internal::DeleteAccountAPIResult(
@@ -432,6 +561,29 @@ fn push_addons_to_api<E: Env + 'static>(addons: Vec<Descriptor>, auth_key: &Auth
             .boxed_env(),
     )
     .into()
+}
+
+fn refresh_trakt_token_api<E: Env + 'static>(auth_key: AuthKey) -> (RefreshTraktToken, Effect) {
+    let request = RefreshTraktToken { auth_key };
+
+    let request2 = request.clone();
+    let request_effect = EffectFuture::Concurrent(
+        async move {
+            let result = fetch_api::<E, _, _, _>(&request2)
+                .await
+                .map_err(CtxError::from)
+                .and_then(|api_result| api_result.into_result().map_err(CtxError::from));
+
+            Msg::Internal(Internal::UserRefreshTraktTokenAPIResult(
+                request2.clone(),
+                result,
+            ))
+        }
+        .boxed_env(),
+    )
+    .into();
+
+    (request, request_effect)
 }
 
 fn pull_user_from_api<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
