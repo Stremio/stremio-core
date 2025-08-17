@@ -46,6 +46,8 @@ pub struct StreamItemState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub playback_speed: Option<f32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub volume: Option<u8>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub player_type: Option<String>,
 }
 
@@ -91,7 +93,7 @@ impl StreamsItem {
     ///         a stream for next binge video as audio/subtitle sync might be different,
     ///         but we want to retain track ids as next binge group might have
     ///         the same embedded tracks with same ids;
-    ///     Otherwise retain only playback speed and player type as these should not change
+    ///     Otherwise retain only playback speed, volume and player type as these should not change
     ///         regardless of the video, since you usually want to maintain these throughout
     ///         the whole series;
     #[inline]
@@ -111,6 +113,7 @@ impl StreamsItem {
             }
             StreamItemState {
                 playback_speed: state.playback_speed,
+                volume: state.volume,
                 player_type: state.player_type,
                 ..Default::default()
             }
