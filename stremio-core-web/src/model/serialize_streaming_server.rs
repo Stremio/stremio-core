@@ -1,13 +1,14 @@
-use crate::model::deep_links_ext::DeepLinksExt;
+#[cfg(feature = "wasm")]
 use gloo_utils::format::JsValueSerdeExt;
 use serde::Serialize;
 use stremio_core::deep_links::MetaItemDeepLinks;
 use stremio_core::models::common::Loadable;
-use stremio_core::models::streaming_server::{PlaybackDevice, Selected, StreamingServer};
+use stremio_core::models::streaming_server::{PlaybackDevice, Selected};
 use stremio_core::runtime::EnvError;
 use stremio_core::types::addon::ResourcePath;
 use stremio_core::types::streaming_server::{DeviceInfo, NetworkInfo, Settings, Statistics};
 use url::Url;
+#[cfg(feature = "wasm")]
 use wasm_bindgen::JsValue;
 
 mod model {
@@ -29,8 +30,12 @@ mod model {
         pub statistics: Option<&'a Loadable<Statistics, EnvError>>,
     }
 }
+#[cfg(feature = "wasm")]
+pub fn serialize_streaming_server(
+    streaming_server: &stremio_core::models::streaming_server::StreamingServer,
+) -> JsValue {
+    use crate::model::deep_links_ext::DeepLinksExt;
 
-pub fn serialize_streaming_server(streaming_server: &StreamingServer) -> JsValue {
     <JsValue as JsValueSerdeExt>::from_serde(&model::StreamingServer {
         selected: &streaming_server.selected,
         settings: &streaming_server.settings,

@@ -9,6 +9,7 @@ use super::UrlExtended;
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 pub struct Subtitles {
+    pub id: String,
     pub lang: String,
     #[cfg_attr(
         test,

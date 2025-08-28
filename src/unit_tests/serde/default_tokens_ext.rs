@@ -56,8 +56,10 @@ impl DefaultTokens for Subtitles {
         vec![
             Token::Struct {
                 name: "Subtitles",
-                len: 2,
+                len: 3,
             },
+            Token::Str("id"),
+            Token::Str(""),
             Token::Str("lang"),
             Token::Str(""),
             Token::Str("url"),
@@ -321,13 +323,15 @@ impl DefaultTokens for User {
             vec![
                 Token::Struct {
                     name: "User",
-                    len: 9,
+                    len: 10,
                 },
                 Token::Str("_id"),
                 Token::Str(""),
                 Token::Str("email"),
                 Token::Str(""),
                 Token::Str("fbId"),
+                Token::None,
+                Token::Str("appleId"),
                 Token::None,
                 Token::Str("avatar"),
                 Token::None,
@@ -372,10 +376,12 @@ impl DefaultTokens for Settings {
         vec![
             Token::Struct {
                 name: "Settings",
-                len: 27,
+                len: 31,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
+            Token::Str("hideSpoilers"),
+            Token::Bool(false),
             Token::Str("streamingServerUrl"),
             Token::Str("http://127.0.0.1:11470/"),
             Token::Str("playerType"),
@@ -429,10 +435,16 @@ impl DefaultTokens for Settings {
             Token::U32(3000),
             Token::Str("pauseOnMinimize"),
             Token::Bool(false),
+            Token::Str("quitOnClose"),
+            Token::Bool(true),
             Token::Str("surroundSound"),
             Token::Bool(false),
             Token::Str("streamingServerWarningDismissed"),
             Token::None,
+            Token::Str("serverInForeground"),
+            Token::Bool(false),
+            Token::Str("sendCrashReports"),
+            Token::Bool(true),
             Token::StructEnd,
         ]
     }

@@ -2,12 +2,15 @@ use std::marker::PhantomData;
 
 use futures::{future, FutureExt};
 use http::Request;
+use once_cell::sync::Lazy;
 use percent_encoding::utf8_percent_encode;
 use url::Url;
 
 use crate::addon_transport::http_transport::legacy::AddonLegacyTransport;
 use crate::addon_transport::AddonTransport;
-use crate::constants::{ADDON_LEGACY_PATH, ADDON_MANIFEST_PATH, URI_COMPONENT_ENCODE_SET};
+use crate::constants::{
+    ADDON_LEGACY_PATH, ADDON_MANIFEST_PATH, CINEMETA_URL, URI_COMPONENT_ENCODE_SET,
+};
 use crate::runtime::{Env, EnvError, EnvFutureExt, TryEnvFuture};
 use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
 use crate::types::query_params_encode;
@@ -58,10 +61,38 @@ impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
                 query_params_encode(path.extra.iter().map(|ev| (&ev.name, &ev.value)))
             )
         };
-        let url = self
+
+        let mut url = self
             .transport_url
             .as_str()
             .replace(ADDON_MANIFEST_PATH, &path);
+
+        static CINEMETA_ADDONS_CATALOG_URL: Lazy<String> = Lazy::new(|| {
+            CINEMETA_URL
+                .as_str()
+                .replace(ADDON_MANIFEST_PATH, "/addon_catalog/all/community.json")
+        });
+
+        match (
+            url.clone(),
+            std::env::var("CINEMETA_ADDONS_CATALOG_URL")
+                .ok()
+                .or(option_env!("CINEMETA_ADDONS_CATALOG_URL").map(|slice| slice.to_string()))
+                .filter(|env| !env.is_empty()),
+        ) {
+            (current_url, Some(replace_url)) if url.contains(&*CINEMETA_ADDONS_CATALOG_URL) => {
+                let new_url = current_url.replace(&*CINEMETA_ADDONS_CATALOG_URL, &replace_url);
+                url = new_url.clone();
+                tracing::warn!(
+                    current_url = current_url,
+                    replace_url = replace_url,
+                    new_url = new_url,
+                    "Custom cinemeta addons catalog url will be used",
+                );
+            }
+            _ => {}
+        }
+
         let request = Request::get(&url).body(()).expect("request builder failed");
         let addon_transport_url = self.transport_url.clone();
         E::fetch::<_, ResourceResponse>(request)

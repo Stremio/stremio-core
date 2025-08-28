@@ -7,6 +7,7 @@ use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Profile, Settings};
 use crate::types::search_history::SearchHistoryBucket;
+use crate::types::server_urls::ServerUrlsBucket;
 use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{TestEnv, REQUESTS, STORAGE};
 use stremio_derive::Model;
@@ -28,6 +29,7 @@ fn actionctx_updatesettings() {
         Profile::default(),
         LibraryBucket::default(),
         StreamsBucket::default(),
+        ServerUrlsBucket::new::<TestEnv>(None),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
         DismissedEventsBucket::default(),
@@ -49,7 +51,7 @@ fn actionctx_updatesettings() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap().settings == settings
             }),
         "Settings updated successfully in storage"
@@ -87,6 +89,7 @@ fn actionctx_updatesettings_not_changed() {
                 profile,
                 LibraryBucket::default(),
                 StreamsBucket::default(),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
@@ -111,7 +114,7 @@ fn actionctx_updatesettings_not_changed() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap().settings == settings
             }),
         "Settings not updated in storage"

@@ -3,7 +3,7 @@ use std::sync::RwLock;
 use enclose::enclose;
 use futures::{future, try_join, FutureExt, StreamExt};
 use gloo_utils::format::JsValueSerdeExt;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use tracing::{info, Level};
 use tracing_wasm::WASMLayerConfigBuilder;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
@@ -12,14 +12,14 @@ use stremio_core::{
     constants::{
         DISMISSED_EVENTS_STORAGE_KEY, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
         NOTIFICATIONS_STORAGE_KEY, PROFILE_STORAGE_KEY, SEARCH_HISTORY_STORAGE_KEY,
-        STREAMS_STORAGE_KEY,
+        STREAMING_SERVER_URLS_STORAGE_KEY, STREAMS_STORAGE_KEY,
     },
     models::common::Loadable,
     runtime::{msg::Action, Env, EnvError, Runtime, RuntimeAction, RuntimeEvent},
     types::{
         events::DismissedEventsBucket, library::LibraryBucket, notifications::NotificationsBucket,
         profile::Profile, resource::Stream, search_history::SearchHistoryBucket,
-        streams::StreamsBucket,
+        server_urls::ServerUrlsBucket, streams::StreamsBucket,
     },
 };
 
@@ -29,10 +29,9 @@ use crate::{
     model::{WebModel, WebModelField},
 };
 
-lazy_static! {
-    static ref RUNTIME: RwLock<Option<Loadable<Runtime<WebEnv, WebModel>, EnvError>>> =
-        Default::default();
-}
+#[allow(clippy::type_complexity)]
+static RUNTIME: Lazy<RwLock<Option<Loadable<Runtime<WebEnv, WebModel>, EnvError>>>> =
+    Lazy::new(Default::default);
 
 #[wasm_bindgen(start)]
 pub fn start() {
@@ -69,6 +68,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                 WebEnv::get_storage::<LibraryBucket>(LIBRARY_RECENT_STORAGE_KEY),
                 WebEnv::get_storage::<LibraryBucket>(LIBRARY_STORAGE_KEY),
                 WebEnv::get_storage::<StreamsBucket>(STREAMS_STORAGE_KEY),
+                WebEnv::get_storage::<ServerUrlsBucket>(STREAMING_SERVER_URLS_STORAGE_KEY),
                 WebEnv::get_storage::<NotificationsBucket>(NOTIFICATIONS_STORAGE_KEY),
                 WebEnv::get_storage::<SearchHistoryBucket>(SEARCH_HISTORY_STORAGE_KEY),
                 WebEnv::get_storage::<DismissedEventsBucket>(DISMISSED_EVENTS_STORAGE_KEY),
@@ -79,6 +79,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                     recent_bucket,
                     other_bucket,
                     streams_bucket,
+                    server_urls_bucket,
                     notifications_bucket,
                     search_history_bucket,
                     dismissed_events_bucket,
@@ -93,6 +94,9 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                     };
                     let streams_bucket =
                         streams_bucket.unwrap_or_else(|| StreamsBucket::new(profile.uid()));
+                    let server_urls_bucket =
+                        server_urls_bucket
+                            .unwrap_or(ServerUrlsBucket::new::<WebEnv>(profile.uid()));
                     let notifications_bucket = notifications_bucket
                         .unwrap_or(NotificationsBucket::new::<WebEnv>(profile.uid(), vec![]));
                     let search_history_bucket =
@@ -103,6 +107,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                         profile,
                         library,
                         streams_bucket,
+                        server_urls_bucket,
                         notifications_bucket,
                         search_history_bucket,
                         dismissed_events_bucket,

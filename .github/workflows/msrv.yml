@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  RUST_MSRV_VERSION: '1.67.1'
+  RUST_MSRV_VERSION: '1.77'
 
 jobs:
   build:
@@ -32,7 +32,7 @@ jobs:
     - uses: Swatinem/rust-cache@v2
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - run: cargo check
     - run: cargo test

@@ -1,6 +1,10 @@
+[build]
 
+rustdocflags = ["--cfg", "docsrs", "-Z", "unstable-options", "--enable-index-page"]
 
 [alias]
 # Requires cargo-watch
 ww = ["watch-wasm"]
 watch-wasm = ["watch", "--shell", "./scripts/build.sh --dev"]
+
+wasm-docs = "doc --target wasm32-unknown-unknown -F wasm"

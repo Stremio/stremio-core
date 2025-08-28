@@ -1,22 +1,32 @@
-use crate::constants::LIBRARY_COLLECTION_NAME;
-use crate::models::common::{DescriptorLoadable, Loadable, ResourceLoadable};
-use crate::models::ctx::{
-    update_events, update_library, update_notifications, update_profile, update_search_history,
-    update_streams, update_trakt_addon, CtxError,
+use crate::{
+    constants::LIBRARY_COLLECTION_NAME,
+    models::{
+        common::{DescriptorLoadable, Loadable, ResourceLoadable},
+        ctx::{
+            update_events, update_library, update_notifications, update_profile,
+            update_search_history, update_streaming_server_urls, update_streams,
+            update_trakt_addon, CtxError, OtherError,
+        },
+    },
+    runtime::{
+        msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg},
+        Effect, EffectFuture, Effects, Env, EnvFutureExt, Update,
+    },
+    types::{
+        api::{
+            fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
+            DatastoreCommand, DatastoreRequest, LibraryItemsResponse, SuccessResponse,
+        },
+        events::{DismissedEventsBucket, Events},
+        library::LibraryBucket,
+        notifications::NotificationsBucket,
+        profile::{Auth, AuthKey, Profile},
+        resource::MetaItem,
+        search_history::SearchHistoryBucket,
+        server_urls::ServerUrlsBucket,
+        streams::StreamsBucket,
+    },
 };
-use crate::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg};
-use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
-use crate::types::api::{
-    fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
-    DatastoreCommand, DatastoreRequest, LibraryItemsResponse, SuccessResponse,
-};
-use crate::types::events::{DismissedEventsBucket, Events};
-use crate::types::library::LibraryBucket;
-use crate::types::notifications::NotificationsBucket;
-use crate::types::profile::{Auth, AuthKey, Profile};
-use crate::types::resource::MetaItem;
-use crate::types::search_history::SearchHistoryBucket;
-use crate::types::streams::StreamsBucket;
 
 #[cfg(test)]
 use derivative::Derivative;
@@ -25,8 +35,6 @@ use futures::{future, FutureExt, TryFutureExt};
 use serde::Serialize;
 
 use tracing::{error, trace};
-
-use super::OtherError;
 
 #[derive(Default, PartialEq, Eq, Serialize, Clone, Debug)]
 pub enum CtxStatus {
@@ -48,6 +56,8 @@ pub struct Ctx {
     #[serde(skip)]
     pub streams: StreamsBucket,
     #[serde(skip)]
+    pub streaming_server_urls: ServerUrlsBucket,
+    #[serde(skip)]
     pub search_history: SearchHistoryBucket,
     #[serde(skip)]
     pub dismissed_events: DismissedEventsBucket,
@@ -58,7 +68,12 @@ pub struct Ctx {
     /// Used only for loading the Descriptor and then the descriptor will be discarded
     pub trakt_addon: Option<DescriptorLoadable>,
     #[serde(skip)]
+    /// The catalogs response from all addons that support the `lastVideosIds`
+    /// ([`LAST_VIDEOS_IDS_EXTRA_PROP`]) resource
+    ///
+    /// [`LAST_VIDEOS_IDS_EXTRA_PROP`]: static@crate::constants::LAST_VIDEOS_IDS_EXTRA_PROP
     pub notification_catalogs: Vec<ResourceLoadable<Vec<MetaItem>>>,
+
     pub events: Events,
 }
 
@@ -67,7 +82,9 @@ impl Ctx {
         profile: Profile,
         library: LibraryBucket,
         streams: StreamsBucket,
+        streaming_server_urls: ServerUrlsBucket,
         notifications: NotificationsBucket,
+
         search_history: SearchHistoryBucket,
         dismissed_events: DismissedEventsBucket,
     ) -> Self {
@@ -75,6 +92,7 @@ impl Ctx {
             profile,
             library,
             streams,
+            streaming_server_urls,
             search_history,
             dismissed_events,
             notifications,
@@ -96,10 +114,15 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 self.status = CtxStatus::Loading(auth_request.to_owned());
                 Effects::one(authenticate::<E>(auth_request)).unchanged()
             }
-            Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
+            Msg::Action(Action::Ctx(ActionCtx::Logout)) => {
+                Effects::msg(Msg::Internal(Internal::Logout(false))).unchanged()
+            }
+            Msg::Internal(Internal::Logout(deleted)) => {
                 let uid = self.profile.uid();
                 let session_effects = match self.profile.auth_key() {
-                    Some(auth_key) => Effects::one(delete_session::<E>(auth_key)).unchanged(),
+                    Some(auth_key) if !deleted => {
+                        Effects::one(delete_session::<E>(auth_key)).unchanged()
+                    }
                     _ => Effects::none().unchanged(),
                 };
                 let profile_effects =
@@ -107,6 +130,11 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
+                let server_urls_effects = update_streaming_server_urls::<E>(
+                    &mut self.streaming_server_urls,
+                    &self.status,
+                    msg,
+                );
                 let search_history_effects =
                     update_search_history::<E>(&mut self.search_history, &self.status, msg);
                 let events_effects =
@@ -132,6 +160,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(profile_effects)
                     .join(library_effects)
                     .join(streams_effects)
+                    .join(server_urls_effects)
                     .join(search_history_effects)
                     .join(events_effects)
                     .join(trakt_addon_effects)
@@ -157,6 +186,11 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     msg,
                 );
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
+                let server_urls_effects = update_streaming_server_urls::<E>(
+                    &mut self.streaming_server_urls,
+                    &self.status,
+                    msg,
+                );
                 let search_history_effects =
                     update_search_history::<E>(&mut self.search_history, &self.status, msg);
                 let events_effects =
@@ -225,6 +259,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 profile_effects
                     .join(library_effects)
                     .join(streams_effects)
+                    .join(server_urls_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
                     .join(search_history_effects)
@@ -237,6 +272,11 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
+                let server_urls_effects = update_streaming_server_urls::<E>(
+                    &mut self.streaming_server_urls,
+                    &self.status,
+                    msg,
+                );
                 let trakt_addon_effects = update_trakt_addon::<E>(
                     &mut self.trakt_addon,
                     &self.profile,
@@ -258,6 +298,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 profile_effects
                     .join(library_effects)
                     .join(streams_effects)
+                    .join(server_urls_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
                     .join(search_history_effects)

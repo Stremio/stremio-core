@@ -120,6 +120,11 @@ pub struct Player {
     pub seek_history: Vec<SeekLog>,
     #[serde(skip_serializing)]
     pub skip_gaps: Option<(SkipGapsRequest, Loadable<SkipGapsResponse, CtxError>)>,
+    /// Enable or disable Seek log collection.
+    ///
+    /// Default: `false` (Do not collect)
+    #[serde(default, skip_serializing)]
+    pub collect_seek_logs: bool,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for Player {
@@ -136,7 +141,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .as_ref()
                         .map(|meta_request| &meta_request.path.id)
                 {
-                    item_state_update(&mut self.library_item, &self.next_video)
+                    item_state_update(&mut self.library_item, self.next_video.as_ref())
                 } else {
                     Effects::none().unchanged()
                 };
@@ -213,6 +218,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.meta_item,
                     &ctx.library,
                 );
+
+                let library_item_state_effects =
+                    library_item_state_update(&mut self.library_item, &self.selected);
+
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
 
@@ -275,6 +284,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(update_streams_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
+                    .join(library_item_state_effects)
                     .join(watched_effects)
                     .join(skip_gaps_effects)
                     .join(intro_outro_update_effects)
@@ -301,7 +311,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
 
                 let item_state_update_effects =
-                    item_state_update(&mut self.library_item, &self.next_video);
+                    item_state_update(&mut self.library_item, self.next_video.as_ref());
                 let push_to_library_effects = match &self.library_item {
                     Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                         library_item.to_owned(),
@@ -380,6 +390,73 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 }))
                 .unchanged()
             }
+            Msg::Action(Action::Player(ActionPlayer::Seek {
+                time,
+                duration,
+                device,
+            })) => match (&self.selected, &mut self.library_item) {
+                (
+                    // make sure we have a Selected
+                    Some(_selected),
+                    Some(library_item),
+                ) => {
+                    // We might want to consider whether we want to update the LibraryItem for next video
+                    // like we do for TimeChanged
+
+                    // update the last_watched
+                    library_item.state.last_watched = Some(E::now());
+
+                    if self.collect_seek_logs {
+                        // collect seek history
+                        if library_item.r#type == "series" && time < &PLAYER_IGNORE_SEEK_AFTER {
+                            self.seek_history.push(SeekLog {
+                                from: library_item.state.time_offset,
+                                to: *time,
+                            });
+                        }
+                    }
+                    // };
+                    time.clone_into(&mut library_item.state.time_offset);
+                    duration.clone_into(&mut library_item.state.duration);
+                    // No need to check and flag the library item as watched,
+                    // seeking does not update the time_watched!
+
+                    // Nor there's a need to update removed and temp, this can only happen
+                    // after we mark a LibraryItem as watched! Leave this to TimeChanged
+
+                    // Update the analytics, we still want to keep the correct time and duration updated
+                    if let Some(analytics_context) = &mut self.analytics_context {
+                        library_item
+                            .state
+                            .video_id
+                            .clone_into(&mut analytics_context.video_id);
+                        analytics_context.time = Some(library_item.state.time_offset);
+                        analytics_context.duration = Some(library_item.state.duration);
+                        analytics_context.device_type = Some(device.to_owned());
+                        analytics_context.device_name = Some(device.to_owned());
+                        analytics_context.player_duration = Some(duration.to_owned());
+                    };
+
+                    // on seeking we want to make sure we send the correct Trakt events
+                    let trakt_event_effects = match (self.loaded, self.paused) {
+                        (true, Some(true)) => Effects::msg(Msg::Event(Event::TraktPaused {
+                            context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                        }))
+                        .unchanged(),
+                        (true, Some(false)) => Effects::msg(Msg::Event(Event::TraktPlaying {
+                            context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                        }))
+                        .unchanged(),
+                        _ => Effects::none(),
+                    };
+
+                    let push_to_library_effects =
+                        push_to_library::<E>(&mut self.push_library_item_time, library_item);
+
+                    trakt_event_effects.join(push_to_library_effects)
+                }
+                _ => Effects::none().unchanged(),
+            },
             Msg::Action(Action::Player(ActionPlayer::TimeChanged {
                 time,
                 duration,
@@ -396,8 +473,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     }),
                     Some(library_item),
                 ) => {
-                    let seeking = library_item.state.time_offset.abs_diff(*time) > 1000;
-
                     // if we've selected a new video (like the next episode)
                     library_item.state.last_watched = Some(E::now());
                     if library_item.state.video_id != Some(video_id.to_owned()) {
@@ -409,20 +484,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         library_item.state.time_watched = 0;
                         library_item.state.flagged_watched = 0;
                     } else {
-                        // else we have added to the currently selected video/stream
-                        // seek logging
-                        if seeking
-                            && library_item.r#type == "series"
-                            && time < &PLAYER_IGNORE_SEEK_AFTER
-                        {
-                            self.seek_history.push(SeekLog {
-                                from: library_item.state.time_offset,
-                                to: *time,
-                            });
-                        }
-
-                        let time_watched =
-                            1000.min(time.saturating_sub(library_item.state.time_offset));
+                        let time_watched = time.saturating_sub(library_item.state.time_offset);
                         library_item.state.time_watched =
                             library_item.state.time_watched.saturating_add(time_watched);
                         library_item.state.overall_time_watched = library_item
@@ -430,8 +492,18 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                             .overall_time_watched
                             .saturating_add(time_watched);
                     };
-                    time.clone_into(&mut library_item.state.time_offset);
-                    duration.clone_into(&mut library_item.state.duration);
+
+                    // if we seek forward, time will be < time_offset
+                    // this is the only thing we can guard against!
+                    //
+                    // for both backward and forward seeking we expect the apps to
+                    // send the right actions and update the times accordingly
+                    // when the state changes (from seeking to playing and vice versa)
+                    if time > &library_item.state.time_offset {
+                        time.clone_into(&mut library_item.state.time_offset);
+                        duration.clone_into(&mut library_item.state.duration);
+                    }
+
                     if library_item.state.flagged_watched == 0
                         && library_item.state.time_watched as f64
                             > library_item.state.duration as f64 * WATCHED_THRESHOLD_COEF
@@ -444,13 +516,16 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                             watched_bit_field.set_video(video_id, true);
                             library_item.state.watched = Some(watched_bit_field.into());
                         }
-                    };
+                    }
+
                     if library_item.temp && library_item.state.times_watched == 0 {
                         library_item.removed = true;
-                    };
+                    }
+
                     if library_item.removed {
                         library_item.temp = true;
-                    };
+                    }
+
                     if let Some(analytics_context) = &mut self.analytics_context {
                         library_item
                             .state
@@ -462,37 +537,47 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         analytics_context.device_name = Some(device.to_owned());
                         analytics_context.player_duration = Some(duration.to_owned());
                     };
-                    let trakt_event_effects = if seeking && self.loaded && self.paused.is_some() {
-                        if self.paused.expect("paused is None") {
-                            Effects::msg(Msg::Event(Event::TraktPaused {
-                                context: self
-                                    .analytics_context
-                                    .as_ref()
-                                    .cloned()
-                                    .unwrap_or_default(),
-                            }))
-                            .unchanged()
-                        } else {
-                            Effects::msg(Msg::Event(Event::TraktPlaying {
-                                context: self
-                                    .analytics_context
-                                    .as_ref()
-                                    .cloned()
-                                    .unwrap_or_default(),
-                            }))
-                            .unchanged()
-                        }
-                    } else {
-                        Effects::none()
-                    };
 
-                    let push_to_library_effects =
-                        push_to_library::<E>(&mut self.push_library_item_time, library_item);
-
-                    trakt_event_effects.join(push_to_library_effects)
+                    push_to_library::<E>(&mut self.push_library_item_time, library_item)
                 }
                 _ => Effects::none().unchanged(),
             },
+            Msg::Action(Action::Player(ActionPlayer::PausedChanged { paused }))
+                if self.selected.is_some() =>
+            {
+                self.paused = Some(*paused);
+                let trakt_event_effects = if !self.loaded {
+                    self.loaded = true;
+                    Effects::msg(Msg::Event(Event::PlayerPlaying {
+                        load_time: self
+                            .load_time
+                            .map(|load_time| {
+                                E::now().timestamp_millis() - load_time.timestamp_millis()
+                            })
+                            .unwrap_or(-1),
+                        context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                    }))
+                    .unchanged()
+                } else if *paused {
+                    Effects::msg(Msg::Event(Event::TraktPaused {
+                        context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                    }))
+                    .unchanged()
+                } else {
+                    Effects::msg(Msg::Event(Event::TraktPlaying {
+                        context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                    }))
+                    .unchanged()
+                };
+                let update_library_item_effects = match &self.library_item {
+                    Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                        library_item.to_owned(),
+                    )))
+                    .unchanged(),
+                    _ => Effects::none().unchanged(),
+                };
+                trakt_event_effects.join(update_library_item_effects)
+            }
             Msg::Action(Action::Player(ActionPlayer::PausedChanged { paused }))
                 if self.selected.is_some() =>
             {
@@ -578,6 +663,67 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 }))
                 .unchanged()
             }
+            Msg::Action(Action::Player(ActionPlayer::MarkVideoAsWatched(video, is_watched))) => {
+                match (&self.library_item, &self.watched) {
+                    (Some(library_item), Some(watched)) => {
+                        let mut library_item = library_item.to_owned();
+                        library_item.mark_video_as_watched::<E>(watched, video, *is_watched);
+
+                        Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
+                            .unchanged()
+                    }
+                    _ => Effects::none().unchanged(),
+                }
+            }
+            Msg::Action(Action::Player(ActionPlayer::MarkSeasonAsWatched(season, is_watched))) => {
+                match (&self.library_item, &self.watched) {
+                    (Some(library_item), Some(watched)) => {
+                        // Find videos of given season from the meta item loadable
+                        let videos = self
+                            .meta_item
+                            .as_ref()
+                            .and_then(|meta_item| meta_item.content.as_ref())
+                            .and_then(|meta_item| meta_item.ready())
+                            .map(|meta_item| meta_item.videos_by_season(*season));
+
+                        match videos {
+                            Some(videos) => {
+                                let mut library_item = library_item.to_owned();
+                                library_item.mark_videos_as_watched::<E>(
+                                    watched,
+                                    videos,
+                                    *is_watched,
+                                );
+
+                                Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                                    library_item,
+                                )))
+                                .unchanged()
+                            }
+                            None => Effects::none().unchanged(),
+                        }
+                    }
+                    _ => Effects::none().unchanged(),
+                }
+            }
+            Msg::Internal(Internal::LibraryChanged(_)) => {
+                let library_item_effects = library_item_update::<E>(
+                    &mut self.library_item,
+                    &self.selected,
+                    &self.meta_item,
+                    &ctx.library,
+                );
+
+                let library_item_state_effects =
+                    library_item_state_update(&mut self.library_item, &self.selected);
+
+                let watched_effects =
+                    watched_update(&mut self.watched, &self.meta_item, &self.library_item);
+
+                library_item_effects
+                    .join(library_item_state_effects)
+                    .join(watched_effects)
+            }
             Msg::Internal(Internal::StreamsChanged(_)) => {
                 stream_state_update(&mut self.stream_state, &self.selected, &ctx.streams)
             }
@@ -656,6 +802,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.meta_item,
                     &ctx.library,
                 );
+
+                let library_item_state_effects =
+                    library_item_state_update(&mut self.library_item, &self.selected);
+
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
 
@@ -698,6 +848,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(next_stream_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
+                    .join(library_item_state_effects)
                     .join(watched_effects)
                     .join(skip_gaps_effects)
             }
@@ -755,7 +906,7 @@ fn push_to_library<E: Env + 'static>(
 
 fn item_state_update(
     library_item: &mut Option<LibraryItem>,
-    next_video: &Option<Video>,
+    next_video: Option<&Video>,
 ) -> Effects {
     match library_item {
         Some(library_item)
@@ -972,10 +1123,7 @@ fn library_item_update<E: Env + 'static>(
             meta_request: Some(meta_request),
             ..
         }) => {
-            let library_item = library_item
-                .as_ref()
-                .filter(|library_item| library_item.id == meta_request.path.id)
-                .or_else(|| library.items.get(&meta_request.path.id));
+            let library_item = library.items.get(&meta_request.path.id);
             let meta_item = meta_item.as_ref().and_then(|meta_item| match meta_item {
                 ResourceLoadable {
                     content: Some(Loadable::Ready(meta_item)),
@@ -997,28 +1145,7 @@ fn library_item_update<E: Env + 'static>(
         }
         _ => None,
     };
-    if *library_item != next_library_item {
-        let update_library_item_effects = match &library_item {
-            Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                library_item.to_owned(),
-            )))
-            .unchanged(),
-            _ => Effects::none().unchanged(),
-        };
-        let update_next_library_item_effects = match &next_library_item {
-            Some(next_library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                next_library_item.to_owned(),
-            )))
-            .unchanged(),
-            _ => Effects::none().unchanged(),
-        };
-        *library_item = next_library_item;
-        Effects::none()
-            .join(update_library_item_effects)
-            .join(update_next_library_item_effects)
-    } else {
-        Effects::none().unchanged()
-    }
+    eq_update(library_item, next_library_item)
 }
 
 fn watched_update(
@@ -1039,6 +1166,28 @@ fn watched_update(
         })
         .map(|(meta_item, library_item)| library_item.state.watched_bitfield(&meta_item.videos));
     eq_update(watched, next_watched)
+}
+
+fn library_item_state_update(
+    library_item: &mut Option<LibraryItem>,
+    selected: &Option<Selected>,
+) -> Effects {
+    match (library_item, selected) {
+        (Some(library_item), Some(selected)) => {
+            match (&selected.stream_request, &library_item.state.video_id) {
+                (Some(stream_request), Some(state_video_id))
+                    if stream_request.path.id != *state_video_id =>
+                {
+                    library_item.state.time_offset = 0;
+                    Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                        library_item.to_owned(),
+                    )))
+                }
+                _ => Effects::none().unchanged(),
+            }
+        }
+        _ => Effects::none().unchanged(),
+    }
 }
 
 fn subtitles_update<E: Env + 'static>(
@@ -1103,7 +1252,7 @@ fn seek_update<E: Env + 'static>(
                 selected.stream.name.as_ref(),
                 video_params.hash.clone(),
             ) {
-                (true, Some(stream_name), Some(opensubtitles_hash)) => {
+                (true, Some(stream_name), Some(os_hash)) => {
                     let stream_name_hash = {
                         use sha2::Digest;
                         let mut sha256 = sha2::Sha256::new();
@@ -1114,7 +1263,7 @@ fn seek_update<E: Env + 'static>(
                     };
 
                     let seek_log_req = SeekLogRequest {
-                        opensubtitles_hash,
+                        os_hash,
                         item_id: library_item.id.to_owned(),
                         series_info: series_info.to_owned(),
                         stream_name_hash,
@@ -1292,7 +1441,7 @@ fn skip_gaps_update<E: Env + 'static>(
                 selected.stream.name.as_ref(),
                 video_params.hash.clone(),
             ) {
-                (true, Some(stream_name), Some(opensubtitles_hash)) => {
+                (true, Some(stream_name), Some(os_hash)) => {
                     let stream_name_hash = {
                         use sha2::Digest;
                         let mut sha256 = sha2::Sha256::new();
@@ -1304,7 +1453,7 @@ fn skip_gaps_update<E: Env + 'static>(
 
                     let skip_gaps_request = SkipGapsRequest {
                         auth_key,
-                        opensubtitles_hash,
+                        os_hash,
                         item_id: library_item.id.to_owned(),
                         series_info: series_info.to_owned(),
                         stream_name_hash,

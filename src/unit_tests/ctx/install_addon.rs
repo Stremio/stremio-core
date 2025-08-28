@@ -9,6 +9,7 @@ use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::search_history::SearchHistoryBucket;
+use crate::types::server_urls::ServerUrlsBucket;
 use crate::types::streams::StreamsBucket;
 use crate::types::True;
 use crate::unit_tests::{
@@ -29,7 +30,7 @@ fn actionctx_installaddon_install() {
     }
     let addon = Descriptor {
         manifest: Manifest {
-            id: "id".to_owned(),
+            id: "id".into(),
             version: Version::new(0, 0, 1),
             name: "name".to_owned(),
             contact_email: None,
@@ -56,6 +57,7 @@ fn actionctx_installaddon_install() {
                 },
                 LibraryBucket::default(),
                 StreamsBucket::default(),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
@@ -80,7 +82,7 @@ fn actionctx_installaddon_install() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap().addons == vec![addon.to_owned()]
             }),
         "addon updated successfully in storage"
@@ -114,7 +116,7 @@ fn actionctx_installaddon_install_with_user() {
     }
     let addon = Descriptor {
         manifest: Manifest {
-            id: "id".to_owned(),
+            id: "id".into(),
             version: Version::new(0, 0, 1),
             name: "name".to_owned(),
             contact_email: None,
@@ -140,9 +142,10 @@ fn actionctx_installaddon_install_with_user() {
                     auth: Some(Auth {
                         key: AuthKey("auth_key".to_owned()),
                         user: User {
-                            id: "user_id".to_owned(),
+                            id: "user_id".into(),
                             email: "user_email".to_owned(),
                             fb_id: None,
+                            apple_id: None,
                             avatar: None,
                             last_modified: TestEnv::now(),
                             date_registered: TestEnv::now(),
@@ -154,6 +157,7 @@ fn actionctx_installaddon_install_with_user() {
                                 marketing: true,
                                 from: Some("tests".to_owned()),
                             },
+                            ..Default::default()
                         },
                     }),
                     addons: vec![],
@@ -161,6 +165,7 @@ fn actionctx_installaddon_install_with_user() {
                 },
                 LibraryBucket::default(),
                 StreamsBucket::default(),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
@@ -185,7 +190,7 @@ fn actionctx_installaddon_install_with_user() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap().addons == vec![addon.to_owned()]
             }),
         "addon updated successfully in storage"
@@ -284,6 +289,7 @@ fn actionctx_installaddon_update() {
                 },
                 LibraryBucket::default(),
                 StreamsBucket::default(),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
@@ -308,7 +314,7 @@ fn actionctx_installaddon_update() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap().addons
                     == vec![addon.to_owned(), addon2.to_owned()]
             }),
@@ -329,7 +335,7 @@ fn actionctx_installaddon_already_installed() {
     }
     let addon = Descriptor {
         manifest: Manifest {
-            id: "id".to_owned(),
+            id: "id".into(),
             version: Version::new(0, 0, 1),
             name: "name".to_owned(),
             contact_email: None,
@@ -361,6 +367,7 @@ fn actionctx_installaddon_already_installed() {
                 profile,
                 LibraryBucket::default(),
                 StreamsBucket::default(),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
@@ -385,7 +392,7 @@ fn actionctx_installaddon_already_installed() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(false, |data| {
+            .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap().addons == vec![addon.to_owned()]
             }),
         "addons in storage not updated"

@@ -10,7 +10,7 @@ jobs:
     name: Deploy docs on gh-pages
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
 
@@ -18,13 +18,13 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           # Use nightly to build the docs with `--cfg docsrs`
-          toolchain: nightly
+          toolchain: nightly-2025-01-21
           components: rust-docs
 
       - name: Build docs
         # Building locally:
         # for `--enable-index-page` it is required to pass `-Z unstable-options` to rustdocs
-        run: RUSTDOCFLAGS="--cfg docsrs -Z unstable-options --enable-index-page" cargo +nightly build-docs
+        run: RUSTDOCFLAGS="--cfg docsrs -Z unstable-options --enable-index-page" cargo +nightly-2025-01-21 build-docs
 
       - name: Prepare /docs
         run: |
@@ -32,7 +32,9 @@ jobs:
           mv target/doc ./docs
 
       - name: Deploy gh-pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs
+          # we build and publish docs from `development` branch only
+          destination_dir: ./docs/${{ github.ref_name }}

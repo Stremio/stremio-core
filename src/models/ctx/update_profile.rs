@@ -11,7 +11,7 @@ use crate::types::addon::Descriptor;
 use crate::types::api::{
     fetch_api, APIError, APIRequest, APIResult, CollectionResponse, SuccessResponse,
 };
-use crate::types::profile::{Auth, AuthKey, Profile, Settings, User};
+use crate::types::profile::{Auth, AuthKey, Password, Profile, Settings, User};
 use crate::types::streams::StreamsBucket;
 
 pub fn update_profile<E: Env + 'static>(
@@ -21,7 +21,7 @@ pub fn update_profile<E: Env + 'static>(
     msg: &Msg,
 ) -> Effects {
     match msg {
-        Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
+        Msg::Internal(Internal::Logout(_)) => {
             let next_profile = Profile::default();
             if *profile != next_profile {
                 *profile = next_profile;
@@ -30,6 +30,14 @@ pub fn update_profile<E: Env + 'static>(
                 Effects::none().unchanged()
             }
         }
+        Msg::Action(Action::Ctx(ActionCtx::DeleteAccount(password))) => match profile.auth_key() {
+            Some(auth_key) => Effects::one(delete_account::<E>(auth_key, password)).unchanged(),
+            _ => Effects::msg(Msg::Event(Event::Error {
+                error: CtxError::from(OtherError::UserNotLoggedIn),
+                source: Box::new(Event::UserAccountDeleted { uid: profile.uid() }),
+            }))
+            .unchanged(),
+        },
         Msg::Action(Action::Ctx(ActionCtx::PushUserToAPI)) => match &profile.auth {
             Some(Auth { key, user }) => {
                 Effects::one(push_user_to_api::<E>(user.to_owned(), key)).unchanged()
@@ -369,7 +377,7 @@ pub fn update_profile<E: Env + 'static>(
                 Err(error) => {
                     let session_expired_effects = match error {
                         CtxError::API(APIError { code, .. }) if *code == 1 => {
-                            Effects::msg(Msg::Internal(Internal::Logout)).unchanged()
+                            Effects::msg(Msg::Internal(Internal::Logout(false))).unchanged()
                         }
                         _ => Effects::none().unchanged(),
                     };
@@ -382,6 +390,17 @@ pub fn update_profile<E: Env + 'static>(
                 }
             }
         }
+        Msg::Internal(Internal::DeleteAccountAPIResult(
+            APIRequest::DeleteAccount { auth_key, .. },
+            result,
+        )) if profile.auth_key() == Some(auth_key) => match result {
+            Ok(_) => Effects::msg(Msg::Internal(Internal::Logout(true))).unchanged(),
+            Err(error) => Effects::msg(Msg::Event(Event::Error {
+                error: error.to_owned(),
+                source: Box::new(Event::UserAccountDeleted { uid: profile.uid() }),
+            }))
+            .unchanged(),
+        },
         _ => Effects::none().unchanged(),
     }
 }
@@ -486,6 +505,24 @@ fn push_profile_to_storage<E: Env + 'static>(profile: &Profile) -> Effect {
                     source: Box::new(Event::ProfilePushedToStorage { uid }),
                 })
             }))
+            .boxed_env(),
+    )
+    .into()
+}
+
+fn delete_account<E: Env + 'static>(auth_key: &AuthKey, password: &Password) -> Effect {
+    let request = APIRequest::DeleteAccount {
+        auth_key: auth_key.to_owned(),
+        password: password.to_owned(),
+    };
+    EffectFuture::Concurrent(
+        fetch_api::<E, _, _, _>(&request)
+            .map_err(CtxError::from)
+            .and_then(|result| match result {
+                APIResult::Ok(result) => future::ok(result),
+                APIResult::Err(error) => future::err(CtxError::from(error)),
+            })
+            .map(move |result| Msg::Internal(Internal::DeleteAccountAPIResult(request, result)))
             .boxed_env(),
     )
     .into()

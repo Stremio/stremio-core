@@ -7,6 +7,7 @@ use url::Url;
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
     pub interface_language: String,
+    pub hide_spoilers: bool,
     pub streaming_server_url: Url,
     pub player_type: Option<String>,
     pub binge_watching: bool,
@@ -36,8 +37,12 @@ pub struct Settings {
     pub seek_short_time_duration: u32,
     /// Whether we should pause the playback when the application get's minimized
     pub pause_on_minimize: bool,
+    /// Wheter we should quit the application when closing the window
+    pub quit_on_close: bool,
     pub surround_sound: bool,
     pub streaming_server_warning_dismissed: Option<DateTime<Utc>>,
+    pub server_in_foreground: bool,
+    pub send_crash_reports: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -54,6 +59,7 @@ impl Default for Settings {
             binge_watching: true,
             play_in_background: true,
             hardware_decoding: true,
+            hide_spoilers: false,
             frame_rate_matching_strategy: FrameRateMatchingStrategy::FrameRateOnly,
             next_video_notification_duration: 35000,
             audio_passthrough: false,
@@ -75,8 +81,11 @@ impl Default for Settings {
             seek_time_duration: 10000,
             seek_short_time_duration: 3000,
             pause_on_minimize: false,
+            quit_on_close: true,
             surround_sound: false,
             streaming_server_warning_dismissed: None,
+            server_in_foreground: false,
+            send_crash_reports: true,
         }
     }
 }

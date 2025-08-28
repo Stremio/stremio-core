@@ -122,7 +122,7 @@ pub fn update_notifications<E: Env + 'static>(
             Msg::Internal(Internal::DismissNotificationItem(id.to_owned())),
         )
         .unchanged(),
-        Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
+        Msg::Internal(Internal::Logout(_)) => {
             let notification_catalogs_effects = eq_update(notification_catalogs, vec![]);
             let next_notifications = NotificationsBucket::new::<E>(profile.uid(), vec![]);
             let notifications_effects = if *notifications != next_notifications {

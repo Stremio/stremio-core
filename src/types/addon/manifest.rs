@@ -134,7 +134,7 @@ impl Manifest {
                     ManifestResource::Short(_) => self.id_prefixes.as_ref(),
                     ManifestResource::Full { id_prefixes, .. } => id_prefixes.as_ref(),
                 };
-                let type_supported = types.map_or(false, |types| types.contains(&path.r#type));
+                let type_supported = types.is_some_and(|types| types.contains(&path.r#type));
                 let id_supported = id_prefixes.map_or(true, |id_prefixes| {
                     id_prefixes.iter().any(|prefix| path.id.starts_with(prefix))
                 });
@@ -164,6 +164,21 @@ pub struct ManifestPreview {
     pub types: Vec<String>,
     #[serde(default)]
     pub behavior_hints: ManifestBehaviorHints,
+}
+
+impl From<&Manifest> for ManifestPreview {
+    fn from(manifest_full: &Manifest) -> Self {
+        Self {
+            id: manifest_full.id.clone(),
+            version: manifest_full.version.clone(),
+            name: manifest_full.name.clone(),
+            description: manifest_full.description.clone(),
+            logo: manifest_full.logo.clone(),
+            background: manifest_full.background.clone(),
+            types: manifest_full.types.clone(),
+            behavior_hints: manifest_full.behavior_hints.clone(),
+        }
+    }
 }
 
 /// Resources supported by the addon.

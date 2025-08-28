@@ -114,7 +114,7 @@ impl<'a, T: Env> AddonLegacyTransport<'a, T> {
     }
 }
 
-impl<'a, T: Env> AddonTransport for AddonLegacyTransport<'a, T> {
+impl<T: Env> AddonTransport for AddonLegacyTransport<'_, T> {
     fn resource(&self, path: &ResourcePath) -> TryEnvFuture<ResourceResponse> {
         let fetch_req = match build_legacy_req(self.transport_url, path) {
             Ok(r) => r,
@@ -241,7 +241,7 @@ fn build_legacy_req(transport_url: &Url, path: &ResourcePath) -> Result<Request<
         serde_json::to_string(&q_json).map_err(|error| EnvError::Serde(error.to_string()))?,
     );
     let url = format!("{transport_url}/q.json?b={param_str}");
-    Ok(Request::get(&url).body(()).expect("request builder failed"))
+    Ok(Request::get(url).body(()).expect("request builder failed"))
 }
 
 fn build_jsonrpc(method: &str, params: serde_json::Value) -> serde_json::Value {

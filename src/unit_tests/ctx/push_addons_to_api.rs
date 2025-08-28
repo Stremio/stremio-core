@@ -8,6 +8,7 @@ use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::search_history::SearchHistoryBucket;
+use crate::types::server_urls::ServerUrlsBucket;
 use crate::types::streams::StreamsBucket;
 use crate::types::True;
 use crate::unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS};
@@ -31,7 +32,7 @@ fn actionctx_pushaddonstoapi() {
                 Profile {
                     addons: vec![Descriptor {
                         manifest: Manifest {
-                            id: "id".to_owned(),
+                            id: "id".into(),
                             version: Version::new(0, 0, 1),
                             name: "name".to_owned(),
                             contact_email: None,
@@ -52,6 +53,7 @@ fn actionctx_pushaddonstoapi() {
                 },
                 LibraryBucket::default(),
                 StreamsBucket::default(),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
@@ -103,9 +105,10 @@ fn actionctx_pushaddonstoapi_with_user() {
                     auth: Some(Auth {
                         key: AuthKey("auth_key".to_owned()),
                         user: User {
-                            id: "user_id".to_owned(),
+                            id: "user_id".into(),
                             email: "user_email".to_owned(),
                             fb_id: None,
+                            apple_id: None,
                             avatar: None,
                             last_modified: TestEnv::now(),
                             date_registered: TestEnv::now(),
@@ -117,11 +120,12 @@ fn actionctx_pushaddonstoapi_with_user() {
                                 marketing: true,
                                 from: Some("tests".to_owned()),
                             },
+                            ..Default::default()
                         },
                     }),
                     addons: vec![Descriptor {
                         manifest: Manifest {
-                            id: "id".to_owned(),
+                            id: "id".into(),
                             version: Version::new(0, 0, 1),
                             name: "name".to_owned(),
                             contact_email: None,
@@ -142,6 +146,7 @@ fn actionctx_pushaddonstoapi_with_user() {
                 },
                 LibraryBucket::default(),
                 StreamsBucket::default(),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),

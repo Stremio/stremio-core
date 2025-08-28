@@ -3,6 +3,7 @@ use crate::models::player::AnalyticsContext as PlayerAnalyticsContext;
 use crate::types::api::AuthRequest;
 use crate::types::library::LibraryItemId;
 use crate::types::profile::{AuthKey, Settings, UID};
+use crate::types::resource::MetaItemId;
 use serde::Serialize;
 use url::Url;
 
@@ -88,6 +89,9 @@ pub enum Event {
     UserLoggedOut {
         uid: UID,
     },
+    UserAccountDeleted {
+        uid: UID,
+    },
     SessionDeleted {
         auth_key: AuthKey,
     },
@@ -129,6 +133,9 @@ pub enum Event {
         id: LibraryItemId,
         is_watched: bool,
     },
+    MetaItemRated {
+        id: MetaItemId,
+    },
     /// The notifications for the given LibraryItemId have been dismissed
     NotificationsDismissed {
         id: LibraryItemId,
@@ -141,6 +148,12 @@ pub enum Event {
     },
     PlayingOnDevice {
         device: String,
+    },
+    StreamingServerUrlsBucketChanged {
+        uid: UID,
+    },
+    StreamingServerUrlsPushedToStorage {
+        uid: UID,
     },
     Error {
         error: CtxError,

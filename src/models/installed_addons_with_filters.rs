@@ -3,7 +3,7 @@ use crate::models::common::{compare_with_priorities, eq_update};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
-use crate::types::addon::{DescriptorPreview, ManifestPreview};
+use crate::types::addon::Descriptor;
 use crate::types::profile::Profile;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
@@ -35,7 +35,7 @@ pub struct Selectable {
 pub struct InstalledAddonsWithFilters {
     pub selected: Option<Selected>,
     pub selectable: Selectable,
-    pub catalog: Vec<DescriptorPreview>,
+    pub catalog: Vec<Descriptor>,
 }
 
 impl InstalledAddonsWithFilters {
@@ -130,7 +130,7 @@ fn selectable_update(
 }
 
 fn catalog_update(
-    catalog: &mut Vec<DescriptorPreview>,
+    catalog: &mut Vec<Descriptor>,
     selected: &Option<Selected>,
     profile: &Profile,
 ) -> Effects {
@@ -142,19 +142,7 @@ fn catalog_update(
                 Some(r#type) => addon.manifest.types.contains(r#type),
                 None => true,
             })
-            .map(|addon| DescriptorPreview {
-                transport_url: addon.transport_url.to_owned(),
-                manifest: ManifestPreview {
-                    id: addon.manifest.id.to_owned(),
-                    version: addon.manifest.version.to_owned(),
-                    name: addon.manifest.name.to_owned(),
-                    description: addon.manifest.description.to_owned(),
-                    logo: addon.manifest.logo.to_owned(),
-                    background: addon.manifest.background.to_owned(),
-                    types: addon.manifest.types.to_owned(),
-                    behavior_hints: addon.manifest.behavior_hints.to_owned(),
-                },
-            })
+            .cloned()
             .collect::<Vec<_>>(),
         _ => vec![],
     };

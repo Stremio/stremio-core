@@ -6,14 +6,17 @@ use url::Url;
 fn subtitles() {
     assert_tokens(
         &Subtitles {
+            id: "id".into(),
             lang: "lang".to_owned(),
             url: UrlExtended::Url(Url::parse("https://url").unwrap()),
         },
         &[
             Token::Struct {
                 name: "Subtitles",
-                len: 2,
+                len: 3,
             },
+            Token::Str("id"),
+            Token::Str("id"),
             Token::Str("lang"),
             Token::Str("lang"),
             Token::Str("url"),

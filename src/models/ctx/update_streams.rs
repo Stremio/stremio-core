@@ -5,7 +5,7 @@ use std::collections::hash_map::Entry;
 use crate::constants::STREAMS_STORAGE_KEY;
 use crate::models::common::{Loadable, ResourceLoadable};
 use crate::models::ctx::{CtxError, CtxStatus};
-use crate::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg};
+use crate::runtime::msg::{CtxAuthResponse, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 use crate::types::streams::{StreamsBucket, StreamsItem, StreamsItemKey};
 
@@ -15,7 +15,7 @@ pub fn update_streams<E: Env + 'static>(
     msg: &Msg,
 ) -> Effects {
     match msg {
-        Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
+        Msg::Internal(Internal::Logout(_)) => {
             let next_streams = StreamsBucket::default();
             if *streams != next_streams {
                 *streams = next_streams;

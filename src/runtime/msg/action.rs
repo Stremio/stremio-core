@@ -3,10 +3,10 @@ use std::ops::Range;
 use serde::Deserialize;
 use url::Url;
 
-use crate::types::streams::StreamItemState;
 use crate::{
     models::{
         addon_details::Selected as AddonDetailsSelected,
+        calendar::Selected as CalendarSelected,
         catalog_with_filters::Selected as CatalogWithFiltersSelected,
         catalogs_with_extra::Selected as CatalogsWithExtraSelected,
         installed_addons_with_filters::Selected as InstalledAddonsWithFiltersSelected,
@@ -19,12 +19,14 @@ use crate::{
         addon::Descriptor,
         api::AuthRequest,
         library::LibraryItemId,
-        profile::Settings as ProfileSettings,
+        profile::{Password, Settings as ProfileSettings},
+        rating::Rating,
         resource::{MetaItemId, MetaItemPreview, Video},
         streaming_server::{
             Settings as StreamingServerSettings,
             StatisticsRequest as StreamingServerStatisticsRequest,
         },
+        streams::StreamItemState,
     },
 };
 
@@ -33,6 +35,7 @@ use crate::{
 pub enum ActionCtx {
     Authenticate(AuthRequest),
     Logout,
+    DeleteAccount(Password),
     InstallAddon(Descriptor),
     InstallTraktAddon,
     LogoutTrakt,
@@ -68,6 +71,10 @@ pub enum ActionCtx {
     GetEvents,
     /// Dismiss an event by id, either a Modal or Notification
     DismissEvent(String),
+    /// Add a server URL to the list of available streaming servers
+    AddServerUrl(Url),
+    /// Delete a server URL from the list of available streaming servers
+    DeleteServerUrl(Url),
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -110,6 +117,10 @@ pub enum ActionMetaDetails {
     ///
     /// [`LibraryItem`]: crate::types::library::LibraryItem
     MarkVideoAsWatched(Video, bool),
+    /// Mark all videos from given season as watched
+    MarkSeasonAsWatched(u32, bool),
+    /// Rate the current meta item
+    Rate(Option<Rating>),
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -153,6 +164,23 @@ pub enum ActionPlayer {
     StreamStateChanged {
         state: StreamItemState,
     },
+    /// Seek performed by the user when using the seekbar or
+    /// the shortcuts for seeking.
+    ///
+    /// When transitioning from Seek to TimeChanged and vice-versa
+    /// we need to make sure to update the other accordingly
+    /// if we have any type of throttling of these events,
+    /// otherwise we will get wrong `LibraryItem.state.time_offset`!
+    Seek {
+        time: u64,
+        duration: u64,
+        device: String,
+    },
+    /// A normal playback by the video player
+    ///
+    /// The time from one TimeChanged action to another can only grow (move forward)
+    /// and should never go backwards, except when a [`ActionPlayer::Seek`] happen
+    /// and moves the time backwards.
     TimeChanged {
         time: u64,
         duration: u64,
@@ -169,10 +197,19 @@ pub enum ActionPlayer {
     /// - We've watched a movie to the last second
     /// - We've watched a movie series to the last second
     Ended,
+    /// Marks the given [`Video`] of the [`LibraryItem`] as watched.
+    ///
+    /// Applicable only when you have a multi-video (e.g. movie series) item.
+    ///
+    /// [`LibraryItem`]: crate::types::library::LibraryItem
+    MarkVideoAsWatched(Video, bool),
+    /// Mark all videos from given season as watched
+    MarkSeasonAsWatched(u32, bool),
 }
 
 #[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "model", content = "args")]
+/// Action to load a specific Model.
 pub enum ActionLoad {
     AddonDetails(AddonDetailsSelected),
     CatalogWithFilters(Option<CatalogWithFiltersSelected>),
@@ -181,6 +218,8 @@ pub enum ActionLoad {
     InstalledAddonsWithFilters(InstalledAddonsWithFiltersSelected),
     LibraryWithFilters(LibraryWithFiltersSelected),
     LibraryByType(LibraryByTypeSelected),
+    /// Loads the Calendar Model
+    Calendar(Option<CalendarSelected>),
     /// Loads the data required for Local search
     LocalSearch,
     MetaDetails(MetaDetailsSelected),

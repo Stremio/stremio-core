@@ -1,12 +1,15 @@
 use gloo_utils::format::JsValueSerdeExt;
+use wasm_bindgen::JsValue;
+
+use super::*;
+
 #[cfg(debug_assertions)]
 use serde::Serialize;
-
-use wasm_bindgen::JsValue;
 
 use stremio_core::{
     models::{
         addon_details::AddonDetails,
+        calendar::Calendar,
         catalog_with_filters::CatalogWithFilters,
         catalogs_with_extra::CatalogsWithExtra,
         continue_watching_preview::ContinueWatchingPreview,
@@ -22,22 +25,15 @@ use stremio_core::{
     },
     runtime::Effects,
     types::{
-        addon::DescriptorPreview, api::LinkAuthKey, events::DismissedEventsBucket,
-        library::LibraryBucket, notifications::NotificationsBucket, profile::Profile,
-        resource::MetaItemPreview, search_history::SearchHistoryBucket, streams::StreamsBucket,
+        addon::Descriptor, api::LinkAuthKey, events::DismissedEventsBucket, library::LibraryBucket,
+        notifications::NotificationsBucket, profile::Profile, resource::MetaItemPreview,
+        search_history::SearchHistoryBucket, server_urls::ServerUrlsBucket, streams::StreamsBucket,
     },
     Model,
 };
 
-use crate::{
-    env::WebEnv,
-    model::{
-        serialize_catalogs_with_extra, serialize_continue_watching_preview, serialize_ctx,
-        serialize_data_export, serialize_discover, serialize_installed_addons, serialize_library,
-        serialize_local_search, serialize_meta_details, serialize_player, serialize_remote_addons,
-        serialize_streaming_server,
-    },
-};
+use super::SerializeModel;
+use crate::env::WebEnv;
 
 #[derive(Model, Clone)]
 #[cfg_attr(debug_assertions, derive(Serialize))]
@@ -51,11 +47,12 @@ pub struct WebModel {
     pub discover: CatalogWithFilters<MetaItemPreview>,
     pub library: LibraryWithFilters<NotRemovedFilter>,
     pub continue_watching: LibraryWithFilters<ContinueWatchingFilter>,
+    pub calendar: Calendar,
     pub search: CatalogsWithExtra,
     /// Pre-loaded results for local search
     pub local_search: LocalSearch,
     pub meta_details: MetaDetails,
-    pub remote_addons: CatalogWithFilters<DescriptorPreview>,
+    pub remote_addons: CatalogWithFilters<Descriptor>,
     pub installed_addons: InstalledAddonsWithFilters,
     pub addon_details: AddonDetails,
     pub streaming_server: StreamingServer,
@@ -67,6 +64,7 @@ impl WebModel {
         profile: Profile,
         library: LibraryBucket,
         streams: StreamsBucket,
+        server_urls: ServerUrlsBucket,
         notifications: NotificationsBucket,
         search_history: SearchHistoryBucket,
         dismissed_events: DismissedEventsBucket,
@@ -79,7 +77,7 @@ impl WebModel {
         let (continue_watching, continue_watching_effects) =
             LibraryWithFilters::<ContinueWatchingFilter>::new(&library, &notifications);
         let (remote_addons, remote_addons_effects) =
-            CatalogWithFilters::<DescriptorPreview>::new(&profile);
+            CatalogWithFilters::<Descriptor>::new(&profile);
         let (installed_addons, installed_addons_effects) =
             InstalledAddonsWithFilters::new(&profile);
         let (streaming_server, streaming_server_effects) = StreamingServer::new::<WebEnv>(&profile);
@@ -89,6 +87,7 @@ impl WebModel {
                 profile,
                 library,
                 streams,
+                server_urls,
                 notifications,
                 search_history,
                 dismissed_events,
@@ -101,13 +100,17 @@ impl WebModel {
             discover,
             library: library_,
             continue_watching,
+            calendar: Default::default(),
             search: Default::default(),
             meta_details: Default::default(),
             remote_addons,
             installed_addons,
             addon_details: Default::default(),
             streaming_server,
-            player: Default::default(),
+            player: Player {
+                collect_seek_logs: true,
+                ..Default::default()
+            },
         };
         (
             model,
@@ -133,7 +136,16 @@ impl WebModel {
                 self.streaming_server.base_url.as_ref(),
                 &self.ctx.profile.settings,
             ),
-            WebModelField::Board => serialize_catalogs_with_extra(&self.board, &self.ctx),
+            WebModelField::Board => {
+                // let old = serialize_catalogs_with_extra(&self.board, &self.ctx);
+                crate::model::serialize_catalogs_with_extra::CatalogsWithExtra::new(
+                    &self.board,
+                    &self.ctx,
+                    &self.streaming_server,
+                )
+                .serialize_model()
+                .expect("JsValue from model::CatalogsWithExtra")
+            }
             WebModelField::Discover => {
                 serialize_discover(&self.discover, &self.ctx, &self.streaming_server)
             }
@@ -149,11 +161,23 @@ impl WebModel {
                 self.streaming_server.base_url.as_ref(),
                 "continuewatching".to_owned(),
             ),
-            WebModelField::Search => serialize_catalogs_with_extra(&self.search, &self.ctx),
-            WebModelField::LocalSearch => serialize_local_search(&self.local_search),
-            WebModelField::MetaDetails => {
-                serialize_meta_details(&self.meta_details, &self.ctx, &self.streaming_server)
+            WebModelField::Search => {
+                // let old = serialize_catalogs_with_extra(&self.search, &self.ctx)
+                crate::model::serialize_catalogs_with_extra::CatalogsWithExtra::new(
+                    &self.search,
+                    &self.ctx,
+                    &self.streaming_server,
+                )
+                .serialize_model()
+                .expect("JsValue from model::CatalogsWithExtra")
             }
+            WebModelField::Calendar => serialize_calendar(&self.calendar),
+            WebModelField::LocalSearch => serialize_local_search(&self.local_search),
+            WebModelField::MetaDetails => serialize_meta_details::<WebEnv>(
+                &self.meta_details,
+                &self.ctx,
+                &self.streaming_server,
+            ),
             WebModelField::RemoteAddons => serialize_remote_addons(&self.remote_addons, &self.ctx),
             WebModelField::InstalledAddons => serialize_installed_addons(&self.installed_addons),
             WebModelField::AddonDetails => {
@@ -162,7 +186,7 @@ impl WebModel {
             }
             WebModelField::StreamingServer => serialize_streaming_server(&self.streaming_server),
             WebModelField::Player => {
-                serialize_player(&self.player, &self.ctx, &self.streaming_server)
+                serialize_player::<WebEnv>(&self.player, &self.ctx, &self.streaming_server)
             }
         }
     }

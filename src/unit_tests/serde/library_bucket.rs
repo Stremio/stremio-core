@@ -7,7 +7,7 @@ fn library_bucket() {
     assert_tokens(
         &vec![
             LibraryBucket {
-                uid: Some("uid".to_owned()),
+                uid: Some("uid".into()),
                 items: HashMap::new(),
             },
             LibraryBucket {

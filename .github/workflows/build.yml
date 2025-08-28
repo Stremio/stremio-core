@@ -1,8 +1,15 @@
 name: Build
 
 on:
-  - push
-  - pull_request
+  # build on each push as we build the stremio-core-web npm package
+  # and upload it to gh-pages for testing with stremio-web.
+  # For pull requests we do not build the package and if
+  # developer pushes a commit without opening a PR
+  # this will still create a package for testing!
+  push:
+  pull_request:
+    branches:
+      - development
 
 # Stops the running workflow of previous pushes
 concurrency:
@@ -18,10 +25,13 @@ jobs:
     steps:
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
-    - name: Rust setup (stable)
-      uses: dtolnay/rust-toolchain@stable
+    # we use older stable version because our old version of `wasm-bindgen` is not compatible with >= 1.86
+    - name: Rust setup (stable, 1.85)
+      uses: dtolnay/rust-toolchain@1.85
+      with:
+        components: rustfmt, clippy
 
     - uses: Swatinem/rust-cache@v2
 
@@ -42,18 +52,20 @@ jobs:
 
     env:
       NODE_VERSION: 12
-      WASM_PACK_VERSION: 0.12.1
+      WASM_PACK_VERSION: 0.13.1
+      RUST_VERSION: '1.77'
     # No need to check core-web if core itself is not passing
     needs: build-core
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Rust setup
-        uses: dtolnay/rust-toolchain@1.77
+        uses: dtolnay/rust-toolchain@master
         with:
-          components: rustfmt, clippy
+          toolchain: ${{ env.RUST_VERSION }}
+          components: rust-std
           targets: wasm32-unknown-unknown
 
       - uses: Swatinem/rust-cache@v2
@@ -119,7 +131,7 @@ jobs:
         
       - name: Deploy gh-pages
         if: ${{ ! startsWith(github.ref, 'refs/pull/')  &&  github.actor != 'dependabot[bot]' }}
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # the build directory already contains the `github.ref_name` as subfolder(s)

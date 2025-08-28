@@ -6,15 +6,16 @@ on:
 
 env:
   NODE_VERSION: 12
-  WASM_PACK_VERSION: 0.12.1
+  WASM_PACK_VERSION: 0.13.1
+  RUST_VERSION: '1.77'
 
 jobs:
   prerelease-stremio-core-web:
-    if: ${{ ! startsWith(github.ref, 'refs/tags/stremio-core-web') }}
+    if: ${{ startsWith(github.ref, 'refs/tags/stremio-core-web') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup NodeJS
         uses: actions/setup-node@v4
@@ -25,8 +26,9 @@ jobs:
           cache-dependency-path: stremio-core-web/package-lock.json
 
       - name: Rust setup
-        uses: dtolnay/rust-toolchain@1.77
+        uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: ${{ env.RUST_VERSION }}
           targets: wasm32-unknown-unknown
 
       - uses: taiki-e/install-action@v2

@@ -70,4 +70,25 @@ impl<R, E> Loadable<R, E> {
             _ => panic!("{}", msg),
         }
     }
+
+    #[inline]
+    pub fn map_ready<F, U>(self, f: F) -> Loadable<U, E>
+    where
+        F: FnOnce(R) -> U,
+    {
+        match self {
+            Loadable::Err(e) => Loadable::Err(e),
+            Loadable::Ready(r) => Loadable::Ready(f(r)),
+            Loadable::Loading => Loadable::Loading,
+        }
+    }
+}
+
+impl<R, E> From<Result<R, E>> for Loadable<R, E> {
+    fn from(result: Result<R, E>) -> Self {
+        match result {
+            Ok(x) => Loadable::Ready(x),
+            Err(err) => Loadable::Err(err),
+        }
+    }
 }

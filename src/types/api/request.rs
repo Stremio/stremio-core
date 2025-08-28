@@ -3,7 +3,7 @@ use core::fmt;
 use crate::constants::{API_URL, LINK_API_URL};
 use crate::types::addon::Descriptor;
 use crate::types::library::LibraryItem;
-use crate::types::profile::{AuthKey, GDPRConsent, User};
+use crate::types::profile::{AuthKey, GDPRConsent, Password, User};
 use crate::types::resource::SeriesInfo;
 use chrono::{DateTime, Local};
 #[cfg(test)]
@@ -48,6 +48,11 @@ pub enum APIRequest {
     #[serde(rename_all = "camelCase")]
     Logout {
         auth_key: AuthKey,
+    },
+    #[serde(rename_all = "camelCase")]
+    DeleteAccount {
+        auth_key: AuthKey,
+        password: Password,
     },
     #[serde(rename_all = "camelCase")]
     AddonCollectionGet {
@@ -108,7 +113,7 @@ pub struct SeekLog {
 pub struct SeekLogRequest {
     /// Opensubtitles hash returned by the server
     #[serde(rename = "osId")]
-    pub opensubtitles_hash: String,
+    pub os_hash: String,
     pub item_id: String,
     #[serde(flatten)]
     pub series_info: SeriesInfo,
@@ -130,7 +135,7 @@ pub struct SkipGapsRequest {
     pub auth_key: AuthKey,
     /// Opensubtitles hash returned by the server
     #[serde(rename = "osId")]
-    pub opensubtitles_hash: String,
+    pub os_hash: String,
     pub item_id: String,
     #[serde(flatten)]
     pub series_info: SeriesInfo,
@@ -153,8 +158,10 @@ impl FetchRequestParams<APIRequest> for APIRequest {
             APIRequest::Auth(AuthRequest::Login { .. }) => "login".to_owned(),
             APIRequest::Auth(AuthRequest::LoginWithToken { .. }) => "loginWithToken".to_owned(),
             APIRequest::Auth(AuthRequest::Facebook { .. }) => "authWithFacebook".to_owned(),
+            APIRequest::Auth(AuthRequest::Apple { .. }) => "authWithApple".to_owned(),
             APIRequest::Auth(AuthRequest::Register { .. }) => "register".to_owned(),
             APIRequest::Logout { .. } => "logout".to_owned(),
+            APIRequest::DeleteAccount { .. } => "deleteUser".to_owned(),
             APIRequest::AddonCollectionGet { .. } => "addonCollectionGet".to_owned(),
             APIRequest::AddonCollectionSet { .. } => "addonCollectionSet".to_owned(),
             APIRequest::GetUser { .. } => "getUser".to_owned(),
@@ -195,6 +202,12 @@ pub enum AuthRequest {
     Facebook {
         token: String,
     },
+    Apple {
+        token: String,
+        sub: String,
+        email: String,
+        name: String,
+    },
     LoginWithToken {
         token: String,
     },
@@ -226,6 +239,18 @@ impl fmt::Debug for AuthRequest {
             Self::Facebook { token: _ } => f
                 .debug_struct("Facebook")
                 .field("token", &"<SENSITIVE>")
+                .finish(),
+            Self::Apple {
+                token: _,
+                sub,
+                email,
+                name,
+            } => f
+                .debug_struct("Apple")
+                .field("token", &"<SENSITIVE>")
+                .field("sub", sub)
+                .field("email", email)
+                .field("name", name)
                 .finish(),
             Self::LoginWithToken { token: _ } => f
                 .debug_struct("LoginWithToken")

@@ -8,26 +8,30 @@ fn user() {
     assert_tokens(
         &vec![
             User {
-                id: "id".to_owned(),
+                id: "id".into(),
                 email: "email".to_owned(),
-                fb_id: Some("fb_id".to_owned()),
+                fb_id: None,
+                apple_id: None,
                 avatar: Some("avatar".to_owned()),
                 last_modified: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
                 date_registered: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
                 trakt: None,
                 premium_expire: None,
                 gdpr_consent: GDPRConsent::default(),
+                ..Default::default()
             },
             User {
-                id: "id".to_owned(),
+                id: "id".into(),
                 email: "email".to_owned(),
                 fb_id: None,
+                apple_id: None,
                 avatar: None,
                 last_modified: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
                 date_registered: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
                 trakt: None,
                 premium_expire: None,
                 gdpr_consent: GDPRConsent::default(),
+                ..Default::default()
             },
         ]
         .compact(),
@@ -36,15 +40,16 @@ fn user() {
                 Token::Seq { len: Some(2) },
                 Token::Struct {
                     name: "User",
-                    len: 9,
+                    len: 10,
                 },
                 Token::Str("_id"),
                 Token::Str("id"),
                 Token::Str("email"),
                 Token::Str("email"),
                 Token::Str("fbId"),
-                Token::Some,
-                Token::Str("fb_id"),
+                Token::None,
+                Token::Str("appleId"),
+                Token::None,
                 Token::Str("avatar"),
                 Token::Some,
                 Token::Str("avatar"),
@@ -63,13 +68,15 @@ fn user() {
                 Token::StructEnd,
                 Token::Struct {
                     name: "User",
-                    len: 9,
+                    len: 10,
                 },
                 Token::Str("_id"),
                 Token::Str("id"),
                 Token::Str("email"),
                 Token::Str("email"),
                 Token::Str("fbId"),
+                Token::None,
+                Token::Str("appleId"),
                 Token::None,
                 Token::Str("avatar"),
                 Token::None,
@@ -90,15 +97,17 @@ fn user() {
     );
     assert_de_tokens(
         &User {
-            id: "id".to_owned(),
+            id: "id".into(),
             email: "email".to_owned(),
             fb_id: None,
+            apple_id: None,
             avatar: None,
             last_modified: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
             date_registered: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
             trakt: None,
             premium_expire: None,
             gdpr_consent: GDPRConsent::default(),
+            ..Default::default()
         },
         &[
             vec![

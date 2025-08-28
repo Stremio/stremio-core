@@ -1,23 +1,23 @@
-use boolinator::Boolinator;
-use gloo_utils::format::JsValueSerdeExt;
-use itertools::Itertools;
-
-use serde::Serialize;
-use wasm_bindgen::JsValue;
-
-use stremio_core::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks};
-use stremio_core::models::catalog_with_filters::{
-    CatalogWithFilters, Selected as CatalogWithFiltersSelected,
+#[cfg(feature = "wasm")]
+use {
+    crate::model::deep_links_ext::DeepLinksExt,
+    boolinator::Boolinator,
+    gloo_utils::format::JsValueSerdeExt,
+    itertools::Itertools,
+    stremio_core::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks},
+    wasm_bindgen::JsValue,
 };
-use stremio_core::models::common::Loadable;
-use stremio_core::models::ctx::Ctx;
-use stremio_core::models::streaming_server::StreamingServer;
-use stremio_core::types::resource::MetaItemPreview;
 
-use crate::model::deep_links_ext::DeepLinksExt;
+pub use model::*;
 
 mod model {
-    use super::*;
+    use serde::Serialize;
+
+    use stremio_core::{
+        deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks},
+        models::{catalog_with_filters::Selected as CatalogWithFiltersSelected, common::Loadable},
+    };
+
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct ManifestPreview<'a> {
@@ -100,11 +100,16 @@ mod model {
     }
 }
 
+#[cfg(feature = "wasm")]
 pub fn serialize_discover(
-    discover: &CatalogWithFilters<MetaItemPreview>,
-    ctx: &Ctx,
-    streaming_server: &StreamingServer,
+    discover: &stremio_core::models::catalog_with_filters::CatalogWithFilters<
+        stremio_core::types::resource::MetaItemPreview,
+    >,
+    ctx: &stremio_core::models::ctx::Ctx,
+    streaming_server: &stremio_core::models::streaming_server::StreamingServer,
 ) -> JsValue {
+    use stremio_core::models::common::Loadable;
+
     <JsValue as JsValueSerdeExt>::from_serde(&model::CatalogWithFilters {
         selected: &discover.selected,
         selectable: model::Selectable {

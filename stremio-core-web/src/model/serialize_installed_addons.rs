@@ -1,19 +1,31 @@
-use crate::model::deep_links_ext::DeepLinksExt;
-use gloo_utils::format::JsValueSerdeExt;
-use serde::Serialize;
-use stremio_core::deep_links::AddonsDeepLinks;
-use stremio_core::models::installed_addons_with_filters::{
-    InstalledAddonsRequest, InstalledAddonsWithFilters, Selected,
+#[cfg(feature = "wasm")]
+use {
+    crate::model::deep_links_ext::DeepLinksExt, gloo_utils::format::JsValueSerdeExt,
+    stremio_core::deep_links::AddonsDeepLinks, wasm_bindgen::JsValue,
 };
-use wasm_bindgen::JsValue;
 
+pub use model::*;
 mod model {
+    use serde::Serialize;
+    use url::Url;
+
+    use stremio_core::{
+        models::installed_addons_with_filters::Selected,
+        types::addon::{DescriptorFlags, Manifest},
+    };
+
     use super::*;
+
+    /// Descriptor Preview serializing the [`Manifest`] and
+    /// [`DescriptorFlags`] of an addon.
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
-    pub struct DescriptorPreview<'a> {
-        #[serde(flatten)]
-        pub addon: &'a stremio_core::types::addon::DescriptorPreview,
+    pub struct Descriptor<'a> {
+        pub manifest: &'a Manifest,
+        pub transport_url: Url,
+        #[serde(default)]
+        pub flags: DescriptorFlags,
+        /// All addons in this model are installed by default!
         pub installed: bool,
     }
     #[derive(Serialize)]
@@ -41,11 +53,14 @@ mod model {
     pub struct InstalledAddonsWithFilters<'a> {
         pub selected: &'a Option<Selected>,
         pub selectable: Selectable<'a>,
-        pub catalog: Vec<DescriptorPreview<'a>>,
+        pub catalog: Vec<Descriptor<'a>>,
     }
 }
 
-pub fn serialize_installed_addons(installed_addons: &InstalledAddonsWithFilters) -> JsValue {
+#[cfg(feature = "wasm")]
+pub fn serialize_installed_addons(
+    installed_addons: &stremio_core::models::installed_addons_with_filters::InstalledAddonsWithFilters,
+) -> JsValue {
     <JsValue as JsValueSerdeExt>::from_serde(&model::InstalledAddonsWithFilters {
         selected: &installed_addons.selected,
         selectable: model::Selectable {
@@ -63,15 +78,21 @@ pub fn serialize_installed_addons(installed_addons: &InstalledAddonsWithFilters)
             catalogs: vec![model::SelectableCatalog {
                 name: "Installed".to_owned(),
                 selected: installed_addons.selected.is_some(),
-                deep_links: AddonsDeepLinks::from(&InstalledAddonsRequest { r#type: None })
-                    .into_web_deep_links(),
+                deep_links: AddonsDeepLinks::from(
+                    &stremio_core::models::installed_addons_with_filters::InstalledAddonsRequest {
+                        r#type: None,
+                    },
+                )
+                .into_web_deep_links(),
             }],
         },
         catalog: installed_addons
             .catalog
             .iter()
-            .map(|addon| model::DescriptorPreview {
-                addon,
+            .map(|addon| model::Descriptor {
+                manifest: &addon.manifest,
+                transport_url: addon.transport_url.clone(),
+                flags: addon.flags.clone(),
                 installed: true,
             })
             .collect(),

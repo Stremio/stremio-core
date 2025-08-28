@@ -14,6 +14,8 @@ use crate::types::api::{
 };
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
+use crate::types::rating::{RatingGetStatusResponse, RatingSendResponse};
+use crate::types::resource::MetaItemId;
 use crate::types::streaming_server::{
     DeviceInfo, GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics, StatisticsRequest,
 };
@@ -49,12 +51,14 @@ pub enum Internal {
     AddonsAPIResult(APIRequest, Result<Vec<Descriptor>, CtxError>),
     /// Result for pull user from API.
     UserAPIResult(APIRequest, Result<User, CtxError>),
+    /// Result for deleting account from API.
+    DeleteAccountAPIResult(APIRequest, Result<SuccessResponse, CtxError>),
     /// Result for library sync plan with API.
     LibrarySyncPlanResult(DatastoreRequest, Result<LibraryPlanResponse, CtxError>),
     /// Result for pull library items from API.
     LibraryPullResult(DatastoreRequest, Result<Vec<LibraryItem>, CtxError>),
-    /// Dispatched when expired session is detected
-    Logout,
+    /// Dispatched when the user session needs to be cleared with a flag if the session was already deleted server-side
+    Logout(bool),
     /// Internal event dispatched on user action or login
     /// to install the addon if it's not present
     InstallTraktAddon,
@@ -89,6 +93,8 @@ pub enum Internal {
     StreamsChanged(bool),
     /// Search history has changed.
     SearchHistoryChanged,
+    /// Server URLs bucket has changed.
+    StreamingServerUrlsBucketChanged,
     /// User notifications have changed
     NotificationsChanged,
     /// Pulling of notifications triggered either by the user (with an action) or
@@ -153,4 +159,6 @@ pub enum Internal {
     ),
     /// When dismissed events changed
     DismissedEventsChanged,
+    RatingGetStatusResult(MetaItemId, Result<RatingGetStatusResponse, EnvError>),
+    RatingSendResult(MetaItemId, Result<RatingSendResponse, EnvError>),
 }

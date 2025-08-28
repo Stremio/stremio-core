@@ -1,6 +1,8 @@
+#[cfg(feature = "wasm")]
 use gloo_utils::format::JsValueSerdeExt;
 use itertools::Itertools;
 use serde::Serialize;
+#[cfg(feature = "wasm")]
 use wasm_bindgen::JsValue;
 
 use stremio_core::deep_links::LocalSearchItemDeepLinks;
@@ -25,7 +27,7 @@ mod model {
         pub deep_links: LocalSearchItemDeepLinks,
     }
 }
-
+#[cfg(feature = "wasm")]
 pub fn serialize_local_search(local_search: &LocalSearch) -> JsValue {
     <JsValue as JsValueSerdeExt>::from_serde(&model::LocalSearch {
         items: local_search

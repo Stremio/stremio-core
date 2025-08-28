@@ -28,6 +28,8 @@ use crate::types::{NumberAsString, SortedVec, SortedVecAdapter, UniqueVec, Uniqu
 /// For example when using the id as key in a [`HashMap`].
 pub type MetaItemId = String;
 
+pub type MetaItemType = String;
+
 #[derive(Clone, PartialEq, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]
 struct Trailer {
@@ -264,6 +266,19 @@ impl MetaItem {
         } else {
             Either::Right(self.videos.iter().rev())
         }
+    }
+
+    /// Returns a vector of videos for a given season
+    pub fn videos_by_season(&self, season: u32) -> Vec<&Video> {
+        self.videos
+            .iter()
+            .filter(|video| {
+                video
+                    .series_info
+                    .as_ref()
+                    .is_some_and(|series_info| series_info.season == season)
+            })
+            .collect_vec()
     }
 }
 

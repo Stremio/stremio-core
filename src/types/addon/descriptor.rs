@@ -19,6 +19,15 @@ pub struct DescriptorPreview {
     pub transport_url: Url,
 }
 
+impl From<&Descriptor> for DescriptorPreview {
+    fn from(value: &Descriptor) -> Self {
+        Self {
+            manifest: (&value.manifest).into(),
+            transport_url: value.transport_url.clone(),
+        }
+    }
+}
+
 #[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct DescriptorFlags {

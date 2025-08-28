@@ -13,7 +13,7 @@ pub fn update_search_history<E: Env + 'static>(
     msg: &Msg,
 ) -> Effects {
     match msg {
-        Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
+        Msg::Internal(Internal::Logout(_)) => {
             let next_search_history = SearchHistoryBucket::default();
             *search_history = next_search_history;
             Effects::msg(Msg::Internal(Internal::SearchHistoryChanged))

@@ -37,6 +37,6 @@ including when you're using a local patch for `stremio-core`.
 2. Commit the change with the new version as a message, e.g. `0.44.14`
 3. Wait for CI to build successfully
 4. Push a new tag starting with `stremio-core-web-v`, e.g. `git tag stremio-core-web-v0.47.4` `git push origin stremio-core-web-v0.47.4`
-5. Create a [new Release](https://github.com/Stremio/stremio-core-web/releases/new) with the created tag and the tag name as a title, e.g. `stremio-core-web v0.47.4`
+5. Create a [new Release](https://github.com/Stremio/stremio-core/releases/new) with the created tag and the tag name as a title, e.g. `stremio-core-web v0.47.4`
 6. Publish the Release
 7. CI will automatically build and release the `npm` package to the registry

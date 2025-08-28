@@ -6,7 +6,8 @@ use url::Url;
 use crate::{
     constants::URI_COMPONENT_ENCODE_SET,
     models::{
-        installed_addons_with_filters::InstalledAddonsRequest, library_with_filters::LibraryRequest,
+        calendar::YearMonthDate, installed_addons_with_filters::InstalledAddonsRequest,
+        library_with_filters::LibraryRequest,
     },
     types::{
         addon::{ExtraValue, ResourcePath, ResourceRequest},
@@ -82,71 +83,81 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
         let playlist = stream.m3u_data_uri(streaming_server_url);
         let file_name = playlist.as_ref().map(|_| "playlist.m3u".to_owned());
         let open_player = match &streaming {
-            Some(url) => match settings.player_type.as_ref() {
-                Some(player_type) => match player_type.as_str() {
-                    "choose" => Some(OpenPlayerLink {
-                        android: Some(format!(
-                            "{}#Intent;type=video/any;scheme=https;end",
-                            http_regex.replace(url.as_str(), "intent://"),
-                        )),
+            Some(url) => {
+                // `x-callback-url` schema urls need to be encoded
+                // >(Note: callback URLs in parameters should be encoded. They were left decoded for legibility)
+                // https://x-callback-url.com/examples/
+                let url_encoded = utf8_percent_encode(url.as_str(), URI_COMPONENT_ENCODE_SET);
+
+                match settings.player_type.as_ref() {
+                    Some(player_type) => match player_type.as_str() {
+                        "choose" => Some(OpenPlayerLink {
+                            android: Some(format!(
+                                "{}#Intent;type=video/any;scheme=https;end",
+                                http_regex.replace(url.as_str(), "intent://"),
+                            )),
+                            ..Default::default()
+                        }),
+                        "vlc" => Some(OpenPlayerLink {
+                            ios: Some(format!("vlc-x-callback://x-callback-url/stream?url={url_encoded}")),
+                            visionos: Some(format!("vlc-x-callback://x-callback-url/stream?url={url_encoded}")),
+                            android: Some(format!(
+                                "{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
+                                http_regex.replace(url.as_str(), "intent://"),
+                            )),
+                            ..Default::default()
+                        }),
+                        "mxplayer" => Some(OpenPlayerLink {
+                            android: Some(format!(
+                                "{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end",
+                                http_regex.replace(url.as_str(), "intent://"),
+                            )),
+                            ..Default::default()
+                        }),
+                        "justplayer" => Some(OpenPlayerLink {
+                            android: Some(format!(
+                                "{}#Intent;package=com.brouken.player;type=video;scheme=https;end",
+                                http_regex.replace(url.as_str(), "intent://"),
+                            )),
+                            ..Default::default()
+                        }),
+                        "outplayer" => Some(OpenPlayerLink {
+                            ios: Some(http_regex.replace(url.as_str(), "outplayer://").to_string()),
+                            visionos: Some(http_regex.replace(url.as_str(), "outplayer://").to_string()),
+                            ..Default::default()
+                        }),
+                        // Either a query that's url-safe or encoded.
+                        // https://support.firecore.com/hc/en-us/articles/215090997-API-for-Third-Party-Apps-Services#h_01HDS4GZEG00ME3VJJ77SEFF5V
+                        "infuse" => Some(OpenPlayerLink {
+                            ios: Some(format!("infuse://x-callback-url/play?url={url_encoded}")),
                         ..Default::default()
-                    }),
-                    "vlc" => Some(OpenPlayerLink {
-                        ios: Some(format!("vlc-x-callback://x-callback-url/stream?url={url}")),
-                        visionos: Some(format!("vlc-x-callback://x-callback-url/stream?url={url}")),
-                        android: Some(format!(
-                            "{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
-                            http_regex.replace(url.as_str(), "intent://"),
-                        )),
+                        }),
+
+                        "iina" => Some(OpenPlayerLink {
+                            macos: Some(format!("iina://weblink?url={url_encoded}")),
                         ..Default::default()
-                    }),
-                    "mxplayer" => Some(OpenPlayerLink {
-                        android: Some(format!(
-                            "{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end",
-                            http_regex.replace(url.as_str(), "intent://"),
-                        )),
+                        }),
+                        "mpv" => Some(OpenPlayerLink {
+                            macos: Some(format!("mpv://{url}")),
                         ..Default::default()
-                    }),
-                    "justplayer" => Some(OpenPlayerLink {
-                        android: Some(format!(
-                            "{}#Intent;package=com.brouken.player;type=video;scheme=https;end",
-                            http_regex.replace(url.as_str(), "intent://"),
-                        )),
+                        }),
+                        "moonplayer" => Some(OpenPlayerLink {
+                            visionos: Some(format!("moonplayer://open?url={url}")),
+                            ..Default::default()
+                        }),
+                        "m3u" => Some(OpenPlayerLink {
+                            linux: playlist.to_owned(),
+                            windows: playlist.to_owned(),
+                            macos: playlist.to_owned(),
+                            android: playlist.to_owned(),
+                            ios: playlist.to_owned(),
                         ..Default::default()
-                    }),
-                    "outplayer" => Some(OpenPlayerLink {
-                        ios: Some(http_regex.replace(url.as_str(), "outplayer://").to_string()),
-                        visionos: Some(http_regex.replace(url.as_str(), "outplayer://").to_string()),
-                        ..Default::default()
-                    }),
-                    "infuse" => Some(OpenPlayerLink {
-                        ios: Some(format!("infuse://x-callback-url/play?url={url}")),
-                       ..Default::default()
-                    }),
-                    "iina" => Some(OpenPlayerLink {
-                        macos: Some(format!("iina://weblink?url={url}")),
-                       ..Default::default()
-                    }),
-                    "mpv" => Some(OpenPlayerLink {
-                        macos: Some(format!("mpv://{url}")),
-                       ..Default::default()
-                    }),
-                    "moonplayer" => Some(OpenPlayerLink {
-                        visionos: Some(format!("moonplayer://open?url={url}")),
-                        ..Default::default()
-                    }),
-                    "m3u" => Some(OpenPlayerLink {
-                        linux: playlist.to_owned(),
-                        windows: playlist.to_owned(),
-                        macos: playlist.to_owned(),
-                        android: playlist.to_owned(),
-                        ios: playlist.to_owned(),
-                       ..Default::default()
-                    }),
-                    _ => None,
-                },
-                None => None,
-            },
+                        }),
+                        _ => None,
+                    },
+                    None => None,
+                }
+            }
             None => None,
         };
         let (web, android_tv, tizen, webos) = match &stream.source {
@@ -615,6 +626,39 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
                     )]),
                 ),
             },
+        }
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CalendarDeepLinks {
+    pub calendar: String,
+}
+
+impl From<&YearMonthDate> for CalendarDeepLinks {
+    fn from(date: &YearMonthDate) -> Self {
+        Self {
+            calendar: format!("stremio:///calendar/{}/{}", date.year, date.month),
+        }
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CalendarItemDeepLinks {
+    pub meta_details_streams: String,
+}
+
+impl From<(&MetaItem, &Video)> for CalendarItemDeepLinks {
+    fn from((meta_item, video): (&MetaItem, &Video)) -> Self {
+        CalendarItemDeepLinks {
+            meta_details_streams: format!(
+                "stremio:///detail/{}/{}/{}",
+                utf8_percent_encode(&meta_item.preview.r#type, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&meta_item.preview.id, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
+            ),
         }
     }
 }

@@ -31,6 +31,21 @@ pub struct APIError {
     pub code: u64,
 }
 
+impl<T> APIResult<T> {
+    pub fn into_result(self) -> Result<T, APIError> {
+        self.into()
+    }
+}
+
+impl<T> From<APIResult<T>> for Result<T, APIError> {
+    fn from(api_result: APIResult<T>) -> Self {
+        match api_result {
+            APIResult::Ok(x) => Result::Ok(x),
+            APIResult::Err(err) => Result::Err(err),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CollectionResponse {

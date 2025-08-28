@@ -19,6 +19,9 @@ use update_search_history::*;
 mod update_trakt_addon;
 use update_trakt_addon::*;
 
+mod update_streaming_server_urls;
+use update_streaming_server_urls::*;
+
 mod error;
 pub use error::*;
 

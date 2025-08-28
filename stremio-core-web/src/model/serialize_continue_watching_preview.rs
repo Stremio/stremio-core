@@ -1,14 +1,16 @@
-use gloo_utils::format::JsValueSerdeExt;
-use url::Url;
-use wasm_bindgen::JsValue;
-
-use stremio_core::{
-    models::continue_watching_preview::ContinueWatchingPreview,
-    types::{profile::Settings, streams::StreamsBucket},
+#[cfg(feature = "wasm")]
+use {
+    gloo_utils::format::JsValueSerdeExt,
+    stremio_core::types::{profile::Settings, streams::StreamsBucket},
+    url::Url,
+    wasm_bindgen::JsValue,
 };
 
+pub use model::*;
+
+#[cfg(feature = "wasm")]
 pub fn serialize_continue_watching_preview(
-    continue_watching_preview: &ContinueWatchingPreview,
+    continue_watching_preview: &stremio_core::models::continue_watching_preview::ContinueWatchingPreview,
     streams_bucket: &StreamsBucket,
     streaming_server_url: Option<&Url>,
     settings: &Settings,

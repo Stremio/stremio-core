@@ -7,8 +7,8 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCatalogWithFilters, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{
-    DescriptorPreview, ExtraExt, Manifest, ManifestCatalog, ResourcePath, ResourceRequest,
-    ResourceResponse,
+    Descriptor, DescriptorPreview, ExtraExt, Manifest, ManifestCatalog, ResourcePath,
+    ResourceRequest, ResourceResponse,
 };
 use crate::types::profile::Profile;
 use crate::types::resource::MetaItemPreview;
@@ -43,6 +43,18 @@ impl CatalogResourceAdapter for MetaItemPreview {
 }
 
 impl CatalogResourceAdapter for DescriptorPreview {
+    fn resource() -> &'static str {
+        "addon_catalog"
+    }
+    fn catalogs(manifest: &Manifest) -> &[ManifestCatalog] {
+        &manifest.addon_catalogs
+    }
+    fn selectable_priority() -> SelectablePriority {
+        SelectablePriority::Catalog
+    }
+}
+
+impl CatalogResourceAdapter for Descriptor {
     fn resource() -> &'static str {
         "addon_catalog"
     }
@@ -138,7 +150,7 @@ impl<E, T> UpdateWithCtx<E> for CatalogWithFilters<T>
 where
     E: Env + 'static,
     T: CatalogResourceAdapter + PartialEq,
-    Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
+    Vec<T>: TryFrom<ResourceResponse, Error = derive_more::TryIntoError<ResourceResponse>>,
 {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
@@ -267,7 +279,7 @@ fn catalog_update<E, T>(
 where
     E: Env + 'static,
     T: CatalogResourceAdapter + PartialEq,
-    Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
+    Vec<T>: TryFrom<ResourceResponse, Error = derive_more::TryIntoError<ResourceResponse>>,
 {
     let mut page = ResourceLoadable {
         request: request.to_owned(),

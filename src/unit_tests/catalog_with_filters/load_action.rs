@@ -10,6 +10,7 @@ use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::Profile;
 use crate::types::resource::MetaItemPreview;
 use crate::types::search_history::SearchHistoryBucket;
+use crate::types::server_urls::ServerUrlsBucket;
 use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, EVENTS, FETCH_HANDLER, REQUESTS, STATES,
@@ -50,6 +51,7 @@ fn default_catalog() {
         Profile::default(),
         LibraryBucket::default(),
         StreamsBucket::default(),
+        ServerUrlsBucket::new::<TestEnv>(None),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
         DismissedEventsBucket::default(),
@@ -93,7 +95,7 @@ fn default_catalog() {
         .collect::<Vec<_>>();
     assert_eq!(states.len(), 3);
     assert!(states[1].discover.selectable.next_page.is_none());
-    assert_matches!(&states[1].discover.selected, Some(Selected { request }) if *request == states[0].discover.selectable.types.first().unwrap().request);
+    assert_matches!(&states[1].discover.selected, Some(Selected { request }) if request == &states[0].discover.selectable.types.first().unwrap().request);
     assert_matches!(
         states[1].discover.catalog.first(),
         Some(ResourceLoadable {
@@ -151,6 +153,7 @@ fn search_catalog() {
         Profile::default(),
         LibraryBucket::default(),
         StreamsBucket::default(),
+        ServerUrlsBucket::new::<TestEnv>(None),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
         DismissedEventsBucket::default(),

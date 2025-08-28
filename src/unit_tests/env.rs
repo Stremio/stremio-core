@@ -1,29 +1,31 @@
-use crate::models::ctx::Ctx;
-use crate::models::streaming_server::StreamingServer;
-use crate::runtime::{Env, EnvFuture, EnvFutureExt, Model, Runtime, RuntimeEvent, TryEnvFuture};
+use std::{
+    any::{type_name, Any},
+    collections::{BTreeMap, HashMap},
+    ops::Fn,
+    sync::{Arc, LockResult, Mutex, MutexGuard, RwLock},
+};
+
 use chrono::{DateTime, Utc};
 use enclose::enclose;
-use futures::channel::mpsc::Receiver;
-use futures::StreamExt;
-use futures::{future, Future, TryFutureExt};
-use lazy_static::lazy_static;
+use futures::{channel::mpsc::Receiver, future, Future, StreamExt, TryFutureExt};
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use std::any::{type_name, Any};
-use std::collections::BTreeMap;
-use std::collections::HashMap;
-use std::ops::Fn;
-use std::sync::{Arc, LockResult, Mutex, MutexGuard, RwLock};
 
-lazy_static! {
-    pub static ref FETCH_HANDLER: RwLock<FetchHandler> =
-        RwLock::new(Box::new(default_fetch_handler));
-    pub static ref REQUESTS: RwLock<Vec<Request>> = Default::default();
-    pub static ref STORAGE: RwLock<BTreeMap<String, String>> = Default::default();
-    pub static ref EVENTS: RwLock<Vec<Box<dyn Any + Send + Sync + 'static>>> = Default::default();
-    pub static ref STATES: RwLock<Vec<Box<dyn Any + Send + Sync + 'static>>> = Default::default();
-    pub static ref NOW: RwLock<DateTime<Utc>> = RwLock::new(Utc::now());
-    pub static ref ENV_MUTEX: Mutex<()> = Default::default();
-}
+use crate::{
+    models::{ctx::Ctx, streaming_server::StreamingServer},
+    runtime::{Env, EnvFuture, EnvFutureExt, Model, Runtime, RuntimeEvent, TryEnvFuture},
+};
+
+pub static FETCH_HANDLER: Lazy<RwLock<FetchHandler>> =
+    Lazy::new(|| RwLock::new(Box::new(default_fetch_handler)));
+pub static REQUESTS: Lazy<RwLock<Vec<Request>>> = Lazy::new(Default::default);
+pub static STORAGE: Lazy<RwLock<BTreeMap<String, String>>> = Lazy::new(Default::default);
+pub static EVENTS: Lazy<RwLock<Vec<Box<dyn Any + Send + Sync + 'static>>>> =
+    Lazy::new(Default::default);
+pub static STATES: Lazy<RwLock<Vec<Box<dyn Any + Send + Sync + 'static>>>> =
+    Lazy::new(Default::default);
+pub static NOW: Lazy<RwLock<DateTime<Utc>>> = Lazy::new(|| RwLock::new(Utc::now()));
+pub static ENV_MUTEX: Mutex<()> = Mutex::new(());
 
 pub type FetchHandler =
     Box<dyn Fn(Request) -> TryEnvFuture<Box<dyn Any + Send>> + Send + Sync + 'static>;

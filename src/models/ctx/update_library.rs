@@ -33,7 +33,7 @@ pub fn update_library<E: Env + 'static>(
 ) -> Effects {
     let auth_key = profile.auth_key();
     match msg {
-        Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
+        Msg::Internal(Internal::Logout(_)) => {
             let next_library = LibraryBucket::default();
             if *library != next_library {
                 *library = next_library;
