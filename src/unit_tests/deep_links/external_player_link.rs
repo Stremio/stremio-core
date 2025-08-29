@@ -171,7 +171,7 @@ fn external_player_link_player_frame() {
 fn external_player_link_with_vlc_player() {
     let stream = Stream {
         source: StreamSource::Url {
-            url: Url::from_str("http://example.com/stream").unwrap(),
+            url: UrlExtended::from_str("http://example.com/stream").unwrap(),
         },
         name: None,
         description: None,
@@ -209,7 +209,7 @@ fn external_player_link_with_vlc_player() {
 fn external_player_link_with_mxplayer() {
     let stream = Stream {
         source: StreamSource::Url {
-            url: Url::from_str("http://example.com/stream").unwrap(),
+            url: UrlExtended::from_str("http://example.com/stream").unwrap(),
         },
         name: None,
         description: None,
@@ -238,7 +238,7 @@ fn external_player_link_with_mxplayer() {
 fn external_player_link_with_justplayer() {
     let stream = Stream {
         source: StreamSource::Url {
-            url: Url::from_str("http://example.com/stream").unwrap(),
+            url: UrlExtended::from_str("http://example.com/stream").unwrap(),
         },
         name: None,
         description: None,
@@ -267,7 +267,7 @@ fn external_player_link_with_justplayer() {
 fn external_player_link_with_outplayer() {
     let stream = Stream {
         source: StreamSource::Url {
-            url: Url::from_str("http://example.com/stream").unwrap(),
+            url: UrlExtended::from_str("http://example.com/stream").unwrap(),
         },
         name: None,
         description: None,
@@ -296,7 +296,7 @@ fn external_player_link_with_outplayer() {
 fn external_player_link_with_infuse() {
     let stream = Stream {
         source: StreamSource::Url {
-            url: Url::from_str("http://example.com/stream").unwrap(),
+            url: UrlExtended::from_str("http://example.com/stream").unwrap(),
         },
         name: None,
         description: None,
