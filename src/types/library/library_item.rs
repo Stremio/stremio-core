@@ -37,6 +37,10 @@ pub struct LibraryItem {
     #[serde(rename = "_mtime")]
     pub mtime: DateTime<Utc>,
     pub state: LibraryItemState,
+    /// Whether or not to receive notification for the given [`LibraryItem`].
+    /// Default: receive notifications
+    #[serde(default)]
+    pub no_notif: bool,
     #[serde(default)]
     pub behavior_hints: MetaItemBehaviorHints,
 }
@@ -50,7 +54,10 @@ impl LibraryItem {
     }
     #[inline]
     pub fn is_in_continue_watching(&self) -> bool {
-        self.r#type != "other" && self.state.time_offset > 0
+        use crate::constants::CONTINUE_WATCHING_THRESHOLD_COEF;
+        self.r#type != "other"
+            && self.state.time_offset > 0
+            && self.progress() < CONTINUE_WATCHING_THRESHOLD_COEF * 100.0
     }
 
     /// Returns watch progress percentage
@@ -76,7 +83,7 @@ impl LibraryItem {
     /// - The LibraryItem should not have been removed from the Library
     /// - The LibraryItem should not be temporary but in your LibraryItem
     pub fn should_pull_notifications(&self) -> bool {
-        !self.state.no_notif
+    !self.no_notif
             && self.r#type != "other"
             && self.r#type != "movie"
             && self.behavior_hints.default_video_id.is_none()
@@ -238,11 +245,7 @@ pub struct LibraryItemState {
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub watched: Option<WatchedField>,
-    /// Weather or not to receive notification for the given [`LibraryItem`].
-    ///
-    /// Default: receive notifications
-    #[serde(default)]
-    pub no_notif: bool,
+
 }
 
 impl LibraryItemState {

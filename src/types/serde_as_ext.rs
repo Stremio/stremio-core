@@ -10,31 +10,15 @@ pub trait SortedVecAdapter {
     type Input;
     type Args;
 
-    fn args(values: &[Self::Input]) -> Self::Args;
+    /// Accepts both the values and an external argument (e.g., meta type)
+    fn args(values: &[Self::Input], external: &Self::Args) -> Self::Args;
     fn cmp(a: &Self::Input, b: &Self::Input, args: &Self::Args) -> Ordering;
 }
 
 #[derive(Copy, Clone, Debug, Default)]
 pub struct SortedVec<V, A>(PhantomData<(V, A)>);
 
-impl<'de, T, V, A> DeserializeAs<'de, Vec<T>> for SortedVec<V, A>
-where
-    T: Deserialize<'de>,
-    V: DeserializeAs<'de, Vec<T>>,
-    A: SortedVecAdapter<Input = T>,
-{
-    fn deserialize_as<D>(deserializer: D) -> Result<Vec<T>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let values = V::deserialize_as(deserializer)?;
-        let args = A::args(&values);
-        Ok(values
-            .into_iter()
-            .sorted_by(|a, b| A::cmp(a, b, &args))
-            .collect())
-    }
-}
+// Note: The actual deserialization logic for passing external args must be handled in the parent struct.
 
 impl<T, V, A> SerializeAs<Vec<T>> for SortedVec<V, A>
 where

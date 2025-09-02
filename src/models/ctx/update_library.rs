@@ -62,7 +62,7 @@ pub fn update_library<E: Env + 'static>(
                 library_item.temp = false;
 
                 // Dismiss any notification for the LibraryItem
-                let notifications_effects = if library_item.state.no_notif {
+                let notifications_effects = if library_item.no_notif {
                     Effects::msg(Msg::Internal(Internal::DismissNotificationItem(
                         id.to_owned(),
                     )))
@@ -105,11 +105,11 @@ pub fn update_library<E: Env + 'static>(
             match library.items.get(id) {
                 Some(library_item) => {
                     let mut library_item = library_item.to_owned();
-                    library_item.state.no_notif = *state;
+                    library_item.no_notif = *state;
 
                     // if we have `no_notif` set to `true` (we don't want notifications for the LibraryItem)
                     // we want to dismiss any notifications for the LibraryItem that exist
-                    let notifications_effects = if library_item.state.no_notif {
+                    let notifications_effects = if library_item.no_notif {
                         Effects::msg(Msg::Internal(Internal::DismissNotificationItem(
                             id.to_owned(),
                         )))

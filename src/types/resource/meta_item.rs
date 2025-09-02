@@ -7,7 +7,7 @@ use chrono::{DateTime, Utc};
 use either::Either;
 use itertools::Itertools;
 use percent_encoding::utf8_percent_encode;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Deserializer};
 use serde_with::{
     formats::PreferMany, serde_as, DefaultOnNull, DeserializeAs, NoneAsEmptyString, OneOrMany,
     PickFirst, TimestampMilliSeconds,
@@ -241,18 +241,67 @@ impl From<MetaItemPreviewLegacy> for MetaItemPreview {
     }
 }
 
-#[serde_as]
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+
+#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
 #[cfg_attr(test, derive(Default))]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItem {
     #[serde(flatten)]
     pub preview: MetaItemPreview,
-    #[serde(default)]
-    #[serde_as(
-        as = "DefaultOnNull<SortedVec<UniqueVec<Vec<_>, VideoUniqueVecAdapter>, VideoSortedVecAdapter>>"
-    )]
     pub videos: Vec<Video>,
+}
+
+impl<'de> Deserialize<'de> for MetaItem {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        use serde::de::{MapAccess, Visitor};
+        use std::fmt;
+        struct MetaItemVisitor;
+        impl<'de> Visitor<'de> for MetaItemVisitor {
+            type Value = MetaItem;
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct MetaItem")
+            }
+            fn visit_map<V>(self, mut map: V) -> Result<MetaItem, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                use serde::de::Error;
+                use serde_json::Value;
+                let mut preview: Option<MetaItemPreview> = None;
+                let mut videos: Option<Vec<Video>> = None;
+                let mut other: serde_json::Map<String, Value> = serde_json::Map::new();
+                while let Some(key) = map.next_key::<String>()? {
+                    match key.as_str() {
+                        "id" | "type" | "name" | "poster" | "background" | "logo" | "description" | "releaseInfo" | "behaviorHints" => {
+                            // These are part of MetaItemPreview
+                            let value: Value = map.next_value()?;
+                            other.insert(key, value);
+                        }
+                        "videos" => {
+                            videos = Some(map.next_value()?);
+                        }
+                        _ => {
+                            // Unknown or extra fields
+                            let value: Value = map.next_value()?;
+                            other.insert(key, value);
+                        }
+                    }
+                }
+                // Deserialize preview from collected fields
+                let preview: MetaItemPreview = serde_json::from_value(Value::Object(other)).map_err(V::Error::custom)?;
+                let mut videos = videos.unwrap_or_default();
+                // Sort videos using VideoSortedVecAdapter and preview.r#type
+                let meta_type = preview.r#type.clone();
+                let args = crate::types::resource::meta_item::VideoSortedVecAdapter::args(&videos, &meta_type);
+                videos.sort_by(|a, b| crate::types::resource::meta_item::VideoSortedVecAdapter::cmp(a, b, &args));
+                Ok(MetaItem { preview, videos })
+            }
+        }
+        deserializer.deserialize_map(MetaItemVisitor)
+    }
 }
 
 impl MetaItem {
@@ -359,12 +408,13 @@ struct VideoSortedVecAdapter;
 
 impl SortedVecAdapter for VideoSortedVecAdapter {
     type Input = Video;
-    type Args = bool;
+    type Args = String; // meta_item type
 
-    fn args(videos: &[Video]) -> Self::Args {
-        videos.iter().any(|video| video.series_info.is_some())
+    fn args(_videos: &[Video], meta_type: &Self::Args) -> Self::Args {
+        meta_type.clone()
     }
-    fn cmp(a: &Self::Input, b: &Self::Input, is_series: &Self::Args) -> Ordering {
+    fn cmp(a: &Self::Input, b: &Self::Input, meta_type: &Self::Args) -> Ordering {
+        let is_series = meta_type == "series";
         if let (Some(a), Some(b)) = (a.series_info.as_ref(), b.series_info.as_ref()) {
             let a_season = if a.season == 0 { u32::MAX } else { a.season };
             let b_season = if b.season == 0 { u32::MAX } else { b.season };
@@ -374,7 +424,7 @@ impl SortedVecAdapter for VideoSortedVecAdapter {
         } else if b.series_info.is_some() {
             std::cmp::Ordering::Greater
         } else if let (Some(a), Some(b)) = (a.released, b.released) {
-            if *is_series {
+            if is_series {
                 a.cmp(&b)
             } else {
                 b.cmp(&a)

@@ -16,7 +16,7 @@ fn library_item_state() {
                 duration: 1,
                 video_id: Some("tt2934286:1:5".to_owned()),
                 watched: Some("tt2934286:1:5:5:eJyTZwAAAEAAIA==".parse().unwrap()),
-                no_notif: true,
+                // no_notif removed from LibraryItemState
             },
             LibraryItemState {
                 last_watched: None,
@@ -28,7 +28,7 @@ fn library_item_state() {
                 duration: 0,
                 video_id: None,
                 watched: None,
-                no_notif: false,
+                // no_notif removed from LibraryItemState
             },
         ],
         &[
@@ -101,7 +101,7 @@ fn library_item_state() {
                 duration: 0,
                 video_id: None,
                 watched: None,
-                no_notif: false,
+                // no_notif removed from LibraryItemState
             },
             LibraryItemState {
                 last_watched: None,
@@ -113,7 +113,7 @@ fn library_item_state() {
                 duration: 0,
                 video_id: None,
                 watched: None,
-                no_notif: false,
+                // no_notif removed from LibraryItemState
             },
         ],
         &[

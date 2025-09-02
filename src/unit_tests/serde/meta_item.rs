@@ -1,3 +1,108 @@
+#[test]
+fn meta_item_video_sorting_edge_cases() {
+    use serde_json::json;
+    // Mixed seriesInfo and missing fields
+    let meta_json = json!({
+        "id": "series2",
+        "type": "series",
+        "name": "Edge Series",
+        "videos": [
+            {"id": "noinfo"},
+            {"id": "ep1", "seriesInfo": {"season": 1, "episode": 1}},
+            {"id": "ep2", "seriesInfo": {"season": 1, "episode": 2}},
+            {"id": "zero", "seriesInfo": {"season": 0, "episode": 0}},
+            {"id": "dup", "seriesInfo": {"season": 1, "episode": 2}}
+        ]
+    });
+    let meta: MetaItem = serde_json::from_value(meta_json).unwrap();
+    let ids: Vec<_> = meta.videos.iter().map(|v| v.id.as_str()).collect();
+    // Should sort by season/episode, 0s last, duplicates preserved
+    assert_eq!(ids, ["ep1", "ep2", "dup", "zero", "noinfo"]);
+
+    // Movie with release dates
+    let meta_json = json!({
+        "id": "movie2",
+        "type": "movie",
+        "name": "Edge Movie",
+        "videos": [
+            {"id": "a", "released": "2020-01-01T00:00:00Z"},
+            {"id": "b", "released": "2021-01-01T00:00:00Z"},
+            {"id": "c"}
+        ]
+    });
+    let meta: MetaItem = serde_json::from_value(meta_json).unwrap();
+    let ids: Vec<_> = meta.videos.iter().map(|v| v.id.as_str()).collect();
+    // For movies, fallback is reverse lexicographical if no released, but with released, sort by released descending
+    assert_eq!(ids, ["b", "a", "c"]);
+
+    // Non-standard type
+    let meta_json = json!({
+        "id": "other1",
+        "type": "documentary",
+        "name": "Other",
+        "videos": [
+            {"id": "x"}, {"id": "y"}, {"id": "z"}
+        ]
+    });
+    let meta: MetaItem = serde_json::from_value(meta_json).unwrap();
+    let ids: Vec<_> = meta.videos.iter().map(|v| v.id.as_str()).collect();
+    // Fallback is reverse lexicographical
+    assert_eq!(ids, ["z", "y", "x"]);
+
+    // Empty and single-element
+    let meta_json = json!({
+        "id": "empty",
+        "type": "series",
+        "name": "Empty",
+        "videos": []
+    });
+    let meta: MetaItem = serde_json::from_value(meta_json).unwrap();
+    assert!(meta.videos.is_empty());
+    let meta_json = json!({
+        "id": "single",
+        "type": "movie",
+        "name": "Single",
+        "videos": [{"id": "only"}]
+    });
+    let meta: MetaItem = serde_json::from_value(meta_json).unwrap();
+    assert_eq!(meta.videos[0].id, "only");
+}
+use crate::types::resource::Video;
+
+#[test]
+fn meta_item_video_sorting_by_type() {
+    use serde_json::json;
+    // For series, should sort by season/episode ascending
+    let meta_json = json!({
+        "id": "series1",
+        "type": "series",
+        "name": "Test Series",
+        "videos": [
+            {"id": "ep2", "seriesInfo": {"season": 1, "episode": 2}},
+            {"id": "ep1", "seriesInfo": {"season": 1, "episode": 1}},
+            {"id": "ep3", "seriesInfo": {"season": 2, "episode": 1}}
+        ]
+    });
+    let meta: MetaItem = serde_json::from_value(meta_json).unwrap();
+    let ids: Vec<_> = meta.videos.iter().map(|v| v.id.as_str()).collect();
+    assert_eq!(ids, ["ep1", "ep2", "ep3"]);
+
+    // For movie, should sort by id descending (fallback logic)
+    let meta_json = json!({
+        "id": "movie1",
+        "type": "movie",
+        "name": "Test Movie",
+        "videos": [
+            {"id": "b"},
+            {"id": "a"},
+            {"id": "c"}
+        ]
+    });
+    let meta: MetaItem = serde_json::from_value(meta_json).unwrap();
+    let ids: Vec<_> = meta.videos.iter().map(|v| v.id.as_str()).collect();
+    // For movies, fallback is reverse lexicographical (see cmp logic)
+    assert_eq!(ids, ["c", "b", "a"]);
+}
 use crate::types::resource::{MetaItem, MetaItemBehaviorHints, MetaItemPreview, PosterShape};
 use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use chrono::{TimeZone, Utc};
