@@ -481,7 +481,7 @@ fn supported_rating_id(id: &str) -> bool {
 }
 
 fn supported_rating_type(r#type: &str) -> bool {
-    USER_LIKES_SUPPORTED_TYPES.iter().any(|t| r#type == *t)
+    USER_LIKES_SUPPORTED_TYPES.contains(&r#type)
 }
 
 fn rating_info_update<E: Env + 'static>(

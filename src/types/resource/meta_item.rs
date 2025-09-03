@@ -328,7 +328,7 @@ pub struct Video {
 }
 
 impl Video {
-    pub fn stream(&self) -> Option<Cow<Stream>> {
+    pub fn stream(&self) -> Option<Cow<'_, Stream>> {
         self.streams
             .iter()
             .exactly_one()
