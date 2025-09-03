@@ -51,7 +51,7 @@ where
         runtime.handle_effects(effects, vec![]);
         (runtime, rx)
     }
-    pub fn model(&self) -> LockResult<RwLockReadGuard<M>> {
+    pub fn model(&self) -> LockResult<RwLockReadGuard<'_, M>> {
         self.model.read()
     }
     pub fn dispatch(&self, action: RuntimeAction<E, M>) {
