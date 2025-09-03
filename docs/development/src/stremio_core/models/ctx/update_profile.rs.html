@@ -565,7 +565,34 @@
 <a href="#564" id="564">564</a>
 <a href="#565" id="565">565</a>
 <a href="#566" id="566">566</a>
-<a href="#567" id="567">567</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashSet;
+<a href="#567" id="567">567</a>
+<a href="#568" id="568">568</a>
+<a href="#569" id="569">569</a>
+<a href="#570" id="570">570</a>
+<a href="#571" id="571">571</a>
+<a href="#572" id="572">572</a>
+<a href="#573" id="573">573</a>
+<a href="#574" id="574">574</a>
+<a href="#575" id="575">575</a>
+<a href="#576" id="576">576</a>
+<a href="#577" id="577">577</a>
+<a href="#578" id="578">578</a>
+<a href="#579" id="579">579</a>
+<a href="#580" id="580">580</a>
+<a href="#581" id="581">581</a>
+<a href="#582" id="582">582</a>
+<a href="#583" id="583">583</a>
+<a href="#584" id="584">584</a>
+<a href="#585" id="585">585</a>
+<a href="#586" id="586">586</a>
+<a href="#587" id="587">587</a>
+<a href="#588" id="588">588</a>
+<a href="#589" id="589">589</a>
+<a href="#590" id="590">590</a>
+<a href="#591" id="591">591</a>
+<a href="#592" id="592">592</a>
+<a href="#593" id="593">593</a>
+<a href="#594" id="594">594</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashSet;
 
 <span class="kw">use </span>enclose::enclose;
 <span class="kw">use </span>futures::{future, FutureExt, TryFutureExt};
@@ -615,14 +642,23 @@
             }))
             .unchanged(),
         },
-        Msg::Action(Action::Ctx(ActionCtx::PullUserFromAPI)) =&gt; <span class="kw">match </span>profile.auth_key() {
-            <span class="prelude-val">Some</span>(auth_key) =&gt; Effects::one(pull_user_from_api::&lt;E&gt;(auth_key)).unchanged(),
-            <span class="kw">_ </span>=&gt; Effects::msg(Msg::Event(Event::Error {
-                error: CtxError::from(OtherError::UserNotLoggedIn),
-                source: Box::new(Event::UserPulledFromAPI { uid: profile.uid() }),
-            }))
-            .unchanged(),
-        },
+        Msg::Action(Action::Ctx(ActionCtx::PullUserFromAPI {
+            token: action_token,
+        })) =&gt;
+        <span class="comment">// the action token will take priority over the profile AuthKey
+        </span>{
+            <span class="kw">match </span>action_token.as_ref().or(profile.auth_key()) {
+                <span class="prelude-val">Some</span>(auth_key) =&gt; {
+                    Effects::one(pull_user_from_api::&lt;E&gt;(auth_key, action_token.is_some()))
+                        .unchanged()
+                }
+                <span class="kw">_ </span>=&gt; Effects::msg(Msg::Event(Event::Error {
+                    error: CtxError::from(OtherError::UserNotLoggedIn),
+                    source: Box::new(Event::UserPulledFromAPI { uid: profile.uid() }),
+                }))
+                .unchanged(),
+            }
+        }
         Msg::Action(Action::Ctx(ActionCtx::PushAddonsToAPI)) =&gt; <span class="kw">match </span>profile.auth_key() {
             <span class="prelude-val">Some</span>(auth_key) =&gt; {
                 Effects::one(push_addons_to_api::&lt;E&gt;(profile.addons.to_owned(), auth_key))
@@ -928,35 +964,47 @@
 
             addons_locked_effects.join(profile_effects)
         }
-        Msg::Internal(Internal::UserAPIResult(APIRequest::GetUser { auth_key }, result))
-            <span class="kw">if </span>profile.auth_key() == <span class="prelude-val">Some</span>(auth_key) =&gt;
-        {
-            <span class="kw">match </span>result {
-                <span class="prelude-val">Ok</span>(user) =&gt; <span class="kw">match </span><span class="kw-2">&amp;mut </span>profile.auth {
-                    <span class="prelude-val">Some</span>(auth) <span class="kw">if </span>auth.user != <span class="kw-2">*</span>user =&gt; {
-                        user.clone_into(<span class="kw-2">&amp;mut </span>auth.user);
-                        Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }))
-                            .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
-                    }
-                    <span class="kw">_ </span>=&gt; Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }))
-                        .unchanged(),
-                },
-                <span class="prelude-val">Err</span>(error) =&gt; {
-                    <span class="kw">let </span>session_expired_effects = <span class="kw">match </span>error {
-                        CtxError::API(APIError { code, .. }) <span class="kw">if </span><span class="kw-2">*</span>code == <span class="number">1 </span>=&gt; {
-                            Effects::msg(Msg::Internal(Internal::Logout(<span class="bool-val">false</span>))).unchanged()
-                        }
-                        <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
-                    };
-                    Effects::msg(Msg::Event(Event::Error {
-                        error: error.to_owned(),
-                        source: Box::new(Event::UserPulledFromAPI { uid: profile.uid() }),
-                    }))
-                    .unchanged()
-                    .join(session_expired_effects)
+        Msg::Internal(Internal::UserAPIResult {
+            request: APIRequest::GetUser { auth_key },
+            result,
+            overwritten,
+        }) <span class="kw">if </span><span class="kw-2">*</span>overwritten || profile.auth_key() == <span class="prelude-val">Some</span>(auth_key) =&gt; <span class="kw">match </span>result {
+            <span class="prelude-val">Ok</span>(user) =&gt; <span class="kw">match </span><span class="kw-2">&amp;mut </span>profile.auth {
+                <span class="prelude-val">Some</span>(auth) <span class="kw">if </span>auth.user != <span class="kw-2">*</span>user =&gt; {
+                    user.clone_into(<span class="kw-2">&amp;mut </span>auth.user);
+                    Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }))
+                        .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                 }
+                <span class="kw">_ </span>=&gt; {
+                    <span class="kw">let </span>effects =
+                        Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }));
+                    <span class="kw">if </span><span class="kw-2">*</span>overwritten {
+                        profile.auth = <span class="prelude-val">Some</span>(Auth {
+                            key: auth_key.clone(),
+                            user: user.clone(),
+                        });
+
+                        effects.join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                    } <span class="kw">else </span>{
+                        effects.unchanged()
+                    }
+                }
+            },
+            <span class="prelude-val">Err</span>(error) =&gt; {
+                <span class="kw">let </span>session_expired_effects = <span class="kw">match </span>error {
+                    CtxError::API(APIError { code, .. }) <span class="kw">if </span><span class="kw-2">*</span>code == <span class="number">1 </span>=&gt; {
+                        Effects::msg(Msg::Internal(Internal::Logout(<span class="bool-val">false</span>))).unchanged()
+                    }
+                    <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
+                };
+                Effects::msg(Msg::Event(Event::Error {
+                    error: error.to_owned(),
+                    source: Box::new(Event::UserPulledFromAPI { uid: profile.uid() }),
+                }))
+                .unchanged()
+                .join(session_expired_effects)
             }
-        }
+        },
         Msg::Internal(Internal::DeleteAccountAPIResult(
             APIRequest::DeleteAccount { auth_key, .. },
             result,
@@ -1001,7 +1049,7 @@
     .into()
 }
 
-<span class="kw">fn </span>pull_user_from_api&lt;E: Env + <span class="lifetime">'static</span>&gt;(auth_key: <span class="kw-2">&amp;</span>AuthKey) -&gt; Effect {
+<span class="kw">fn </span>pull_user_from_api&lt;E: Env + <span class="lifetime">'static</span>&gt;(auth_key: <span class="kw-2">&amp;</span>AuthKey, overwritten: bool) -&gt; Effect {
     <span class="kw">let </span>request = APIRequest::GetUser {
         auth_key: auth_key.to_owned(),
     };
@@ -1012,7 +1060,13 @@
                 APIResult::Ok(result) =&gt; future::ok(result),
                 APIResult::Err(error) =&gt; future::err(CtxError::from(error)),
             })
-            .map(<span class="kw">move </span>|result| Msg::Internal(Internal::UserAPIResult(request, result)))
+            .map(<span class="kw">move </span>|result| {
+                Msg::Internal(Internal::UserAPIResult {
+                    request,
+                    result,
+                    overwritten,
+                })
+            })
             .boxed_env(),
     )
     .into()

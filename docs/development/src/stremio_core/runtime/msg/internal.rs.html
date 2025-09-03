@@ -162,7 +162,14 @@
 <a href="#161" id="161">161</a>
 <a href="#162" id="162">162</a>
 <a href="#163" id="163">163</a>
-<a href="#164" id="164">164</a></pre></div><pre class="rust"><code><span class="kw">use </span>url::Url;
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a></pre></div><pre class="rust"><code><span class="kw">use </span>url::Url;
 
 <span class="kw">use </span><span class="kw">crate</span>::models::common::ResourceLoadable;
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::CtxError;
@@ -214,7 +221,14 @@
     <span class="doccomment">/// Result for pull addons from API.
     </span>AddonsAPIResult(APIRequest, <span class="prelude-ty">Result</span>&lt;Vec&lt;Descriptor&gt;, CtxError&gt;),
     <span class="doccomment">/// Result for pull user from API.
-    </span>UserAPIResult(APIRequest, <span class="prelude-ty">Result</span>&lt;User, CtxError&gt;),
+    </span>UserAPIResult {
+        request: APIRequest,
+        result: <span class="prelude-ty">Result</span>&lt;User, CtxError&gt;,
+        <span class="doccomment">/// In case we want to use a token directly to pull user data from the API.
+        ///
+        /// The field indicates whether or not we have overwritten the token from the profile
+        </span>overwritten: bool,
+    },
     <span class="doccomment">/// Result for deleting account from API.
     </span>DeleteAccountAPIResult(APIRequest, <span class="prelude-ty">Result</span>&lt;SuccessResponse, CtxError&gt;),
     <span class="doccomment">/// Result for library sync plan with API.
