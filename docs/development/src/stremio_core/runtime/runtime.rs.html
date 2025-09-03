@@ -175,7 +175,7 @@
         runtime.handle_effects(effects, <span class="macro">vec!</span>[]);
         (runtime, rx)
     }
-    <span class="kw">pub fn </span>model(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; LockResult&lt;RwLockReadGuard&lt;M&gt;&gt; {
+    <span class="kw">pub fn </span>model(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; LockResult&lt;RwLockReadGuard&lt;<span class="lifetime">'_</span>, M&gt;&gt; {
         <span class="self">self</span>.model.read()
     }
     <span class="kw">pub fn </span>dispatch(<span class="kw-2">&amp;</span><span class="self">self</span>, action: RuntimeAction&lt;E, M&gt;) {

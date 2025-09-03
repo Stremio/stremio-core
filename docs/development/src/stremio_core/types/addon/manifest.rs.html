@@ -807,7 +807,7 @@
 }
 
 <span class="kw">impl </span>ManifestExtra {
-    <span class="kw">pub fn </span>iter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw">impl </span>Iterator&lt;Item = Cow&lt;ExtraProp&gt;&gt; {
+    <span class="kw">pub fn </span>iter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw">impl </span>Iterator&lt;Item = Cow&lt;<span class="lifetime">'_</span>, ExtraProp&gt;&gt; {
         <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self </span>{
             ManifestExtra::Full { props } =&gt; Either::Left(props.iter().map(Cow::Borrowed)),
             ManifestExtra::Short {

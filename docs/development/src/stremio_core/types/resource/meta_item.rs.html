@@ -738,7 +738,7 @@
 }
 
 <span class="kw">impl </span>Video {
-    <span class="kw">pub fn </span>stream(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Cow&lt;Stream&gt;&gt; {
+    <span class="kw">pub fn </span>stream(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Cow&lt;<span class="lifetime">'_</span>, Stream&gt;&gt; {
         <span class="self">self</span>.streams
             .iter()
             .exactly_one()

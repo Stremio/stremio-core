@@ -1249,7 +1249,7 @@
 }
 
 <span class="kw">fn </span>supported_rating_type(r#type: <span class="kw-2">&amp;</span>str) -&gt; bool {
-    USER_LIKES_SUPPORTED_TYPES.iter().any(|t| r#type == <span class="kw-2">*</span>t)
+    USER_LIKES_SUPPORTED_TYPES.contains(<span class="kw-2">&amp;</span>r#type)
 }
 
 <span class="kw">fn </span>rating_info_update&lt;E: Env + <span class="lifetime">'static</span>&gt;(
