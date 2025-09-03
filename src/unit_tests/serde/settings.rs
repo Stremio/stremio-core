@@ -9,6 +9,7 @@ fn settings() {
         &Settings {
             interface_language: "interface_language".to_owned(),
             hide_spoilers: false,
+            gamepad_support: false,
             streaming_server_url: Url::parse("https://streaming_server_url").unwrap(),
             player_type: Some("player".to_owned()),
             binge_watching: true,
@@ -44,11 +45,13 @@ fn settings() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 31,
+                len: 32,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
             Token::Str("hideSpoilers"),
+            Token::Bool(false),
+            Token::Str("gamepadSupport"),
             Token::Bool(false),
             Token::Str("streamingServerUrl"),
             Token::Str("https://streaming_server_url/"),
@@ -129,11 +132,13 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 25,
+                len: 32,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
             Token::Str("hideSpoilers"),
+            Token::Bool(false),
+            Token::Str("gamepadSupport"),
             Token::Bool(false),
             Token::Str("streamingServerUrl"),
             Token::Str("http://127.0.0.1:11470/"),

@@ -32,7 +32,7 @@ jobs:
     - uses: Swatinem/rust-cache@v2
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - run: cargo check
     - run: cargo test
