@@ -48,14 +48,23 @@ pub fn update_profile<E: Env + 'static>(
             }))
             .unchanged(),
         },
-        Msg::Action(Action::Ctx(ActionCtx::PullUserFromAPI)) => match profile.auth_key() {
-            Some(auth_key) => Effects::one(pull_user_from_api::<E>(auth_key)).unchanged(),
-            _ => Effects::msg(Msg::Event(Event::Error {
-                error: CtxError::from(OtherError::UserNotLoggedIn),
-                source: Box::new(Event::UserPulledFromAPI { uid: profile.uid() }),
-            }))
-            .unchanged(),
-        },
+        Msg::Action(Action::Ctx(ActionCtx::PullUserFromAPI {
+            token: action_token,
+        })) =>
+        // the action token will take priority over the profile AuthKey
+        {
+            match action_token.as_ref().or(profile.auth_key()) {
+                Some(auth_key) => {
+                    Effects::one(pull_user_from_api::<E>(auth_key, action_token.is_some()))
+                        .unchanged()
+                }
+                _ => Effects::msg(Msg::Event(Event::Error {
+                    error: CtxError::from(OtherError::UserNotLoggedIn),
+                    source: Box::new(Event::UserPulledFromAPI { uid: profile.uid() }),
+                }))
+                .unchanged(),
+            }
+        }
         Msg::Action(Action::Ctx(ActionCtx::PushAddonsToAPI)) => match profile.auth_key() {
             Some(auth_key) => {
                 Effects::one(push_addons_to_api::<E>(profile.addons.to_owned(), auth_key))
@@ -361,35 +370,47 @@ pub fn update_profile<E: Env + 'static>(
 
             addons_locked_effects.join(profile_effects)
         }
-        Msg::Internal(Internal::UserAPIResult(APIRequest::GetUser { auth_key }, result))
-            if profile.auth_key() == Some(auth_key) =>
-        {
-            match result {
-                Ok(user) => match &mut profile.auth {
-                    Some(auth) if auth.user != *user => {
-                        user.clone_into(&mut auth.user);
-                        Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }))
-                            .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
-                    }
-                    _ => Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }))
-                        .unchanged(),
-                },
-                Err(error) => {
-                    let session_expired_effects = match error {
-                        CtxError::API(APIError { code, .. }) if *code == 1 => {
-                            Effects::msg(Msg::Internal(Internal::Logout(false))).unchanged()
-                        }
-                        _ => Effects::none().unchanged(),
-                    };
-                    Effects::msg(Msg::Event(Event::Error {
-                        error: error.to_owned(),
-                        source: Box::new(Event::UserPulledFromAPI { uid: profile.uid() }),
-                    }))
-                    .unchanged()
-                    .join(session_expired_effects)
+        Msg::Internal(Internal::UserAPIResult {
+            request: APIRequest::GetUser { auth_key },
+            result,
+            overwritten,
+        }) if *overwritten || profile.auth_key() == Some(auth_key) => match result {
+            Ok(user) => match &mut profile.auth {
+                Some(auth) if auth.user != *user => {
+                    user.clone_into(&mut auth.user);
+                    Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }))
+                        .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                 }
+                _ => {
+                    let effects =
+                        Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }));
+                    if *overwritten {
+                        profile.auth = Some(Auth {
+                            key: auth_key.clone(),
+                            user: user.clone(),
+                        });
+
+                        effects.join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                    } else {
+                        effects.unchanged()
+                    }
+                }
+            },
+            Err(error) => {
+                let session_expired_effects = match error {
+                    CtxError::API(APIError { code, .. }) if *code == 1 => {
+                        Effects::msg(Msg::Internal(Internal::Logout(false))).unchanged()
+                    }
+                    _ => Effects::none().unchanged(),
+                };
+                Effects::msg(Msg::Event(Event::Error {
+                    error: error.to_owned(),
+                    source: Box::new(Event::UserPulledFromAPI { uid: profile.uid() }),
+                }))
+                .unchanged()
+                .join(session_expired_effects)
             }
-        }
+        },
         Msg::Internal(Internal::DeleteAccountAPIResult(
             APIRequest::DeleteAccount { auth_key, .. },
             result,
@@ -434,7 +455,7 @@ fn push_addons_to_api<E: Env + 'static>(addons: Vec<Descriptor>, auth_key: &Auth
     .into()
 }
 
-fn pull_user_from_api<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
+fn pull_user_from_api<E: Env + 'static>(auth_key: &AuthKey, overwritten: bool) -> Effect {
     let request = APIRequest::GetUser {
         auth_key: auth_key.to_owned(),
     };
@@ -445,7 +466,13 @@ fn pull_user_from_api<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
                 APIResult::Ok(result) => future::ok(result),
                 APIResult::Err(error) => future::err(CtxError::from(error)),
             })
-            .map(move |result| Msg::Internal(Internal::UserAPIResult(request, result)))
+            .map(move |result| {
+                Msg::Internal(Internal::UserAPIResult {
+                    request,
+                    result,
+                    overwritten,
+                })
+            })
             .boxed_env(),
     )
     .into()

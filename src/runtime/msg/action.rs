@@ -19,7 +19,7 @@ use crate::{
         addon::Descriptor,
         api::AuthRequest,
         library::LibraryItemId,
-        profile::{Password, Settings as ProfileSettings},
+        profile::{AuthKey, Password, Settings as ProfileSettings},
         rating::Rating,
         resource::{MetaItemId, MetaItemPreview, Video},
         streaming_server::{
@@ -55,7 +55,31 @@ pub enum ActionCtx {
     DismissNotificationItem(MetaItemId),
     ClearSearchHistory,
     PushUserToAPI,
-    PullUserFromAPI,
+    /// # Examples
+    ///
+    /// ```
+    /// use stremio_core::runtime::msg::ActionCtx;
+    ///
+    /// let pull_user_with_token = serde_json::from_value::<ActionCtx>(serde_json::json!({
+    ///     "action": "PullUserFromAPI",
+    ///     "args": {
+    ///         "token": "exampleToken1234",
+    ///     },
+    /// })).expect("Should be a valid action");
+    ///
+    /// let pull_user_with_profile_auth = serde_json::from_value::<ActionCtx>(serde_json::json!({
+    ///     "action": "PullUserFromAPI",
+    ///     "args": {},
+    /// })).expect("Should be a valid action");
+    /// ```
+    PullUserFromAPI {
+        /// Optional auth token of the user to be fetched
+        ///
+        /// if `None` is provided, the `ctx.profile.auth`
+        /// will be used to pull the user (if one exists)
+        #[serde(default)]
+        token: Option<AuthKey>,
+    },
     PushAddonsToAPI,
     PullAddonsFromAPI,
     SyncLibraryWithAPI,
