@@ -50,7 +50,14 @@ pub enum Internal {
     /// Result for pull addons from API.
     AddonsAPIResult(APIRequest, Result<Vec<Descriptor>, CtxError>),
     /// Result for pull user from API.
-    UserAPIResult(APIRequest, Result<User, CtxError>),
+    UserAPIResult {
+        request: APIRequest,
+        result: Result<User, CtxError>,
+        /// In case we want to use a token directly to pull user data from the API.
+        ///
+        /// The field indicates whether or not we have overwritten the token from the profile
+        overwritten: bool,
+    },
     /// Result for deleting account from API.
     DeleteAccountAPIResult(APIRequest, Result<SuccessResponse, CtxError>),
     /// Result for library sync plan with API.

@@ -358,7 +358,7 @@ pub enum ManifestExtra {
 }
 
 impl ManifestExtra {
-    pub fn iter(&self) -> impl Iterator<Item = Cow<ExtraProp>> {
+    pub fn iter(&self) -> impl Iterator<Item = Cow<'_, ExtraProp>> {
         match &self {
             ManifestExtra::Full { props } => Either::Left(props.iter().map(Cow::Borrowed)),
             ManifestExtra::Short {
