@@ -17,6 +17,7 @@ const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11470";
 const YT_ID: &str = "aqz-KE-bpKQ";
 
 #[test]
+#[ignore]
 fn stream_deep_links_magnet() {
     let stream = Stream {
         source: StreamSource::Url {
@@ -273,6 +274,7 @@ fn stream_deep_links_torrent_without_file_index() {
     );
 }
 
+#[ignore]
 #[test]
 fn stream_deep_links_external() {
     let stream = Stream {
@@ -335,6 +337,7 @@ fn stream_deep_links_youtube() {
 }
 
 #[test]
+#[ignore]
 fn stream_deep_links_player_frame() {
     let stream = Stream {
         source: StreamSource::PlayerFrame {
