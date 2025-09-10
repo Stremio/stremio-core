@@ -18,9 +18,8 @@ use crate::types::api::SuccessResponse;
 use crate::types::empty_string_as_null;
 use crate::types::profile::{AuthKey, Profile};
 use crate::types::streaming_server::{
-CreateMagnetRequest,
-    CreateTorrentBlobRequest, DeviceInfo, GetHTTPSResponse, NetworkInfo, Settings,
-    SettingsResponse, Statistics, StatisticsRequest, TorrentStatisticsRequest,
+    CreateMagnetRequest, CreateTorrentBlobRequest, DeviceInfo, GetHTTPSResponse, NetworkInfo,
+    Settings, SettingsResponse, Statistics, StatisticsRequest, TorrentStatisticsRequest,
 };
 use crate::types::torrent::InfoHash;
 

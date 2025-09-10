@@ -19,7 +19,12 @@ use stremio_serde_hex::{SerHex, Strict};
 
 use crate::{
     constants::{BASE64, URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX},
-    types::{resource::Subtitles, streams::StreamSourceTrait, torrent::InfoHash},
+    types::{
+        resource::Subtitles,
+        streaming_server::{ArchiveStreamBody, ArchiveStreamOptions},
+        streams::StreamSourceTrait,
+        torrent::InfoHash,
+    },
 };
 use crate::{runtime::EnvError, types::streams::ConvertedStreamSource};
 
@@ -177,7 +182,7 @@ impl Stream {
             }
             StreamSource::Url { url } => Some(url.to_string()),
             StreamSource::Rar {
-                rar_urls: _,
+                urls: _,
                 file_idx: _,
                 file_must_include: _,
             } => None,
@@ -187,7 +192,7 @@ impl Stream {
                 file_must_include: _,
             } => None,
             StreamSource::Zip {
-                zip_urls: _,
+                urls: _,
                 file_idx: _,
                 file_must_include: _,
             } => None,
@@ -359,16 +364,31 @@ impl Stream {
         streaming_server_url: Option<&Url>,
     ) -> Result<Stream<ConvertedStreamSource>, EnvError> {
         match (streaming_server_url, self.source.to_owned()) {
-            (Some(streaming_server_url), StreamSource::Rar { rar_urls, .. }) => {
-                if rar_urls.is_empty() {
+            (
+                Some(streaming_server_url),
+                StreamSource::Rar {
+                    urls,
+                    file_idx,
+                    file_must_include,
+                },
+            ) => {
+                if urls.is_empty() {
                     return Err(EnvError::Other("No RAR URLs provided".into()));
                 }
 
                 let mut stream_url = streaming_server_url
-                    .join("rar/stream")
+                    .join("rar/create")
                     .map_err(|err| EnvError::Other(err.to_string()))?;
 
-                let stream_data = serde_json::to_string(&self.source)?;
+                let payload = ArchiveStreamBody {
+                    urls,
+                    options: ArchiveStreamOptions {
+                        file_idx,
+                        file_must_include,
+                    },
+                };
+
+                let stream_data = serde_json::to_string(&payload)?;
                 stream_url.query_pairs_mut().append_pair(
                     "lz",
                     &lz_str::compress_to_encoded_uri_component(&stream_data),
@@ -376,8 +396,15 @@ impl Stream {
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
-            (Some(streaming_server_url), StreamSource::Zip { zip_urls, .. }) => {
-                if zip_urls.is_empty() {
+            (
+                Some(streaming_server_url),
+                StreamSource::Zip {
+                    urls,
+                    file_idx,
+                    file_must_include,
+                },
+            ) => {
+                if urls.is_empty() {
                     return Err(EnvError::Other("No Zip URLs provided".into()));
                 }
 
@@ -385,7 +412,16 @@ impl Stream {
                     .clone()
                     .join(&format!("zip/create"))
                     .expect("Url should always be valid");
-                let stream_data = serde_json::to_string(&self.source)?;
+
+                let payload = ArchiveStreamBody {
+                    urls,
+                    options: ArchiveStreamOptions {
+                        file_idx,
+                        file_must_include,
+                    },
+                };
+
+                let stream_data = serde_json::to_string(&payload)?;
                 stream_url.query_pairs_mut().append_pair(
                     "lz",
                     &lz_str::compress_to_encoded_uri_component(&stream_data),
@@ -395,7 +431,14 @@ impl Stream {
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
-            (Some(streaming_server_url), StreamSource::Zip7 { urls, .. }) => {
+            (
+                Some(streaming_server_url),
+                StreamSource::Zip7 {
+                    urls,
+                    file_idx,
+                    file_must_include,
+                },
+            ) => {
                 if urls.is_empty() {
                     return Err(EnvError::Other("No 7zip URLs provided".into()));
                 }
@@ -404,7 +447,15 @@ impl Stream {
                     .clone()
                     .join(&format!("7zip/create"))
                     .expect("Url should always be valid");
-                let stream_data = serde_json::to_string(&self.source)?;
+                let payload = ArchiveStreamBody {
+                    urls,
+                    options: ArchiveStreamOptions {
+                        file_idx,
+                        file_must_include,
+                    },
+                };
+
+                let stream_data = serde_json::to_string(&payload)?;
                 stream_url.query_pairs_mut().append_pair(
                     "lz",
                     &lz_str::compress_to_encoded_uri_component(&stream_data),
@@ -413,7 +464,14 @@ impl Stream {
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
-            (Some(streaming_server_url), StreamSource::Tgz { urls, .. }) => {
+            (
+                Some(streaming_server_url),
+                StreamSource::Tgz {
+                    urls,
+                    file_idx,
+                    file_must_include,
+                },
+            ) => {
                 if urls.is_empty() {
                     return Err(EnvError::Other("No tgz URLs provided".into()));
                 }
@@ -423,7 +481,15 @@ impl Stream {
                     .join(&format!("tgz/create"))
                     .expect("Url should always be valid");
 
-                let stream_data = serde_json::to_string(&self.source)?;
+                let payload = ArchiveStreamBody {
+                    urls,
+                    options: ArchiveStreamOptions {
+                        file_idx,
+                        file_must_include,
+                    },
+                };
+
+                let stream_data = serde_json::to_string(&payload)?;
                 stream_url.query_pairs_mut().append_pair(
                     "lz",
                     &lz_str::compress_to_encoded_uri_component(&stream_data),
@@ -432,17 +498,32 @@ impl Stream {
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
-            (Some(streaming_server_url), StreamSource::Tar { urls, .. }) => {
+            (
+                Some(streaming_server_url),
+                StreamSource::Tar {
+                    urls,
+                    file_idx,
+                    file_must_include,
+                },
+            ) => {
                 if urls.is_empty() {
                     return Err(EnvError::Other("No tar URLs provided".into()));
                 }
+
+                let payload = ArchiveStreamBody {
+                    urls,
+                    options: ArchiveStreamOptions {
+                        file_idx,
+                        file_must_include,
+                    },
+                };
 
                 let mut stream_url = streaming_server_url
                     .clone()
                     .join(&format!("tar/create"))
                     .expect("Url should always be valid");
 
-                let stream_data = serde_json::to_string(&self.source)?;
+                let stream_data = serde_json::to_string(&payload)?;
                 stream_url.query_pairs_mut().append_pair(
                     "lz",
                     &lz_str::compress_to_encoded_uri_component(&stream_data),
@@ -578,22 +659,22 @@ impl Stream {
 ///
 /// let expected = vec![
 ///     StreamSource::Rar {
-///         rar_urls: vec![ArchiveUrl { url: "https://example-source.com/file.rar".parse().unwrap(), bytes: Some(10_000) }, ArchiveUrl {url: "https://example-source2.com/file2.rar".parse().unwrap(), bytes: None }],
+///         urls: vec![ArchiveUrl { url: "https://example-source.com/file.rar".parse().unwrap(), bytes: Some(10_000) }, ArchiveUrl {url: "https://example-source2.com/file2.rar".parse().unwrap(), bytes: None }],
 ///         file_idx: None,
 ///         file_must_include: vec![],
 ///     },
 ///     StreamSource::Rar {
-///         rar_urls: vec![ArchiveUrl { url: "https://example-source3.com/file.rar".parse().unwrap(), bytes: None }, ArchiveUrl {url: "https://example-source4.com/file2.rar".parse().unwrap(), bytes: None }],
+///         urls: vec![ArchiveUrl { url: "https://example-source3.com/file.rar".parse().unwrap(), bytes: None }, ArchiveUrl {url: "https://example-source4.com/file2.rar".parse().unwrap(), bytes: None }],
 ///         file_idx: Some(1),
 ///         file_must_include: vec!["includeFile1".into()]
 ///     },
 ///     StreamSource::Rar {
-///         rar_urls: vec![ArchiveUrl { url: "https://example-source5.com/file.rar".parse().unwrap(), bytes: None }, ArchiveUrl {url: "https://example-source6.com/file2.rar".parse().unwrap(), bytes: None }],
+///         urls: vec![ArchiveUrl { url: "https://example-source5.com/file.rar".parse().unwrap(), bytes: None }, ArchiveUrl {url: "https://example-source6.com/file2.rar".parse().unwrap(), bytes: None }],
 ///         file_idx: None,
 ///         file_must_include: vec!["includeFile2".into()]
 ///     },
 ///     StreamSource::Rar {
-///         rar_urls: vec![
+///         urls: vec![
 ///             ArchiveUrl { url: "https://example-source7.com/file.rar".parse().unwrap(), bytes: None }, ArchiveUrl {url: "https://example-source8.com/file2.rar".parse().unwrap(), bytes: None }
 ///         ],
 ///         file_idx: Some(2),
@@ -636,22 +717,22 @@ impl Stream {
 ///
 /// let expected = vec![
 ///     StreamSource::Zip {
-///         zip_urls: vec![ArchiveUrl {url: "https://example-source.com/file.rar".parse().unwrap(), bytes: Some(20_000) }, ArchiveUrl {url: "https://example-source2.com/file2.rar".parse().unwrap(), bytes: None}],
+///         urls: vec![ArchiveUrl {url: "https://example-source.com/file.rar".parse().unwrap(), bytes: Some(20_000) }, ArchiveUrl {url: "https://example-source2.com/file2.rar".parse().unwrap(), bytes: None}],
 ///         file_idx: None,
 ///         file_must_include: vec![],
 ///     },
 ///     StreamSource::Zip {
-///         zip_urls: vec![ArchiveUrl {url: "https://example-source3.com/file.rar".parse().unwrap(), bytes: None}, ArchiveUrl {url: "https://example-source4.com/file2.rar".parse().unwrap(), bytes: None}],
+///         urls: vec![ArchiveUrl {url: "https://example-source3.com/file.rar".parse().unwrap(), bytes: None}, ArchiveUrl {url: "https://example-source4.com/file2.rar".parse().unwrap(), bytes: None}],
 ///         file_idx: Some(1),
 ///         file_must_include: vec!["includeFile1".into()],
 ///     },
 ///     StreamSource::Zip {
-///         zip_urls: vec![ArchiveUrl {url: "https://example-source5.com/file.rar".parse().unwrap(), bytes: None}, ArchiveUrl {url: "https://example-source6.com/file2.rar".parse().unwrap(), bytes: None}],
+///         urls: vec![ArchiveUrl {url: "https://example-source5.com/file.rar".parse().unwrap(), bytes: None}, ArchiveUrl {url: "https://example-source6.com/file2.rar".parse().unwrap(), bytes: None}],
 ///         file_idx: None,
 ///         file_must_include: vec!["includeFile2".into()],
 ///     },
 ///     StreamSource::Zip {
-///         zip_urls: vec![ArchiveUrl {url: "https://example-source7.com/file.rar".parse().unwrap(), bytes: None}, ArchiveUrl {url: "https://example-source8.com/file2.rar".parse().unwrap(), bytes: None}],
+///         urls: vec![ArchiveUrl {url: "https://example-source7.com/file.rar".parse().unwrap(), bytes: None}, ArchiveUrl {url: "https://example-source8.com/file2.rar".parse().unwrap(), bytes: None}],
 ///         file_idx: Some(2),
 ///         file_must_include: vec![],
 ///     },
@@ -678,7 +759,8 @@ pub enum StreamSource {
     /// Rar archive source
     #[serde(rename_all = "camelCase")]
     Rar {
-        rar_urls: Vec<ArchiveUrl>,
+        #[serde(rename = "rarUrls")]
+        urls: Vec<ArchiveUrl>,
         #[serde(default)]
         file_idx: Option<u16>,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -688,7 +770,8 @@ pub enum StreamSource {
     /// Zip archive source
     #[serde(rename_all = "camelCase")]
     Zip {
-        zip_urls: Vec<ArchiveUrl>,
+        #[serde(rename = "zipUrls")]
+        urls: Vec<ArchiveUrl>,
         #[serde(default)]
         file_idx: Option<u16>,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -781,7 +864,11 @@ pub struct ArchiveUrl {
 /// ```
 /// use stremio_core::types::resource::ArchiveUrl2;
 ///
-/// let stream_source = serde_json::from_value::<Vec<ArchiveUrl2>>(serde_json::json!([["https://example.com"], ["https://example.com", 123]])).expect("Should deserialize");
+/// let stream_source = serde_json::from_value::<Vec<ArchiveUrl2>>(serde_json::json!([
+///     ["https://example.com"],
+///     ["https://example.com", 123]
+/// ]))
+/// .expect("Should deserialize");
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ArchiveUrl2(

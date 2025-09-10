@@ -19,7 +19,7 @@ use crate::types::resource::MetaItemId;
 use crate::types::streaming_server::{
     DeviceInfo, GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics, StatisticsRequest,
 };
-use crate::types::streams::{StreamItemState};
+use crate::types::streams::StreamItemState;
 use crate::types::{
     resource::{MetaItem, Stream},
     torrent::InfoHash,
