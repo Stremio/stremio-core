@@ -138,8 +138,10 @@ impl WebEnv {
                         StreamSource::YouTube { .. } => "YouTube",
                         StreamSource::Torrent { .. } => "Torrent",
                         StreamSource::Rar { .. } => "Rar",
-                        StreamSource::Zip7 { .. } => "7zip",
                         StreamSource::Zip { .. } => "Zip",
+                        StreamSource::Zip7 { .. } => "7zip",
+                        StreamSource::Tgz { .. } => "Tgz",
+                        StreamSource::Tar { .. } => "Tar",
                         StreamSource::Nzb { .. } => "Nzb",
                         StreamSource::External { .. } => "External",
                         StreamSource::PlayerFrame { .. } => "PlayerFrame"

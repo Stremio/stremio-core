@@ -107,6 +107,8 @@ uuid = { version = "1.12.1", features = [
     "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
 ]}
 
+lz-str = "0.2"
+
 [dev-dependencies]
 tokio = { version = "1.12", features = ["rt", "macros"] }
 tokio-current-thread = "=0.2.0-alpha.1"

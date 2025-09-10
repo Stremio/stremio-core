@@ -4,6 +4,7 @@ use std::ops::Div;
 use base64::Engine;
 use futures::{future, FutureExt, TryFutureExt};
 use num::rational::Ratio;
+use url::Url;
 
 use crate::constants::{
     BASE64, CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, PLAYER_IGNORE_SEEK_AFTER,
@@ -100,7 +101,7 @@ pub struct Player {
     pub next_video: Option<Video>,
     pub next_streams: Option<ResourceLoadable<Vec<Stream>>>,
     pub next_stream: Option<Stream>,
-    pub stream: Loadable<(StreamUrls, Stream<ConvertedStreamSource>), EnvError>,
+    pub stream: Option<Loadable<(StreamUrls, Stream<ConvertedStreamSource>), EnvError>>,
     pub series_info: Option<SeriesInfo>,
     pub library_item: Option<LibraryItem>,
     pub stream_state: Option<StreamItemState>,
@@ -179,11 +180,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let stream_state_effects = eq_update(&mut self.stream_state, None);
                 let video_params_effects = eq_update(&mut self.video_params, None);
 
-                let stream_effects = eq_update(&mut self.stream, Loadable::Loading);
-                let update_stream_source_effects =
-                    Effects::msg(Msg::Internal(Internal::UpdateStreamSource {
-                        stream: selected.stream.to_owned(),
-                    }));
+                let stream_effects = stream_update(
+                    &mut self.stream,
+                    self.selected.as_ref(),
+                    &ctx.profile.settings.streaming_server_url,
+                );
 
                 let subtitles_effects = subtitles_update::<E>(
                     &mut self.subtitles,
@@ -290,7 +291,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(stream_state_effects)
                     .join(video_params_effects)
                     .join(stream_effects)
-                    .join(update_stream_source_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(next_streams_effects)
@@ -337,6 +337,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let video_params_effects = eq_update(&mut self.video_params, None);
                 let meta_item_effects = eq_update(&mut self.meta_item, None);
                 let stream_state_effects = eq_update(&mut self.stream_state, None);
+                let stream_effects = eq_update(&mut self.stream, None);
                 let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
                 let next_video_effects = eq_update(&mut self.next_video, None);
                 let next_streams_effects = eq_update(&mut self.next_streams, None);
@@ -356,6 +357,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(push_to_library_effects)
                     .join(selected_effects)
                     .join(video_params_effects)
+                    .join(stream_effects)
                     .join(meta_item_effects)
                     .join(stream_state_effects)
                     .join(subtitles_effects)
@@ -371,6 +373,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             Msg::Action(Action::Player(ActionPlayer::VideoParamsChanged { video_params })) => {
                 let video_params_effects =
                     eq_update(&mut self.video_params, video_params.to_owned());
+
                 let subtitles_effects = subtitles_update::<E>(
                     &mut self.subtitles,
                     &self.selected,
@@ -899,34 +902,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 };
                 Effects::none().unchanged()
             }
-            Msg::Internal(Internal::StreamingServerStreamSourceResult {
-                original,
-                result,
-                streaming_server_url,
-            }) => {
-                let next_stream_url_effects = match &self.selected {
-                    // update it only if the result is for the same original
-                    // stream that the request was made for
-                    Some(selected) if &selected.stream == original => {
-                        let next_stream = match result {
-                            Ok(converted_stream) => {
-                                let stream_urls = StreamUrls::new(
-                                    converted_stream.to_owned(),
-                                    streaming_server_url.as_ref(),
-                                );
-
-                                Loadable::Ready((stream_urls, converted_stream.to_owned()))
-                            }
-                            Err(err) => Loadable::Err(err.to_owned()),
-                        };
-
-                        eq_update(&mut self.stream, next_stream)
-                    }
-                    _ => Effects::none().unchanged(),
-                };
-
-                next_stream_url_effects
-            }
             _ => Effects::none().unchanged(),
         }
     }
@@ -1231,6 +1206,34 @@ fn library_item_state_update(
                 }
                 _ => Effects::none().unchanged(),
             }
+        }
+        _ => Effects::none().unchanged(),
+    }
+}
+
+fn stream_update(
+    stream: &mut Option<Loadable<(StreamUrls, Stream<ConvertedStreamSource>), EnvError>>,
+    selected: Option<&Selected>,
+    streaming_server_url: &Url,
+) -> Effects {
+    match selected {
+        // update it only if the result is for the same original
+        // stream that the request was made for
+        Some(selected) => {
+            let next_stream = match selected.stream.convert(
+                Some(streaming_server_url.clone()),
+                streaming_server_url.clone(),
+            ) {
+                Ok(converted_stream) => {
+                    let stream_urls =
+                        StreamUrls::new(converted_stream.clone(), Some(&streaming_server_url));
+
+                    Loadable::Ready((stream_urls, converted_stream))
+                }
+                Err(err) => Loadable::Err(err),
+            };
+
+            eq_update(stream, Some(next_stream))
         }
         _ => Effects::none().unchanged(),
     }

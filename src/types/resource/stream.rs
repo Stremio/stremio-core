@@ -17,11 +17,11 @@ use url::{form_urlencoded, Url};
 
 use stremio_serde_hex::{SerHex, Strict};
 
-use crate::types::streams::ConvertedStreamSource;
 use crate::{
     constants::{BASE64, URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX},
-    types::{resource::Subtitles, streams::StreamSourceTrait},
+    types::{resource::Subtitles, streams::StreamSourceTrait, torrent::InfoHash},
 };
+use crate::{runtime::EnvError, types::streams::ConvertedStreamSource};
 
 /// # Examples
 ///
@@ -191,6 +191,8 @@ impl Stream {
                 file_idx: _,
                 file_must_include: _,
             } => None,
+            StreamSource::Tar { .. } => None,
+            StreamSource::Tgz { .. } => None,
             StreamSource::Nzb { .. } => None,
             StreamSource::Torrent { .. } => {
                 self.magnet_url().map(|magnet_url| magnet_url.to_string())
@@ -347,6 +349,197 @@ impl Stream {
             thumbnail: self.thumbnail.clone(),
             subtitles: self.subtitles.clone(),
             behavior_hints: self.behavior_hints.clone(),
+        }
+    }
+
+    /// Updates a `StreamSource` if it's Rar, Zip, 7zip, Tar, Tgz and Nzb
+    /// and creates a [`ConvertedStreamSource::Url`]
+    pub fn convert(
+        &self,
+        base_url: Option<Url>,
+        streaming_server_url: Url,
+    ) -> Result<Stream<ConvertedStreamSource>, EnvError> {
+        match (base_url, self.source.to_owned()) {
+            (Some(_), StreamSource::Rar { rar_urls, .. }) => {
+                if rar_urls.is_empty() {
+                    return Err(EnvError::Other("No RAR URLs provided".into()));
+                }
+
+                let mut stream_url = streaming_server_url
+                    .join("rar/stream")
+                    .map_err(|err| EnvError::Other(err.to_string()))?;
+
+                let stream_data = serde_json::to_string(&self.source)?;
+                stream_url.query_pairs_mut().append_pair(
+                    "lz",
+                    &lz_str::compress_to_encoded_uri_component(&stream_data),
+                );
+
+                Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
+            }
+            (Some(_), StreamSource::Zip { zip_urls, .. }) => {
+                if zip_urls.is_empty() {
+                    return Err(EnvError::Other("No Zip URLs provided".into()));
+                }
+
+                let mut stream_url = streaming_server_url
+                    .clone()
+                    .join(&format!("zip/create"))
+                    .expect("Url should always be valid");
+                let stream_data = serde_json::to_string(&self.source)?;
+                stream_url.query_pairs_mut().append_pair(
+                    "lz",
+                    &lz_str::compress_to_encoded_uri_component(&stream_data),
+                );
+
+                tracing::trace!("Server Request for Zip: {:?}", stream_url);
+
+                Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
+            }
+            (Some(_), StreamSource::Zip7 { urls, .. }) => {
+                if urls.is_empty() {
+                    return Err(EnvError::Other("No 7zip URLs provided".into()));
+                }
+
+                let mut stream_url = streaming_server_url
+                    .clone()
+                    .join(&format!("7zip/create"))
+                    .expect("Url should always be valid");
+                let stream_data = serde_json::to_string(&self.source)?;
+                stream_url.query_pairs_mut().append_pair(
+                    "lz",
+                    &lz_str::compress_to_encoded_uri_component(&stream_data),
+                );
+                tracing::trace!("Server Request for 7zip: {:?}", stream_url);
+
+                Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
+            }
+            (Some(_), StreamSource::Tgz { urls, .. }) => {
+                if urls.is_empty() {
+                    return Err(EnvError::Other("No tgz URLs provided".into()));
+                }
+
+                let mut stream_url = streaming_server_url
+                    .clone()
+                    .join(&format!("tgz/create"))
+                    .expect("Url should always be valid");
+
+                let stream_data = serde_json::to_string(&self.source)?;
+                stream_url.query_pairs_mut().append_pair(
+                    "lz",
+                    &lz_str::compress_to_encoded_uri_component(&stream_data),
+                );
+                tracing::trace!("Server Request for tgz: {:?}", stream_url);
+
+                Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
+            }
+            (Some(_), StreamSource::Tar { urls, .. }) => {
+                if urls.is_empty() {
+                    return Err(EnvError::Other("No tar URLs provided".into()));
+                }
+
+                let mut stream_url = streaming_server_url
+                    .clone()
+                    .join(&format!("tar/create"))
+                    .expect("Url should always be valid");
+
+                let stream_data = serde_json::to_string(&self.source)?;
+                stream_url.query_pairs_mut().append_pair(
+                    "lz",
+                    &lz_str::compress_to_encoded_uri_component(&stream_data),
+                );
+                tracing::trace!("Server Request for tar: {:?}", stream_url);
+
+                Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
+            }
+            (Some(_), StreamSource::Nzb { servers, .. }) => {
+                if servers.is_empty() {
+                    return Err(EnvError::Other("No nzb server URLs provided".into()));
+                }
+
+                let mut stream_url = streaming_server_url
+                    .clone()
+                    .join(&format!("nzb/create"))
+                    .expect("Url should always be valid");
+
+                let stream_data = serde_json::to_string(&self.source)?;
+                stream_url.query_pairs_mut().append_pair(
+                    "lz",
+                    &lz_str::compress_to_encoded_uri_component(&stream_data),
+                );
+                tracing::trace!("Server Request for nzb: {:?}", stream_url);
+
+                Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
+            }
+            (
+                None,
+                StreamSource::Rar { .. }
+                | StreamSource::Zip { .. }
+                | StreamSource::Zip7 { .. }
+                | StreamSource::Tgz { .. }
+                | StreamSource::Tar { .. }
+                | StreamSource::Nzb { .. },
+            ) => Err(EnvError::Other(
+                "Can't play Rar/Zip/Zip7/Tar/Tgz/Nzb because the streaming server is not running"
+                    .into(),
+            )),
+            // no further changes are needed for now
+            // we still need to create torrents, etc. in stremio-video
+            // as it's not part of the current scope
+            (_, StreamSource::Url { url }) => {
+                Ok(self.to_converted(ConvertedStreamSource::Url { url }))
+            }
+            (Some(streaming_server_url), StreamSource::YouTube { yt_id }) => {
+                Ok(self.to_converted(ConvertedStreamSource::YouTube {
+                    url: self
+                        .streaming_url(Some(&streaming_server_url))
+                        .expect("Torrents always have a url when the server is present"),
+                    yt_id,
+                }))
+            }
+            (None, StreamSource::YouTube { .. }) => Err(EnvError::Other(
+                "Can't play Youtube videos because streaming server is not running".into(),
+            )),
+            (
+                Some(streaming_server_url),
+                StreamSource::Torrent {
+                    info_hash,
+                    file_idx,
+                    announce,
+                    file_must_include,
+                },
+            ) => {
+                Ok(self.to_converted(ConvertedStreamSource::Torrent {
+                    // this needs to change once conversion of torrents is also moved to core
+                    url: self
+                        .streaming_url(Some(&streaming_server_url))
+                        .expect("Torrents always have a url when the server is present"),
+                    info_hash: InfoHash::new(info_hash),
+                    file_idx,
+                    announce,
+                    file_must_include,
+                }))
+            }
+            (None, StreamSource::Torrent { .. }) => Err(EnvError::Other(
+                "Can't play Torrents because streaming server is not running".into(),
+            )),
+            (_, StreamSource::PlayerFrame { player_frame_url }) => {
+                Ok(self.to_converted(ConvertedStreamSource::PlayerFrame { player_frame_url }))
+            }
+            (
+                _,
+                StreamSource::External {
+                    external_url,
+                    android_tv_url,
+                    tizen_url,
+                    webos_url,
+                },
+            ) => Ok(self.to_converted(ConvertedStreamSource::External {
+                external_url,
+                android_tv_url,
+                tizen_url,
+                webos_url,
+            })),
         }
     }
 }
@@ -514,7 +707,29 @@ pub enum StreamSource {
         #[serde_as(deserialize_as = "DefaultOnNull")]
         file_must_include: Vec<String>,
     },
-    /// Nzb source
+    /// Tgz archive source
+    #[serde(rename_all = "camelCase")]
+    Tgz {
+        #[serde(rename = "tgzUrls")]
+        urls: Vec<ArchiveUrl>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        file_idx: Option<u16>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde_as(deserialize_as = "DefaultOnNull")]
+        file_must_include: Vec<String>,
+    },
+    /// Tar archive source
+    #[serde(rename_all = "camelCase")]
+    Tar {
+        #[serde(rename = "tarUrls")]
+        urls: Vec<ArchiveUrl>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        file_idx: Option<u16>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde_as(deserialize_as = "DefaultOnNull")]
+        file_must_include: Vec<String>,
+    },
+    /// Nzb sourced
     #[serde(rename_all = "camelCase")]
     Nzb {
         nzb_url: Url,
@@ -555,11 +770,25 @@ pub enum StreamSource {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+// pub struct ArchiveUrl(Url, #[serde(default, skip_serializing_if = "Option::is_none")] Option<u64>,)
 pub struct ArchiveUrl {
     pub url: Url,
     /// File size (if known) in Bytes
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bytes: Option<u64>,
 }
+
+// TODO:
+/// ```
+/// use stremio_core::types::resource::ArchiveUrl2;
+///
+/// let stream_source = serde_json::from_value::<Vec<ArchiveUrl2>>(serde_json::json!([["https://example.com"], ["https://example.com", 123]])).expect("Should deserialize");
+/// ```
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ArchiveUrl2(
+    Url,
+    #[serde(default, skip_serializing_if = "Option::is_none")] Option<u64>,
+);
 
 type ExternalStreamSource = (Option<Url>, Option<Url>, Option<String>, Option<String>);
 
@@ -895,3 +1124,4 @@ fn get_streaming_url(
         }
     }
 }
+

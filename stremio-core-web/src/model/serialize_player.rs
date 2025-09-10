@@ -105,7 +105,7 @@ mod model {
     #[serde(rename_all = "camelCase")]
     pub struct Player<'a> {
         pub selected: Option<Selected<'a>>,
-        pub stream: Loadable<Stream<ConvertedStreamSource>, &'a EnvError>,
+        pub stream: Option<Loadable<Stream<ConvertedStreamSource>, &'a EnvError>>,
         pub meta_item: Option<Loadable<model::MetaItem<'a>, &'a ResourceError>>,
         pub subtitles: Vec<model::Subtitles<'a>>,
         pub next_video: Option<Video<'a>>,
@@ -140,22 +140,24 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
             meta_request: &selected.meta_request,
             subtitles_path: &selected.subtitles_path,
         }),
-        stream: player.stream.as_ref().map(|(urls, stream)| {
-            tracing::trace!(?urls, "StreamUrls");
-            let mut url_stream = stream.clone();
-            // make sure we clear any proxy_headers as they have already been applied by core
-            // stremio-video can apply them a second time if they exist.
-            url_stream.behavior_hints.proxy_headers = None;
+        stream: player.stream.as_ref().map(|stream| {
+            stream.as_ref().map(|(urls, stream)| {
+                tracing::trace!(?urls, "StreamUrls");
+                let mut url_stream = stream.clone();
+                // make sure we clear any proxy_headers as they have already been applied by core
+                // stremio-video can apply them a second time if they exist.
+                url_stream.behavior_hints.proxy_headers = None;
 
-            model::Stream {
-                stream: url_stream,
-                deep_links: StreamDeepLinks::from((
-                    stream,
-                    streaming_server.base_url.as_ref(),
-                    &ctx.profile.settings,
-                ))
-                .into_web_deep_links(),
-            }
+                model::Stream {
+                    stream: url_stream,
+                    deep_links: StreamDeepLinks::from((
+                        stream,
+                        streaming_server.base_url.as_ref(),
+                        &ctx.profile.settings,
+                    ))
+                    .into_web_deep_links(),
+                }
+            })
         }),
         meta_item: player
             .meta_item
