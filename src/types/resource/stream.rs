@@ -356,11 +356,10 @@ impl Stream {
     /// and creates a [`ConvertedStreamSource::Url`]
     pub fn convert(
         &self,
-        base_url: Option<Url>,
-        streaming_server_url: Url,
+        streaming_server_url: Option<&Url>,
     ) -> Result<Stream<ConvertedStreamSource>, EnvError> {
-        match (base_url, self.source.to_owned()) {
-            (Some(_), StreamSource::Rar { rar_urls, .. }) => {
+        match (streaming_server_url, self.source.to_owned()) {
+            (Some(streaming_server_url), StreamSource::Rar { rar_urls, .. }) => {
                 if rar_urls.is_empty() {
                     return Err(EnvError::Other("No RAR URLs provided".into()));
                 }
@@ -377,7 +376,7 @@ impl Stream {
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
-            (Some(_), StreamSource::Zip { zip_urls, .. }) => {
+            (Some(streaming_server_url), StreamSource::Zip { zip_urls, .. }) => {
                 if zip_urls.is_empty() {
                     return Err(EnvError::Other("No Zip URLs provided".into()));
                 }
@@ -396,7 +395,7 @@ impl Stream {
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
-            (Some(_), StreamSource::Zip7 { urls, .. }) => {
+            (Some(streaming_server_url), StreamSource::Zip7 { urls, .. }) => {
                 if urls.is_empty() {
                     return Err(EnvError::Other("No 7zip URLs provided".into()));
                 }
@@ -414,7 +413,7 @@ impl Stream {
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
-            (Some(_), StreamSource::Tgz { urls, .. }) => {
+            (Some(streaming_server_url), StreamSource::Tgz { urls, .. }) => {
                 if urls.is_empty() {
                     return Err(EnvError::Other("No tgz URLs provided".into()));
                 }
@@ -433,7 +432,7 @@ impl Stream {
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
-            (Some(_), StreamSource::Tar { urls, .. }) => {
+            (Some(streaming_server_url), StreamSource::Tar { urls, .. }) => {
                 if urls.is_empty() {
                     return Err(EnvError::Other("No tar URLs provided".into()));
                 }
@@ -452,7 +451,7 @@ impl Stream {
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
-            (Some(_), StreamSource::Nzb { servers, .. }) => {
+            (Some(streaming_server_url), StreamSource::Nzb { servers, .. }) => {
                 if servers.is_empty() {
                     return Err(EnvError::Other("No nzb server URLs provided".into()));
                 }
@@ -1125,3 +1124,31 @@ fn get_streaming_url(
     }
 }
 
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_lz_string_decompress() {
+        let url = "http://127.0.0.1:11470/nzb/create?lz=N4IgdgXgRgqgTgGxALhACwC4YA4GdkD0BAJnAK5gDWApmLgmQOYB0AxgPYC2Bj1GkUAgEMAjAA4RAdlYBOSQFYx1GQBYAZqwDMa6cXmyha6spmbRalWM0A2KBOYCAZAEsAvFIAM16x8dxX8tZqHjLUrFBCUAZCmqyRYqxiPvIATB4qItRQ1EIgADQguNRwAG7FuCgA2uBgOPhEUACekpweYNjU1sgAQswpMABqAPpiAEoeUACk8gCiAI4AAmDUAO64zGRFyxhFpcVsXMgqKpoEKvk1dYQEAFZC5BHIMAAilCsDalBqC0WsZHDUByrdY5XCNZZrA6cI4nM4XMC1PDXCjYSQpTSSFQeESaE7IZ4qFZiGSTdEARRUAC1GAANMQAYVJ3Umkm6AA8ABSklTTGZiFIAWlJmmmzxuC2oZA2Wz42Dgzk4gI40OOp3OBQRVyIrDiKhS1E0gREevkeigyEmmgAggB5STEXnsSmW%2BnWGRWoRLYHMVbUShCBwIZCBNUgAC6AF8gA".parse::<url::Url>().unwrap();
+        let lz_str = url
+            .query_pairs()
+            .find_map(|(key, value)| {
+                if key == "lz" {
+                    Some(value.to_string())
+                } else {
+                    None
+                }
+            })
+            .unwrap();
+        let decomp =
+            lz_str::decompress_from_encoded_uri_component(&lz_str).expect("Should decompress");
+
+        let decomp_string =
+            String::from_utf16(&decomp).expect("Decompressed data is not valid UTF-16");
+
+        println!(
+            "Compressed string length: {}\nServer Url total Length: {}\n\t{decomp_string}",
+            decomp_string.len(),
+            url.as_str().len(),
+        );
+    }
+}

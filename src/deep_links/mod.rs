@@ -14,7 +14,7 @@ use crate::{
         library::LibraryItem,
         profile::Settings,
         query_params_encode,
-        resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video},
+        resource::{MetaItem, MetaItemPreview, Stream, StreamUrls, Video},
         streams::{ConvertedStreamSource, StreamsItem},
     },
 };
@@ -68,7 +68,6 @@ impl From<(&Stream, &Option<Url>, &Settings)> for ExternalPlayerLink {
     }
 }
 
-// TODO: Remove
 impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
     /// Create an [`ExternalPlayerLink`] using the [`Stream`],
     /// the server url (from [`StreamingServer::base_url`] which indicates a running or not server)
@@ -80,9 +79,19 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
         // Use streaming_server_url from settings if streaming_server is reachable
         let streaming_server_url = streaming_server_url.map(|_| &settings.streaming_server_url);
         let http_regex = Regex::new(r"https?://").unwrap();
-        let download = stream.download_url();
-        let streaming = stream.streaming_url(streaming_server_url);
-        let playlist = stream.m3u_data_uri(streaming_server_url);
+        let converted_stream = stream.convert(streaming_server_url).ok();
+        let stream_urls = converted_stream
+            .clone()
+            .map(|converted| StreamUrls::new(converted, streaming_server_url));
+        let download = stream_urls
+            .as_ref()
+            .and_then(|urls| urls.download_url.as_ref().map(ToString::to_string));
+        let streaming = stream_urls
+            .as_ref()
+            .and_then(|urls| urls.streaming_url.clone());
+        let playlist = stream_urls
+            .as_ref()
+            .and_then(|urls| urls.m3u_data_uri.clone());
         let file_name = playlist.as_ref().map(|_| "playlist.m3u".to_owned());
         let open_player = match &streaming {
             Some(url) => {
@@ -162,21 +171,24 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
             }
             None => None,
         };
-        let (web, android_tv, tizen, webos) = match &stream.source {
-            StreamSource::External {
-                external_url,
-                android_tv_url,
-                tizen_url,
-                webos_url,
-                ..
-            } => (
-                external_url.to_owned(),
-                android_tv_url.to_owned(),
-                tizen_url.to_owned(),
-                webos_url.to_owned(),
-            ),
-            _ => (None, None, None, None),
-        };
+        let (web, android_tv, tizen, webos) = converted_stream
+            .as_ref()
+            .map(|stream| match &stream.source {
+                ConvertedStreamSource::External {
+                    external_url,
+                    android_tv_url,
+                    tizen_url,
+                    webos_url,
+                    ..
+                } => (
+                    external_url.to_owned(),
+                    android_tv_url.to_owned(),
+                    tizen_url.to_owned(),
+                    webos_url.to_owned(),
+                ),
+                _ => (None, None, None, None),
+            })
+            .unwrap_or((None, None, None, None));
         ExternalPlayerLink {
             download,
             streaming: streaming.as_ref().map(ToString::to_string),

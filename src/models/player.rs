@@ -1220,10 +1220,7 @@ fn stream_update(
         // update it only if the result is for the same original
         // stream that the request was made for
         Some(selected) => {
-            let next_stream = match selected.stream.convert(
-                Some(streaming_server_url.clone()),
-                streaming_server_url.clone(),
-            ) {
+            let next_stream = match selected.stream.convert(Some(&streaming_server_url)) {
                 Ok(converted_stream) => {
                     let stream_urls =
                         StreamUrls::new(converted_stream.clone(), Some(&streaming_server_url));
