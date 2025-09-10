@@ -781,7 +781,7 @@ pub enum StreamSource {
     /// 7zip archive source
     #[serde(rename_all = "camelCase")]
     Zip7 {
-        #[serde(rename = "7zUrls")]
+        #[serde(rename = "7zipUrls")]
         urls: Vec<ArchiveUrl>,
         #[serde(default)]
         file_idx: Option<u16>,
