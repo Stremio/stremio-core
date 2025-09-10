@@ -211,22 +211,20 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
     ///
     /// [`StreamingServer::base_url`]: crate::models::streaming_server::StreamingServer::base_url
     fn from(
-        (stream, _streaming_server_url, settings): (
+        (stream, streaming_server_url, settings): (
             &Stream<ConvertedStreamSource>,
             Option<&Url>,
             &Settings,
         ),
     ) -> Self {
-        // Use streaming_server_url from settings if streaming_server is reachable
-        // let streaming_server_url = streaming_server_url.map(|_| &settings.streaming_server_url);
         let http_regex = Regex::new(r"https?://").unwrap();
-        // let download = stream.download_url();
-        let download = None;
-        // let streaming = stream.streaming_url(streaming_server_url);
-        let streaming: Option<url::Url> = None;
-        // let playlist = stream.m3u_data_uri(streaming_server_url);
-        let playlist = None;
+
+        let stream_urls = StreamUrls::new(stream.clone(), streaming_server_url);
+        let download = stream_urls.download_url.as_ref().map(ToString::to_string);
+        let streaming = stream_urls.streaming_url.clone();
+        let playlist = stream_urls.m3u_data_uri.clone();
         let file_name = playlist.as_ref().map(|_| "playlist.m3u".to_owned());
+
         let open_player = match &streaming {
             Some(url) => match settings.player_type.as_ref() {
                 Some(player_type) => match player_type.as_str() {

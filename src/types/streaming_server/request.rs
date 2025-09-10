@@ -2,33 +2,19 @@ use http::{header::CONTENT_TYPE, Request};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-use crate::types::{streaming_server::PeerSearch, torrent::InfoHash};
+use crate::types::{resource::ArchiveUrl, streaming_server::PeerSearch, torrent::InfoHash};
 
-pub struct ArchiveStreamRequest<Key = String> {
-    /// The `rar/create`, `zip/create` or `7zip/create` key returned in the response or created by us
-    pub key: Key,
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+/// Request used for `rar`, `zip`, `7zip`, tgz & tar creation
+/// the only difference is with `nzb` which expects `nzbUrl` & `servers` fields
+pub struct ArchiveStreamBody {
+    /// The `rar/create`, `zip/create`, `7zip/create`, `tgz/create`, `tar/create` urls
+    pub urls: Vec<ArchiveUrl>,
+    #[serde(flatten)]
     pub options: ArchiveStreamOptions,
 }
 
-impl ArchiveStreamRequest {
-    pub fn to_query_pairs(self) -> Vec<(String, String)> {
-        let options = serde_json::to_value(&self.options).expect("should serialize");
-
-        let mut query_params = vec![("key".into(), self.key.to_owned())];
-
-        if self.options != ArchiveStreamOptions::default() {
-            query_params.push(("o".into(), options.to_string()));
-        }
-
-        query_params
-    }
-}
-
-/// Server's `rar/stream` and `zip/stream` options of the query.
-///
-/// Format: `rar/stream?key={create_key}{options length}&o={options_json_string}`
-///
-/// Where all parameters are url encoded.
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ArchiveStreamOptions {
