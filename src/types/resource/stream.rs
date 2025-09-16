@@ -943,11 +943,6 @@ fn is_default_value<T: Default + PartialEq>(value: &T) -> bool {
     *value == T::default()
 }
 
-// ArchiveUrl {
-//     url: Url,
-
-// }
-
 #[derive(Clone, derivative::Derivative, Serialize, PartialEq, Eq)]
 pub struct StreamUrls {
     #[serde(default)]
@@ -1203,9 +1198,11 @@ fn get_streaming_url(
 
         ConvertedStreamSource::YouTube { url, .. } => Some(url.clone()),
         ConvertedStreamSource::External { external_url, .. } => {
+            // TODO: should this be returned as the streaming url?
             external_url.as_ref().map(|url| url.to_owned())
         }
         ConvertedStreamSource::PlayerFrame { player_frame_url } => {
+            // TODO: should this be returned as the streaming url?
             Some(player_frame_url.to_owned())
         }
     }

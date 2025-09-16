@@ -17,7 +17,6 @@ const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11470";
 const YT_ID: &str = "aqz-KE-bpKQ";
 
 #[test]
-#[ignore]
 fn stream_deep_links_magnet() {
     let stream = Stream {
         source: StreamSource::Url {
@@ -37,7 +36,10 @@ fn stream_deep_links_magnet() {
         sdl.external_player.download,
         Some(MAGNET_STR_URL.to_owned()),
     );
-    assert_eq!(sdl.external_player.file_name, None);
+    assert_eq!(
+        sdl.external_player.file_name,
+        "playlist.m3u".to_string().into()
+    );
 }
 
 #[test]
@@ -274,7 +276,6 @@ fn stream_deep_links_torrent_without_file_index() {
     );
 }
 
-#[ignore]
 #[test]
 fn stream_deep_links_external() {
     let stream = Stream {
@@ -298,7 +299,10 @@ fn stream_deep_links_external() {
         sdl.external_player.web,
         Some(Url::from_str(HTTP_STR_URL).unwrap()),
     );
-    assert_eq!(sdl.external_player.file_name, None);
+    assert_eq!(
+        sdl.external_player.file_name,
+        "playlist.m3u".to_string().into()
+    );
 }
 
 #[test]
@@ -337,7 +341,6 @@ fn stream_deep_links_youtube() {
 }
 
 #[test]
-#[ignore]
 fn stream_deep_links_player_frame() {
     let stream = Stream {
         source: StreamSource::PlayerFrame {
@@ -353,8 +356,11 @@ fn stream_deep_links_player_frame() {
     let settings = Settings::default();
     let sdl = StreamDeepLinks::from((&stream, &streaming_server_url, &settings));
     assert_eq!(&sdl.player, "stremio:///player/eAEBMQDO%2F3sicGxheWVyRnJhbWVVcmwiOiJodHRwOi8vZG9tYWluLnJvb3Qvc29tZS9wYXRoIn2%2F2hHn");
-    assert_eq!(sdl.external_player.playlist, None);
-    assert_eq!(sdl.external_player.file_name, None);
+    assert_eq!(sdl.external_player.playlist, Some("data:application/octet-stream;charset=utf-8;base64,I0VYVE0zVQojRVhUSU5GOjAKaHR0cDovL2RvbWFpbi5yb290L3NvbWUvcGF0aA==".to_string()));
+    assert_eq!(
+        sdl.external_player.file_name,
+        "playlist.m3u".to_string().into()
+    );
 }
 
 #[test]
