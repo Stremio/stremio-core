@@ -21,7 +21,7 @@ use crate::{
     constants::{BASE64, URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX},
     types::{
         resource::Subtitles,
-        streaming_server::{ArchiveStreamBody, ArchiveStreamOptions},
+        streaming_server::{ArchiveStreamBody, ArchiveStreamOptions, FtpStreamBody},
         streams::StreamSourceTrait,
         torrent::InfoHash,
     },
@@ -357,6 +357,36 @@ impl Stream {
         }
     }
 
+    /// Converts an `ftp://` or `ftps://` url to a proxied streaming server url
+    ///
+    /// # Returns
+    ///
+    /// Err(EnvError::Other) - If streaming server is not available
+    /// Ok(Url) - if stream is converted or left unchanged (non-ftp url)
+    fn ftp_url_handler(streaming_server_url: Option<&Url>, url: Url) -> Result<Url, EnvError> {
+        match (streaming_server_url, url.scheme()) {
+            (Some(streaming_server_url), "ftp") | (Some(streaming_server_url), "ftps") => {
+                let mut stream_url = streaming_server_url
+                    .join("ftp/create")
+                    .map_err(|err| EnvError::Other(err.to_string()))?;
+
+                let payload = FtpStreamBody { ftp_url: url };
+
+                let stream_data = serde_json::to_string(&payload)?;
+                stream_url.query_pairs_mut().append_pair(
+                    "lz",
+                    &lz_str::compress_to_encoded_uri_component(&stream_data),
+                );
+
+                Ok(stream_url)
+            }
+            (None, _) => Err(EnvError::Other(
+                "Can't play FTP/FTPS because streaming server is not running".into(),
+            )),
+            _ => Ok(url),
+        }
+    }
+
     /// Updates a `StreamSource` if it's Rar, Zip, 7zip, Tar, Tgz and Nzb
     /// and creates a [`ConvertedStreamSource::Url`]
     pub fn convert(
@@ -381,7 +411,18 @@ impl Stream {
                     .map_err(|err| EnvError::Other(err.to_string()))?;
 
                 let payload = ArchiveStreamBody {
-                    urls,
+                    urls: urls
+                        .into_iter()
+                        .map(|archive_url| {
+                            Self::ftp_url_handler(Some(streaming_server_url), archive_url.url).map(
+                                |url| ArchiveUrl {
+                                    url,
+                                    bytes: archive_url.bytes,
+                                },
+                            )
+                        })
+                        .collect::<Result<Vec<_>, _>>()
+                        .expect("Streaming server availability is already checked"),
                     options: ArchiveStreamOptions {
                         file_idx,
                         file_must_include,
@@ -414,7 +455,18 @@ impl Stream {
                     .expect("Url should always be valid");
 
                 let payload = ArchiveStreamBody {
-                    urls,
+                    urls: urls
+                        .into_iter()
+                        .map(|archive_url| {
+                            Self::ftp_url_handler(Some(streaming_server_url), archive_url.url).map(
+                                |url| ArchiveUrl {
+                                    url,
+                                    bytes: archive_url.bytes,
+                                },
+                            )
+                        })
+                        .collect::<Result<Vec<_>, _>>()
+                        .expect("Streaming server availability is already checked"),
                     options: ArchiveStreamOptions {
                         file_idx,
                         file_must_include,
@@ -448,7 +500,18 @@ impl Stream {
                     .join(&format!("7zip/create"))
                     .expect("Url should always be valid");
                 let payload = ArchiveStreamBody {
-                    urls,
+                    urls: urls
+                        .into_iter()
+                        .map(|archive_url| {
+                            Self::ftp_url_handler(Some(streaming_server_url), archive_url.url).map(
+                                |url| ArchiveUrl {
+                                    url,
+                                    bytes: archive_url.bytes,
+                                },
+                            )
+                        })
+                        .collect::<Result<Vec<_>, _>>()
+                        .expect("Streaming server availability is already checked"),
                     options: ArchiveStreamOptions {
                         file_idx,
                         file_must_include,
@@ -482,7 +545,18 @@ impl Stream {
                     .expect("Url should always be valid");
 
                 let payload = ArchiveStreamBody {
-                    urls,
+                    urls: urls
+                        .into_iter()
+                        .map(|archive_url| {
+                            Self::ftp_url_handler(Some(streaming_server_url), archive_url.url).map(
+                                |url| ArchiveUrl {
+                                    url,
+                                    bytes: archive_url.bytes,
+                                },
+                            )
+                        })
+                        .collect::<Result<Vec<_>, _>>()
+                        .expect("Streaming server availability is already checked"),
                     options: ArchiveStreamOptions {
                         file_idx,
                         file_must_include,
@@ -511,7 +585,18 @@ impl Stream {
                 }
 
                 let payload = ArchiveStreamBody {
-                    urls,
+                    urls: urls
+                        .into_iter()
+                        .map(|archive_url| {
+                            Self::ftp_url_handler(Some(streaming_server_url), archive_url.url).map(
+                                |url| ArchiveUrl {
+                                    url,
+                                    bytes: archive_url.bytes,
+                                },
+                            )
+                        })
+                        .collect::<Result<Vec<_>, _>>()
+                        .expect("Streaming server availability is already checked"),
                     options: ArchiveStreamOptions {
                         file_idx,
                         file_must_include,
@@ -532,17 +617,33 @@ impl Stream {
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
-            (Some(streaming_server_url), StreamSource::Nzb { servers, .. }) => {
+            (
+                Some(streaming_server_url),
+                StreamSource::Nzb {
+                    nzb_url, servers, ..
+                },
+            ) => {
                 if servers.is_empty() {
                     return Err(EnvError::Other("No nzb server URLs provided".into()));
                 }
+
+                let servers = servers
+                    .into_iter()
+                    .map(|server_url| Self::ftp_url_handler(Some(streaming_server_url), server_url))
+                    .collect::<Result<Vec<_>, _>>()
+                    .expect("Streaming server availability is already checked");
 
                 let mut stream_url = streaming_server_url
                     .clone()
                     .join(&format!("nzb/create"))
                     .expect("Url should always be valid");
 
-                let stream_data = serde_json::to_string(&self.source)?;
+                let stream_data = serde_json::to_string(&StreamSource::Nzb {
+                    nzb_url: Self::ftp_url_handler(Some(streaming_server_url), nzb_url)
+                        .expect("Streaming server availability is already checked"),
+
+                    servers,
+                })?;
                 stream_url.query_pairs_mut().append_pair(
                     "lz",
                     &lz_str::compress_to_encoded_uri_component(&stream_data),
@@ -567,6 +668,8 @@ impl Stream {
             // we still need to create torrents, etc. in stremio-video
             // as it's not part of the current scope
             (_, StreamSource::Url { url }) => {
+                let url = Self::ftp_url_handler(streaming_server_url, url)?;
+
                 Ok(self.to_converted(ConvertedStreamSource::Url { url }))
             }
             (Some(streaming_server_url), StreamSource::YouTube { yt_id }) => {

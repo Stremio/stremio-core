@@ -15,6 +15,12 @@ pub struct ArchiveStreamBody {
     pub options: ArchiveStreamOptions,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct FtpStreamBody {
+    pub ftp_url: Url,
+}
+
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ArchiveStreamOptions {
