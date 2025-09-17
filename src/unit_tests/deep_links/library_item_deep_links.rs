@@ -23,7 +23,7 @@ static INFUSE_PLAYER_SETTINGS: Lazy<Settings> = Lazy::new(|| Settings {
 
 static TORRENT_STREAMS_ITEM: Lazy<StreamsItem> = Lazy::new(|| {
     let stream = Stream {
-        source: StreamSource::Tramvai {
+        source: StreamSource::Torrent {
             info_hash: SerHex::<Strict>::from_hex("df2c94aec35f97943c4e432f25081b590cd35326")
                 .unwrap(),
             file_idx: Some(0),

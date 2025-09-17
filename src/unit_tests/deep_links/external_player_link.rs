@@ -59,7 +59,7 @@ fn external_player_link_torrent() {
     let file_idx = 0;
     let announce = vec!["http://bt1.archive.org:6969/announce".to_string()];
     let stream = Stream {
-        source: StreamSource::Tramvai {
+        source: StreamSource::Torrent {
             info_hash,
             file_idx: Some(file_idx),
             announce,

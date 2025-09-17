@@ -29,19 +29,19 @@ fn stream_source() {
             StreamSource::YouTube {
                 yt_id: "yt_id".to_owned(),
             },
-            StreamSource::Tramvai {
+            StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: Some(1),
                 announce: vec!["announce".to_owned()],
                 file_must_include: vec![],
             },
-            StreamSource::Tramvai {
+            StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: None,
                 announce: vec![],
                 file_must_include: vec![],
             },
-            StreamSource::Tramvai {
+            StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: Some(2),
                 announce: vec![],
@@ -148,31 +148,31 @@ fn stream_source() {
             StreamSource::YouTube {
                 yt_id: "yt_id".to_owned(),
             },
-            StreamSource::Tramvai {
+            StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: Some(1),
                 announce: vec!["announce".to_owned()],
                 file_must_include: vec![],
             },
-            StreamSource::Tramvai {
+            StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: Some(1),
                 announce: vec!["announce".to_owned()],
                 file_must_include: vec![],
             },
-            StreamSource::Tramvai {
+            StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: None,
                 announce: vec![],
                 file_must_include: vec![],
             },
-            StreamSource::Tramvai {
+            StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: None,
                 announce: vec![],
                 file_must_include: vec![],
             },
-            StreamSource::Tramvai {
+            StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: Some(2),
                 announce: vec![],
