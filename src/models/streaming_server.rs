@@ -582,7 +582,7 @@ fn parse_magnet(magnet: &Url) -> Result<(InfoHash, Vec<String>), MagnetError> {
 
 fn parse_torrent(torrent: &[u8]) -> Result<(InfoHash, Vec<String>), serde_bencode::Error> {
     #[derive(Deserialize)]
-    struct TramvaiFile {
+    struct TorrentFile {
         info: serde_bencode::value::Value,
         #[serde(default)]
         announce: Option<String>,
@@ -590,7 +590,7 @@ fn parse_torrent(torrent: &[u8]) -> Result<(InfoHash, Vec<String>), serde_bencod
         #[serde(rename = "announce-list")]
         announce_list: Option<Vec<Vec<String>>>,
     }
-    let torrent_file = serde_bencode::from_bytes::<TramvaiFile>(torrent)?;
+    let torrent_file = serde_bencode::from_bytes::<TorrentFile>(torrent)?;
     let info_bytes = serde_bencode::to_bytes(&torrent_file.info)?;
     let mut hasher = Sha1::new();
     hasher.update(info_bytes);
