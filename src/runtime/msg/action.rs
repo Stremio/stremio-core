@@ -55,6 +55,23 @@ pub enum ActionCtx {
     DismissNotificationItem(MetaItemId),
     ClearSearchHistory,
     PushUserToAPI,
+    /// # Examples
+    ///
+    /// ```
+    /// use stremio_core::runtime::msg::ActionCtx;
+    ///
+    /// let pull_user_with_token = serde_json::from_value::<ActionCtx>(serde_json::json!({
+    ///     "action": "PullUserFromAPI",
+    ///     "args": {
+    ///         "token": "exampleToken1234",
+    ///     },
+    /// })).expect("Should be a valid action");
+    ///
+    /// let pull_user_with_profile_auth = serde_json::from_value::<ActionCtx>(serde_json::json!({
+    ///     "action": "PullUserFromAPI",
+    ///     "args": {},
+    /// })).expect("Should be a valid action");
+    /// ```
     PullUserFromAPI {
         /// Optional auth token of the user to be fetched
         ///
