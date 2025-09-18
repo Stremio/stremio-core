@@ -303,6 +303,6 @@ fn stream_source() {
             Token::None,
             Token::StructEnd,
         ],
-        "data did not match any variant of untagged enum StreamSource",
+        "Valid StreamSource",
     );
 }
