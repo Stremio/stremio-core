@@ -170,7 +170,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     let torrent_effects = eq_update(&mut self.torrent, None);
                     Effects::msg(Msg::Event(Event::Error {
                         error: CtxError::Env(EnvError::Other(format!(
-                            "Failed to parse torrent file: {error}"
+                            "Failed to parse stream from file: {error}"
                         ))),
                         source: Box::new(Event::TorrentParsed {
                             torrent: torrent.to_owned(),
