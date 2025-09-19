@@ -154,7 +154,7 @@
 <span class="attr">#[derive(Serialize)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>CreateMagnetBody {
-    <span class="kw">pub </span>torrent: CreateMagnetTorrent,
+    <span class="kw">pub </span>stream: CreateMagnetTorrent,
     <span class="kw">pub </span>peer_search: <span class="prelude-ty">Option</span>&lt;PeerSearch&gt;,
 }
 
@@ -169,7 +169,7 @@
         <span class="kw">let </span>info_hash = val.info_hash;
 
         <span class="kw">let </span>body = CreateMagnetBody {
-            torrent: CreateMagnetTorrent {
+            stream: CreateMagnetTorrent {
                 info_hash: val.info_hash.to_owned(),
             },
             peer_search: <span class="kw">if </span>!val.announce.is_empty() {

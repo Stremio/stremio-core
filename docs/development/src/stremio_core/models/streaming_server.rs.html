@@ -889,7 +889,7 @@
                     <span class="kw">let </span>torrent_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.torrent, <span class="prelude-val">None</span>);
                     Effects::msg(Msg::Event(Event::Error {
                         error: CtxError::Env(EnvError::Other(<span class="macro">format!</span>(
-                            <span class="string">"Failed to parse torrent file: {error}"
+                            <span class="string">"Failed to parse stream from file: {error}"
                         </span>))),
                         source: Box::new(Event::TorrentParsed {
                             torrent: torrent.to_owned(),
