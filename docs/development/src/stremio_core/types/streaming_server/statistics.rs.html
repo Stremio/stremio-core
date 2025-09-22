@@ -118,7 +118,7 @@
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>Growler {
     <span class="kw">pub </span>flood: u64,
-    <span class="kw">pub </span>pulse: u64,
+    <span class="kw">pub </span>pulse: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 }
 
 <span class="attr">#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
@@ -147,21 +147,21 @@
 <span class="attr">#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>SwarmCap {
-    <span class="kw">pub </span>max_speed: f64,
-    <span class="kw">pub </span>min_peers: u64,
+    <span class="kw">pub </span>max_speed: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+    <span class="kw">pub </span>min_peers: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 }
 
 <span class="attr">#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>Options {
-    <span class="kw">pub </span>connections: u64,
+    <span class="kw">pub </span>connections: <span class="prelude-ty">Option</span>&lt;u64&gt;,
     <span class="kw">pub </span>dht: bool,
     <span class="kw">pub </span>growler: Growler,
-    <span class="kw">pub </span>handshake_timeout: u64,
+    <span class="kw">pub </span>handshake_timeout: <span class="prelude-ty">Option</span>&lt;u64&gt;,
     <span class="kw">pub </span>path: String,
     <span class="kw">pub </span>peer_search: PeerSearch,
     <span class="kw">pub </span>swarm_cap: SwarmCap,
-    <span class="kw">pub </span>timeout: u64,
+    <span class="kw">pub </span>timeout: <span class="prelude-ty">Option</span>&lt;u64&gt;,
     <span class="kw">pub </span>tracker: bool,
     <span class="kw">pub </span>r#virtual: bool,
 }
