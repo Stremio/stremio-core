@@ -220,7 +220,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
 
                 let library_item_state_effects =
-                    library_item_state_update(&mut self.library_item, &self.selected);
+                    library_item_state_update(&mut self.library_item, &self.next_video.as_ref(), &self.selected);
 
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
@@ -627,13 +627,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .map(|library_item| library_item.state.time_offset),
                 );
 
-                // Set time_offset to 0 as we switch to next video
+                // Set time_offset to 0 or 1 as we switch to next video
                 let library_item_effects = self
                     .library_item
                     .as_mut()
                     .map(|library_item| {
                         // instantly update the library item's time_offset.
-                        library_item.state.time_offset = 0;
+                        library_item.state.time_offset =
+                            if self.next_video.is_some() { 1 } else { 0 };
 
                         Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                             library_item.to_owned(),
@@ -715,7 +716,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
 
                 let library_item_state_effects =
-                    library_item_state_update(&mut self.library_item, &self.selected);
+                    library_item_state_update(&mut self.library_item, self.next_video.as_ref(), &self.selected);
 
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
@@ -804,7 +805,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
 
                 let library_item_state_effects =
-                    library_item_state_update(&mut self.library_item, &self.selected);
+                    library_item_state_update(&mut self.library_item, self.next_video.as_ref(), &self.selected);
 
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
@@ -1170,6 +1171,7 @@ fn watched_update(
 
 fn library_item_state_update(
     library_item: &mut Option<LibraryItem>,
+    next_video: Option<&Video>,
     selected: &Option<Selected>,
 ) -> Effects {
     match (library_item, selected) {
@@ -1178,7 +1180,7 @@ fn library_item_state_update(
                 (Some(stream_request), Some(state_video_id))
                     if stream_request.path.id != *state_video_id =>
                 {
-                    library_item.state.time_offset = 0;
+                    library_item.state.time_offset = if next_video.is_some() { 1 } else { 0 };
                     Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                         library_item.to_owned(),
                     )))
