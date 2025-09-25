@@ -204,7 +204,7 @@ fn next_stream() {
             .unwrap()
             .state
             .time_offset,
-        0,
-        "library item time_offset was reset"
+        1,
+        "library item time_offset was reset to 1 to keep it in CW as there's a next video"
     );
 }
