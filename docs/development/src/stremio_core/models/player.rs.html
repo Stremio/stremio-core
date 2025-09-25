@@ -1558,7 +1558,18 @@
 <a href="#1557" id="1557">1557</a>
 <a href="#1558" id="1558">1558</a>
 <a href="#1559" id="1559">1559</a>
-<a href="#1560" id="1560">1560</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#1560" id="1560">1560</a>
+<a href="#1561" id="1561">1561</a>
+<a href="#1562" id="1562">1562</a>
+<a href="#1563" id="1563">1563</a>
+<a href="#1564" id="1564">1564</a>
+<a href="#1565" id="1565">1565</a>
+<a href="#1566" id="1566">1566</a>
+<a href="#1567" id="1567">1567</a>
+<a href="#1568" id="1568">1568</a>
+<a href="#1569" id="1569">1569</a>
+<a href="#1570" id="1570">1570</a>
+<a href="#1571" id="1571">1571</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>std::ops::Div;
 
 <span class="kw">use </span>base64::Engine;
@@ -1779,8 +1790,11 @@
                     <span class="kw-2">&amp;</span>ctx.library,
                 );
 
-                <span class="kw">let </span>library_item_state_effects =
-                    library_item_state_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span><span class="self">self</span>.selected);
+                <span class="kw">let </span>library_item_state_effects = library_item_state_update(
+                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item,
+                    <span class="self">self</span>.next_video.as_ref(),
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
+                );
 
                 <span class="kw">let </span>watched_effects =
                     watched_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.watched, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_item, <span class="kw-2">&amp;</span><span class="self">self</span>.library_item);
@@ -2187,13 +2201,14 @@
                         .map(|library_item| library_item.state.time_offset),
                 );
 
-                <span class="comment">// Set time_offset to 0 as we switch to next video
+                <span class="comment">// Set time_offset to 0 or 1 as we switch to next video
                 </span><span class="kw">let </span>library_item_effects = <span class="self">self
                     </span>.library_item
                     .as_mut()
                     .map(|library_item| {
                         <span class="comment">// instantly update the library item's time_offset.
-                        </span>library_item.state.time_offset = <span class="number">0</span>;
+                        </span>library_item.state.time_offset =
+                            <span class="kw">if </span><span class="self">self</span>.next_video.is_some() { <span class="number">1 </span>} <span class="kw">else </span>{ <span class="number">0 </span>};
 
                         Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                             library_item.to_owned(),
@@ -2274,8 +2289,11 @@
                     <span class="kw-2">&amp;</span>ctx.library,
                 );
 
-                <span class="kw">let </span>library_item_state_effects =
-                    library_item_state_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span><span class="self">self</span>.selected);
+                <span class="kw">let </span>library_item_state_effects = library_item_state_update(
+                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item,
+                    <span class="self">self</span>.next_video.as_ref(),
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
+                );
 
                 <span class="kw">let </span>watched_effects =
                     watched_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.watched, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_item, <span class="kw-2">&amp;</span><span class="self">self</span>.library_item);
@@ -2363,8 +2381,11 @@
                     <span class="kw-2">&amp;</span>ctx.library,
                 );
 
-                <span class="kw">let </span>library_item_state_effects =
-                    library_item_state_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span><span class="self">self</span>.selected);
+                <span class="kw">let </span>library_item_state_effects = library_item_state_update(
+                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item,
+                    <span class="self">self</span>.next_video.as_ref(),
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
+                );
 
                 <span class="kw">let </span>watched_effects =
                     watched_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.watched, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_item, <span class="kw-2">&amp;</span><span class="self">self</span>.library_item);
@@ -2730,6 +2751,7 @@
 
 <span class="kw">fn </span>library_item_state_update(
     library_item: <span class="kw-2">&amp;mut </span><span class="prelude-ty">Option</span>&lt;LibraryItem&gt;,
+    next_video: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Video&gt;,
     selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
 ) -&gt; Effects {
     <span class="kw">match </span>(library_item, selected) {
@@ -2738,7 +2760,7 @@
                 (<span class="prelude-val">Some</span>(stream_request), <span class="prelude-val">Some</span>(state_video_id))
                     <span class="kw">if </span>stream_request.path.id != <span class="kw-2">*</span>state_video_id =&gt;
                 {
-                    library_item.state.time_offset = <span class="number">0</span>;
+                    library_item.state.time_offset = <span class="kw">if </span>next_video.is_some() { <span class="number">1 </span>} <span class="kw">else </span>{ <span class="number">0 </span>};
                     Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                         library_item.to_owned(),
                     )))
