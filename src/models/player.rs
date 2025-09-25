@@ -219,8 +219,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.library,
                 );
 
-                let library_item_state_effects =
-                    library_item_state_update(&mut self.library_item, &self.next_video.as_ref(), &self.selected);
+                let library_item_state_effects = library_item_state_update(
+                    &mut self.library_item,
+                    self.next_video.as_ref(),
+                    &self.selected,
+                );
 
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
@@ -715,8 +718,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.library,
                 );
 
-                let library_item_state_effects =
-                    library_item_state_update(&mut self.library_item, self.next_video.as_ref(), &self.selected);
+                let library_item_state_effects = library_item_state_update(
+                    &mut self.library_item,
+                    self.next_video.as_ref(),
+                    &self.selected,
+                );
 
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
@@ -804,8 +810,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.library,
                 );
 
-                let library_item_state_effects =
-                    library_item_state_update(&mut self.library_item, self.next_video.as_ref(), &self.selected);
+                let library_item_state_effects = library_item_state_update(
+                    &mut self.library_item,
+                    self.next_video.as_ref(),
+                    &self.selected,
+                );
 
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
