@@ -4,6 +4,7 @@ use futures::{
     future::{self, Either},
     FutureExt, TryFutureExt,
 };
+use tracing::warn;
 
 use crate::{
     constants::{
@@ -294,6 +295,7 @@ fn update_and_push_items_to_storage<E: Env + 'static>(
     library: &mut LibraryBucket,
     items: Vec<LibraryItem>,
 ) -> Effect {
+    let now = E::now();
     let ids = items
         .iter()
         .map(|item| &item.id)
@@ -301,6 +303,17 @@ fn update_and_push_items_to_storage<E: Env + 'static>(
         .collect::<Vec<_>>();
     let are_items_in_recent = library.are_ids_in_recent(&ids);
     library.merge_items(items);
+    warn!(
+        "It took {:?} micros to merge items to library",
+        (E::now() - now).num_microseconds()
+    );
+
+    let now = E::now();
+    loop {
+        if E::now() - now >= chrono::TimeDelta::seconds(1) {
+            break;
+        }
+    }
     let push_to_storage_future = if library.items.len() <= LIBRARY_RECENT_COUNT {
         Either::Left(
             future::try_join_all(vec![
