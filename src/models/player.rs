@@ -644,9 +644,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .map(|library_item| library_item.state.time_offset),
                 );
 
-                let item_state_update_effects =
-                    item_state_update(&mut self.library_item, self.next_video.as_ref());
-
                 // Set time_offset to 0 as we switch to next video
                 let library_item_effects = self
                     .library_item
@@ -664,7 +661,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
 
                 // Load will actually take care of loading the next video
                 seek_history_effects
-                    .join(item_state_update_effects)
                     .join(
                         Effects::msg(Msg::Event(Event::PlayerNextVideo {
                             context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
