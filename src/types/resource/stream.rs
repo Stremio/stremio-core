@@ -849,7 +849,7 @@ impl Stream {
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(derivative::Derivative))]
 #[cfg_attr(test, derivative(Default))]
-#[serde(untagged)]
+#[serde(untagged, expecting = "Valid StreamSource")]
 pub enum StreamSource {
     Url {
         url: Url,

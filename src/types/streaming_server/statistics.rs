@@ -16,7 +16,7 @@ pub struct File {
 #[serde(rename_all = "camelCase")]
 pub struct Growler {
     pub flood: u64,
-    pub pulse: u64,
+    pub pulse: Option<u64>,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
@@ -45,21 +45,21 @@ impl PeerSearch {
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SwarmCap {
-    pub max_speed: f64,
-    pub min_peers: u64,
+    pub max_speed: Option<f64>,
+    pub min_peers: Option<u64>,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Options {
-    pub connections: u64,
+    pub connections: Option<u64>,
     pub dht: bool,
     pub growler: Growler,
-    pub handshake_timeout: u64,
+    pub handshake_timeout: Option<u64>,
     pub path: String,
     pub peer_search: PeerSearch,
     pub swarm_cap: SwarmCap,
-    pub timeout: u64,
+    pub timeout: Option<u64>,
     pub tracker: bool,
     pub r#virtual: bool,
 }
