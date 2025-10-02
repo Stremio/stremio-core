@@ -357,17 +357,39 @@ impl Stream {
         }
     }
 
+    /// # Examples
+    /// ```
+    /// use stremio_core::types::resource::{Stream, StreamSource};
+    ///
+    /// assert_eq!("file.rar".to_string(), Stream::ftp_filename(&"ftp://example.com/file.rar".parse().unwrap()).unwrap());
+    /// assert_eq!("0x00000000000000000000".to_string(), Stream::ftp_filename(&"ftp://example.com/0x00000000000000000000".parse().unwrap()).unwrap());
+    /// ```
+    pub fn ftp_filename(url: &Url) -> Result<String, EnvError> {
+        url.path_segments()
+            .and_then(|segments| segments.last())
+            .map(|s| s.to_string())
+            .ok_or(EnvError::Other(
+                "Ftp(s) filepath is missing in the url".into(),
+            ))
+    }
+
     /// Converts an `ftp://` or `ftps://` url to a proxied streaming server url
     ///
     /// # Returns
     ///
     /// Err(EnvError::Other) - If streaming server is not available
+    /// Err(EnvError::Other) - If filename cannot be extracted from the url, either `/file_name.ext`
+    /// or `/0x0adf0120` string path with no extension are supported
     /// Ok(Url) - if stream is converted or left unchanged (non-ftp url)
     fn ftp_url_handler(streaming_server_url: Option<&Url>, url: Url) -> Result<Url, EnvError> {
         match (streaming_server_url, url.scheme()) {
             (Some(streaming_server_url), "ftp") | (Some(streaming_server_url), "ftps") => {
+                let filename = Self::ftp_filename(&url)?;
+
                 let mut stream_url = streaming_server_url
-                    .join("ftp/create")
+                    .join("ftp/createFilename/")
+                    .map_err(|err| EnvError::Other(err.to_string()))?
+                    .join(&filename)
                     .map_err(|err| EnvError::Other(err.to_string()))?;
 
                 let payload = FtpStreamBody { ftp_url: url };
@@ -378,10 +400,12 @@ impl Stream {
                     &lz_str::compress_to_encoded_uri_component(&stream_data),
                 );
 
+                trace!(%stream_url, json_payload=?payload, "Ftp(s) Streaming Server Request");
+
                 Ok(stream_url)
             }
             (None, _) => Err(EnvError::Other(
-                "Can't play FTP/FTPS because streaming server is not running".into(),
+                "Can't play Ftp(s) because streaming server is not running".into(),
             )),
             _ => Ok(url),
         }
@@ -403,7 +427,7 @@ impl Stream {
                 },
             ) => {
                 if urls.is_empty() {
-                    return Err(EnvError::Other("No RAR URLs provided".into()));
+                    return Err(EnvError::Other("No Rar URLs provided".into()));
                 }
 
                 let mut stream_url = streaming_server_url
@@ -434,6 +458,7 @@ impl Stream {
                     "lz",
                     &lz_str::compress_to_encoded_uri_component(&stream_data),
                 );
+                trace!(%stream_url, json_payload=?payload, "Rar Streaming Server Request");
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
@@ -479,7 +504,7 @@ impl Stream {
                     &lz_str::compress_to_encoded_uri_component(&stream_data),
                 );
 
-                tracing::trace!("Server Request for Zip: {:?}", stream_url);
+                trace!(stream_url=%stream_url, json_payload=?payload, "Zip Streaming Server Request");
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
@@ -523,7 +548,7 @@ impl Stream {
                     "lz",
                     &lz_str::compress_to_encoded_uri_component(&stream_data),
                 );
-                tracing::trace!("Server Request for 7zip: {:?}", stream_url);
+                trace!(%stream_url, json_payload=?payload, "7Zip Streaming Server Request");
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
@@ -568,7 +593,7 @@ impl Stream {
                     "lz",
                     &lz_str::compress_to_encoded_uri_component(&stream_data),
                 );
-                tracing::trace!("Server Request for tgz: {:?}", stream_url);
+                trace!(%stream_url, json_payload=?payload, "Tgz Streaming Server Request");
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
@@ -613,16 +638,11 @@ impl Stream {
                     "lz",
                     &lz_str::compress_to_encoded_uri_component(&stream_data),
                 );
-                tracing::trace!("Server Request for tar: {:?}", stream_url);
+                trace!(%stream_url, json_payload=?payload, "Tar Streaming Server Request");
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
-            (
-                Some(streaming_server_url),
-                StreamSource::Nzb {
-                    nzb_url, servers, ..
-                },
-            ) => {
+            (Some(streaming_server_url), StreamSource::Nzb { nzb_url, servers }) => {
                 if servers.is_empty() {
                     return Err(EnvError::Other("No nzb server URLs provided".into()));
                 }
@@ -638,17 +658,18 @@ impl Stream {
                     .join(&format!("nzb/create"))
                     .expect("Url should always be valid");
 
-                let stream_data = serde_json::to_string(&StreamSource::Nzb {
+                let payload = StreamSource::Nzb {
                     nzb_url: Self::ftp_url_handler(Some(streaming_server_url), nzb_url)
                         .expect("Streaming server availability is already checked"),
-
                     servers,
-                })?;
+                };
+
+                let stream_data = serde_json::to_string(&payload)?;
                 stream_url.query_pairs_mut().append_pair(
                     "lz",
                     &lz_str::compress_to_encoded_uri_component(&stream_data),
                 );
-                tracing::trace!("Server Request for nzb: {:?}", stream_url);
+                trace!(%stream_url, json_payload=?payload, "Nzb Streaming Server Request");
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
@@ -954,13 +975,22 @@ pub enum StreamSource {
     },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
 // pub struct ArchiveUrl(Url, #[serde(default, skip_serializing_if = "Option::is_none")] Option<u64>,)
 pub struct ArchiveUrl {
     pub url: Url,
     /// File size (if known) in Bytes
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bytes: Option<u64>,
+}
+
+impl fmt::Debug for ArchiveUrl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ArchiveUrl")
+            .field("url", &self.url.as_str())
+            .field("bytes", &self.bytes)
+            .finish()
+    }
 }
 
 // TODO:

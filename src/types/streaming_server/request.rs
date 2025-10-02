@@ -1,3 +1,5 @@
+use core::fmt;
+
 use http::{header::CONTENT_TYPE, Request};
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -15,10 +17,18 @@ pub struct ArchiveStreamBody {
     pub options: ArchiveStreamOptions,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct FtpStreamBody {
     pub ftp_url: Url,
+}
+
+impl fmt::Debug for FtpStreamBody {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("FtpStreamBody")
+            .field("ftp_url", &self.ftp_url.as_str())
+            .finish()
+    }
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
