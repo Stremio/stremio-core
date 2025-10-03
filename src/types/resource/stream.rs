@@ -976,7 +976,7 @@ pub enum StreamSource {
 }
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
-// pub struct ArchiveUrl(Url, #[serde(default, skip_serializing_if = "Option::is_none")] Option<u64>,)
+#[serde(from = "ArchiveUrlShort", into = "ArchiveUrlShort")]
 pub struct ArchiveUrl {
     pub url: Url,
     /// File size (if known) in Bytes
@@ -993,21 +993,44 @@ impl fmt::Debug for ArchiveUrl {
     }
 }
 
+impl From<ArchiveUrlShort> for ArchiveUrl {
+    fn from(value: ArchiveUrlShort) -> Self {
+        Self {
+            url: value.0,
+            bytes: value.1,
+        }
+    }
+}
+impl From<ArchiveUrl> for ArchiveUrlShort {
+    fn from(value: ArchiveUrl) -> Self {
+        Self(value.url, value.bytes)
+    }
+}
+
 // TODO:
 /// ```
-/// use stremio_core::types::resource::ArchiveUrl2;
+/// use stremio_core::types::resource::ArchiveUrlShort;
 ///
-/// let stream_source = serde_json::from_value::<Vec<ArchiveUrl2>>(serde_json::json!([
+/// let stream_source = serde_json::from_value::<Vec<ArchiveUrlShort>>(serde_json::json!([
 ///     ["https://example.com"],
 ///     ["https://example.com", 123]
 /// ]))
 /// .expect("Should deserialize");
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct ArchiveUrl2(
+#[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ArchiveUrlShort(
     Url,
     #[serde(default, skip_serializing_if = "Option::is_none")] Option<u64>,
 );
+
+impl fmt::Debug for ArchiveUrlShort {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ArchiveUrl")
+            .field("url", &self.0.as_str())
+            .field("bytes", &self.1)
+            .finish()
+    }
+}
 
 type ExternalStreamSource = (Option<Url>, Option<Url>, Option<String>, Option<String>);
 
