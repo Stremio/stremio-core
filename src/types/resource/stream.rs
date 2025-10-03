@@ -387,7 +387,7 @@ impl Stream {
                 let filename = Self::ftp_filename(&url)?;
 
                 let mut stream_url = streaming_server_url
-                    .join("ftp/createFilename/")
+                    .join("ftp/")
                     .map_err(|err| EnvError::Other(err.to_string()))?
                     .join(&filename)
                     .map_err(|err| EnvError::Other(err.to_string()))?;
@@ -760,22 +760,22 @@ impl Stream {
 ///
 /// let streams_json = serde_json::json!([
 /// {
-///     "rarUrls": [{"url": "https://example-source.com/file.rar", "bytes": 10000 }, {"url": "https://example-source2.com/file2.rar", "bytes": null }],
+///     "rarUrls": [["https://example-source.com/file.rar", 10000], ["https://example-source2.com/file2.rar", null ]],
 ///     // ...Stream
 /// },
 /// {
-///     "rarUrls": [{"url": "https://example-source3.com/file.rar"}, {"url": "https://example-source4.com/file2.rar"}],
+///     "rarUrls": [["https://example-source3.com/file.rar"], ["https://example-source4.com/file2.rar"]],
 ///     "fileIdx": 1,
 ///     "fileMustInclude": ["includeFile1"],
 ///     // ...Stream
 /// },
 /// {
-///     "rarUrls": [{"url": "https://example-source5.com/file.rar"}, {"url": "https://example-source6.com/file2.rar"}],
+///     "rarUrls": [["https://example-source5.com/file.rar"], ["https://example-source6.com/file2.rar"]],
 ///     "fileMustInclude": ["includeFile2"],
 ///     // ...Stream
 /// },
 /// {
-///     "rarUrls": [{"url": "https://example-source7.com/file.rar"}, {"url": "https://example-source8.com/file2.rar"}],
+///     "rarUrls": [["https://example-source7.com/file.rar"], ["https://example-source8.com/file2.rar"]],
 ///     "fileIdx": 2,
 ///     // ...Stream
 /// }
@@ -818,22 +818,22 @@ impl Stream {
 ///
 /// let streams_json = serde_json::json!([
 /// {
-///     "zipUrls": [{"url": "https://example-source.com/file.rar", "bytes": 20000}, {"url": "https://example-source2.com/file2.rar"}],
+///     "zipUrls": [["https://example-source.com/file.rar", 20000], ["https://example-source2.com/file2.rar"]],
 ///     // ...Stream
 /// },
 /// {
-///     "zipUrls": [{"url": "https://example-source3.com/file.rar"}, {"url": "https://example-source4.com/file2.rar"}],
+///     "zipUrls": [["https://example-source3.com/file.rar"], ["https://example-source4.com/file2.rar"]],
 ///     "fileIdx": 1,
 ///     "fileMustInclude": ["includeFile1"],
 ///     // ...Stream
 /// },
 /// {
-///     "zipUrls": [{"url": "https://example-source5.com/file.rar"}, {"url": "https://example-source6.com/file2.rar"}],
+///     "zipUrls": [["https://example-source5.com/file.rar"], ["https://example-source6.com/file2.rar"]],
 ///     "fileMustInclude": ["includeFile2"],
 ///     // ...Stream
 /// },
 /// {
-///     "zipUrls": [{"url": "https://example-source7.com/file.rar"}, {"url": "https://example-source8.com/file2.rar"}],
+///     "zipUrls": [["https://example-source7.com/file.rar"], ["https://example-source8.com/file2.rar"]],
 ///     "fileIdx": 2,
 ///     // ...Stream
 /// }
@@ -975,6 +975,21 @@ pub enum StreamSource {
     },
 }
 
+/// ```
+/// use stremio_core::types::resource::ArchiveUrl;
+///
+/// let expected = serde_json::json!([
+///     ["http://example.com/file0.rar"],
+///     ["http://example.com/file1.rar", 123]
+/// ]);
+/// let archive_urls = vec![ArchiveUrl { url: "http://example.com/file0.rar".parse().unwrap(), bytes: None }, ArchiveUrl { url: "http://example.com/file1.rar".parse().unwrap(), bytes: Some(123) }];
+///
+/// let ser_stream_source = serde_json::to_value(&archive_urls).expect("Should serialize");
+/// assert_eq!(ser_stream_source, expected);
+/// println!("{:?}", ser_stream_source);
+/// let stream_source = serde_json::from_value::<Vec<ArchiveUrl>>(expected).expect("Should deserialize");
+/// assert_eq!(archive_urls, stream_source);
+/// ```
 #[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(from = "ArchiveUrlShort", into = "ArchiveUrlShort")]
 pub struct ArchiveUrl {
