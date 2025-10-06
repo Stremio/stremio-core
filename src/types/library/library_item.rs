@@ -50,7 +50,8 @@ impl LibraryItem {
     }
     #[inline]
     pub fn is_in_continue_watching(&self) -> bool {
-        self.r#type != "other" && self.state.time_offset > 0
+        // re-added !self.removed check
+        self.r#type != "other" && !self.removed && self.state.time_offset > 0
     }
 
     /// Returns watch progress percentage
