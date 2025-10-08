@@ -1407,7 +1407,7 @@ fn intro_outro_update<E: Env + 'static>(
                 }),
             )
         }
-        _ => Effects::none().unchanged(),
+        _ => eq_update(intro_outro, None),
     };
 
     skip_gaps_effects.join(intro_outro_effects)
