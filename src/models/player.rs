@@ -432,6 +432,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     if self.collect_seek_logs {
                         let min_duration_in_ms = {
                             let ten_percent = Duration::from_millis(
+                                // 10% of the duration of the current stream
                                 (Ratio::new(10, 100) * duration).to_integer(),
                             );
 
@@ -1273,7 +1274,9 @@ fn seek_update<E: Env + 'static>(
     seek_history: &mut Vec<SeekLog>,
     outro: Option<u64>,
 ) -> Effects {
-    let has_seeks_or_outro = !seek_history.is_empty() || matches!(outro, Some(outro) if outro > 0);
+    let has_seeks_or_outro = !seek_history.is_empty()
+        || matches!(outro, Some(outro) if outro > library_item.state.duration * 80 / 100);
+
     let should_send = auth
         .map(|auth| {
             auth.user
