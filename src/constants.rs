@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
 use once_cell::sync::Lazy;
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC};
@@ -65,8 +65,12 @@ pub const USER_LIKES_SUPPORTED_ID_PREFIXES: &[&str] = &["tt", "tmdb", "kitsu"];
 
 pub const USER_LIKES_SUPPORTED_TYPES: &[&str] = &["movie", "series"];
 
-/// In milliseconds
-pub const PLAYER_IGNORE_SEEK_AFTER: u64 = 600_000;
+/// 10 Minutes Used in milliseconds
+/// ```
+/// use stremio_core::constants::PLAYER_IGNORE_SEEK_AFTER;
+/// assert_eq!(PLAYER_IGNORE_SEEK_AFTER.as_millis(), 600_000, "should be 10 minutes");
+/// ```
+pub const PLAYER_IGNORE_SEEK_AFTER: Duration = Duration::from_secs(10 * 60);
 
 pub static BASE64: base64::engine::general_purpose::GeneralPurpose =
     base64::engine::general_purpose::STANDARD;

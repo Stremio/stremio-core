@@ -1,5 +1,5 @@
 use std::marker::PhantomData;
-use std::ops::Div;
+use std::{ops::Div, time::Duration};
 
 use base64::Engine;
 use futures::{future, FutureExt, TryFutureExt};
@@ -25,13 +25,13 @@ use crate::types::api::{
 };
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::player::{IntroData, IntroOutro};
-use crate::types::profile::{Profile, Settings as ProfileSettings};
+use crate::types::profile::{Auth, Profile, Settings as ProfileSettings};
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, StreamSource, Subtitles, Video};
 use crate::types::streams::{StreamItemState, StreamsBucket, StreamsItemKey};
 
 use stremio_watched_bitfield::WatchedBitField;
 
-use chrono::{DateTime, Duration, TimeZone, Utc};
+use chrono::{DateTime, Duration as ChronoDuration, TimeZone, Utc};
 use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
@@ -39,7 +39,7 @@ use serde::{Deserialize, Serialize};
 use once_cell::sync::Lazy;
 
 /// The duration that must have passed in order for a library item to be updated.
-pub static PUSH_TO_LIBRARY_EVERY: Lazy<Duration> = Lazy::new(|| Duration::seconds(90));
+pub static PUSH_TO_LIBRARY_EVERY: Lazy<ChronoDuration> = Lazy::new(|| ChronoDuration::seconds(90));
 
 #[derive(Clone, Default, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -172,7 +172,26 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     _ => eq_update(&mut self.meta_item, None),
                 };
                 let stream_state_effects = eq_update(&mut self.stream_state, None);
-                let video_params_effects = eq_update(&mut self.video_params, None);
+                // pre-populate video params from Stream's behavior hints if available
+                // if the server and the video player haven't triggered a VideoParamsChanged,
+                // e.g. when server is not running on the platform,
+                // this will ensure that a Video params will be set
+                // if any of the stream behaviour hints are available.
+                let video_params_effects = eq_update(
+                    &mut self.video_params,
+                    if selected.stream.behavior_hints.filename.is_some()
+                        || selected.stream.behavior_hints.video_hash.is_some()
+                        || selected.stream.behavior_hints.video_size.is_some()
+                    {
+                        Some(VideoParams {
+                            filename: selected.stream.behavior_hints.filename.clone(),
+                            hash: selected.stream.behavior_hints.video_hash.clone(),
+                            size: selected.stream.behavior_hints.video_size.clone(),
+                        })
+                    } else {
+                        None
+                    },
+                );
                 let subtitles_effects = subtitles_update::<E>(
                     &mut self.subtitles,
                     &self.selected,
@@ -304,6 +323,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 };
                 let seek_history_effects = seek_update::<E>(
                     self.selected.as_ref(),
+                    ctx.profile.auth.as_ref(),
                     self.video_params.as_ref(),
                     self.series_info.as_ref(),
                     self.library_item.as_ref(),
@@ -410,15 +430,22 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     library_item.state.last_watched = Some(E::now());
 
                     if self.collect_seek_logs {
+                        let min_duration_in_ms = {
+                            let ten_percent = Duration::from_millis(
+                                (Ratio::new(10, 100) * duration).to_integer(),
+                            );
+
+                            PLAYER_IGNORE_SEEK_AFTER.min(ten_percent).as_millis() as u64
+                        };
                         // collect seek history
-                        if library_item.r#type == "series" && time < &PLAYER_IGNORE_SEEK_AFTER {
+                        // only if series and we are < 10 mins or < 10%
+                        if library_item.r#type == "series" && time < &min_duration_in_ms {
                             self.seek_history.push(SeekLog {
                                 from: library_item.state.time_offset,
                                 to: *time,
                             });
                         }
                     }
-                    // };
                     time.clone_into(&mut library_item.state.time_offset);
                     duration.clone_into(&mut library_item.state.duration);
                     // No need to check and flag the library item as watched,
@@ -620,6 +647,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             Msg::Action(Action::Player(ActionPlayer::NextVideo)) => {
                 let seek_history_effects = seek_update::<E>(
                     self.selected.as_ref(),
+                    ctx.profile.auth.as_ref(),
                     self.video_params.as_ref(),
                     self.series_info.as_ref(),
                     self.library_item.as_ref(),
@@ -1238,6 +1266,7 @@ fn subtitles_update<E: Env + 'static>(
 
 fn seek_update<E: Env + 'static>(
     selected: Option<&Selected>,
+    auth: Option<&Auth>,
     video_params: Option<&VideoParams>,
     series_info: Option<&SeriesInfo>,
     library_item: Option<&LibraryItem>,
@@ -1245,25 +1274,29 @@ fn seek_update<E: Env + 'static>(
     outro: Option<u64>,
 ) -> Effects {
     let has_seeks_or_outro = !seek_history.is_empty() || matches!(outro, Some(outro) if outro > 0);
-    let seek_request_effects = match (
-        has_seeks_or_outro,
-        selected,
-        video_params,
-        series_info,
-        library_item,
-    ) {
-        (true, Some(selected), Some(video_params), Some(series_info), Some(library_item)) => {
+    let should_send = auth
+        .map(|auth| {
+            auth.user
+                .premium_expire
+                .as_ref()
+                // if expired
+                .map(|expire| expire < &E::now())
+                // or if no field
+                // make sure to send seeks
+                .unwrap_or(true)
+        })
+        // if user is not authenticated, make sure to send seeks
+        .unwrap_or(true)
+        && has_seeks_or_outro;
+    let seek_request_effects = match (should_send, selected, series_info, library_item) {
+        (true, Some(selected), Some(series_info), Some(library_item)) => {
             // live streams will not have opensubtitle hash so just relying on URL and Torrent is enough.
             let stream_source_supported = matches!(
                 &selected.stream.source,
                 StreamSource::Url { .. } | StreamSource::Torrent { .. }
             );
-            match (
-                stream_source_supported,
-                selected.stream.name.as_ref(),
-                video_params.hash.clone(),
-            ) {
-                (true, Some(stream_name), Some(os_hash)) => {
+            match (stream_source_supported, selected.stream.name.as_ref()) {
+                (true, Some(stream_name)) => {
                     let stream_name_hash = {
                         use sha2::Digest;
                         let mut sha256 = sha2::Sha256::new();
@@ -1274,7 +1307,17 @@ fn seek_update<E: Env + 'static>(
                     };
 
                     let seek_log_req = SeekLogRequest {
-                        os_hash,
+                        os_hash: video_params
+                            .and_then(|vp| {
+                                tracing::info!(
+                                    video_params_os_hash = vp.hash,
+                                    "overwriting the os hash, forcing the call to api to have empty os hash"
+                                );
+
+                                None
+                                // vp.hash.clone()
+                            })
+                            .unwrap_or_default(),
                         item_id: library_item.id.to_owned(),
                         series_info: series_info.to_owned(),
                         stream_name_hash,
@@ -1345,7 +1388,13 @@ fn intro_outro_update<E: Env + 'static>(
         (Some((_, Loadable::Ready(response))), Some(library_item)) => {
             let outro_time = {
                 let outro_durations = response.gaps.iter().filter_map(|(duration, skip_gaps)| {
-                    skip_gaps.outro.map(|outro| (duration, outro))
+                    skip_gaps.outro.and_then(|outro| {
+                        if outro > duration * 70 / 100 {
+                            Some((duration, outro))
+                        } else {
+                            None
+                        }
+                    })
                 });
 
                 let closest_duration = outro_durations.reduce(
@@ -1383,17 +1432,36 @@ fn intro_outro_update<E: Env + 'static>(
                 );
 
                 closest_duration.and_then(|(closest_duration, skip_gaps)| {
-                let duration_diff_in_secs = (library_item.state.duration.abs_diff(*closest_duration)).div(1000 * 10) / 10;
-                tracing::trace!("Player: Intro match by duration with difference of {duration_diff_in_secs} seconds");
+                let duration_diff_in_secs = (Ratio::new(10, 1000 * 10) * (library_item.state.duration.abs_diff(*closest_duration))).to_integer();
+                tracing::trace!(abs_diff=library_item.state.duration.abs_diff(*closest_duration),
+                div_1=library_item.state.duration.abs_diff(*closest_duration).div(1000 * 10),
+                div_2=library_item.state.duration.abs_diff(*closest_duration).div(1000 * 10)/10,
+                closest_duration_ms=closest_duration, library_item_duration_ms = library_item.state.duration, "Player: Intro match by duration with difference of {duration_diff_in_secs} seconds");
 
                 let duration_ration = Ratio::new(library_item.state.duration, *closest_duration);
 
-                // even though we checked for len() > 0 make sure we don't panic if somebody decides to remove that check!
-                skip_gaps.seek_history.first().map(|seek_event| {
-                    IntroData {
-                        from: (duration_ration * seek_event.from).to_integer(),
-                        to: (duration_ration * seek_event.to).to_integer(),
-                        duration: if duration_diff_in_secs > 0 { Some(seek_event.to.abs_diff(seek_event.from)) } else { None }
+                let min_duration_in_ms = {
+                        let ten_percent = Duration::from_millis(
+                            (Ratio::new(10, 100) * library_item.state.duration).to_integer(),
+                        );
+
+                        PLAYER_IGNORE_SEEK_AFTER
+                            .min(ten_percent)
+                            .as_millis() as u64
+                    };
+
+                    // even though we checked for len() > 0 make sure we don't panic if somebody decides to remove that check!
+                    skip_gaps.seek_history.iter().find_map(|seek_event| {
+                    let adjusted_from = (duration_ration * seek_event.from).to_integer();
+                    if adjusted_from <= min_duration_in_ms {
+                        Some(IntroData {
+                            from: adjusted_from,
+                            to: (duration_ration * seek_event.to).to_integer(),
+                            duration: if duration_diff_in_secs > 0 { Some(seek_event.to.abs_diff(seek_event.from)) } else { None }
+                        })
+                    } else {
+                        tracing::trace!(?seek_event, min_duration_in_ms, closest_duration, library_item_duration_ms = library_item.state.duration, "Seek event filtered out because it doesn't pass the seek event from < 10%.min(10 mins)");
+                        None
                     }
                 })
               })
@@ -1447,12 +1515,8 @@ fn skip_gaps_update<E: Env + 'static>(
                 StreamSource::Url { .. } | StreamSource::Torrent { .. }
             );
             // live streams will not have opensubtitle hash so just relying on URL and Torrent is enough.
-            match (
-                stream_source_supported,
-                selected.stream.name.as_ref(),
-                video_params.hash.clone(),
-            ) {
-                (true, Some(stream_name), Some(os_hash)) => {
+            match (stream_source_supported, selected.stream.name.as_ref()) {
+                (true, Some(stream_name)) => {
                     let stream_name_hash = {
                         use sha2::Digest;
                         let mut sha256 = sha2::Sha256::new();
@@ -1464,7 +1528,8 @@ fn skip_gaps_update<E: Env + 'static>(
 
                     let skip_gaps_request = SkipGapsRequest {
                         auth_key,
-                        os_hash,
+                        // will use empty string if
+                        os_hash: video_params.hash.to_owned(),
                         item_id: library_item.id.to_owned(),
                         series_info: series_info.to_owned(),
                         stream_name_hash,
