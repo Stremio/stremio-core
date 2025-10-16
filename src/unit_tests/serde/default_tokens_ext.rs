@@ -376,7 +376,7 @@ impl DefaultTokens for Settings {
         vec![
             Token::Struct {
                 name: "Settings",
-                len: 32,
+                len: 33,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -446,6 +446,8 @@ impl DefaultTokens for Settings {
             Token::Str("serverInForeground"),
             Token::Bool(false),
             Token::Str("sendCrashReports"),
+            Token::Bool(true),
+            Token::Str("autoRotatePlayer"),
             Token::Bool(true),
             Token::StructEnd,
         ]
