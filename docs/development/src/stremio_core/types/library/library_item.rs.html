@@ -304,7 +304,9 @@
 <a href="#303" id="303">303</a>
 <a href="#304" id="304">304</a>
 <a href="#305" id="305">305</a>
-<a href="#306" id="306">306</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 
 <span class="kw">use </span>chrono::{DateTime, Duration, Utc};
 <span class="kw">use </span>itertools::Itertools;
@@ -356,8 +358,9 @@
     }
     <span class="attr">#[inline]
     </span><span class="kw">pub fn </span>is_in_continue_watching(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-        <span class="comment">// re-added !self.removed check
-        </span><span class="self">self</span>.r#type != <span class="string">"other" </span>&amp;&amp; !<span class="self">self</span>.removed &amp;&amp; <span class="self">self</span>.state.time_offset &gt; <span class="number">0
+        <span class="comment">// re-added (!self.removed || temp) check
+        // makes sure to add only relevant Library Items to the Continue Watching
+        </span><span class="self">self</span>.r#type != <span class="string">"other" </span>&amp;&amp; (!<span class="self">self</span>.removed || <span class="self">self</span>.temp) &amp;&amp; <span class="self">self</span>.state.time_offset &gt; <span class="number">0
     </span>}
 
     <span class="doccomment">/// Returns watch progress percentage
@@ -414,7 +417,8 @@
         }
     }
 
-    <span class="kw">pub fn </span>mark_video_as_watched&lt;E: Env&gt;(
+    <span class="doccomment">/// Sets the video as watched/not watched.
+    </span><span class="kw">pub fn </span>mark_video_as_watched&lt;E: Env&gt;(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
         watched: <span class="kw-2">&amp;</span>WatchedBitField,
         video: <span class="kw-2">&amp;</span>Video,
