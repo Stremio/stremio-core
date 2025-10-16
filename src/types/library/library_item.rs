@@ -50,8 +50,9 @@ impl LibraryItem {
     }
     #[inline]
     pub fn is_in_continue_watching(&self) -> bool {
-        // re-added !self.removed check
-        self.r#type != "other" && !self.removed && self.state.time_offset > 0
+        // re-added (!self.removed || temp) check
+        // makes sure to add only relevant Library Items to the Continue Watching
+        self.r#type != "other" && (!self.removed || self.temp) && self.state.time_offset > 0
     }
 
     /// Returns watch progress percentage
@@ -108,6 +109,7 @@ impl LibraryItem {
         }
     }
 
+    /// Sets the video as watched/not watched.
     pub fn mark_video_as_watched<E: Env>(
         &mut self,
         watched: &WatchedBitField,
