@@ -135,7 +135,7 @@ pub struct SkipGapsRequest {
     pub auth_key: AuthKey,
     /// Opensubtitles hash returned by the server
     #[serde(rename = "osId")]
-    pub os_hash: String,
+    pub os_hash: Option<String>,
     pub item_id: String,
     #[serde(flatten)]
     pub series_info: SeriesInfo,
