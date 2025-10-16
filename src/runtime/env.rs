@@ -720,7 +720,7 @@ fn migrate_storage_schema_to_v19<E: Env>() -> TryEnvFuture<()> {
         .boxed_env()
 }
 
-fn migrate_storage_schema_to_v20<E: Env>() -> TryEnvFuture {
+fn migrate_storage_schema_to_v20<E: Env>() -> TryEnvFuture<()> {
     E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
         .and_then(|mut profile| {
             match profile

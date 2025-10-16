@@ -41,6 +41,7 @@ fn settings() {
             ),
             server_in_foreground: false,
             send_crash_reports: true,
+            auto_rotate_player: true,
         },
         &[
             Token::Struct {
