@@ -46,7 +46,7 @@ fn settings() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 32,
+                len: 33,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -121,6 +121,8 @@ fn settings() {
             Token::Bool(false),
             Token::Str("sendCrashReports"),
             Token::Bool(true),
+            Token::Str("autoRotatePlayer"),
+            Token::Bool(true),
             Token::StructEnd,
         ],
     );
@@ -133,7 +135,7 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 32,
+                len: 33,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -199,6 +201,8 @@ fn settings_de() {
             Token::Str("serverInForeground"),
             Token::Bool(false),
             Token::Str("sendCrashReports"),
+            Token::Bool(true),
+            Token::Str("autoRotatePlayer"),
             Token::Bool(true),
             Token::StructEnd,
         ],
