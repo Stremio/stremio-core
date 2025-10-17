@@ -1,5 +1,4 @@
-use std::marker::PhantomData;
-use std::{ops::Div, time::Duration};
+use std::{marker::PhantomData, time::Duration};
 
 use base64::Engine;
 use futures::{future, FutureExt, TryFutureExt};
@@ -39,7 +38,10 @@ use serde::{Deserialize, Serialize};
 use once_cell::sync::Lazy;
 
 /// The duration that must have passed in order for a library item to be updated.
-pub static PUSH_TO_LIBRARY_EVERY: Lazy<ChronoDuration> = Lazy::new(|| ChronoDuration::seconds(90));
+pub const PUSH_TO_LIBRARY_EVERY: ChronoDuration = ChronoDuration::seconds(90);
+
+/// 75% threshold
+pub static OUTRO_THRESHOLD: Lazy<Ratio<u64>> = Lazy::new(|| Ratio::new(75, 100));
 
 #[derive(Clone, Default, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -186,7 +188,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         Some(VideoParams {
                             filename: selected.stream.behavior_hints.filename.clone(),
                             hash: selected.stream.behavior_hints.video_hash.clone(),
-                            size: selected.stream.behavior_hints.video_size.clone(),
+                            size: selected.stream.behavior_hints.video_size,
                         })
                     } else {
                         None
@@ -931,7 +933,7 @@ fn push_to_library<E: Env + 'static>(
     push_library_item_time: &mut DateTime<Utc>,
     library_item: &mut LibraryItem,
 ) -> Effects {
-    if E::now() - *push_library_item_time >= *PUSH_TO_LIBRARY_EVERY {
+    if E::now() - *push_library_item_time >= PUSH_TO_LIBRARY_EVERY {
         *push_library_item_time = E::now();
 
         Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
@@ -1275,7 +1277,7 @@ fn seek_update<E: Env + 'static>(
     outro: Option<u64>,
 ) -> Effects {
     let has_seeks_or_outro = !seek_history.is_empty()
-        || matches!(outro, Some(outro) if outro > library_item.state.duration * 80 / 100);
+        || matches!((outro, library_item), (Some(outro), Some(library_item)) if outro > (num::rational::Ratio::new(75, 100) * library_item.state.duration).to_integer());
 
     let should_send = auth
         .map(|auth| {
@@ -1311,15 +1313,7 @@ fn seek_update<E: Env + 'static>(
 
                     let seek_log_req = SeekLogRequest {
                         os_hash: video_params
-                            .and_then(|vp| {
-                                tracing::info!(
-                                    video_params_os_hash = vp.hash,
-                                    "overwriting the os hash, forcing the call to api to have empty os hash"
-                                );
-
-                                None
-                                // vp.hash.clone()
-                            })
+                            .and_then(|vp| vp.hash.clone())
                             .unwrap_or_default(),
                         item_id: library_item.id.to_owned(),
                         series_info: series_info.to_owned(),
@@ -1357,10 +1351,11 @@ fn push_seek_to_api<E: Env + 'static>(seek_log_req: SeekLogRequest) -> Effect {
 }
 
 fn calculate_outro(library_item: &LibraryItem, closest_duration: u64, closest_outro: u64) -> u64 {
-    // will floor the result before dividing by 10 again
-    let duration_diff_in_secs =
-        (library_item.state.duration.abs_diff(closest_duration)).div(1000 * 10) / 10;
+    let abs_diff = library_item.state.duration.abs_diff(closest_duration);
+    let duration_diff_in_secs = Ratio::new(abs_diff, 1000).round().to_integer();
     tracing::debug!(
+        library_item_duration_ms = library_item.state.duration,
+        closest_duration_ms = closest_duration,
         "Player: Outro match by duration with difference of {duration_diff_in_secs} seconds"
     );
     library_item
@@ -1392,7 +1387,7 @@ fn intro_outro_update<E: Env + 'static>(
             let outro_time = {
                 let outro_durations = response.gaps.iter().filter_map(|(duration, skip_gaps)| {
                     skip_gaps.outro.and_then(|outro| {
-                        if outro > duration * 70 / 100 {
+                        if outro > (*OUTRO_THRESHOLD * duration).to_integer() {
                             Some((duration, outro))
                         } else {
                             None
@@ -1435,11 +1430,10 @@ fn intro_outro_update<E: Env + 'static>(
                 );
 
                 closest_duration.and_then(|(closest_duration, skip_gaps)| {
-                let duration_diff_in_secs = (Ratio::new(10, 1000 * 10) * (library_item.state.duration.abs_diff(*closest_duration))).to_integer();
-                tracing::trace!(abs_diff=library_item.state.duration.abs_diff(*closest_duration),
-                div_1=library_item.state.duration.abs_diff(*closest_duration).div(1000 * 10),
-                div_2=library_item.state.duration.abs_diff(*closest_duration).div(1000 * 10)/10,
-                closest_duration_ms=closest_duration, library_item_duration_ms = library_item.state.duration, "Player: Intro match by duration with difference of {duration_diff_in_secs} seconds");
+
+                let abs_diff = library_item.state.duration.abs_diff(*closest_duration);
+                let duration_diff_in_secs = Ratio::new(abs_diff, 1000).round().to_integer();
+                tracing::trace!(abs_diff, closest_duration_ms=closest_duration, library_item_duration_ms = library_item.state.duration, "Player: Intro match by duration with difference of {duration_diff_in_secs} seconds");
 
                 let duration_ration = Ratio::new(library_item.state.duration, *closest_duration);
 
