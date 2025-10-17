@@ -41,7 +41,7 @@ fn settings() {
             ),
             server_in_foreground: false,
             send_crash_reports: true,
-            auto_rotate_player: true,
+            pwa_auto_rotation: true,
         },
         &[
             Token::Struct {
@@ -121,7 +121,7 @@ fn settings() {
             Token::Bool(false),
             Token::Str("sendCrashReports"),
             Token::Bool(true),
-            Token::Str("autoRotatePlayer"),
+            Token::Str("pwaAutoRotation"),
             Token::Bool(true),
             Token::StructEnd,
         ],
@@ -202,7 +202,7 @@ fn settings_de() {
             Token::Bool(false),
             Token::Str("sendCrashReports"),
             Token::Bool(true),
-            Token::Str("autoRotatePlayer"),
+            Token::Str("pwaAutoRotation"),
             Token::Bool(true),
             Token::StructEnd,
         ],

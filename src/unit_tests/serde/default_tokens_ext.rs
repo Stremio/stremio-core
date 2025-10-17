@@ -447,7 +447,7 @@ impl DefaultTokens for Settings {
             Token::Bool(false),
             Token::Str("sendCrashReports"),
             Token::Bool(true),
-            Token::Str("autoRotatePlayer"),
+            Token::Str("pwaAutoRotation"),
             Token::Bool(true),
             Token::StructEnd,
         ]

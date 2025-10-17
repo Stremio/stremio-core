@@ -723,16 +723,13 @@ fn migrate_storage_schema_to_v19<E: Env>() -> TryEnvFuture<()> {
 fn migrate_storage_schema_to_v20<E: Env>() -> TryEnvFuture<()> {
     E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
         .and_then(|mut profile| {
-            match profile
+            if let Some(settings) = profile
                 .as_mut()
                 .and_then(|profile| profile.as_object_mut())
                 .and_then(|profile| profile.get_mut("settings"))
                 .and_then(|settings| settings.as_object_mut())
             {
-                Some(settings) => {
-                    settings.insert("autoRotatePlayer".to_owned(), serde_json::Value::Bool(true));
-                }
-                _ => {}
+                settings.insert("pwaAutoRotation".to_owned(), serde_json::Value::Bool(true));
             }
             E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
         })

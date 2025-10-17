@@ -44,7 +44,7 @@ pub struct Settings {
     pub streaming_server_warning_dismissed: Option<DateTime<Utc>>,
     pub server_in_foreground: bool,
     pub send_crash_reports: bool,
-    pub auto_rotate_player: bool,
+    pub pwa_auto_rotation: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -89,7 +89,7 @@ impl Default for Settings {
             streaming_server_warning_dismissed: None,
             server_in_foreground: false,
             send_crash_reports: true,
-            auto_rotate_player: true,
+            pwa_auto_rotation: true,
         }
     }
 }
