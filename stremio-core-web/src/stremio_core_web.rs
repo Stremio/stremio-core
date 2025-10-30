@@ -4,9 +4,12 @@ use enclose::enclose;
 use futures::{future, try_join, FutureExt, StreamExt};
 use gloo_utils::format::JsValueSerdeExt;
 use once_cell::sync::Lazy;
-use tracing::{info, Level};
+use tracing::{error, info, trace, Level};
 use tracing_wasm::WASMLayerConfigBuilder;
-use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
+use wasm_bindgen::{
+    prelude::{wasm_bindgen, Closure},
+    JsCast, JsValue,
+};
 
 use stremio_core::{
     constants::{
@@ -22,6 +25,7 @@ use stremio_core::{
         server_urls::ServerUrlsBucket, streams::StreamsBucket,
     },
 };
+use web_sys::window;
 
 use crate::{
     env::WebEnv,
@@ -117,7 +121,8 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                         effects.into_iter().collect::<Vec<_>>(),
                         1000,
                     );
-                    WebEnv::exec_concurrent(rx.for_each(move |event| {
+
+                    let rx_fut = rx.for_each(move |event| {
                         if let RuntimeEvent::CoreEvent(event) = &event {
                             WebEnv::exec_concurrent(WebEnv::get_location_hash().then(
                                 enclose!((event) move |location_hash| async move {
@@ -141,7 +146,27 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                             .call1(&JsValue::NULL, &<JsValue as JsValueSerdeExt>::from_serde(&event).expect("Event handler: JsValue from Event"))
                             .expect("emit event failed");
                         future::ready(())
-                    }));
+                    });
+
+                    let timer = async {
+                        let runtime_action = RuntimeAction {
+                            action: Action::StreamingServer(stremio_core::runtime::msg::ActionStreamingServer::Reload),
+                            field: None,
+                        };
+
+
+                        let result = dispatch_internal(runtime_action, None);
+
+                        
+                        // TODO: setup a timer, a recurring job that performs certain actions.
+                        // loop {
+                        //     set_timeout()
+
+                        // }
+                    };
+                    // let join = futures::future::join(rx_fut, timer);
+                    let join = rx_fut;
+                    WebEnv::exec_concurrent(join);
                     *RUNTIME.write().expect("runtime write failed") =
                         Some(Loadable::Ready(runtime));
                     Ok(())
@@ -193,25 +218,54 @@ pub fn dispatch(action: JsValue, field: JsValue, location_hash: JsValue) {
         JsValueSerdeExt::into_serde(&action).expect("dispatch failed because of Action");
     let field: Option<WebModelField> =
         JsValueSerdeExt::into_serde(&field).expect("dispatch failed because of Field");
+
+    let runtime_action: RuntimeAction<WebEnv, WebModel> = RuntimeAction { action, field };
+    let location_hash = location_hash.as_string();
+    if let Err(state) = dispatch_internal(runtime_action, location_hash) {
+        error!(?state, "Failed to dispatch action due to")
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum State {
+    /// runtime is not ready - None
+
+    /// No runtime has been set yet.
+    /// Please, initialize core first!
+    RuntimeNotSet,
+    /// Runtime is Loading or Error
+    RuntimeNotReady,
+    ModelReadFailed,
+}
+
+fn dispatch_internal(
+    runtime_action: RuntimeAction<WebEnv, WebModel>,
+    location_hash: Option<String>,
+) -> Result<(), State> {
     let runtime = RUNTIME.read().expect("runtime read failed");
-    let runtime = runtime
-        .as_ref()
-        .expect("runtime is not ready - None")
-        .as_ref()
-        .expect("runtime is not ready - Loading or Error");
+    let runtime = runtime.as_ref().ok_or(State::RuntimeNotSet)?;
+
+    let runtime = runtime.ready().ok_or(State::RuntimeNotReady)?;
+
     {
-        let model = runtime.model().expect("model read failed");
+        let model = runtime.model().map_err(|_| State::ModelReadFailed)?;
         let path = location_hash
-            .as_string()
             .and_then(|location_hash| location_hash.split('#').last().map(|path| path.to_owned()))
             .unwrap_or_default();
         WebEnv::emit_to_analytics(
-            &WebEvent::CoreAction(Box::new(action.to_owned())),
+            &WebEvent::CoreAction(Box::new(runtime_action.action.to_owned())),
             &model,
             &path,
         );
     }
-    runtime.dispatch(RuntimeAction { action, field });
+
+    let runtime_action_clone: RuntimeAction<WebEnv, WebModel> = RuntimeAction {
+        action: runtime_action.action.clone(),
+        field: runtime_action.field.clone(),
+    };
+    let result = runtime.dispatch(runtime_action);
+    trace!(?runtime_action_clone, ?result, "Runtime action dispatched");
+    Ok(())
 }
 
 #[wasm_bindgen]
@@ -241,4 +295,40 @@ pub fn decode_stream(stream: JsValue) -> JsValue {
         }
         _ => JsValue::NULL,
     }
+}
+
+fn set_timeout(window: &web_sys::Window, f: &Closure<dyn FnMut()>, timeout_ms: i32) -> i32 {
+    window
+        .set_timeout_with_callback_and_timeout_and_arguments_0(
+            f.as_ref().unchecked_ref(),
+            timeout_ms,
+        )
+        .expect("should register `setTimeout` OK")
+}
+
+#[wasm_bindgen]
+pub fn start_timer(minutes: f64) -> i32 {
+    let closure = Closure::wrap(Box::new(move || {
+        web_sys::console::log_1(&"Function runs every X minutes".into());
+        // Your code here
+    }) as Box<dyn Fn()>);
+
+    let window = window().unwrap();
+    let interval_id = window
+        .set_interval_with_callback_and_timeout_and_arguments_0(
+            closure.as_ref().unchecked_ref(),
+            (minutes * 60.0 * 1000.0) as i32,
+        )
+        .unwrap();
+
+    // Keep closure alive
+    closure.forget();
+
+    interval_id
+}
+
+#[wasm_bindgen]
+pub fn stop_timer(interval_id: i32) {
+    let window = window().unwrap();
+    window.clear_interval_with_handle(interval_id);
 }
