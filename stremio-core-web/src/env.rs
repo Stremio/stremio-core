@@ -75,6 +75,7 @@ struct AnalyticsContext {
     path: String,
 }
 
+#[derive(Debug)]
 pub enum WebEnv {}
 
 impl WebEnv {

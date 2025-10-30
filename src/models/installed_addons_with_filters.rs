@@ -19,19 +19,19 @@ pub struct Selected {
     pub request: InstalledAddonsRequest,
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
 pub struct SelectableType {
     pub r#type: Option<String>,
     pub selected: bool,
     pub request: InstalledAddonsRequest,
 }
 
-#[derive(Default, Clone, PartialEq, Eq, Serialize)]
+#[derive(Default, Clone, PartialEq, Eq, Serialize, Debug)]
 pub struct Selectable {
     pub types: Vec<SelectableType>,
 }
 
-#[derive(Default, Clone, Serialize)]
+#[derive(Default, Clone, Serialize, Debug)]
 pub struct InstalledAddonsWithFilters {
     pub selected: Option<Selected>,
     pub selectable: Selectable,
