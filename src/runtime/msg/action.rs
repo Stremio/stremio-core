@@ -165,6 +165,9 @@ pub struct PlayOnDeviceArgs {
 #[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionStreamingServer {
+    /// refresh the state of the server
+    Refresh,
+    /// reloads the full server model
     Reload,
     UpdateSettings(StreamingServerSettings),
     CreateTorrent(CreateTorrentArgs),

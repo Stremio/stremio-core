@@ -39,6 +39,13 @@ pub struct Selected {
     pub statistics: Option<StatisticsRequest>,
 }
 
+#[derive(Clone, Serialize, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum State {
+    NotRunning,
+    Running,
+}
+
 #[derive(Clone, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamingServer {
@@ -49,13 +56,20 @@ pub struct StreamingServer {
     pub playback_devices: Loadable<Vec<PlaybackDevice>, EnvError>,
     pub network_info: Loadable<NetworkInfo, EnvError>,
     pub device_info: Loadable<DeviceInfo, EnvError>,
+    /// None - server is not available on this platform
+    /// Some - Loadable - based on the results of the settings request
+    pub state: Option<Loadable<State, EnvError>>,
     pub torrent: Option<(InfoHash, Loadable<ResourcePath, EnvError>)>,
     /// [`Loadable::Loading`] is used only on the first statistics request.
     pub statistics: Option<Loadable<Statistics, EnvError>>,
 }
 
 impl StreamingServer {
+    // todo: server available
+    // pub fn new<E: Env + 'static>(profile: &Profile, server_available: bool) -> (Self, Effects) {
     pub fn new<E: Env + 'static>(profile: &Profile) -> (Self, Effects) {
+        let server_available = true;
+
         let effects = Effects::many(vec![
             get_settings::<E>(&profile.settings.streaming_server_url),
             get_playback_devices::<E>(&profile.settings.streaming_server_url),
@@ -67,6 +81,11 @@ impl StreamingServer {
                 selected: Selected {
                     transport_url: profile.settings.streaming_server_url.to_owned(),
                     statistics: None,
+                },
+                state: if server_available {
+                    Some(Loadable::Loading)
+                } else {
+                    None
                 },
                 settings: Loadable::Loading,
                 base_url: None,
@@ -85,6 +104,17 @@ impl StreamingServer {
 impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::Refresh)) => {
+                self.settings = Loadable::Loading;
+
+                // todo: remove once confirmed
+                // we can just wait for the settings and update these values
+                // instead of making them None
+                // self.base_url = None;
+                // self.remote_url = None;
+
+                Effects::many(vec![get_settings::<E>(&self.selected.transport_url)])
+            }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::Reload)) => {
                 let settings_effects = eq_update(&mut self.settings, Loadable::Loading);
                 let network_info_effects = eq_update(&mut self.network_info, Loadable::Loading);
@@ -258,9 +288,16 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                             &settings.values,
                             ctx,
                         );
+                        let state_effects = if self.state.is_some() {
+                            eq_update(&mut self.state, Some(Loadable::Ready(State::Running)))
+                        } else {
+                            Effects::none().unchanged()
+                        };
+
                         settings_effects
                             .join(base_url_effects)
                             .join(remote_url_effects)
+                            .join(state_effects)
                     }
                     Err(error) => {
                         let base_url_effects = eq_update(&mut self.base_url, None);
@@ -274,6 +311,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         let settings_effects =
                             eq_update(&mut self.settings, Loadable::Err(error.to_owned()));
                         let torrent_effects = eq_update(&mut self.torrent, None);
+                        let state_effects = if self.state.is_some() {
+                            eq_update(&mut self.state, Some(Loadable::Ready(State::NotRunning)))
+                        } else {
+                            Effects::none().unchanged()
+                        };
                         base_url_effects
                             .join(remote_url_effects)
                             .join(playback_devices_effects)
@@ -281,6 +323,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                             .join(device_info_effects)
                             .join(settings_effects)
                             .join(torrent_effects)
+                            .join(state_effects)
                     }
                 }
             }
@@ -338,6 +381,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         let settings_effects =
                             eq_update(&mut self.settings, Loadable::Err(error.to_owned()));
                         let torrent_effects = eq_update(&mut self.torrent, None);
+                        let state_effects = if self.state.is_some() {
+                            eq_update(&mut self.state, Some(Loadable::Ready(State::NotRunning)))
+                        } else {
+                            Effects::none().unchanged()
+                        };
                         base_url_effects
                             .join(remote_url_effects)
                             .join(playback_devices_effects)
@@ -345,6 +393,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                             .join(device_info_effects)
                             .join(settings_effects)
                             .join(torrent_effects)
+                            .join(state_effects)
                     }
                 }
             }
