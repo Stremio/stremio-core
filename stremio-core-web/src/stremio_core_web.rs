@@ -1,4 +1,4 @@
-use std::sync::RwLock;
+use std::{sync::RwLock, time::Duration};
 
 use enclose::enclose;
 use futures::{future, try_join, FutureExt, StreamExt};
@@ -7,7 +7,7 @@ use once_cell::sync::Lazy;
 use tracing::{error, info, trace, Level};
 use tracing_wasm::WASMLayerConfigBuilder;
 use wasm_bindgen::{
-    prelude::{wasm_bindgen, Closure},
+    prelude::{wasm_bindgen},
     JsCast, JsValue,
 };
 
@@ -25,12 +25,12 @@ use stremio_core::{
         server_urls::ServerUrlsBucket, streams::StreamsBucket,
     },
 };
-use web_sys::window;
 
 use crate::{
-    env::WebEnv,
+    env::{WebEnv, UNKNOWN_ERROR},
     event::WebEvent,
     model::{WebModel, WebModelField},
+    timers::create_interval,
 };
 
 #[allow(clippy::type_complexity)]
@@ -149,23 +149,48 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                     });
 
                     let timer = async {
-                        let runtime_action = RuntimeAction {
-                            action: Action::StreamingServer(stremio_core::runtime::msg::ActionStreamingServer::Reload),
-                            field: None,
-                        };
+                        loop {
+                            let dispatch_f = || {
+                                let runtime_action = RuntimeAction {
+                                    action: Action::StreamingServer(
+                                        stremio_core::runtime::msg::ActionStreamingServer::Reload,
+                                    ),
+                                    field: None,
+                                };
 
+                                let result = dispatch_internal(runtime_action, None);
+                                if let Err(state) = result {
+                                    error!(
+                                        ?state,
+                                        "Dispatch failed for Server::Refresh recurring action"
+                                    )
+                                }
+                            };
 
-                        let result = dispatch_internal(runtime_action, None);
+                            let server_refresh_interval = create_interval(
+                                Duration::from_secs(5).as_millis().try_into().unwrap(),
+                                dispatch_f,
+                            );
 
-                        
-                        // TODO: setup a timer, a recurring job that performs certain actions.
-                        // loop {
-                        //     set_timeout()
+                            match server_refresh_interval {
+                                Ok(id) => {
+                                    info!(%id, "Refresh interval for streaming server set with");
+                                }
+                                Err(err) => {
+                                    let js_error = err
+                                        .dyn_into::<js_sys::Error>()
+                                        .map(|error| String::from(error.message()))
+                                        .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned());
+                                    error!(%js_error, "Refresh interval failed to be set for streaming server. Trying again...");
 
-                        // }
+                                    continue;
+                                }
+                            }
+                            break;
+                        }
                     };
-                    // let join = futures::future::join(rx_fut, timer);
-                    let join = rx_fut;
+                    let join = futures::future::join(rx_fut, timer).map(drop);
+                    // let join = rx_fut;
                     WebEnv::exec_concurrent(join);
                     *RUNTIME.write().expect("runtime write failed") =
                         Some(Loadable::Ready(runtime));
@@ -295,40 +320,4 @@ pub fn decode_stream(stream: JsValue) -> JsValue {
         }
         _ => JsValue::NULL,
     }
-}
-
-fn set_timeout(window: &web_sys::Window, f: &Closure<dyn FnMut()>, timeout_ms: i32) -> i32 {
-    window
-        .set_timeout_with_callback_and_timeout_and_arguments_0(
-            f.as_ref().unchecked_ref(),
-            timeout_ms,
-        )
-        .expect("should register `setTimeout` OK")
-}
-
-#[wasm_bindgen]
-pub fn start_timer(minutes: f64) -> i32 {
-    let closure = Closure::wrap(Box::new(move || {
-        web_sys::console::log_1(&"Function runs every X minutes".into());
-        // Your code here
-    }) as Box<dyn Fn()>);
-
-    let window = window().unwrap();
-    let interval_id = window
-        .set_interval_with_callback_and_timeout_and_arguments_0(
-            closure.as_ref().unchecked_ref(),
-            (minutes * 60.0 * 1000.0) as i32,
-        )
-        .unwrap();
-
-    // Keep closure alive
-    closure.forget();
-
-    interval_id
-}
-
-#[wasm_bindgen]
-pub fn stop_timer(interval_id: i32) {
-    let window = window().unwrap();
-    window.clear_interval_with_handle(interval_id);
 }
