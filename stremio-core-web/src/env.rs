@@ -31,8 +31,8 @@ use crate::{
     model::WebModel,
 };
 
-const UNKNOWN_ERROR: &str = "Unknown Error";
-const INSTALLATION_ID_STORAGE_KEY: &str = "installation_id";
+pub(crate) const UNKNOWN_ERROR: &str = "Unknown Error";
+pub(crate) const INSTALLATION_ID_STORAGE_KEY: &str = "installation_id";
 
 #[wasm_bindgen]
 extern "C" {
