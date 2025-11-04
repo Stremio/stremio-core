@@ -39,20 +39,47 @@ pub struct Selected {
     pub statistics: Option<StatisticsRequest>,
 }
 
-#[derive(Clone, Serialize, Debug, PartialEq)]
+#[derive(Clone, Copy, Serialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum State {
     NotRunning,
     Running,
 }
 
+#[derive(Clone, Serialize, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct LoadableRequest<Resp> {
+    pub loadable: Loadable<Resp, EnvError>,
+    /// all requests to the server are GET so we keep only the Url
+    pub request: Option<(Url, Loadable<Resp, EnvError>)>,
+}
+
+impl<Resp> LoadableRequest<Resp> {
+    pub fn loading(url: Url) -> Self {
+        Self {
+            loadable: Loadable::Loading,
+            request: Some((url, Loadable::Loading)),
+        }
+    }
+
+    pub fn ready_response(url: Url, response: Resp) -> Self
+    where
+        Resp: Clone,
+    {
+        Self {
+            loadable: Loadable::Ready(response.to_owned()),
+            request: Some((url, Loadable::Ready(response))),
+        }
+    }
+}
+
 #[derive(Clone, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamingServer {
     pub selected: Selected,
-    pub settings: Loadable<Settings, EnvError>,
     pub base_url: Option<Url>,
     pub remote_url: Option<Url>,
+    pub settings: Loadable<Settings, EnvError>,
     pub playback_devices: Loadable<Vec<PlaybackDevice>, EnvError>,
     pub network_info: Loadable<NetworkInfo, EnvError>,
     pub device_info: Loadable<DeviceInfo, EnvError>,
@@ -62,19 +89,51 @@ pub struct StreamingServer {
     pub torrent: Option<(InfoHash, Loadable<ResourcePath, EnvError>)>,
     /// [`Loadable::Loading`] is used only on the first statistics request.
     pub statistics: Option<Loadable<Statistics, EnvError>>,
+
+    pub settings_request: LoadableRequest<Settings>,
+    pub playback_devices_request: LoadableRequest<Vec<PlaybackDevice>>,
+    pub network_info_request: LoadableRequest<NetworkInfo>,
+    pub device_info_request: LoadableRequest<DeviceInfo>,
+}
+
+pub enum ServerAvailability {
+    /// Server can only be accessed through remote url.
+    ///
+    /// No local server can/is ran on the device due to platform restrictions or other
+    RemoteOnly,
+    /// Server is available and ran on the platform but also can use Remote urls
+    Available,
 }
 
 impl StreamingServer {
     // todo: server available
     // pub fn new<E: Env + 'static>(profile: &Profile, server_available: bool) -> (Self, Effects) {
     pub fn new<E: Env + 'static>(profile: &Profile) -> (Self, Effects) {
-        let server_available = true;
+        // e.g. for iOS due to apple policies:
+        // let server_available = ServerAvailability::RemoteOnly;
+        // let server_available = ServerAvailability::Available;
+
+        let (get_settings_url, get_settings_effect) =
+            get_settings::<E>(&profile.settings.streaming_server_url);
+        let settings_request = LoadableRequest::loading(get_settings_url);
+
+        let (get_playback_devices_url, get_playback_devices_effect) =
+            get_playback_devices::<E>(&profile.settings.streaming_server_url);
+        let playback_devices_request = LoadableRequest::loading(get_playback_devices_url);
+
+        let (get_network_info_url, get_network_info_effect) =
+            get_network_info::<E>(&profile.settings.streaming_server_url);
+        let network_info_request = LoadableRequest::loading(get_network_info_url);
+
+        let (get_device_info_url, get_device_info_effect) =
+            get_device_info::<E>(&profile.settings.streaming_server_url);
+        let device_info_request = LoadableRequest::loading(get_device_info_url);
 
         let effects = Effects::many(vec![
-            get_settings::<E>(&profile.settings.streaming_server_url),
-            get_playback_devices::<E>(&profile.settings.streaming_server_url),
-            get_network_info::<E>(&profile.settings.streaming_server_url),
-            get_device_info::<E>(&profile.settings.streaming_server_url),
+            get_settings_effect,
+            get_playback_devices_effect,
+            get_network_info_effect,
+            get_device_info_effect,
         ]);
         (
             Self {
@@ -82,11 +141,7 @@ impl StreamingServer {
                     transport_url: profile.settings.streaming_server_url.to_owned(),
                     statistics: None,
                 },
-                state: if server_available {
-                    Some(Loadable::Loading)
-                } else {
-                    None
-                },
+                state: Some(Loadable::Loading),
                 settings: Loadable::Loading,
                 base_url: None,
                 remote_url: None,
@@ -95,6 +150,10 @@ impl StreamingServer {
                 device_info: Loadable::Loading,
                 torrent: None,
                 statistics: None,
+                settings_request,
+                playback_devices_request,
+                network_info_request,
+                device_info_request,
             },
             effects.unchanged(),
         )
@@ -105,34 +164,55 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::StreamingServer(ActionStreamingServer::Refresh)) => {
-                self.settings = Loadable::Loading;
+                let (get_settings_url, get_settings_effect) =
+                    get_settings::<E>(&ctx.profile.settings.streaming_server_url);
+                let new_settings_request = LoadableRequest::loading(get_settings_url);
+                let settings_request_effects =
+                    eq_update(&mut self.settings_request, new_settings_request);
 
-                // todo: remove once confirmed
-                // we can just wait for the settings and update these values
-                // instead of making them None
-                // self.base_url = None;
-                // self.remote_url = None;
-
-                Effects::many(vec![get_settings::<E>(&self.selected.transport_url)])
+                Effects::one(get_settings_effect)
+                    .unchanged()
+                    .join(settings_request_effects)
             }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::Reload)) => {
-                let settings_effects = eq_update(&mut self.settings, Loadable::Loading);
-                let network_info_effects = eq_update(&mut self.network_info, Loadable::Loading);
-                let device_info_effects = eq_update(&mut self.device_info, Loadable::Loading);
-                let base_url_effects = eq_update(&mut self.base_url, None);
-                let remote_url_effects = eq_update(&mut self.remote_url, None);
+                let (get_settings_url, get_settings_effect) =
+                    get_settings::<E>(&ctx.profile.settings.streaming_server_url);
+                let new_settings_request = LoadableRequest::loading(get_settings_url);
+                let new_settings_request_effects =
+                    eq_update(&mut self.settings_request, new_settings_request);
+
+                let (get_playback_devices_url, get_playback_devices_effect) =
+                    get_playback_devices::<E>(&ctx.profile.settings.streaming_server_url);
+                let new_playback_devices_request =
+                    LoadableRequest::loading(get_playback_devices_url);
+                let new_playback_devices_request_effects = eq_update(
+                    &mut self.playback_devices_request,
+                    new_playback_devices_request,
+                );
+
+                let (get_network_info_url, get_network_info_effect) =
+                    get_network_info::<E>(&ctx.profile.settings.streaming_server_url);
+                let new_network_info_request = LoadableRequest::loading(get_network_info_url);
+                let new_network_info_request_effects =
+                    eq_update(&mut self.network_info_request, new_network_info_request);
+
+                let (get_device_info_url, get_device_info_effect) =
+                    get_device_info::<E>(&ctx.profile.settings.streaming_server_url);
+                let new_device_info_request = LoadableRequest::loading(get_device_info_url);
+                let new_device_info_request_effects =
+                    eq_update(&mut self.device_info_request, new_device_info_request);
+
                 Effects::many(vec![
-                    get_settings::<E>(&self.selected.transport_url),
-                    get_playback_devices::<E>(&self.selected.transport_url),
-                    get_network_info::<E>(&self.selected.transport_url),
-                    get_device_info::<E>(&self.selected.transport_url),
+                    get_settings_effect,
+                    get_playback_devices_effect,
+                    get_network_info_effect,
+                    get_device_info_effect,
                 ])
                 .unchanged()
-                .join(settings_effects)
-                .join(network_info_effects)
-                .join(device_info_effects)
-                .join(base_url_effects)
-                .join(remote_url_effects)
+                .join(new_settings_request_effects)
+                .join(new_playback_devices_request_effects)
+                .join(new_network_info_request_effects)
+                .join(new_device_info_request_effects)
             }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::UpdateSettings(
                 settings,
@@ -253,33 +333,67 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
             Msg::Internal(Internal::ProfileChanged)
                 if self.selected.transport_url != ctx.profile.settings.streaming_server_url =>
             {
+                let (get_settings_url, get_settings_effect) =
+                    get_settings::<E>(&ctx.profile.settings.streaming_server_url);
+                let settings_request = LoadableRequest::loading(get_settings_url);
+
+                let (get_playback_devices_url, get_playback_devices_effect) =
+                    get_playback_devices::<E>(&ctx.profile.settings.streaming_server_url);
+                let playback_devices_request = LoadableRequest::loading(get_playback_devices_url);
+
+                let (get_network_info_url, get_network_info_effect) =
+                    get_network_info::<E>(&ctx.profile.settings.streaming_server_url);
+                let network_info_request = LoadableRequest::loading(get_network_info_url);
+
+                let (get_device_info_url, get_device_info_effect) =
+                    get_device_info::<E>(&ctx.profile.settings.streaming_server_url);
+                let device_info_request = LoadableRequest::loading(get_device_info_url);
+
                 self.selected = Selected {
                     transport_url: ctx.profile.settings.streaming_server_url.to_owned(),
                     statistics: None,
                 };
                 self.settings = Loadable::Loading;
+                // todo: check if we should alos set these to Loading as they were missing, even though we made a request to get playback devices.
+                self.playback_devices = Loadable::Loading;
                 self.network_info = Loadable::Loading;
                 self.device_info = Loadable::Loading;
+                self.settings_request = settings_request;
+                self.playback_devices_request = playback_devices_request;
+                self.network_info_request = network_info_request;
+                self.device_info_request = device_info_request;
+
                 self.base_url = None;
                 self.remote_url = None;
                 self.torrent = None;
                 self.statistics = None;
+
                 Effects::many(vec![
-                    get_settings::<E>(&self.selected.transport_url),
-                    get_playback_devices::<E>(&self.selected.transport_url),
-                    get_network_info::<E>(&self.selected.transport_url),
-                    get_device_info::<E>(&self.selected.transport_url),
+                    get_settings_effect,
+                    get_playback_devices_effect,
+                    get_network_info_effect,
+                    get_device_info_effect,
                 ])
             }
             Msg::Internal(Internal::StreamingServerSettingsResult(url, result))
-                if self.selected.transport_url == *url && self.settings.is_loading() =>
+                if self.selected.transport_url == *url
+                    && self.settings_request.loadable.is_loading() =>
             {
                 match result {
                     Ok(settings) => {
+                        let mut new_request = self.settings_request.to_owned();
+                        new_request.request =
+                            Some((url.to_owned(), Loadable::Ready(settings.values.to_owned())));
+
+                        let settings_request_effects =
+                            eq_update(&mut self.settings_request, new_request);
+
+                        // On ready response, we always override the value
                         let settings_effects = eq_update(
                             &mut self.settings,
                             Loadable::Ready(settings.values.to_owned()),
                         );
+
                         let base_url_effects =
                             eq_update(&mut self.base_url, Some(settings.base_url.to_owned()));
                         let remote_url_effects = update_remote_url::<E>(
@@ -294,33 +408,35 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                             Effects::none().unchanged()
                         };
 
-                        settings_effects
+                        settings_request_effects
+                            .join(settings_effects)
                             .join(base_url_effects)
                             .join(remote_url_effects)
                             .join(state_effects)
                     }
                     Err(error) => {
-                        let base_url_effects = eq_update(&mut self.base_url, None);
-                        let remote_url_effects = eq_update(&mut self.remote_url, None);
-                        let playback_devices_effects =
-                            eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()));
-                        let network_info_effects =
-                            eq_update(&mut self.network_info, Loadable::Err(error.to_owned()));
-                        let device_info_effects =
-                            eq_update(&mut self.device_info, Loadable::Err(error.to_owned()));
-                        let settings_effects =
-                            eq_update(&mut self.settings, Loadable::Err(error.to_owned()));
+                        // keep the last settings, base_url. remote_url, and other server request responses.
+
+                        let mut new_request = self.settings_request.to_owned();
+                        new_request.request =
+                            Some((url.to_owned(), Loadable::Err(error.to_owned())));
+                        let settings_request_effects =
+                            eq_update(&mut self.settings_request, new_request);
+
+                        // if current settings is anything but Ready, override it, keeping Ready state
+                        // else keep the previous known value (Ready)
+                        let settings_effects = if !self.settings.is_ready() {
+                            eq_update(&mut self.settings, Loadable::Err(error.to_owned()))
+                        } else {
+                            Effects::none().unchanged()
+                        };
                         let torrent_effects = eq_update(&mut self.torrent, None);
                         let state_effects = if self.state.is_some() {
                             eq_update(&mut self.state, Some(Loadable::Ready(State::NotRunning)))
                         } else {
                             Effects::none().unchanged()
                         };
-                        base_url_effects
-                            .join(remote_url_effects)
-                            .join(playback_devices_effects)
-                            .join(network_info_effects)
-                            .join(device_info_effects)
+                        settings_request_effects
                             .join(settings_effects)
                             .join(torrent_effects)
                             .join(state_effects)
@@ -328,72 +444,162 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 }
             }
             Msg::Internal(Internal::StreamingServerPlaybackDevicesResult(url, result))
-                if self.selected.transport_url == *url && self.playback_devices.is_loading() =>
+                if self.selected.transport_url == *url
+                    && self.playback_devices_request.loadable.is_loading() =>
             {
                 match result {
-                    Ok(playback_devices) => eq_update(
-                        &mut self.playback_devices,
-                        Loadable::Ready(playback_devices.to_owned()),
-                    ),
+                    Ok(playback_devices) => {
+                        let mut new_request = self.playback_devices_request.to_owned();
+                        new_request.request =
+                            Some((url.to_owned(), Loadable::Ready(playback_devices.to_owned())));
+
+                        let playback_devices_request_effects =
+                            eq_update(&mut self.playback_devices_request, new_request);
+
+                        // On ready response, we always override the value
+                        let playback_devices_effects = eq_update(
+                            &mut self.playback_devices,
+                            Loadable::Ready(playback_devices.to_owned()),
+                        );
+
+                        playback_devices_request_effects.join(playback_devices_effects)
+                    }
                     Err(error) => {
-                        eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()))
+                        let mut new_request = self.playback_devices_request.to_owned();
+                        new_request.request =
+                            Some((url.to_owned(), Loadable::Err(error.to_owned())));
+
+                        let playback_devices_request_effects =
+                            eq_update(&mut self.playback_devices_request, new_request);
+
+                        // if current playback devices is anything but Ready, override it, keeping Ready state
+                        // else keep the previous known value (Ready)
+                        let playback_devices_effects = if !self.playback_devices.is_ready() {
+                            eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()))
+                        } else {
+                            Effects::none().unchanged()
+                        };
+
+                        playback_devices_request_effects.join(playback_devices_effects)
                     }
                 }
             }
             Msg::Internal(Internal::StreamingServerNetworkInfoResult(url, result))
-                if self.selected.transport_url == *url && self.network_info.is_loading() =>
+                if self.selected.transport_url == *url
+                    && self.network_info_request.loadable.is_loading() =>
             {
                 match result {
-                    Ok(network_info) => eq_update(
-                        &mut self.network_info,
-                        Loadable::Ready(network_info.to_owned()),
-                    ),
+                    Ok(network_info) => {
+                        let mut new_request = self.network_info_request.to_owned();
+                        new_request.request =
+                            Some((url.to_owned(), Loadable::Ready(network_info.to_owned())));
+
+                        let network_info_request_effects =
+                            eq_update(&mut self.network_info_request, new_request);
+
+                        // On ready response, we always override the value
+                        let network_info_effects = eq_update(
+                            &mut self.network_info,
+                            Loadable::Ready(network_info.to_owned()),
+                        );
+
+                        network_info_request_effects.join(network_info_effects)
+                    }
                     Err(error) => {
-                        eq_update(&mut self.network_info, Loadable::Err(error.to_owned()))
+                        let mut new_request = self.network_info_request.to_owned();
+                        new_request.request =
+                            Some((url.to_owned(), Loadable::Err(error.to_owned())));
+
+                        let network_info_request_effects =
+                            eq_update(&mut self.network_info_request, new_request);
+
+                        // if current playback devices is anything but Ready, override it, keeping Ready state
+                        // else keep the previous known value (Ready)
+                        let network_info_effects = if !self.network_info.is_ready() {
+                            eq_update(&mut self.network_info, Loadable::Err(error.to_owned()))
+                        } else {
+                            Effects::none().unchanged()
+                        };
+
+                        network_info_request_effects.join(network_info_effects)
                     }
                 }
             }
             Msg::Internal(Internal::StreamingServerDeviceInfoResult(url, result))
-                if self.selected.transport_url == *url && self.device_info.is_loading() =>
+                if self.selected.transport_url == *url
+                    && self.device_info_request.loadable.is_loading() =>
             {
                 match result {
-                    Ok(device_info) => eq_update(
-                        &mut self.device_info,
-                        Loadable::Ready(device_info.to_owned()),
-                    ),
-                    Err(error) => eq_update(&mut self.device_info, Loadable::Err(error.to_owned())),
+                    Ok(device_info) => {
+                        let mut new_request = self.device_info_request.to_owned();
+                        new_request.request =
+                            Some((url.to_owned(), Loadable::Ready(device_info.to_owned())));
+
+                        let device_info_request_effects =
+                            eq_update(&mut self.device_info_request, new_request);
+
+                        // On ready response, we always override the value
+                        let device_info_effects = eq_update(
+                            &mut self.device_info,
+                            Loadable::Ready(device_info.to_owned()),
+                        );
+
+                        device_info_request_effects.join(device_info_effects)
+                    }
+                    Err(error) => {
+                        let mut new_request = self.device_info_request.to_owned();
+                        new_request.request =
+                            Some((url.to_owned(), Loadable::Err(error.to_owned())));
+
+                        let device_info_request_effects =
+                            eq_update(&mut self.device_info_request, new_request);
+
+                        // if current playback devices is anything but Ready, override it, keeping Ready state
+                        // else keep the previous known value (Ready)
+                        let device_info_effects = if !self.device_info.is_ready() {
+                            eq_update(&mut self.device_info, Loadable::Err(error.to_owned()))
+                        } else {
+                            Effects::none().unchanged()
+                        };
+
+                        device_info_request_effects.join(device_info_effects)
+                    }
                 }
             }
             Msg::Internal(Internal::StreamingServerUpdateSettingsResult(url, result))
                 if self.selected.transport_url == *url =>
             {
                 match result {
-                    Ok(_) => Effects::none().unchanged(),
+                    Ok(_) => Effects::msg(Msg::Event(Event::StreamingServerSettingsChanged {
+                        url: url.to_owned(),
+                    }))
+                    .unchanged(),
                     Err(error) => {
-                        let base_url_effects = eq_update(&mut self.base_url, None);
-                        let remote_url_effects = eq_update(&mut self.remote_url, None);
-                        let playback_devices_effects =
-                            eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()));
-                        let network_info_effects =
-                            eq_update(&mut self.network_info, Loadable::Err(error.to_owned()));
-                        let device_info_effects =
-                            eq_update(&mut self.device_info, Loadable::Err(error.to_owned()));
-                        let settings_effects =
-                            eq_update(&mut self.settings, Loadable::Err(error.to_owned()));
+                        // TODO: confirm what we should do if settings fail to update
                         let torrent_effects = eq_update(&mut self.torrent, None);
                         let state_effects = if self.state.is_some() {
-                            eq_update(&mut self.state, Some(Loadable::Ready(State::NotRunning)))
+                            let not_running = State::NotRunning;
+                            eq_update(&mut self.state, Some(Loadable::Ready(not_running))).join(
+                                Effects::msg(Msg::Event(Event::StreamingServerState {
+                                    url: url.to_owned(),
+                                    state: not_running,
+                                }))
+                                .unchanged(),
+                            )
                         } else {
                             Effects::none().unchanged()
                         };
-                        base_url_effects
-                            .join(remote_url_effects)
-                            .join(playback_devices_effects)
-                            .join(network_info_effects)
-                            .join(device_info_effects)
-                            .join(settings_effects)
-                            .join(torrent_effects)
-                            .join(state_effects)
+
+                        let error_event = Effects::msg(Msg::Event(Event::Error {
+                            error: CtxError::Env(error.to_owned()),
+                            source: Event::StreamingServerSettingsChanged {
+                                url: url.to_owned(),
+                            }
+                            .into(),
+                        }))
+                        .unchanged();
+
+                        error_event.join(torrent_effects).join(state_effects)
                     }
                 }
             }
@@ -456,69 +662,84 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
     }
 }
 
-fn get_settings<E: Env + 'static>(url: &Url) -> Effect {
+fn get_settings<E: Env + 'static>(url: &Url) -> (Url, Effect) {
     let endpoint = url.join("settings").expect("url builder failed");
     let request = Request::get(endpoint.as_str())
         .body(())
         .expect("request builder failed");
-    EffectFuture::Concurrent(
-        E::fetch::<_, SettingsResponse>(request)
-            .map(enclose!((url) move |result| {
-                Msg::Internal(Internal::StreamingServerSettingsResult(
-                    url, result,
-                ))
-            }))
-            .boxed_env(),
+    (
+        endpoint,
+        EffectFuture::Concurrent(
+            E::fetch::<_, SettingsResponse>(request)
+                .map(enclose!((url) move |result| {
+                    Msg::Internal(Internal::StreamingServerSettingsResult(
+                        url, result,
+                    ))
+                }))
+                .boxed_env(),
+        )
+        .into(),
     )
-    .into()
 }
 
-fn get_playback_devices<E: Env + 'static>(url: &Url) -> Effect {
+fn get_playback_devices<E: Env + 'static>(url: &Url) -> (Url, Effect) {
     let endpoint = url.join("casting").expect("url builder failed");
     let request = Request::get(endpoint.as_str())
         .body(())
         .expect("request builder failed");
-    EffectFuture::Concurrent(
-        E::fetch::<_, Vec<PlaybackDevice>>(request)
-            .map_ok(|resp| resp)
-            .map(enclose!((url) move |result|
-                Msg::Internal(Internal::StreamingServerPlaybackDevicesResult(url, result))
-            ))
-            .boxed_env(),
+
+    (
+        endpoint,
+        EffectFuture::Concurrent(
+            E::fetch::<_, Vec<PlaybackDevice>>(request)
+                .map_ok(|resp| resp)
+                .map(enclose!((url) move |result|
+                    Msg::Internal(Internal::StreamingServerPlaybackDevicesResult(url, result))
+                ))
+                .boxed_env(),
+        )
+        .into(),
     )
-    .into()
 }
 
-fn get_network_info<E: Env + 'static>(url: &Url) -> Effect {
+fn get_network_info<E: Env + 'static>(url: &Url) -> (Url, Effect) {
     let endpoint = url.join("network-info").expect("url builder failed");
     let request = Request::get(endpoint.as_str())
         .body(())
         .expect("request builder failed");
-    EffectFuture::Concurrent(
-        E::fetch::<_, NetworkInfo>(request)
-            .map_ok(|resp| resp)
-            .map(enclose!((url) move |result|
-                Msg::Internal(Internal::StreamingServerNetworkInfoResult(url, result))
-            ))
-            .boxed_env(),
+
+    (
+        endpoint,
+        EffectFuture::Concurrent(
+            E::fetch::<_, NetworkInfo>(request)
+                .map_ok(|resp| resp)
+                .map(enclose!((url) move |result|
+                    Msg::Internal(Internal::StreamingServerNetworkInfoResult(url, result))
+                ))
+                .boxed_env(),
+        )
+        .into(),
     )
-    .into()
 }
 
-fn get_device_info<E: Env + 'static>(url: &Url) -> Effect {
+fn get_device_info<E: Env + 'static>(url: &Url) -> (Url, Effect) {
     let endpoint = url.join("device-info").expect("url builder failed");
     let request = Request::get(endpoint.as_str())
         .body(())
         .expect("request builder failed");
-    EffectFuture::Concurrent(
-        E::fetch::<_, DeviceInfo>(request)
-            .map_ok(|resp| resp)
-            .map(enclose!((url) move |result|
-                Msg::Internal(Internal::StreamingServerDeviceInfoResult(url, result))
-            ))
-            .boxed_env(),
+
+    (
+        endpoint,
+        EffectFuture::Concurrent(
+            E::fetch::<_, DeviceInfo>(request)
+                .map_ok(|resp| resp)
+                .map(enclose!((url) move |result|
+                    Msg::Internal(Internal::StreamingServerDeviceInfoResult(url, result))
+                ))
+                .boxed_env(),
+        )
+        .into(),
     )
-    .into()
 }
 
 fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
