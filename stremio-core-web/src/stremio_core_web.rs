@@ -6,10 +6,7 @@ use gloo_utils::format::JsValueSerdeExt;
 use once_cell::sync::Lazy;
 use tracing::{error, info, trace, Level};
 use tracing_wasm::WASMLayerConfigBuilder;
-use wasm_bindgen::{
-    prelude::{wasm_bindgen},
-    JsCast, JsValue,
-};
+use wasm_bindgen::{prelude::wasm_bindgen, JsCast, JsValue};
 
 use stremio_core::{
     constants::{
@@ -284,12 +281,13 @@ fn dispatch_internal(
         );
     }
 
-    let runtime_action_clone: RuntimeAction<WebEnv, WebModel> = RuntimeAction {
-        action: runtime_action.action.clone(),
-        field: runtime_action.field.clone(),
-    };
-    let result = runtime.dispatch(runtime_action);
-    trace!(?runtime_action_clone, ?result, "Runtime action dispatched");
+    // let runtime_action_clone: RuntimeAction<WebEnv, WebModel> = RuntimeAction {
+    //     action: runtime_action.action.clone(),
+    //     field: runtime_action.field.clone(),
+    // };
+    let _result = runtime.dispatch(runtime_action);
+    // trace!(?runtime_action_clone, ?_result, "Runtime action dispatched");
+
     Ok(())
 }
 
