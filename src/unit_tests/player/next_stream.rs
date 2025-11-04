@@ -137,26 +137,30 @@ fn next_stream() {
     };
 
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Load(ActionLoad::Player(Box::new(Selected {
-                stream: stream.clone(),
-                stream_request: Some(stream_request),
-                meta_request: Some(meta_request),
-                subtitles_path: None,
-            }))),
-        }).expect("Should dispatch");
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Load(ActionLoad::Player(Box::new(Selected {
+                    stream: stream.clone(),
+                    stream_request: Some(stream_request),
+                    meta_request: Some(meta_request),
+                    subtitles_path: None,
+                }))),
+            })
+            .expect("Should dispatch");
     });
 
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Player(ActionPlayer::TimeChanged {
-                time: 50,
-                duration: 100,
-                device: "device".to_owned(),
-            }),
-        }).expect("Should dispatch");
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Player(ActionPlayer::TimeChanged {
+                    time: 50,
+                    duration: 100,
+                    device: "device".to_owned(),
+                }),
+            })
+            .expect("Should dispatch");
     });
 
     assert_eq!(
@@ -174,10 +178,12 @@ fn next_stream() {
     );
 
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Player(ActionPlayer::NextVideo),
-        }).expect("Should dispatch");
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Player(ActionPlayer::NextVideo),
+            })
+            .expect("Should dispatch");
     });
 
     assert_eq!(

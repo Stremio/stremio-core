@@ -412,13 +412,15 @@ fn actionctx_uninstalladdon_not_installed() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::UninstallAddon(Descriptor {
-                transport_url: Url::parse("https://transport_url2").unwrap(),
-                ..addon.to_owned()
-            })),
-        }).expect("Should dispatch");
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::UninstallAddon(Descriptor {
+                    transport_url: Url::parse("https://transport_url2").unwrap(),
+                    ..addon.to_owned()
+                })),
+            })
+            .expect("Should dispatch");
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,

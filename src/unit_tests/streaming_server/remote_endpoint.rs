@@ -134,22 +134,26 @@ fn remote_endpoint() {
     );
 
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::StreamingServer(ActionStreamingServer::Reload),
-        }).expect("Should dispatch");
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::StreamingServer(ActionStreamingServer::Reload),
+            })
+            .expect("Should dispatch");
     });
 
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::StreamingServer(ActionStreamingServer::UpdateSettings(
-                StreamingServerSettings {
-                    remote_https: Some(AVAILABLE_INTERFACE.to_string()),
-                    ..STREAMING_SERVER_SETTINGS
-                },
-            )),
-        }).expect("Should dispatch");
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::StreamingServer(ActionStreamingServer::UpdateSettings(
+                    StreamingServerSettings {
+                        remote_https: Some(AVAILABLE_INTERFACE.to_string()),
+                        ..STREAMING_SERVER_SETTINGS
+                    },
+                )),
+            })
+            .expect("Should dispatch");
     });
 
     assert!(

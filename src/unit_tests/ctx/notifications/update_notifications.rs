@@ -251,10 +251,12 @@ fn test_pull_notifications_and_play_in_player() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::PullNotifications),
-        }).expect("Should dispatch");
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::PullNotifications),
+            })
+            .expect("Should dispatch");
     });
     assert_eq!(
         REQUESTS.read().unwrap().len(),
@@ -291,48 +293,52 @@ fn test_pull_notifications_and_play_in_player() {
     // This should dismiss all notifications for this MetaItem Id.
     // libraryItem.state.lastWatched dismisses any unwatched episode notifications
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Load(ActionLoad::Player(Box::new(PlayerSelected {
-                stream: Stream {
-                    source: StreamSource::Url {
-                        url: Url::parse("https://example.com/stream.mp4").unwrap(),
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Load(ActionLoad::Player(Box::new(PlayerSelected {
+                    stream: Stream {
+                        source: StreamSource::Url {
+                            url: Url::parse("https://example.com/stream.mp4").unwrap(),
+                        },
+                        name: None,
+                        description: None,
+                        thumbnail: None,
+                        subtitles: vec![],
+                        behavior_hints: Default::default(),
                     },
-                    name: None,
-                    description: None,
-                    thumbnail: None,
-                    subtitles: vec![],
-                    behavior_hints: Default::default(),
-                },
-                meta_request: Some(ResourceRequest {
-                    base: Url::parse("https://addon_1.com/manifest.json").unwrap(),
-                    path: ResourcePath {
-                        id: "tt1".to_owned(),
-                        resource: "meta".to_owned(),
-                        r#type: "series".to_owned(),
-                        extra: vec![],
-                    },
+                    meta_request: Some(ResourceRequest {
+                        base: Url::parse("https://addon_1.com/manifest.json").unwrap(),
+                        path: ResourcePath {
+                            id: "tt1".to_owned(),
+                            resource: "meta".to_owned(),
+                            r#type: "series".to_owned(),
+                            extra: vec![],
+                        },
+                    }),
+                    stream_request: Some(ResourceRequest {
+                        base: Url::parse("https://addon_1.com/manifest.json").unwrap(),
+                        path: ResourcePath {
+                            resource: "stream".to_owned(),
+                            r#type: "series".to_owned(),
+                            id: "tt1:1:6".to_owned(),
+                            extra: vec![],
+                        },
+                    }),
+                    subtitles_path: None,
+                }))),
+            })
+            .expect("Should dispatch");
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Player(ActionPlayer::TimeChanged {
+                    time: 95,
+                    duration: 100,
+                    device: "chromecast".to_owned(),
                 }),
-                stream_request: Some(ResourceRequest {
-                    base: Url::parse("https://addon_1.com/manifest.json").unwrap(),
-                    path: ResourcePath {
-                        resource: "stream".to_owned(),
-                        r#type: "series".to_owned(),
-                        id: "tt1:1:6".to_owned(),
-                        extra: vec![],
-                    },
-                }),
-                subtitles_path: None,
-            }))),
-        }).expect("Should dispatch");
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Player(ActionPlayer::TimeChanged {
-                time: 95,
-                duration: 100,
-                device: "chromecast".to_owned(),
-            }),
-        }).expect("Should dispatch action");
+            })
+            .expect("Should dispatch action");
     });
 
     assert!(
