@@ -137,7 +137,7 @@ fn remote_endpoint() {
         runtime.dispatch(RuntimeAction {
             field: None,
             action: Action::StreamingServer(ActionStreamingServer::Reload),
-        });
+        }).expect("Should dispatch");
     });
 
     TestEnv::run(|| {
@@ -149,7 +149,7 @@ fn remote_endpoint() {
                     ..STREAMING_SERVER_SETTINGS
                 },
             )),
-        });
+        }).expect("Should dispatch");
     });
 
     assert!(

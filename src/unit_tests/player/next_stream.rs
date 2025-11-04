@@ -145,7 +145,7 @@ fn next_stream() {
                 meta_request: Some(meta_request),
                 subtitles_path: None,
             }))),
-        });
+        }).expect("Should dispatch");
     });
 
     TestEnv::run(|| {
@@ -156,7 +156,7 @@ fn next_stream() {
                 duration: 100,
                 device: "device".to_owned(),
             }),
-        });
+        }).expect("Should dispatch");
     });
 
     assert_eq!(
@@ -177,7 +177,7 @@ fn next_stream() {
         runtime.dispatch(RuntimeAction {
             field: None,
             action: Action::Player(ActionPlayer::NextVideo),
-        });
+        }).expect("Should dispatch");
     });
 
     assert_eq!(

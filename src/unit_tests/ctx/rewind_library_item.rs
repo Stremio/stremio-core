@@ -122,10 +122,12 @@ fn actionctx_rewindlibraryitem() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::RewindLibraryItem(library_item.id.to_owned())),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::RewindLibraryItem(library_item.id.to_owned())),
+            })
+            .expect("Should dispatch action");
     });
     assert_eq!(
         runtime
@@ -214,10 +216,12 @@ fn actionctx_rewindlibraryitem_not_added() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::RewindLibraryItem("id2".to_owned())),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::RewindLibraryItem("id2".to_owned())),
+            })
+            .expect("Should dispatch action");
     });
     assert_eq!(
         runtime

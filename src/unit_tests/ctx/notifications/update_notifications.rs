@@ -254,7 +254,7 @@ fn test_pull_notifications_and_play_in_player() {
         runtime.dispatch(RuntimeAction {
             field: None,
             action: Action::Ctx(ActionCtx::PullNotifications),
-        })
+        }).expect("Should dispatch");
     });
     assert_eq!(
         REQUESTS.read().unwrap().len(),
@@ -324,7 +324,7 @@ fn test_pull_notifications_and_play_in_player() {
                 }),
                 subtitles_path: None,
             }))),
-        });
+        }).expect("Should dispatch");
         runtime.dispatch(RuntimeAction {
             field: None,
             action: Action::Player(ActionPlayer::TimeChanged {
@@ -332,7 +332,7 @@ fn test_pull_notifications_and_play_in_player() {
                 duration: 100,
                 device: "chromecast".to_owned(),
             }),
-        });
+        }).expect("Should dispatch action");
     });
 
     assert!(
@@ -348,10 +348,12 @@ fn test_pull_notifications_and_play_in_player() {
     // before pulling notifications, make sure to update the last_updated time
     *NOW.write().unwrap() = Utc::now();
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::PullNotifications),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::PullNotifications),
+            })
+            .expect("Should dispatch action");
     });
 
     assert_eq!(
@@ -400,10 +402,12 @@ fn test_pull_notifications_test_cases() {
             1000,
         );
         TestEnv::run(|| {
-            runtime.dispatch(RuntimeAction {
-                field: None,
-                action: Action::Ctx(ActionCtx::PullNotifications),
-            })
+            runtime
+                .dispatch(RuntimeAction {
+                    field: None,
+                    action: Action::Ctx(ActionCtx::PullNotifications),
+                })
+                .expect("Should dispatch action");
         });
 
         pretty_assertions::assert_eq!(
@@ -524,7 +528,7 @@ fn test_dismiss_notification() {
             runtime.dispatch(RuntimeAction {
                 field: None,
                 action: Action::Ctx(ActionCtx::DismissNotificationItem("tt1".into())),
-            })
+            }).expect("Should dispatch action");
         }),
     );
     let events = EVENTS.read().unwrap();

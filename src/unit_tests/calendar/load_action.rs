@@ -125,7 +125,7 @@ fn calendar() {
         runtime.dispatch(RuntimeAction {
             field: None,
             action: Action::Load(ActionLoad::Calendar(None)),
-        });
+        }).expect("Should dispatch");
     });
 
     assert_eq!(

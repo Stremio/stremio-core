@@ -68,7 +68,7 @@ fn test_search_history_update() {
                     value: query.to_owned(),
                 }],
             })),
-        })
+        }).expect("Should dispatch")
     });
 
     assert_eq!(
@@ -139,7 +139,7 @@ fn test_search_history_clear_items() {
                     value: "superman".to_owned(),
                 }],
             })),
-        })
+        }).expect("Should dispatch");
     });
 
     assert!(
@@ -148,10 +148,12 @@ fn test_search_history_clear_items() {
     );
 
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::ClearSearchHistory),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::ClearSearchHistory),
+            })
+            .expect("Should dispatch action");
     });
 
     assert!(
