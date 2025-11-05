@@ -4,7 +4,7 @@ use enclose::enclose;
 use futures::{future, try_join, FutureExt, StreamExt};
 use gloo_utils::format::JsValueSerdeExt;
 use once_cell::sync::Lazy;
-use tracing::{error, info, trace, Level};
+use tracing::{error, info, Level};
 use tracing_wasm::WASMLayerConfigBuilder;
 use wasm_bindgen::{prelude::wasm_bindgen, JsCast, JsValue};
 
@@ -250,8 +250,6 @@ pub fn dispatch(action: JsValue, field: JsValue, location_hash: JsValue) {
 
 #[derive(Debug, Clone)]
 pub enum State {
-    /// runtime is not ready - None
-
     /// No runtime has been set yet.
     /// Please, initialize core first!
     RuntimeNotSet,
@@ -286,7 +284,7 @@ fn dispatch_internal(
     //     field: runtime_action.field.clone(),
     // };
     let _result = runtime.dispatch(runtime_action);
-    // trace!(?runtime_action_clone, ?_result, "Runtime action dispatched");
+    // tracing::trace!(?runtime_action_clone, ?_result, "Runtime action dispatched");
 
     Ok(())
 }
