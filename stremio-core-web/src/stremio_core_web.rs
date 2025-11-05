@@ -150,7 +150,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                             let dispatch_f = || {
                                 let runtime_action = RuntimeAction {
                                     action: Action::StreamingServer(
-                                        stremio_core::runtime::msg::ActionStreamingServer::Reload,
+                                        stremio_core::runtime::msg::ActionStreamingServer::Refresh,
                                     ),
                                     field: None,
                                 };
@@ -165,7 +165,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                             };
 
                             let server_refresh_interval = create_interval(
-                                Duration::from_secs(5).as_millis().try_into().unwrap(),
+                                Duration::from_secs(10).as_millis().try_into().unwrap(),
                                 dispatch_f,
                             );
 

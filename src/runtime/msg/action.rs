@@ -165,7 +165,10 @@ pub struct PlayOnDeviceArgs {
 #[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionStreamingServer {
-    /// refresh the state of the server
+    /// refresh the state of the server.
+    /// 
+    /// Sends the settings request and conditionally sends
+    /// the other requests for reloading the full server model when needed.
     Refresh,
     /// reloads the full server model
     Reload,
