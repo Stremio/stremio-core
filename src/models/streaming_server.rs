@@ -90,6 +90,7 @@ pub struct StreamingServer {
     /// [`Loadable::Loading`] is used only on the first statistics request.
     pub statistics: Option<Loadable<Statistics, EnvError>>,
 
+    pub heartbeat_request: LoadableRequest<bool>,
     pub settings_request: LoadableRequest<Settings>,
     pub playback_devices_request: LoadableRequest<Vec<PlaybackDevice>>,
     pub network_info_request: LoadableRequest<NetworkInfo>,
@@ -113,6 +114,10 @@ impl StreamingServer {
         // let server_available = ServerAvailability::RemoteOnly;
         // let server_available = ServerAvailability::Available;
 
+        let (get_heartbeat_url, get_heartbeat_effect) =
+            get_heartbeat::<E>(&profile.settings.streaming_server_url);
+        let heartbeat_request = LoadableRequest::loading(get_heartbeat_url);
+
         let (get_settings_url, get_settings_effect) =
             get_settings::<E>(&profile.settings.streaming_server_url);
         let settings_request = LoadableRequest::loading(get_settings_url);
@@ -130,6 +135,7 @@ impl StreamingServer {
         let device_info_request = LoadableRequest::loading(get_device_info_url);
 
         let effects = Effects::many(vec![
+            get_heartbeat_effect,
             get_settings_effect,
             get_playback_devices_effect,
             get_network_info_effect,
@@ -154,6 +160,7 @@ impl StreamingServer {
                 playback_devices_request,
                 network_info_request,
                 device_info_request,
+                heartbeat_request,
             },
             effects.unchanged(),
         )
@@ -164,74 +171,107 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::StreamingServer(ActionStreamingServer::Refresh)) => {
-                let (get_settings_url, get_settings_effect) =
-                    get_settings::<E>(&ctx.profile.settings.streaming_server_url);
-                let new_settings_request = LoadableRequest::loading(get_settings_url);
-                let settings_request_effects =
-                    eq_update(&mut self.settings_request, new_settings_request);
+                let (get_heartbeat_effects, new_heartbeat_request_effects) = {
+                    let (get_heartbeat_url, get_heartbeat_effect) =
+                        get_heartbeat::<E>(&ctx.profile.settings.streaming_server_url);
+                    let new_heartbeat_request = LoadableRequest::loading(get_heartbeat_url);
+                    let new_heartbeat_request_effects =
+                        eq_update(&mut self.heartbeat_request, new_heartbeat_request);
 
-                let (get_playback_devices_effects, new_playback_devices_request_effects) =
-                    if self.playback_devices.is_err() {
-                        let (get_playback_devices_url, get_playback_devices_effect) =
-                            get_playback_devices::<E>(&ctx.profile.settings.streaming_server_url);
-                        let new_playback_devices_request =
-                            LoadableRequest::loading(get_playback_devices_url);
+                    (
+                        Effects::one(get_heartbeat_effect).unchanged(),
+                        new_heartbeat_request_effects,
+                    )
+                };
 
-                        let new_playback_devices_request_effects = eq_update(
-                            &mut self.playback_devices_request,
-                            new_playback_devices_request,
-                        );
+                if self.torrent.is_none() {
+                    let (get_settings_effects, new_settings_request_effects) =
+                        if self.settings.is_err() {
+                            let (get_settings_url, get_settings_effect) =
+                                get_settings::<E>(&ctx.profile.settings.streaming_server_url);
+                            let new_settings_request = LoadableRequest::loading(get_settings_url);
+                            let new_settings_request_effects =
+                                eq_update(&mut self.settings_request, new_settings_request);
 
-                        (
-                            Effects::one(get_playback_devices_effect).unchanged(),
-                            new_playback_devices_request_effects,
-                        )
-                    } else {
-                        (Effects::none().unchanged(), Effects::none().unchanged())
-                    };
+                            (
+                                Effects::one(get_settings_effect).unchanged(),
+                                new_settings_request_effects,
+                            )
+                        } else {
+                            (Effects::none().unchanged(), Effects::none().unchanged())
+                        };
+                    let (get_playback_devices_effects, new_playback_devices_request_effects) =
+                        if self.playback_devices.is_err() {
+                            let (get_playback_devices_url, get_playback_devices_effect) =
+                                get_playback_devices::<E>(
+                                    &ctx.profile.settings.streaming_server_url,
+                                );
+                            let new_playback_devices_request =
+                                LoadableRequest::loading(get_playback_devices_url);
 
-                let (get_network_info_effects, new_network_info_request_effects) =
-                    if self.network_info.is_err() {
-                        let (get_network_info_url, get_network_info_effect) =
-                            get_network_info::<E>(&ctx.profile.settings.streaming_server_url);
-                        let new_network_info_request =
-                            LoadableRequest::loading(get_network_info_url);
+                            let new_playback_devices_request_effects = eq_update(
+                                &mut self.playback_devices_request,
+                                new_playback_devices_request,
+                            );
 
-                        let new_network_info_request_effects =
-                            eq_update(&mut self.network_info_request, new_network_info_request);
-                        (
-                            Effects::one(get_network_info_effect).unchanged(),
-                            new_network_info_request_effects,
-                        )
-                    } else {
-                        (Effects::none().unchanged(), Effects::none().unchanged())
-                    };
+                            (
+                                Effects::one(get_playback_devices_effect).unchanged(),
+                                new_playback_devices_request_effects,
+                            )
+                        } else {
+                            (Effects::none().unchanged(), Effects::none().unchanged())
+                        };
 
-                let (get_device_info_effects, new_device_info_request_effects) =
-                    if self.device_info.is_err() {
-                        let (get_device_info_url, get_device_info_effect) =
-                            get_device_info::<E>(&ctx.profile.settings.streaming_server_url);
-                        let new_device_info_request = LoadableRequest::loading(get_device_info_url);
-                        let new_device_info_request_effects =
-                            eq_update(&mut self.device_info_request, new_device_info_request);
+                    let (get_network_info_effects, new_network_info_request_effects) =
+                        if self.network_info.is_err() {
+                            let (get_network_info_url, get_network_info_effect) =
+                                get_network_info::<E>(&ctx.profile.settings.streaming_server_url);
+                            let new_network_info_request =
+                                LoadableRequest::loading(get_network_info_url);
 
-                        (
-                            Effects::one(get_device_info_effect).unchanged(),
-                            new_device_info_request_effects,
-                        )
-                    } else {
-                        (Effects::none().unchanged(), Effects::none().unchanged())
-                    };
+                            let new_network_info_request_effects =
+                                eq_update(&mut self.network_info_request, new_network_info_request);
+                            (
+                                Effects::one(get_network_info_effect).unchanged(),
+                                new_network_info_request_effects,
+                            )
+                        } else {
+                            (Effects::none().unchanged(), Effects::none().unchanged())
+                        };
 
-                Effects::one(get_settings_effect)
-                    .join(get_playback_devices_effects)
-                    .join(get_network_info_effects)
-                    .join(get_device_info_effects)
+                    let (get_device_info_effects, new_device_info_request_effects) =
+                        if self.device_info.is_err() {
+                            let (get_device_info_url, get_device_info_effect) =
+                                get_device_info::<E>(&ctx.profile.settings.streaming_server_url);
+                            let new_device_info_request =
+                                LoadableRequest::loading(get_device_info_url);
+                            let new_device_info_request_effects =
+                                eq_update(&mut self.device_info_request, new_device_info_request);
+
+                            (
+                                Effects::one(get_device_info_effect).unchanged(),
+                                new_device_info_request_effects,
+                            )
+                        } else {
+                            (Effects::none().unchanged(), Effects::none().unchanged())
+                        };
+
+                    return get_heartbeat_effects
+                        .join(get_settings_effects)
+                        .join(get_playback_devices_effects)
+                        .join(get_network_info_effects)
+                        .join(get_device_info_effects)
+                        .unchanged()
+                        .join(new_heartbeat_request_effects)
+                        .join(new_settings_request_effects)
+                        .join(new_playback_devices_request_effects)
+                        .join(new_network_info_request_effects)
+                        .join(new_device_info_request_effects);
+                }
+
+                get_heartbeat_effects
                     .unchanged()
-                    .join(settings_request_effects)
-                    .join(new_playback_devices_request_effects)
-                    .join(new_network_info_request_effects)
-                    .join(new_device_info_request_effects)
+                    .join(new_heartbeat_request_effects)
             }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::Reload)) => {
                 let (get_settings_url, get_settings_effect) =
@@ -461,17 +501,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                             &settings.values,
                             ctx,
                         );
-                        let state_effects = if self.state.is_some() {
-                            eq_update(&mut self.state, Some(Loadable::Ready(State::Running)))
-                        } else {
-                            Effects::none().unchanged()
-                        };
 
                         settings_request_effects
                             .join(settings_effects)
                             .join(base_url_effects)
                             .join(remote_url_effects)
-                            .join(state_effects)
                     }
                     Err(error) => {
                         // keep the last settings, base_url. remote_url, and other server request responses.
@@ -490,13 +524,47 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                             Effects::none().unchanged()
                         };
                         let torrent_effects = eq_update(&mut self.torrent, None);
+                        settings_request_effects
+                            .join(settings_effects)
+                            .join(torrent_effects)
+                    }
+                }
+            }
+            Msg::Internal(Internal::StreamingServerHeartbeatResult(url, result))
+                if self.selected.transport_url == *url
+                    && self.heartbeat_request.loadable.is_loading() =>
+            {
+                match result {
+                    Ok(_) => {
+                        let mut new_request = self.heartbeat_request.to_owned();
+                        new_request.request = Some((url.to_owned(), Loadable::Ready(true)));
+
+                        let heartbeat_request_effects =
+                            eq_update(&mut self.heartbeat_request, new_request);
+
+                        let state_effects = if self.state.is_some() {
+                            eq_update(&mut self.state, Some(Loadable::Ready(State::Running)))
+                        } else {
+                            Effects::none().unchanged()
+                        };
+
+                        heartbeat_request_effects.join(state_effects)
+                    }
+                    Err(error) => {
+                        let mut new_request = self.heartbeat_request.to_owned();
+                        new_request.request =
+                            Some((url.to_owned(), Loadable::Err(error.to_owned())));
+                        let heartbeat_request_effects =
+                            eq_update(&mut self.heartbeat_request, new_request);
+
                         let state_effects = if self.state.is_some() {
                             eq_update(&mut self.state, Some(Loadable::Ready(State::NotRunning)))
                         } else {
                             Effects::none().unchanged()
                         };
-                        settings_request_effects
-                            .join(settings_effects)
+                        let torrent_effects = eq_update(&mut self.torrent, None);
+
+                        heartbeat_request_effects
                             .join(torrent_effects)
                             .join(state_effects)
                     }
@@ -719,6 +787,27 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
             _ => Effects::none().unchanged(),
         }
     }
+}
+
+fn get_heartbeat<E: Env + 'static>(url: &Url) -> (Url, Effect) {
+    let endpoint = url.join("heartbeat").expect("url builder failed");
+    let request = Request::get(endpoint.as_str())
+        .body(())
+        .expect("request builder failed");
+
+    (
+        endpoint,
+        EffectFuture::Concurrent(
+            E::fetch::<_, SuccessResponse>(request)
+                .map(enclose!((url) move |result| {
+                    Msg::Internal(Internal::StreamingServerHeartbeatResult(
+                        url, result.map(drop),
+                    ))
+                }))
+                .boxed_env(),
+        )
+        .into(),
+    )
 }
 
 fn get_settings<E: Env + 'static>(url: &Url) -> (Url, Effect) {
