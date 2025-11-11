@@ -200,6 +200,27 @@ impl From<(&MetaItemPreview, &LibraryItem)> for LibraryItem {
     }
 }
 
+impl<E: Env + 'static> From<(&String, PhantomData<E>)> for LibraryItem {
+    fn from((id, _): (&String, PhantomData<E>)) -> Self {
+        LibraryItem {
+            id: id.to_owned(),
+            removed: true,
+            temp: true,
+            ctime: Some(E::now()),
+            mtime: E::now(),
+            state: LibraryItemState {
+                last_watched: Some(E::now()),
+                ..LibraryItemState::default()
+            },
+            name: Default::default(),
+            r#type: "other".to_owned(),
+            poster: None,
+            poster_shape: Default::default(),
+            behavior_hints: Default::default(),
+        }
+    }
+}
+
 #[serde_as]
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
