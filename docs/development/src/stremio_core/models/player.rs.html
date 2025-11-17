@@ -1566,10 +1566,7 @@
 <a href="#1565" id="1565">1565</a>
 <a href="#1566" id="1566">1566</a>
 <a href="#1567" id="1567">1567</a>
-<a href="#1568" id="1568">1568</a>
-<a href="#1569" id="1569">1569</a>
-<a href="#1570" id="1570">1570</a>
-<a href="#1571" id="1571">1571</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#1568" id="1568">1568</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>std::ops::Div;
 
 <span class="kw">use </span>base64::Engine;
@@ -1755,7 +1752,6 @@
                     <span class="kw-2">&amp;</span><span class="self">self</span>.next_stream,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.meta_item,
-                    <span class="kw-2">&amp;</span>ctx.profile.settings,
                 );
                 <span class="kw">let </span>next_streams_effects = next_streams_update::&lt;E&gt;(
                     <span class="kw-2">&amp;mut </span><span class="self">self</span>.next_streams,
@@ -2356,7 +2352,6 @@
                     <span class="kw-2">&amp;</span><span class="self">self</span>.next_stream,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.meta_item,
-                    <span class="kw-2">&amp;</span>ctx.profile.settings,
                 );
 
                 <span class="kw">let </span>next_streams_effects = next_streams_effects.join(next_streams_update::&lt;E&gt;(
@@ -2541,7 +2536,6 @@
     stream: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Stream&gt;,
     selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
     meta_item: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;ResourceLoadable&lt;MetaItem&gt;&gt;,
-    settings: <span class="kw-2">&amp;</span>ProfileSettings,
 ) -&gt; Effects {
     <span class="kw">let </span>next_video = <span class="kw">match </span>(selected, meta_item) {
         (
@@ -2557,7 +2551,7 @@
                 content: <span class="prelude-val">Some</span>(Loadable::Ready(meta_item)),
                 ..
             }),
-        ) <span class="kw">if </span>settings.binge_watching =&gt; meta_item
+        ) =&gt; meta_item
             .videos
             .iter()
             .find_position(|video| video.id == <span class="kw-2">*</span>video_id)
