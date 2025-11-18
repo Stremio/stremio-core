@@ -569,15 +569,58 @@ pub fn create_torrent_request<E: Env + 'static>(
     .into()
 }
 
-fn parse_magnet(magnet: &Url) -> Result<(InfoHash, Vec<String>), MagnetError> {
-    let magnet = Magnet::new(magnet.as_str())?;
-    let info_hash = magnet.xt.ok_or(MagnetError::NotAMagnetURL)?;
-    let info_hash = info_hash
-        .parse()
-        .map_err(|_err| MagnetError::NotAMagnetURL)?;
 
-    let announce = magnet.tr;
-    Ok((info_hash, announce))
+
+/// Decode the BTIH hash from a magnet link into raw bytes.
+/// Supports Base32 (32 or 52 chars) and hex (40 or 64 chars).
+fn decode_btih(magnet_uri: &str) -> Result<(Magnet, Vec<u8>), Box<dyn std::error::Error>> {
+    let magnet = Magnet::new(magnet_uri).map_err(|err| err.to_string())?;
+
+    /// Only BTIH is currently supported
+    const BTIH_TYPE: &str = "btih";
+    // (exact topic) parameters
+    let (_hash_type, hash_str) = match (magnet.hash_type(), magnet.hash()) {
+        (None, Some(_)) => return Err("No hash type in exact topic parameter found".into()),
+        (Some(_), None) => return Err("No hash in exact topic parameter found".into()),
+        (Some(btih_type), Some(hash_str)) if btih_type == BTIH_TYPE => {
+            (btih_type, hash_str)
+        }
+        (Some(_other_type), Some(_hash_str)) => {
+            return Err("No BTIH hash type in exact topic parameter found".into())
+        }
+        (None, None) => return Err("No hash and no hash type provided".into()),
+    };
+    let hash_str = hash_str.trim();
+
+    // Choose decoder based on length and character set
+    let decoded = match hash_str.len() {
+        // Base32 (SHA-1 or SHA-256)
+        32 | 52 => {
+            data_encoding::BASE32.decode(hash_str.as_bytes())?
+        }
+        40 | 64 if hash_str.chars().all(|c| c.is_ascii_hexdigit()) => {
+            data_encoding::HEXLOWER.decode(hash_str.as_bytes())?
+        }
+        _ => return Err(format!("Unrecognized hash format: {}", hash_str).into()),
+    };
+
+    Ok((magnet, decoded))
+}
+
+fn parse_magnet(magnet: &Url) -> Result<(InfoHash, Vec<String>), MagnetError> {
+    let (magnet, hash_vec) =
+        decode_btih(magnet.as_str()).map_err(|_err| MagnetError::NotAMagnetURL)?;
+    let mut hash: [u8; 20] = [0_u8; 20];
+
+    if hash_vec.len() != 20 {
+        return Err(MagnetError::NotAMagnetURL);
+    }
+    hash.copy_from_slice(&hash_vec[..20]);
+
+    let info_hash = InfoHash::new(hash);
+
+    let announce = magnet.trackers();
+    Ok((info_hash, announce.to_vec()))
 }
 
 fn parse_torrent(torrent: &[u8]) -> Result<(InfoHash, Vec<String>), serde_bencode::Error> {
