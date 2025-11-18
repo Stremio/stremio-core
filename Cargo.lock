@@ -266,6 +266,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "data-encoding"
+version = "2.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
+
+[[package]]
 name = "deflate-macro"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -680,13 +686,9 @@ checksum = "a7a70ba024b9dc04c27ea2f0c0548feb474ec5c54bba33a7f72f873a39d07b24"
 
 [[package]]
 name = "magnet-url"
-version = "2.0.0"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac3b4c4004e88aca00cc0c60782e5642c8fc628deca19e530ce58aa76e737d74"
-dependencies = [
- "lazy_static",
- "regex",
-]
+checksum = "b2ab81d03e8f70deb7e21ac2f47f6cc9fe9a20a4fe06acc20cb90e8d346537ae"
 
 [[package]]
 name = "memchr"
@@ -1101,6 +1103,7 @@ dependencies = [
  "base64 0.22.1",
  "boolinator",
  "chrono",
+ "data-encoding",
  "derivative",
  "derive_more",
  "either",

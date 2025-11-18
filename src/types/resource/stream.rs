@@ -82,12 +82,8 @@ impl Stream {
                 info_hash,
                 announce,
                 ..
-            } => Some(Magnet {
-                dn: self.name.to_owned(),
-                hash_type: Some("btih".to_string()),
-                xt: Some(hex::encode(info_hash)),
-                xl: None,
-                tr: announce
+            } => {
+                let trackers = announce
                     .iter()
                     // `tracker` and `dht` prefixes are used internally by the server.js
                     // we need to remove those prefixes when generating the magnet URL
@@ -106,13 +102,28 @@ impl Stream {
                     .map(|tracker| {
                         utf8_percent_encode(&tracker, URI_COMPONENT_ENCODE_SET).to_string()
                     })
-                    .collect::<Vec<String>>(),
-                kt: None,
-                ws: None,
-                acceptable_source: None,
-                mt: None,
-                xs: None,
-            }),
+                    .collect::<Vec<String>>();
+                let trackers = if !trackers.is_empty() {
+                    Some(format!("&tr={}", trackers.join("&tr=")))
+                } else {
+                    None
+                };
+
+                Some(Magnet::new(&format!(
+                    "magnet:?{dn}xt=urn:btih:{hash}{trackers}",
+                    dn = if let Some(name) = self.name.as_ref() {
+                        format!(
+                            "dn={}&",
+                            utf8_percent_encode(&name, URI_COMPONENT_ENCODE_SET).to_string()
+                        )
+                    } else {
+                        String::new()
+                    },
+                    hash = hex::encode(info_hash),
+                    trackers = trackers.unwrap_or_default(),
+                ))
+                .expect("Should parse our generated magnet url!"))
+            }
             _ => None,
         }
     }
