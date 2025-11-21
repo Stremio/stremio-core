@@ -376,7 +376,7 @@ impl DefaultTokens for Settings {
         vec![
             Token::Struct {
                 name: "Settings",
-                len: 33,
+                len: 34,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -431,6 +431,8 @@ impl DefaultTokens for Settings {
             Token::Str("#000000"),
             Token::Str("subtitlesOpacity"),
             Token::U8(100),
+            Token::Str("saaSubtitlesSupport"),
+            Token::Bool(true),
             Token::Str("escExitFullscreen"),
             Token::Bool(true),
             Token::Str("seekTimeDuration"),
