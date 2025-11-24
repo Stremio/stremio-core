@@ -33,19 +33,20 @@ pub struct CreateTorrentBlobBody {
     pub blob: String,
 }
 
+#[derive(Debug, Clone)]
 pub struct CreateMagnetRequest {
     pub server_url: Url,
     pub info_hash: InfoHash,
     pub announce: Vec<String>,
 }
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateMagnetBody {
     pub stream: CreateMagnetTorrent,
     pub peer_search: Option<PeerSearch>,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateMagnetTorrent {
     pub info_hash: InfoHash,
