@@ -569,8 +569,6 @@ pub fn create_torrent_request<E: Env + 'static>(
     .into()
 }
 
-
-
 /// Decode the BTIH hash from a magnet link into raw bytes.
 /// Supports Base32 (32 or 52 chars) and hex (40 or 64 chars).
 fn decode_btih(magnet_uri: &str) -> Result<(Magnet, Vec<u8>), Box<dyn std::error::Error>> {
@@ -582,9 +580,7 @@ fn decode_btih(magnet_uri: &str) -> Result<(Magnet, Vec<u8>), Box<dyn std::error
     let (_hash_type, hash_str) = match (magnet.hash_type(), magnet.hash()) {
         (None, Some(_)) => return Err("No hash type in exact topic parameter found".into()),
         (Some(_), None) => return Err("No hash in exact topic parameter found".into()),
-        (Some(btih_type), Some(hash_str)) if btih_type == BTIH_TYPE => {
-            (btih_type, hash_str)
-        }
+        (Some(btih_type), Some(hash_str)) if btih_type == BTIH_TYPE => (btih_type, hash_str),
         (Some(_other_type), Some(_hash_str)) => {
             return Err("No BTIH hash type in exact topic parameter found".into())
         }
@@ -595,9 +591,7 @@ fn decode_btih(magnet_uri: &str) -> Result<(Magnet, Vec<u8>), Box<dyn std::error
     // Choose decoder based on length and character set
     let decoded = match hash_str.len() {
         // Base32 (SHA-1 or SHA-256)
-        32 | 52 => {
-            data_encoding::BASE32.decode(hash_str.as_bytes())?
-        }
+        32 | 52 => data_encoding::BASE32.decode(hash_str.as_bytes())?,
         40 | 64 if hash_str.chars().all(|c| c.is_ascii_hexdigit()) => {
             data_encoding::HEXLOWER.decode(hash_str.as_bytes())?
         }

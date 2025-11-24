@@ -109,20 +109,22 @@ impl Stream {
                     None
                 };
 
-                Some(Magnet::new(&format!(
-                    "magnet:?{dn}xt=urn:btih:{hash}{trackers}",
-                    dn = if let Some(name) = self.name.as_ref() {
-                        format!(
-                            "dn={}&",
-                            utf8_percent_encode(&name, URI_COMPONENT_ENCODE_SET).to_string()
-                        )
-                    } else {
-                        String::new()
-                    },
-                    hash = hex::encode(info_hash),
-                    trackers = trackers.unwrap_or_default(),
-                ))
-                .expect("Should parse our generated magnet url!"))
+                Some(
+                    Magnet::new(&format!(
+                        "magnet:?{dn}xt=urn:btih:{hash}{trackers}",
+                        dn = if let Some(name) = self.name.as_ref() {
+                            format!(
+                                "dn={}&",
+                                utf8_percent_encode(name, URI_COMPONENT_ENCODE_SET)
+                            )
+                        } else {
+                            String::new()
+                        },
+                        hash = hex::encode(info_hash),
+                        trackers = trackers.unwrap_or_default(),
+                    ))
+                    .expect("Should parse our generated magnet url!"),
+                )
             }
             _ => None,
         }
