@@ -197,7 +197,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.next_stream,
                     &self.selected,
                     &self.meta_item,
-                    &ctx.profile.settings,
                 );
                 let next_streams_effects = next_streams_update::<E>(
                     &mut self.next_streams,
@@ -802,7 +801,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.next_stream,
                     &self.selected,
                     &self.meta_item,
-                    &ctx.profile.settings,
                 );
 
                 let next_streams_effects = next_streams_effects.join(next_streams_update::<E>(
@@ -987,7 +985,6 @@ fn next_video_update(
     stream: &Option<Stream>,
     selected: &Option<Selected>,
     meta_item: &Option<ResourceLoadable<MetaItem>>,
-    settings: &ProfileSettings,
 ) -> Effects {
     let next_video = match (selected, meta_item) {
         (
@@ -1003,7 +1000,7 @@ fn next_video_update(
                 content: Some(Loadable::Ready(meta_item)),
                 ..
             }),
-        ) if settings.binge_watching => meta_item
+        ) => meta_item
             .videos
             .iter()
             .find_position(|video| video.id == *video_id)
@@ -1454,7 +1451,7 @@ fn intro_outro_update<E: Env + 'static>(
                 }),
             )
         }
-        _ => Effects::none().unchanged(),
+        _ => eq_update(intro_outro, None),
     };
 
     skip_gaps_effects.join(intro_outro_effects)

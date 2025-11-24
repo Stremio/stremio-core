@@ -62,14 +62,12 @@ pub fn update_library<E: Env + 'static>(
                 library_item.temp = false;
 
                 // Dismiss any notification for the LibraryItem
-                let notifications_effects = if library_item.state.no_notif {
-                    Effects::msg(Msg::Internal(Internal::DismissNotificationItem(
-                        id.to_owned(),
-                    )))
-                    .unchanged()
-                } else {
-                    Effects::none().unchanged()
-                };
+                // whether no_notifs is enabled or not, we do not care.
+                // we will dismiss the notifs. and remove the item from CW.
+                let notifications_effects = Effects::msg(Msg::Internal(
+                    Internal::DismissNotificationItem(id.to_owned()),
+                ))
+                .unchanged();
 
                 Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                     .join(notifications_effects)
