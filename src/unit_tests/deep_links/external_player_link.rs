@@ -100,7 +100,6 @@ fn external_player_link_torrent() {
     assert_eq!(epl.file_name, Some("playlist.m3u".to_string()));
 }
 
-#[ignore]
 #[test]
 fn external_player_link_external() {
     let stream = Stream {
@@ -120,6 +119,7 @@ fn external_player_link_external() {
     let settings = Settings::default();
     let epl = ExternalPlayerLink::from((&stream, streaming_server_url.as_ref(), &settings));
     assert_eq!(epl.web, Some(Url::from_str(HTTP_STR_URL).unwrap()));
+    // assert_eq!(epl.file_name, Some("playlist.m3u".to_string()));
     assert_eq!(epl.file_name, None);
 }
 
@@ -153,7 +153,6 @@ fn external_player_link_youtube() {
 }
 
 #[test]
-#[ignore]
 fn external_player_link_player_frame() {
     let stream = Stream {
         source: StreamSource::PlayerFrame {
@@ -170,6 +169,7 @@ fn external_player_link_player_frame() {
     let epl = ExternalPlayerLink::from((&stream, &streaming_server_url, &settings));
     assert_eq!(epl.playlist, None);
     assert_eq!(epl.file_name, None);
+    // assert_eq!(epl.file_name, "playlist.m3u".to_string());
 }
 
 #[test]

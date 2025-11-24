@@ -1243,8 +1243,6 @@ fn get_download_url(
             .and_then(|url_string| url_string.parse().ok()),
         ConvertedStreamSource::Url { url } => Some(url.to_owned()),
         ConvertedStreamSource::Torrent { url, .. } => {
-            // ConvertedStreamSource::Torrent { url: _url, .. } => {
-
             // we just need to know that the server is running
             streaming_server_url.as_ref().map(|_| {
                 let mut torrent_stream_url = url.clone();
@@ -1368,14 +1366,15 @@ fn get_streaming_url(
         }
 
         ConvertedStreamSource::YouTube { url, .. } => Some(url.clone()),
-        ConvertedStreamSource::External { external_url, .. } => {
-            // TODO: should this be returned as the streaming url?
-            external_url.as_ref().map(|url| url.to_owned())
-        }
-        ConvertedStreamSource::PlayerFrame { player_frame_url } => {
-            // TODO: should this be returned as the streaming url?
-            Some(player_frame_url.to_owned())
-        }
+        // ConvertedStreamSource::External { external_url, .. } => {
+        //     // TODO: should this be returned as the streaming url?
+        //     // external_url.as_ref().map(|url| url.to_owned())
+        // }
+        // ConvertedStreamSource::PlayerFrame { player_frame_url } => {
+        //     // TODO: should this be returned as the streaming url?
+        //     Some(player_frame_url.to_owned())
+        // }
+        _ => None
     }
 }
 

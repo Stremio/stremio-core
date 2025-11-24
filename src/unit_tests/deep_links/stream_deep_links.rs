@@ -299,10 +299,12 @@ fn stream_deep_links_external() {
         sdl.external_player.web,
         Some(Url::from_str(HTTP_STR_URL).unwrap()),
     );
-    assert_eq!(
-        sdl.external_player.file_name,
-        "playlist.m3u".to_string().into()
-    );
+
+    // assert_eq!(
+    //     sdl.external_player.file_name,
+    //     "playlist.m3u".to_string().into()
+    // );
+    assert_eq!(sdl.external_player.file_name, None);
 }
 
 #[test]
@@ -356,11 +358,13 @@ fn stream_deep_links_player_frame() {
     let settings = Settings::default();
     let sdl = StreamDeepLinks::from((&stream, &streaming_server_url, &settings));
     assert_eq!(&sdl.player, "stremio:///player/eAEBMQDO%2F3sicGxheWVyRnJhbWVVcmwiOiJodHRwOi8vZG9tYWluLnJvb3Qvc29tZS9wYXRoIn2%2F2hHn");
-    assert_eq!(sdl.external_player.playlist, Some("data:application/octet-stream;charset=utf-8;base64,I0VYVE0zVQojRVhUSU5GOjAKaHR0cDovL2RvbWFpbi5yb290L3NvbWUvcGF0aA==".to_string()));
-    assert_eq!(
-        sdl.external_player.file_name,
-        "playlist.m3u".to_string().into()
-    );
+    // assert_eq!(sdl.external_player.playlist, Some("data:application/octet-stream;charset=utf-8;base64,I0VYVE0zVQojRVhUSU5GOjAKaHR0cDovL2RvbWFpbi5yb290L3NvbWUvcGF0aA==".to_string()));
+    assert_eq!(sdl.external_player.playlist, None);
+    // assert_eq!(
+    //     sdl.external_player.file_name,
+    //     "playlist.m3u".to_string().into()
+    // );
+    assert_eq!(sdl.external_player.file_name, None);
 }
 
 #[test]
