@@ -1281,7 +1281,8 @@ fn get_streaming_url(
         "get_streaming_url of Stream with converted StreamSource"
     );
     match &converted.source {
-        ConvertedStreamSource::Url { url } if url.scheme() != "magnet" => {
+        ConvertedStreamSource::Url { url } if url.scheme() == "magnet" => None,
+        ConvertedStreamSource::Url { url } => {
             // If proxy headers are set and streaming server is available, build the proxied streaming url from streaming server url
             // Otherwise return the url
             match (
@@ -1316,7 +1317,6 @@ fn get_streaming_url(
                 _ => Some(url.to_owned()),
             }
         }
-        ConvertedStreamSource::Url { url } => Some(url.to_owned()),
         ConvertedStreamSource::Torrent {
             info_hash,
             file_idx,
@@ -1366,15 +1366,7 @@ fn get_streaming_url(
         }
 
         ConvertedStreamSource::YouTube { url, .. } => Some(url.clone()),
-        // ConvertedStreamSource::External { external_url, .. } => {
-        //     // TODO: should this be returned as the streaming url?
-        //     // external_url.as_ref().map(|url| url.to_owned())
-        // }
-        // ConvertedStreamSource::PlayerFrame { player_frame_url } => {
-        //     // TODO: should this be returned as the streaming url?
-        //     Some(player_frame_url.to_owned())
-        // }
-        _ => None
+        _ => None,
     }
 }
 

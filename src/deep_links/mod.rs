@@ -60,14 +60,6 @@ pub struct ExternalPlayerLink {
     pub webos: Option<String>,
 }
 
-/// Using `&Option<Url>` is not encouraged, use `.as_ref()` to get an `Option<&Url>` instead!
-// TODO: Remove
-impl From<(&Stream, &Option<Url>, &Settings)> for ExternalPlayerLink {
-    fn from((stream, streaming_server_url, settings): (&Stream, &Option<Url>, &Settings)) -> Self {
-        Self::from((stream, streaming_server_url.as_ref(), settings))
-    }
-}
-
 impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
     /// Create an [`ExternalPlayerLink`] using the [`Stream`],
     /// the server url (from [`StreamingServer::base_url`] which indicates a running or not server)
@@ -522,7 +514,7 @@ impl From<(&Video, &ResourceRequest, &Option<Url>, &Settings)> for VideoDeepLink
                 .transpose()
                 .unwrap_or_else(|error| Some(ErrorLink::from(error).into())),
             external_player: stream.as_ref().map(|stream| {
-                ExternalPlayerLink::from((stream.as_ref(), streaming_server_url, settings))
+                ExternalPlayerLink::from((stream.as_ref(), streaming_server_url.as_ref(), settings))
             }),
         }
     }
@@ -575,7 +567,7 @@ impl
                 .transpose()
                 .unwrap_or_else(|error| Some(ErrorLink::from(error).into())),
             external_player: stream.as_ref().map(|stream| {
-                ExternalPlayerLink::from((stream.as_ref(), streaming_server_url, settings))
+                ExternalPlayerLink::from((stream.as_ref(), streaming_server_url.as_ref(), settings))
             }),
         }
     }
@@ -606,7 +598,11 @@ impl From<(&Stream, &Option<Url>, &Settings)> for StreamDeepLinks {
                     )
                 })
                 .unwrap_or_else(|error| ErrorLink::from(error).into()),
-            external_player: ExternalPlayerLink::from((stream, streaming_server_url, settings)),
+            external_player: ExternalPlayerLink::from((
+                stream,
+                streaming_server_url.as_ref(),
+                settings,
+            )),
         }
     }
 }
@@ -678,7 +674,11 @@ impl
                     )
                 })
                 .unwrap_or_else(|error| ErrorLink::from(error).into()),
-            external_player: ExternalPlayerLink::from((stream, streaming_server_url, settings)),
+            external_player: ExternalPlayerLink::from((
+                stream,
+                streaming_server_url.as_ref(),
+                settings,
+            )),
         }
     }
 }
