@@ -7,8 +7,6 @@ use percent_encoding::utf8_percent_encode;
 use std::str::FromStr;
 use url::Url;
 
-const DOWNLOAD_TORRENT_STR_URL: &str =
-    "http://127.0.0.1:11470/dd8255ecdc7ca55fb0bbf81323d87062db1f6d1c/0?external=1&download=1";
 const MAGNET_STR_URL: &str = "magnet:?xt=urn:btih:dd8255ecdc7ca55fb0bbf81323d87062db1f6d1c&tr=http%3A%2F%2Fbt1.archive.org%3A6969%2Fannounce";
 const HTTP_STR_URL: &str = "http://domain.root/path";
 const BASE64_HTTP_URL: &str = "data:application/octet-stream;charset=utf-8;base64,I0VYVE0zVQojRVhUSU5GOjAKaHR0cDovL2RvbWFpbi5yb290L3BhdGg=";
@@ -95,7 +93,7 @@ fn external_player_link_torrent() {
             ))
         ))
     );
-    assert_eq!(epl.download, Some(DOWNLOAD_TORRENT_STR_URL.to_owned()));
+    assert_eq!(epl.download, Some(MAGNET_STR_URL.to_owned()));
     assert_eq!(epl.file_name, Some("playlist.m3u".to_string()));
 }
 

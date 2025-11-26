@@ -4,7 +4,6 @@ use std::ops::Div;
 use base64::Engine;
 use futures::{future, FutureExt, TryFutureExt};
 use num::rational::Ratio;
-use url::Url;
 
 use crate::constants::{
     BASE64, CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, PLAYER_IGNORE_SEEK_AFTER,
@@ -18,7 +17,7 @@ use crate::models::common::{
 };
 use crate::models::ctx::{Ctx, CtxError};
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg};
-use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx};
+use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, ResourceRequest};
 use crate::types::api::{
     fetch_api, APIRequest, APIResult, SeekLog, SeekLogRequest, SkipGapsRequest, SkipGapsResponse,
@@ -27,12 +26,8 @@ use crate::types::api::{
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::player::{IntroData, IntroOutro};
 use crate::types::profile::{Profile, Settings as ProfileSettings};
-use crate::types::resource::{
-    MetaItem, SeriesInfo, Stream, StreamSource, StreamUrls, Subtitles, Video,
-};
-use crate::types::streams::{
-    ConvertedStreamSource, StreamItemState, StreamsBucket, StreamsItemKey,
-};
+use crate::types::resource::{MetaItem, SeriesInfo, Stream, StreamSource, Subtitles, Video};
+use crate::types::streams::{StreamItemState, StreamsBucket, StreamsItemKey};
 
 use stremio_watched_bitfield::WatchedBitField;
 
@@ -101,7 +96,6 @@ pub struct Player {
     pub next_video: Option<Video>,
     pub next_streams: Option<ResourceLoadable<Vec<Stream>>>,
     pub next_stream: Option<Stream>,
-    pub stream: Option<Loadable<(StreamUrls, Stream<ConvertedStreamSource>), EnvError>>,
     pub series_info: Option<SeriesInfo>,
     pub library_item: Option<LibraryItem>,
     pub stream_state: Option<StreamItemState>,
@@ -179,12 +173,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 };
                 let stream_state_effects = eq_update(&mut self.stream_state, None);
                 let video_params_effects = eq_update(&mut self.video_params, None);
-
-                let stream_effects = stream_update(
-                    &mut self.stream,
-                    self.selected.as_ref(),
-                    &ctx.profile.settings.streaming_server_url,
-                );
 
                 let subtitles_effects = subtitles_update::<E>(
                     &mut self.subtitles,
@@ -292,7 +280,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(meta_item_effects)
                     .join(stream_state_effects)
                     .join(video_params_effects)
-                    .join(stream_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(next_streams_effects)
@@ -339,7 +326,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let video_params_effects = eq_update(&mut self.video_params, None);
                 let meta_item_effects = eq_update(&mut self.meta_item, None);
                 let stream_state_effects = eq_update(&mut self.stream_state, None);
-                let stream_effects = eq_update(&mut self.stream, None);
                 let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
                 let next_video_effects = eq_update(&mut self.next_video, None);
                 let next_streams_effects = eq_update(&mut self.next_streams, None);
@@ -359,7 +345,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(push_to_library_effects)
                     .join(selected_effects)
                     .join(video_params_effects)
-                    .join(stream_effects)
                     .join(meta_item_effects)
                     .join(stream_state_effects)
                     .join(subtitles_effects)
@@ -1210,31 +1195,6 @@ fn library_item_state_update(
                 }
                 _ => Effects::none().unchanged(),
             }
-        }
-        _ => Effects::none().unchanged(),
-    }
-}
-
-fn stream_update(
-    stream: &mut Option<Loadable<(StreamUrls, Stream<ConvertedStreamSource>), EnvError>>,
-    selected: Option<&Selected>,
-    streaming_server_url: &Url,
-) -> Effects {
-    match selected {
-        // update it only if the result is for the same original
-        // stream that the request was made for
-        Some(selected) => {
-            let next_stream = match selected.stream.convert(Some(&streaming_server_url)) {
-                Ok(converted_stream) => {
-                    let stream_urls =
-                        StreamUrls::new(converted_stream.clone(), Some(&streaming_server_url));
-
-                    Loadable::Ready((stream_urls, converted_stream))
-                }
-                Err(err) => Loadable::Err(err),
-            };
-
-            eq_update(stream, Some(next_stream))
         }
         _ => Effects::none().unchanged(),
     }

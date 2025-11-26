@@ -36,10 +36,7 @@ fn stream_deep_links_magnet() {
         sdl.external_player.download,
         Some(MAGNET_STR_URL.to_owned()),
     );
-    assert_eq!(
-        sdl.external_player.file_name,
-        "playlist.m3u".to_string().into()
-    );
+    assert_eq!(sdl.external_player.file_name, None);
 }
 
 #[test]
