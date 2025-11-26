@@ -13,7 +13,7 @@ use magnet_url::Magnet;
 use percent_encoding::utf8_percent_encode;
 use serde::{de::Error, Deserialize, Deserializer, Serialize};
 use serde_with::{serde_as, DefaultOnNull, VecSkipError};
-use url::{form_urlencoded, Url};
+use url::Url;
 
 use stremio_serde_hex::{SerHex, Strict};
 
@@ -172,162 +172,6 @@ impl Stream {
                 subtitles: vec![],
                 behavior_hints: Default::default(),
             })
-    }
-
-    #[deprecated = "Because of RAR & ZIP require request to create an archive url in Server"]
-    pub fn download_url(&self) -> Option<String> {
-        match &self.source {
-            StreamSource::Url { url } if url.scheme() == "magnet" => {
-                self.magnet_url().map(|magnet_url| magnet_url.to_string())
-            }
-            StreamSource::Url { url } => Some(url.to_string()),
-            StreamSource::Rar {
-                urls: _,
-                file_idx: _,
-                file_must_include: _,
-            } => None,
-            StreamSource::Zip7 {
-                urls: _,
-                file_idx: _,
-                file_must_include: _,
-            } => None,
-            StreamSource::Zip {
-                urls: _,
-                file_idx: _,
-                file_must_include: _,
-            } => None,
-            StreamSource::Tar { .. } => None,
-            StreamSource::Tgz { .. } => None,
-            StreamSource::Nzb { .. } => None,
-            StreamSource::Torrent { .. } => {
-                self.magnet_url().map(|magnet_url| magnet_url.to_string())
-            }
-            StreamSource::YouTube { .. } => self.youtube_url(),
-            StreamSource::External { external_url, .. } => {
-                external_url.as_ref().map(|url| url.to_string())
-            }
-            StreamSource::PlayerFrame { player_frame_url } => Some(player_frame_url.to_string()),
-        }
-    }
-
-    #[deprecated]
-    pub fn m3u_data_uri(&self, streaming_server_url: Option<&Url>) -> Option<String> {
-        self.streaming_url(streaming_server_url).map(|url| {
-            format!(
-                "data:application/octet-stream;charset=utf-8;base64,{}",
-                BASE64.encode(format!("#EXTM3U\n#EXTINF:0\n{url}"))
-            )
-        })
-    }
-
-    pub fn streaming_url(&self, streaming_server_url: Option<&Url>) -> Option<Url> {
-        match (&self.source, streaming_server_url) {
-            (StreamSource::Url { url }, streaming_server_url) if url.scheme() != "magnet" => {
-                // If proxy headers are set and streaming server is available, build the proxied streaming url from streaming server url
-                // Otherwise return the url
-                match (&self.behavior_hints.proxy_headers, streaming_server_url) {
-                    (
-                        Some(StreamProxyHeaders { request, response }),
-                        Some(streaming_server_url),
-                    ) => {
-                        let mut streaming_url = streaming_server_url.to_owned();
-                        let mut proxy_query = form_urlencoded::Serializer::new(String::new());
-                        let origin = format!("{}://{}", url.scheme(), url.authority());
-                        proxy_query.append_pair("d", origin.as_str());
-                        proxy_query.extend_pairs(
-                            request
-                                .iter()
-                                .map(|header| ("h", format!("{}:{}", header.0, header.1))),
-                        );
-                        proxy_query.extend_pairs(
-                            response
-                                .iter()
-                                .map(|header| ("r", format!("{}:{}", header.0, header.1))),
-                        );
-
-                        streaming_url.set_path(&format!(
-                            "proxy/{query}/{url_path}",
-                            query = proxy_query.finish().as_str(),
-                            url_path = &url.path().strip_prefix('/').unwrap_or(url.path()),
-                        ));
-
-                        streaming_url.set_query(url.query());
-                        Some(streaming_url)
-                    }
-                    _ => Some(url.to_owned()),
-                }
-            }
-            (
-                StreamSource::Torrent {
-                    info_hash,
-                    file_idx,
-                    announce,
-                    file_must_include,
-                },
-                Some(streaming_server_url),
-            ) => {
-                let mut url = streaming_server_url.to_owned();
-                match url.path_segments_mut() {
-                    Ok(mut path) => {
-                        path.extend([
-                            &hex::encode(info_hash),
-                            // When fileIndex is not provided use -1, which will tell the
-                            // streaming server to choose the file with the largest size from the torrent
-                            &file_idx.map_or_else(|| "-1".to_string(), |idx| idx.to_string()),
-                        ]);
-                    }
-                    _ => return None,
-                }
-
-                // setup query params
-                {
-                    let mut query_params = url.query_pairs_mut();
-
-                    if !announce.is_empty() {
-                        query_params.extend_pairs(
-                            announce.iter().map(|tracker| ("tr", tracker.to_owned())),
-                        );
-                    }
-
-                    if !file_must_include.is_empty() {
-                        query_params.extend_pairs(
-                            file_must_include
-                                .iter()
-                                .map(|file_must_include| ("f", file_must_include.to_owned())),
-                        );
-                    }
-                }
-
-                Some(url)
-            }
-            // we do not support Rar & Zip at this point
-            (StreamSource::Zip { .. }, Some(_streaming_server_url)) => None,
-            (StreamSource::Rar { .. }, Some(_streaming_server_url)) => None,
-            (StreamSource::YouTube { yt_id }, Some(streaming_server_url)) => {
-                let mut url = streaming_server_url.to_owned();
-                match url.path_segments_mut() {
-                    Ok(mut path) => {
-                        path.push("yt");
-                        path.push(
-                            &utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET).to_string(),
-                        );
-                    }
-                    _ => return None,
-                };
-                Some(url)
-            }
-            _ => None,
-        }
-    }
-
-    pub fn youtube_url(&self) -> Option<String> {
-        match &self.source {
-            StreamSource::YouTube { yt_id } => Some(format!(
-                "https://youtube.com/watch?v={}",
-                utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET)
-            )),
-            _ => None,
-        }
     }
 
     #[inline]
@@ -688,6 +532,7 @@ impl Stream {
             // no further changes are needed for now
             // we still need to create torrents, etc. in stremio-video
             // as it's not part of the current scope
+            // This keeps the `magnet:` urls working until we get the the streaming url
             (_, StreamSource::Url { url }) => {
                 let url = Self::ftp_url_handler(streaming_server_url, url)?;
 
@@ -695,9 +540,20 @@ impl Stream {
             }
             (Some(streaming_server_url), StreamSource::YouTube { yt_id }) => {
                 Ok(self.to_converted(ConvertedStreamSource::YouTube {
-                    url: self
-                        .streaming_url(Some(&streaming_server_url))
-                        .expect("Torrents always have a url when the server is present"),
+                    url: {
+                        let mut url = streaming_server_url.to_owned();
+                        {
+                            let mut path = url
+                                .path_segments_mut()
+                                .expect("Streaming server should always be base");
+                            path.push("yt");
+                            path.push(
+                                &utf8_percent_encode(&yt_id, URI_COMPONENT_ENCODE_SET).to_string(),
+                            );
+                        }
+
+                        url
+                    },
                     yt_id,
                 }))
             }
@@ -713,11 +569,43 @@ impl Stream {
                     file_must_include,
                 },
             ) => {
+                let streaming_url = {
+                    let mut url = streaming_server_url.to_owned();
+
+                    {
+                        let mut path = url.path_segments_mut().expect("Should always be base url");
+                        path.extend([
+                            &hex::encode(info_hash),
+                            // When fileIndex is not provided use -1, which will tell the
+                            // streaming server to choose the file with the largest size from the torrent
+                            &file_idx.map_or_else(|| "-1".to_string(), |idx| idx.to_string()),
+                        ]);
+                    }
+
+                    // setup query params
+                    {
+                        let mut query_params = url.query_pairs_mut();
+
+                        if !announce.is_empty() {
+                            query_params.extend_pairs(
+                                announce.iter().map(|tracker| ("tr", tracker.to_owned())),
+                            );
+                        }
+
+                        if !file_must_include.is_empty() {
+                            query_params.extend_pairs(
+                                file_must_include
+                                    .iter()
+                                    .map(|file_must_include| ("f", file_must_include.to_owned())),
+                            );
+                        }
+                    }
+                    url
+                };
+
                 Ok(self.to_converted(ConvertedStreamSource::Torrent {
                     // this needs to change once conversion of torrents is also moved to core
-                    url: self
-                        .streaming_url(Some(&streaming_server_url))
-                        .expect("Torrents always have a url when the server is present"),
+                    url: streaming_url,
                     info_hash: InfoHash::new(info_hash),
                     file_idx,
                     announce,
@@ -1157,7 +1045,7 @@ impl StreamUrls {
         converted: Stream<ConvertedStreamSource>,
         streaming_server_url: Option<&Url>,
     ) -> Self {
-        let streaming_url = get_streaming_url(&converted, streaming_server_url);
+        let streaming_url = get_streaming_url(&converted);
         let download_url = get_download_url(&converted, streaming_server_url);
         let magnet_url = get_magnet_url(&converted);
 
@@ -1272,100 +1160,16 @@ fn get_download_url(
     }
 }
 
-fn get_streaming_url(
-    converted: &Stream<ConvertedStreamSource>,
-    streaming_server_url: Option<&Url>,
-) -> Option<Url> {
-    trace!(
-        ?converted,
-        "get_streaming_url of Stream with converted StreamSource"
-    );
+fn get_streaming_url(converted: &Stream<ConvertedStreamSource>) -> Option<Url> {
     match &converted.source {
         ConvertedStreamSource::Url { url } if url.scheme() == "magnet" => None,
-        ConvertedStreamSource::Url { url } => {
-            // If proxy headers are set and streaming server is available, build the proxied streaming url from streaming server url
-            // Otherwise return the url
-            match (
-                &converted.behavior_hints.proxy_headers,
-                streaming_server_url,
-            ) {
-                (Some(StreamProxyHeaders { request, response }), Some(streaming_server_url)) => {
-                    let mut streaming_url = streaming_server_url.to_owned();
-                    let mut proxy_query = form_urlencoded::Serializer::new(String::new());
-                    let origin = format!("{}://{}", url.scheme(), url.authority());
-                    proxy_query.append_pair("d", origin.as_str());
-                    proxy_query.extend_pairs(
-                        request
-                            .iter()
-                            .map(|header| ("h", format!("{}:{}", header.0, header.1))),
-                    );
-                    proxy_query.extend_pairs(
-                        response
-                            .iter()
-                            .map(|header| ("r", format!("{}:{}", header.0, header.1))),
-                    );
-
-                    streaming_url.set_path(&format!(
-                        "proxy/{query}/{url_path}",
-                        query = proxy_query.finish().as_str(),
-                        url_path = &url.path().strip_prefix('/').unwrap_or(url.path()),
-                    ));
-
-                    streaming_url.set_query(url.query());
-                    Some(streaming_url)
-                }
-                _ => Some(url.to_owned()),
-            }
-        }
+        ConvertedStreamSource::Url { url: streaming_url } => Some(streaming_url.to_owned()),
         ConvertedStreamSource::Torrent {
-            info_hash,
-            file_idx,
-            announce,
-            file_must_include,
-            ..
-        } => {
-            match streaming_server_url {
-                Some(streaming_server_url) => {
-                    let mut url = streaming_server_url.to_owned();
-
-                    match url.path_segments_mut() {
-                        Ok(mut path) => {
-                            path.extend([
-                                &hex::encode(info_hash),
-                                // When fileIndex is not provided use -1, which will tell the
-                                // streaming server to choose the file with the largest size from the torrent
-                                &file_idx.map_or_else(|| "-1".to_string(), |idx| idx.to_string()),
-                            ]);
-                        }
-                        _ => return None,
-                    }
-
-                    // setup query params
-                    {
-                        let mut query_params = url.query_pairs_mut();
-
-                        if !announce.is_empty() {
-                            query_params.extend_pairs(
-                                announce.iter().map(|tracker| ("tr", tracker.to_owned())),
-                            );
-                        }
-
-                        if !file_must_include.is_empty() {
-                            query_params.extend_pairs(
-                                file_must_include
-                                    .iter()
-                                    .map(|file_must_include| ("f", file_must_include.to_owned())),
-                            );
-                        }
-                    }
-
-                    Some(url)
-                }
-                None => None,
-            }
-        }
-
-        ConvertedStreamSource::YouTube { url, .. } => Some(url.clone()),
+            url: streaming_url, ..
+        } => Some(streaming_url.to_owned()),
+        ConvertedStreamSource::YouTube {
+            url: streaming_url, ..
+        } => Some(streaming_url.clone()),
         _ => None,
     }
 }
