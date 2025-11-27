@@ -1143,6 +1143,7 @@ fn get_download_url(
                 torrent_stream_url
             })
         }
+        // generate the Youtube video URL instead of providing the streaming url
         ConvertedStreamSource::YouTube { yt_id, .. } => Some(
             format!(
                 "https://youtube.com/watch?v={}",
