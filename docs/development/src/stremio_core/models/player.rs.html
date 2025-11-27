@@ -1611,9 +1611,7 @@
 <a href="#1610" id="1610">1610</a>
 <a href="#1611" id="1611">1611</a>
 <a href="#1612" id="1612">1612</a>
-<a href="#1613" id="1613">1613</a>
-<a href="#1614" id="1614">1614</a>
-<a href="#1615" id="1615">1615</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#1613" id="1613">1613</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>std::ops::Div;
 
 <span class="kw">use </span>base64::Engine;
@@ -2836,9 +2834,7 @@
     streaming_server_url: <span class="kw-2">&amp;</span>Url,
 ) -&gt; Effects {
     <span class="kw">match </span>selected {
-        <span class="comment">// update it only if the result is for the same original
-        // stream that the request was made for
-        </span><span class="prelude-val">Some</span>(selected) =&gt; {
+        <span class="prelude-val">Some</span>(selected) =&gt; {
             <span class="kw">let </span>next_stream = <span class="kw">match </span>selected.stream.convert(<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>streaming_server_url)) {
                 <span class="prelude-val">Ok</span>(converted_stream) =&gt; {
                     <span class="kw">let </span>stream_urls =
@@ -2851,7 +2847,7 @@
 
             eq_update(stream, <span class="prelude-val">Some</span>(next_stream))
         }
-        <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
+        <span class="prelude-val">None </span>=&gt; eq_update(stream, <span class="prelude-val">None</span>),
     }
 }
 
