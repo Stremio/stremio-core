@@ -4,9 +4,9 @@ use enclose::enclose;
 use futures::{future, try_join, FutureExt, StreamExt};
 use gloo_utils::format::JsValueSerdeExt;
 use once_cell::sync::Lazy;
-use tracing::{info, Level};
+use tracing::{error, info, Level};
 use tracing_wasm::WASMLayerConfigBuilder;
-use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue, UnwrapThrowExt};
 
 use stremio_core::{
     constants::{
@@ -17,9 +17,14 @@ use stremio_core::{
     models::common::Loadable,
     runtime::{msg::Action, Env, EnvError, Runtime, RuntimeAction, RuntimeEvent},
     types::{
-        events::DismissedEventsBucket, library::LibraryBucket, notifications::NotificationsBucket,
-        profile::Profile, resource::Stream, search_history::SearchHistoryBucket,
-        server_urls::ServerUrlsBucket, streams::StreamsBucket,
+        events::DismissedEventsBucket,
+        library::LibraryBucket,
+        notifications::NotificationsBucket,
+        profile::Profile,
+        resource::{Stream, StreamSource},
+        search_history::SearchHistoryBucket,
+        server_urls::ServerUrlsBucket,
+        streams::StreamsBucket,
     },
 };
 
@@ -189,8 +194,14 @@ pub fn get_state(field: JsValue) -> JsValue {
 
 #[wasm_bindgen]
 pub fn dispatch(action: JsValue, field: JsValue, location_hash: JsValue) {
-    let action: Action =
-        JsValueSerdeExt::into_serde(&action).expect("dispatch failed because of Action");
+    let action_json = js_sys::JSON::stringify(&action)
+        .map(String::from)
+        .unwrap_throw();
+    let action: Action = JsValueSerdeExt::into_serde(&action)
+        .inspect_err(|err| {
+            error!(action_json, "dispatch failed because of Action: {err}");
+        })
+        .expect("dispatch failed because of Action");
     let field: Option<WebModelField> =
         JsValueSerdeExt::into_serde(&field).expect("dispatch failed because of Field");
     let runtime = RUNTIME.read().expect("runtime read failed");
@@ -234,7 +245,9 @@ pub fn analytics(event: JsValue, location_hash: JsValue) {
 
 #[wasm_bindgen]
 pub fn decode_stream(stream: JsValue) -> JsValue {
-    let stream = stream.as_string().map(Stream::decode);
+    let stream = stream
+        .as_string()
+        .map(|base64_string| Stream::<StreamSource>::decode(&base64_string));
     match stream {
         Some(Ok(stream)) => {
             <JsValue as JsValueSerdeExt>::from_serde(&stream).expect("JsValue from Stream")

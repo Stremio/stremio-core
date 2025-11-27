@@ -1,8 +1,44 @@
+use core::fmt;
+
 use http::Request;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-use crate::types::{streaming_server::PeerSearch, torrent::InfoHash};
+use crate::types::{resource::ArchiveUrl, streaming_server::PeerSearch, torrent::InfoHash};
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+/// Request used for `rar`, `zip`, `7zip`, tgz & tar creation
+/// the only difference is with `nzb` which expects `nzbUrl` & `servers` fields
+pub struct ArchiveStreamBody {
+    /// The `rar/create`, `zip/create`, `7zip/create`, `tgz/create`, `tar/create` urls
+    pub urls: Vec<ArchiveUrl>,
+    #[serde(flatten)]
+    pub options: ArchiveStreamOptions,
+}
+
+#[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct FtpStreamBody {
+    pub ftp_url: Url,
+}
+
+impl fmt::Debug for FtpStreamBody {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("FtpStreamBody")
+            .field("ftp_url", &self.ftp_url.as_str())
+            .finish()
+    }
+}
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ArchiveStreamOptions {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub file_idx: Option<u16>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub file_must_include: Vec<String>,
+}
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]

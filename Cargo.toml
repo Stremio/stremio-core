@@ -13,11 +13,7 @@ opt-level = 's'
 
 [workspace]
 resolver = "2"
-members = [
-    "stremio-core-web",
-    "stremio-derive",
-    "stremio-watched-bitfield",
-]
+members = ["stremio-core-web", "stremio-derive", "stremio-watched-bitfield"]
 
 [features]
 # TODO: env-future-send should be enabled by default
@@ -101,6 +97,8 @@ num = { version = "0.4.0", default-features = false }
 
 # Tracing
 tracing = "0.1"
+
+lz-str = "0.2"
 
 [dev-dependencies]
 tokio = { version = "1.12", features = ["rt", "macros"] }

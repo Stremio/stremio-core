@@ -29,6 +29,12 @@ impl InfoHash {
     }
 }
 
+impl AsRef<[u8]> for InfoHash {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
 impl FromStr for InfoHash {
     type Err = hex::FromHexError;
 
