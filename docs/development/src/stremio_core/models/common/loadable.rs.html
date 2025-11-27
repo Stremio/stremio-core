@@ -92,7 +92,18 @@
 <a href="#91" id="91">91</a>
 <a href="#92" id="92">92</a>
 <a href="#93" id="93">93</a>
-<a href="#94" id="94">94</a></pre></div><pre class="rust"><code><span class="kw">use </span>serde::Serialize;
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a></pre></div><pre class="rust"><code><span class="kw">use </span>serde::Serialize;
 
 <span class="attr">#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
 #[serde(tag = <span class="string">"type"</span>, content = <span class="string">"content"</span>)]
@@ -109,6 +120,17 @@
 }
 
 <span class="kw">impl</span>&lt;R, E&gt; Loadable&lt;R, E&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">pub fn </span>map&lt;U, F&gt;(<span class="self">self</span>, f: F) -&gt; Loadable&lt;U, E&gt;
+    <span class="kw">where
+        </span>F: FnOnce(R) -&gt; U,
+    {
+        <span class="kw">match </span><span class="self">self </span>{
+            Loadable::Loading =&gt; Loadable::Loading,
+            Loadable::Ready(ready) =&gt; Loadable::Ready(f(ready)),
+            Loadable::Err(err) =&gt; Loadable::Err(err),
+        }
+    }
     <span class="attr">#[inline]
     </span><span class="kw">pub fn </span>is_ready(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
         <span class="macro">matches!</span>(<span class="self">self</span>, Loadable::Ready(<span class="kw">_</span>))

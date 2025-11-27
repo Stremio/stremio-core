@@ -362,7 +362,35 @@
 <a href="#361" id="361">361</a>
 <a href="#362" id="362">362</a>
 <a href="#363" id="363">363</a>
-<a href="#364" id="364">364</a></pre></div><pre class="rust"><code><span class="kw">use </span>semver::Version;
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
+<a href="#378" id="378">378</a>
+<a href="#379" id="379">379</a>
+<a href="#380" id="380">380</a>
+<a href="#381" id="381">381</a>
+<a href="#382" id="382">382</a>
+<a href="#383" id="383">383</a>
+<a href="#384" id="384">384</a>
+<a href="#385" id="385">385</a>
+<a href="#386" id="386">386</a>
+<a href="#387" id="387">387</a>
+<a href="#388" id="388">388</a>
+<a href="#389" id="389">389</a>
+<a href="#390" id="390">390</a>
+<a href="#391" id="391">391</a>
+<a href="#392" id="392">392</a></pre></div><pre class="rust"><code><span class="kw">use </span>semver::Version;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>url::Url;
 <span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
@@ -381,12 +409,20 @@
 <span class="kw">use </span><span class="kw">crate</span>::model::deep_links_ext::DeepLinksExt;
 
 <span class="kw">mod </span>model {
+    <span class="kw">use </span>stremio_core::{
+        runtime::EnvError,
+        types::{
+            resource::StreamSource,
+            streams::{ConvertedStreamSource, StreamSourceTrait},
+        },
+    };
+
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
     <span class="attr">#[derive(Serialize)]
     #[serde(rename_all = <span class="string">"camelCase"</span>)]
-    </span><span class="kw">pub struct </span>Stream&lt;<span class="lifetime">'a</span>&gt; {
+    </span><span class="kw">pub struct </span>Stream&lt;S: StreamSourceTrait = StreamSource&gt; {
         <span class="attr">#[serde(flatten)]
-        </span><span class="kw">pub </span>stream: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>stremio_core::types::resource::Stream,
+        </span><span class="kw">pub </span>stream: stremio_core::types::resource::Stream&lt;S&gt;,
         <span class="kw">pub </span>deep_links: StreamDeepLinks,
     }
     <span class="attr">#[derive(Serialize)]
@@ -452,7 +488,7 @@
     <span class="attr">#[derive(Serialize)]
     #[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span><span class="kw">pub struct </span>Selected&lt;<span class="lifetime">'a</span>&gt; {
-        <span class="kw">pub </span>stream: Stream&lt;<span class="lifetime">'a</span>&gt;,
+        <span class="kw">pub </span>stream: Stream,
         <span class="kw">pub </span>stream_request: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;ResourceRequest&gt;,
         <span class="kw">pub </span>meta_request: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;ResourceRequest&gt;,
         <span class="kw">pub </span>subtitles_path: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;ResourcePath&gt;,
@@ -461,6 +497,7 @@
     #[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span><span class="kw">pub struct </span>Player&lt;<span class="lifetime">'a</span>&gt; {
         <span class="kw">pub </span>selected: <span class="prelude-ty">Option</span>&lt;Selected&lt;<span class="lifetime">'a</span>&gt;&gt;,
+        <span class="kw">pub </span>stream: <span class="prelude-ty">Option</span>&lt;Loadable&lt;Stream&lt;ConvertedStreamSource&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>EnvError&gt;&gt;,
         <span class="kw">pub </span>meta_item: <span class="prelude-ty">Option</span>&lt;Loadable&lt;model::MetaItem&lt;<span class="lifetime">'a</span>&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>ResourceError&gt;&gt;,
         <span class="kw">pub </span>subtitles: Vec&lt;model::Subtitles&lt;<span class="lifetime">'a</span>&gt;&gt;,
         <span class="kw">pub </span>next_video: <span class="prelude-ty">Option</span>&lt;Video&lt;<span class="lifetime">'a</span>&gt;&gt;,
@@ -483,10 +520,10 @@
     &lt;JsValue <span class="kw">as </span>JsValueSerdeExt&gt;::from_serde(<span class="kw-2">&amp;</span>model::Player {
         selected: player.selected.as_ref().map(|selected| model::Selected {
             stream: model::Stream {
-                stream: <span class="kw-2">&amp;</span>selected.stream,
+                stream: selected.stream.clone(),
                 deep_links: StreamDeepLinks::from((
                     <span class="kw-2">&amp;</span>selected.stream,
-                    <span class="kw-2">&amp;</span>streaming_server.base_url,
+                    streaming_server.base_url.as_ref(),
                     <span class="kw-2">&amp;</span>ctx.profile.settings,
                 ))
                 .into_web_deep_links(),
@@ -494,6 +531,25 @@
             stream_request: <span class="kw-2">&amp;</span>selected.stream_request,
             meta_request: <span class="kw-2">&amp;</span>selected.meta_request,
             subtitles_path: <span class="kw-2">&amp;</span>selected.subtitles_path,
+        }),
+        stream: player.stream.as_ref().map(|stream| {
+            stream.as_ref().map(|(urls, stream)| {
+                <span class="macro">tracing::trace!</span>(<span class="question-mark">?</span>urls, <span class="string">"StreamUrls"</span>);
+                <span class="kw">let </span><span class="kw-2">mut </span>url_stream = stream.clone();
+                <span class="comment">// make sure we clear any proxy_headers as they have already been applied by core
+                // stremio-video can apply them a second time if they exist.
+                </span>url_stream.behavior_hints.proxy_headers = <span class="prelude-val">None</span>;
+
+                model::Stream {
+                    stream: url_stream,
+                    deep_links: StreamDeepLinks::from((
+                        stream,
+                        streaming_server.base_url.as_ref(),
+                        <span class="kw-2">&amp;</span>ctx.profile.settings,
+                    ))
+                    .into_web_deep_links(),
+                }
+            })
         }),
         meta_item: player
             .meta_item

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["StreamSource"],"fn":["deserialize_stream_source_external","is_default_value"],"struct":["Stream","StreamBehaviorHints","StreamProxyHeaders"],"type":["ExternalStreamSource"]};
+window.SIDEBAR_ITEMS = {"enum":["StreamSource"],"fn":["deserialize_stream_source_external","get_download_url","get_m3u_data_uri","get_magnet_url","get_streaming_url","is_default_value"],"struct":["ArchiveUrl","ArchiveUrlShort","Stream","StreamBehaviorHints","StreamProxyHeaders","StreamUrls"],"type":["ExternalStreamSource"]};

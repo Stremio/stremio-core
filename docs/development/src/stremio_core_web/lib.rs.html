@@ -69,7 +69,13 @@
 <a href="#68" id="68">68</a>
 <a href="#69" id="69">69</a>
 <a href="#70" id="70">70</a>
-<a href="#71" id="71">71</a></pre></div><pre class="rust"><code><span class="attr">#[allow(clippy::module_inception)]
+<a href="#71" id="71">71</a>
+<a href="#72" id="72">72</a>
+<a href="#73" id="73">73</a>
+<a href="#74" id="74">74</a></pre></div><pre class="rust"><code><span class="attr">#![allow(clippy::module_inception)]
+#![allow(deprecated)]
+#![allow(clippy::all)]
+
 </span><span class="kw">pub mod </span>model {
     <span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
     </span><span class="kw">pub use </span>{

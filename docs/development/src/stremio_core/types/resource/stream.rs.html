@@ -586,7 +586,625 @@
 <a href="#585" id="585">585</a>
 <a href="#586" id="586">586</a>
 <a href="#587" id="587">587</a>
-<a href="#588" id="588">588</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{collections::HashMap, io::Write};
+<a href="#588" id="588">588</a>
+<a href="#589" id="589">589</a>
+<a href="#590" id="590">590</a>
+<a href="#591" id="591">591</a>
+<a href="#592" id="592">592</a>
+<a href="#593" id="593">593</a>
+<a href="#594" id="594">594</a>
+<a href="#595" id="595">595</a>
+<a href="#596" id="596">596</a>
+<a href="#597" id="597">597</a>
+<a href="#598" id="598">598</a>
+<a href="#599" id="599">599</a>
+<a href="#600" id="600">600</a>
+<a href="#601" id="601">601</a>
+<a href="#602" id="602">602</a>
+<a href="#603" id="603">603</a>
+<a href="#604" id="604">604</a>
+<a href="#605" id="605">605</a>
+<a href="#606" id="606">606</a>
+<a href="#607" id="607">607</a>
+<a href="#608" id="608">608</a>
+<a href="#609" id="609">609</a>
+<a href="#610" id="610">610</a>
+<a href="#611" id="611">611</a>
+<a href="#612" id="612">612</a>
+<a href="#613" id="613">613</a>
+<a href="#614" id="614">614</a>
+<a href="#615" id="615">615</a>
+<a href="#616" id="616">616</a>
+<a href="#617" id="617">617</a>
+<a href="#618" id="618">618</a>
+<a href="#619" id="619">619</a>
+<a href="#620" id="620">620</a>
+<a href="#621" id="621">621</a>
+<a href="#622" id="622">622</a>
+<a href="#623" id="623">623</a>
+<a href="#624" id="624">624</a>
+<a href="#625" id="625">625</a>
+<a href="#626" id="626">626</a>
+<a href="#627" id="627">627</a>
+<a href="#628" id="628">628</a>
+<a href="#629" id="629">629</a>
+<a href="#630" id="630">630</a>
+<a href="#631" id="631">631</a>
+<a href="#632" id="632">632</a>
+<a href="#633" id="633">633</a>
+<a href="#634" id="634">634</a>
+<a href="#635" id="635">635</a>
+<a href="#636" id="636">636</a>
+<a href="#637" id="637">637</a>
+<a href="#638" id="638">638</a>
+<a href="#639" id="639">639</a>
+<a href="#640" id="640">640</a>
+<a href="#641" id="641">641</a>
+<a href="#642" id="642">642</a>
+<a href="#643" id="643">643</a>
+<a href="#644" id="644">644</a>
+<a href="#645" id="645">645</a>
+<a href="#646" id="646">646</a>
+<a href="#647" id="647">647</a>
+<a href="#648" id="648">648</a>
+<a href="#649" id="649">649</a>
+<a href="#650" id="650">650</a>
+<a href="#651" id="651">651</a>
+<a href="#652" id="652">652</a>
+<a href="#653" id="653">653</a>
+<a href="#654" id="654">654</a>
+<a href="#655" id="655">655</a>
+<a href="#656" id="656">656</a>
+<a href="#657" id="657">657</a>
+<a href="#658" id="658">658</a>
+<a href="#659" id="659">659</a>
+<a href="#660" id="660">660</a>
+<a href="#661" id="661">661</a>
+<a href="#662" id="662">662</a>
+<a href="#663" id="663">663</a>
+<a href="#664" id="664">664</a>
+<a href="#665" id="665">665</a>
+<a href="#666" id="666">666</a>
+<a href="#667" id="667">667</a>
+<a href="#668" id="668">668</a>
+<a href="#669" id="669">669</a>
+<a href="#670" id="670">670</a>
+<a href="#671" id="671">671</a>
+<a href="#672" id="672">672</a>
+<a href="#673" id="673">673</a>
+<a href="#674" id="674">674</a>
+<a href="#675" id="675">675</a>
+<a href="#676" id="676">676</a>
+<a href="#677" id="677">677</a>
+<a href="#678" id="678">678</a>
+<a href="#679" id="679">679</a>
+<a href="#680" id="680">680</a>
+<a href="#681" id="681">681</a>
+<a href="#682" id="682">682</a>
+<a href="#683" id="683">683</a>
+<a href="#684" id="684">684</a>
+<a href="#685" id="685">685</a>
+<a href="#686" id="686">686</a>
+<a href="#687" id="687">687</a>
+<a href="#688" id="688">688</a>
+<a href="#689" id="689">689</a>
+<a href="#690" id="690">690</a>
+<a href="#691" id="691">691</a>
+<a href="#692" id="692">692</a>
+<a href="#693" id="693">693</a>
+<a href="#694" id="694">694</a>
+<a href="#695" id="695">695</a>
+<a href="#696" id="696">696</a>
+<a href="#697" id="697">697</a>
+<a href="#698" id="698">698</a>
+<a href="#699" id="699">699</a>
+<a href="#700" id="700">700</a>
+<a href="#701" id="701">701</a>
+<a href="#702" id="702">702</a>
+<a href="#703" id="703">703</a>
+<a href="#704" id="704">704</a>
+<a href="#705" id="705">705</a>
+<a href="#706" id="706">706</a>
+<a href="#707" id="707">707</a>
+<a href="#708" id="708">708</a>
+<a href="#709" id="709">709</a>
+<a href="#710" id="710">710</a>
+<a href="#711" id="711">711</a>
+<a href="#712" id="712">712</a>
+<a href="#713" id="713">713</a>
+<a href="#714" id="714">714</a>
+<a href="#715" id="715">715</a>
+<a href="#716" id="716">716</a>
+<a href="#717" id="717">717</a>
+<a href="#718" id="718">718</a>
+<a href="#719" id="719">719</a>
+<a href="#720" id="720">720</a>
+<a href="#721" id="721">721</a>
+<a href="#722" id="722">722</a>
+<a href="#723" id="723">723</a>
+<a href="#724" id="724">724</a>
+<a href="#725" id="725">725</a>
+<a href="#726" id="726">726</a>
+<a href="#727" id="727">727</a>
+<a href="#728" id="728">728</a>
+<a href="#729" id="729">729</a>
+<a href="#730" id="730">730</a>
+<a href="#731" id="731">731</a>
+<a href="#732" id="732">732</a>
+<a href="#733" id="733">733</a>
+<a href="#734" id="734">734</a>
+<a href="#735" id="735">735</a>
+<a href="#736" id="736">736</a>
+<a href="#737" id="737">737</a>
+<a href="#738" id="738">738</a>
+<a href="#739" id="739">739</a>
+<a href="#740" id="740">740</a>
+<a href="#741" id="741">741</a>
+<a href="#742" id="742">742</a>
+<a href="#743" id="743">743</a>
+<a href="#744" id="744">744</a>
+<a href="#745" id="745">745</a>
+<a href="#746" id="746">746</a>
+<a href="#747" id="747">747</a>
+<a href="#748" id="748">748</a>
+<a href="#749" id="749">749</a>
+<a href="#750" id="750">750</a>
+<a href="#751" id="751">751</a>
+<a href="#752" id="752">752</a>
+<a href="#753" id="753">753</a>
+<a href="#754" id="754">754</a>
+<a href="#755" id="755">755</a>
+<a href="#756" id="756">756</a>
+<a href="#757" id="757">757</a>
+<a href="#758" id="758">758</a>
+<a href="#759" id="759">759</a>
+<a href="#760" id="760">760</a>
+<a href="#761" id="761">761</a>
+<a href="#762" id="762">762</a>
+<a href="#763" id="763">763</a>
+<a href="#764" id="764">764</a>
+<a href="#765" id="765">765</a>
+<a href="#766" id="766">766</a>
+<a href="#767" id="767">767</a>
+<a href="#768" id="768">768</a>
+<a href="#769" id="769">769</a>
+<a href="#770" id="770">770</a>
+<a href="#771" id="771">771</a>
+<a href="#772" id="772">772</a>
+<a href="#773" id="773">773</a>
+<a href="#774" id="774">774</a>
+<a href="#775" id="775">775</a>
+<a href="#776" id="776">776</a>
+<a href="#777" id="777">777</a>
+<a href="#778" id="778">778</a>
+<a href="#779" id="779">779</a>
+<a href="#780" id="780">780</a>
+<a href="#781" id="781">781</a>
+<a href="#782" id="782">782</a>
+<a href="#783" id="783">783</a>
+<a href="#784" id="784">784</a>
+<a href="#785" id="785">785</a>
+<a href="#786" id="786">786</a>
+<a href="#787" id="787">787</a>
+<a href="#788" id="788">788</a>
+<a href="#789" id="789">789</a>
+<a href="#790" id="790">790</a>
+<a href="#791" id="791">791</a>
+<a href="#792" id="792">792</a>
+<a href="#793" id="793">793</a>
+<a href="#794" id="794">794</a>
+<a href="#795" id="795">795</a>
+<a href="#796" id="796">796</a>
+<a href="#797" id="797">797</a>
+<a href="#798" id="798">798</a>
+<a href="#799" id="799">799</a>
+<a href="#800" id="800">800</a>
+<a href="#801" id="801">801</a>
+<a href="#802" id="802">802</a>
+<a href="#803" id="803">803</a>
+<a href="#804" id="804">804</a>
+<a href="#805" id="805">805</a>
+<a href="#806" id="806">806</a>
+<a href="#807" id="807">807</a>
+<a href="#808" id="808">808</a>
+<a href="#809" id="809">809</a>
+<a href="#810" id="810">810</a>
+<a href="#811" id="811">811</a>
+<a href="#812" id="812">812</a>
+<a href="#813" id="813">813</a>
+<a href="#814" id="814">814</a>
+<a href="#815" id="815">815</a>
+<a href="#816" id="816">816</a>
+<a href="#817" id="817">817</a>
+<a href="#818" id="818">818</a>
+<a href="#819" id="819">819</a>
+<a href="#820" id="820">820</a>
+<a href="#821" id="821">821</a>
+<a href="#822" id="822">822</a>
+<a href="#823" id="823">823</a>
+<a href="#824" id="824">824</a>
+<a href="#825" id="825">825</a>
+<a href="#826" id="826">826</a>
+<a href="#827" id="827">827</a>
+<a href="#828" id="828">828</a>
+<a href="#829" id="829">829</a>
+<a href="#830" id="830">830</a>
+<a href="#831" id="831">831</a>
+<a href="#832" id="832">832</a>
+<a href="#833" id="833">833</a>
+<a href="#834" id="834">834</a>
+<a href="#835" id="835">835</a>
+<a href="#836" id="836">836</a>
+<a href="#837" id="837">837</a>
+<a href="#838" id="838">838</a>
+<a href="#839" id="839">839</a>
+<a href="#840" id="840">840</a>
+<a href="#841" id="841">841</a>
+<a href="#842" id="842">842</a>
+<a href="#843" id="843">843</a>
+<a href="#844" id="844">844</a>
+<a href="#845" id="845">845</a>
+<a href="#846" id="846">846</a>
+<a href="#847" id="847">847</a>
+<a href="#848" id="848">848</a>
+<a href="#849" id="849">849</a>
+<a href="#850" id="850">850</a>
+<a href="#851" id="851">851</a>
+<a href="#852" id="852">852</a>
+<a href="#853" id="853">853</a>
+<a href="#854" id="854">854</a>
+<a href="#855" id="855">855</a>
+<a href="#856" id="856">856</a>
+<a href="#857" id="857">857</a>
+<a href="#858" id="858">858</a>
+<a href="#859" id="859">859</a>
+<a href="#860" id="860">860</a>
+<a href="#861" id="861">861</a>
+<a href="#862" id="862">862</a>
+<a href="#863" id="863">863</a>
+<a href="#864" id="864">864</a>
+<a href="#865" id="865">865</a>
+<a href="#866" id="866">866</a>
+<a href="#867" id="867">867</a>
+<a href="#868" id="868">868</a>
+<a href="#869" id="869">869</a>
+<a href="#870" id="870">870</a>
+<a href="#871" id="871">871</a>
+<a href="#872" id="872">872</a>
+<a href="#873" id="873">873</a>
+<a href="#874" id="874">874</a>
+<a href="#875" id="875">875</a>
+<a href="#876" id="876">876</a>
+<a href="#877" id="877">877</a>
+<a href="#878" id="878">878</a>
+<a href="#879" id="879">879</a>
+<a href="#880" id="880">880</a>
+<a href="#881" id="881">881</a>
+<a href="#882" id="882">882</a>
+<a href="#883" id="883">883</a>
+<a href="#884" id="884">884</a>
+<a href="#885" id="885">885</a>
+<a href="#886" id="886">886</a>
+<a href="#887" id="887">887</a>
+<a href="#888" id="888">888</a>
+<a href="#889" id="889">889</a>
+<a href="#890" id="890">890</a>
+<a href="#891" id="891">891</a>
+<a href="#892" id="892">892</a>
+<a href="#893" id="893">893</a>
+<a href="#894" id="894">894</a>
+<a href="#895" id="895">895</a>
+<a href="#896" id="896">896</a>
+<a href="#897" id="897">897</a>
+<a href="#898" id="898">898</a>
+<a href="#899" id="899">899</a>
+<a href="#900" id="900">900</a>
+<a href="#901" id="901">901</a>
+<a href="#902" id="902">902</a>
+<a href="#903" id="903">903</a>
+<a href="#904" id="904">904</a>
+<a href="#905" id="905">905</a>
+<a href="#906" id="906">906</a>
+<a href="#907" id="907">907</a>
+<a href="#908" id="908">908</a>
+<a href="#909" id="909">909</a>
+<a href="#910" id="910">910</a>
+<a href="#911" id="911">911</a>
+<a href="#912" id="912">912</a>
+<a href="#913" id="913">913</a>
+<a href="#914" id="914">914</a>
+<a href="#915" id="915">915</a>
+<a href="#916" id="916">916</a>
+<a href="#917" id="917">917</a>
+<a href="#918" id="918">918</a>
+<a href="#919" id="919">919</a>
+<a href="#920" id="920">920</a>
+<a href="#921" id="921">921</a>
+<a href="#922" id="922">922</a>
+<a href="#923" id="923">923</a>
+<a href="#924" id="924">924</a>
+<a href="#925" id="925">925</a>
+<a href="#926" id="926">926</a>
+<a href="#927" id="927">927</a>
+<a href="#928" id="928">928</a>
+<a href="#929" id="929">929</a>
+<a href="#930" id="930">930</a>
+<a href="#931" id="931">931</a>
+<a href="#932" id="932">932</a>
+<a href="#933" id="933">933</a>
+<a href="#934" id="934">934</a>
+<a href="#935" id="935">935</a>
+<a href="#936" id="936">936</a>
+<a href="#937" id="937">937</a>
+<a href="#938" id="938">938</a>
+<a href="#939" id="939">939</a>
+<a href="#940" id="940">940</a>
+<a href="#941" id="941">941</a>
+<a href="#942" id="942">942</a>
+<a href="#943" id="943">943</a>
+<a href="#944" id="944">944</a>
+<a href="#945" id="945">945</a>
+<a href="#946" id="946">946</a>
+<a href="#947" id="947">947</a>
+<a href="#948" id="948">948</a>
+<a href="#949" id="949">949</a>
+<a href="#950" id="950">950</a>
+<a href="#951" id="951">951</a>
+<a href="#952" id="952">952</a>
+<a href="#953" id="953">953</a>
+<a href="#954" id="954">954</a>
+<a href="#955" id="955">955</a>
+<a href="#956" id="956">956</a>
+<a href="#957" id="957">957</a>
+<a href="#958" id="958">958</a>
+<a href="#959" id="959">959</a>
+<a href="#960" id="960">960</a>
+<a href="#961" id="961">961</a>
+<a href="#962" id="962">962</a>
+<a href="#963" id="963">963</a>
+<a href="#964" id="964">964</a>
+<a href="#965" id="965">965</a>
+<a href="#966" id="966">966</a>
+<a href="#967" id="967">967</a>
+<a href="#968" id="968">968</a>
+<a href="#969" id="969">969</a>
+<a href="#970" id="970">970</a>
+<a href="#971" id="971">971</a>
+<a href="#972" id="972">972</a>
+<a href="#973" id="973">973</a>
+<a href="#974" id="974">974</a>
+<a href="#975" id="975">975</a>
+<a href="#976" id="976">976</a>
+<a href="#977" id="977">977</a>
+<a href="#978" id="978">978</a>
+<a href="#979" id="979">979</a>
+<a href="#980" id="980">980</a>
+<a href="#981" id="981">981</a>
+<a href="#982" id="982">982</a>
+<a href="#983" id="983">983</a>
+<a href="#984" id="984">984</a>
+<a href="#985" id="985">985</a>
+<a href="#986" id="986">986</a>
+<a href="#987" id="987">987</a>
+<a href="#988" id="988">988</a>
+<a href="#989" id="989">989</a>
+<a href="#990" id="990">990</a>
+<a href="#991" id="991">991</a>
+<a href="#992" id="992">992</a>
+<a href="#993" id="993">993</a>
+<a href="#994" id="994">994</a>
+<a href="#995" id="995">995</a>
+<a href="#996" id="996">996</a>
+<a href="#997" id="997">997</a>
+<a href="#998" id="998">998</a>
+<a href="#999" id="999">999</a>
+<a href="#1000" id="1000">1000</a>
+<a href="#1001" id="1001">1001</a>
+<a href="#1002" id="1002">1002</a>
+<a href="#1003" id="1003">1003</a>
+<a href="#1004" id="1004">1004</a>
+<a href="#1005" id="1005">1005</a>
+<a href="#1006" id="1006">1006</a>
+<a href="#1007" id="1007">1007</a>
+<a href="#1008" id="1008">1008</a>
+<a href="#1009" id="1009">1009</a>
+<a href="#1010" id="1010">1010</a>
+<a href="#1011" id="1011">1011</a>
+<a href="#1012" id="1012">1012</a>
+<a href="#1013" id="1013">1013</a>
+<a href="#1014" id="1014">1014</a>
+<a href="#1015" id="1015">1015</a>
+<a href="#1016" id="1016">1016</a>
+<a href="#1017" id="1017">1017</a>
+<a href="#1018" id="1018">1018</a>
+<a href="#1019" id="1019">1019</a>
+<a href="#1020" id="1020">1020</a>
+<a href="#1021" id="1021">1021</a>
+<a href="#1022" id="1022">1022</a>
+<a href="#1023" id="1023">1023</a>
+<a href="#1024" id="1024">1024</a>
+<a href="#1025" id="1025">1025</a>
+<a href="#1026" id="1026">1026</a>
+<a href="#1027" id="1027">1027</a>
+<a href="#1028" id="1028">1028</a>
+<a href="#1029" id="1029">1029</a>
+<a href="#1030" id="1030">1030</a>
+<a href="#1031" id="1031">1031</a>
+<a href="#1032" id="1032">1032</a>
+<a href="#1033" id="1033">1033</a>
+<a href="#1034" id="1034">1034</a>
+<a href="#1035" id="1035">1035</a>
+<a href="#1036" id="1036">1036</a>
+<a href="#1037" id="1037">1037</a>
+<a href="#1038" id="1038">1038</a>
+<a href="#1039" id="1039">1039</a>
+<a href="#1040" id="1040">1040</a>
+<a href="#1041" id="1041">1041</a>
+<a href="#1042" id="1042">1042</a>
+<a href="#1043" id="1043">1043</a>
+<a href="#1044" id="1044">1044</a>
+<a href="#1045" id="1045">1045</a>
+<a href="#1046" id="1046">1046</a>
+<a href="#1047" id="1047">1047</a>
+<a href="#1048" id="1048">1048</a>
+<a href="#1049" id="1049">1049</a>
+<a href="#1050" id="1050">1050</a>
+<a href="#1051" id="1051">1051</a>
+<a href="#1052" id="1052">1052</a>
+<a href="#1053" id="1053">1053</a>
+<a href="#1054" id="1054">1054</a>
+<a href="#1055" id="1055">1055</a>
+<a href="#1056" id="1056">1056</a>
+<a href="#1057" id="1057">1057</a>
+<a href="#1058" id="1058">1058</a>
+<a href="#1059" id="1059">1059</a>
+<a href="#1060" id="1060">1060</a>
+<a href="#1061" id="1061">1061</a>
+<a href="#1062" id="1062">1062</a>
+<a href="#1063" id="1063">1063</a>
+<a href="#1064" id="1064">1064</a>
+<a href="#1065" id="1065">1065</a>
+<a href="#1066" id="1066">1066</a>
+<a href="#1067" id="1067">1067</a>
+<a href="#1068" id="1068">1068</a>
+<a href="#1069" id="1069">1069</a>
+<a href="#1070" id="1070">1070</a>
+<a href="#1071" id="1071">1071</a>
+<a href="#1072" id="1072">1072</a>
+<a href="#1073" id="1073">1073</a>
+<a href="#1074" id="1074">1074</a>
+<a href="#1075" id="1075">1075</a>
+<a href="#1076" id="1076">1076</a>
+<a href="#1077" id="1077">1077</a>
+<a href="#1078" id="1078">1078</a>
+<a href="#1079" id="1079">1079</a>
+<a href="#1080" id="1080">1080</a>
+<a href="#1081" id="1081">1081</a>
+<a href="#1082" id="1082">1082</a>
+<a href="#1083" id="1083">1083</a>
+<a href="#1084" id="1084">1084</a>
+<a href="#1085" id="1085">1085</a>
+<a href="#1086" id="1086">1086</a>
+<a href="#1087" id="1087">1087</a>
+<a href="#1088" id="1088">1088</a>
+<a href="#1089" id="1089">1089</a>
+<a href="#1090" id="1090">1090</a>
+<a href="#1091" id="1091">1091</a>
+<a href="#1092" id="1092">1092</a>
+<a href="#1093" id="1093">1093</a>
+<a href="#1094" id="1094">1094</a>
+<a href="#1095" id="1095">1095</a>
+<a href="#1096" id="1096">1096</a>
+<a href="#1097" id="1097">1097</a>
+<a href="#1098" id="1098">1098</a>
+<a href="#1099" id="1099">1099</a>
+<a href="#1100" id="1100">1100</a>
+<a href="#1101" id="1101">1101</a>
+<a href="#1102" id="1102">1102</a>
+<a href="#1103" id="1103">1103</a>
+<a href="#1104" id="1104">1104</a>
+<a href="#1105" id="1105">1105</a>
+<a href="#1106" id="1106">1106</a>
+<a href="#1107" id="1107">1107</a>
+<a href="#1108" id="1108">1108</a>
+<a href="#1109" id="1109">1109</a>
+<a href="#1110" id="1110">1110</a>
+<a href="#1111" id="1111">1111</a>
+<a href="#1112" id="1112">1112</a>
+<a href="#1113" id="1113">1113</a>
+<a href="#1114" id="1114">1114</a>
+<a href="#1115" id="1115">1115</a>
+<a href="#1116" id="1116">1116</a>
+<a href="#1117" id="1117">1117</a>
+<a href="#1118" id="1118">1118</a>
+<a href="#1119" id="1119">1119</a>
+<a href="#1120" id="1120">1120</a>
+<a href="#1121" id="1121">1121</a>
+<a href="#1122" id="1122">1122</a>
+<a href="#1123" id="1123">1123</a>
+<a href="#1124" id="1124">1124</a>
+<a href="#1125" id="1125">1125</a>
+<a href="#1126" id="1126">1126</a>
+<a href="#1127" id="1127">1127</a>
+<a href="#1128" id="1128">1128</a>
+<a href="#1129" id="1129">1129</a>
+<a href="#1130" id="1130">1130</a>
+<a href="#1131" id="1131">1131</a>
+<a href="#1132" id="1132">1132</a>
+<a href="#1133" id="1133">1133</a>
+<a href="#1134" id="1134">1134</a>
+<a href="#1135" id="1135">1135</a>
+<a href="#1136" id="1136">1136</a>
+<a href="#1137" id="1137">1137</a>
+<a href="#1138" id="1138">1138</a>
+<a href="#1139" id="1139">1139</a>
+<a href="#1140" id="1140">1140</a>
+<a href="#1141" id="1141">1141</a>
+<a href="#1142" id="1142">1142</a>
+<a href="#1143" id="1143">1143</a>
+<a href="#1144" id="1144">1144</a>
+<a href="#1145" id="1145">1145</a>
+<a href="#1146" id="1146">1146</a>
+<a href="#1147" id="1147">1147</a>
+<a href="#1148" id="1148">1148</a>
+<a href="#1149" id="1149">1149</a>
+<a href="#1150" id="1150">1150</a>
+<a href="#1151" id="1151">1151</a>
+<a href="#1152" id="1152">1152</a>
+<a href="#1153" id="1153">1153</a>
+<a href="#1154" id="1154">1154</a>
+<a href="#1155" id="1155">1155</a>
+<a href="#1156" id="1156">1156</a>
+<a href="#1157" id="1157">1157</a>
+<a href="#1158" id="1158">1158</a>
+<a href="#1159" id="1159">1159</a>
+<a href="#1160" id="1160">1160</a>
+<a href="#1161" id="1161">1161</a>
+<a href="#1162" id="1162">1162</a>
+<a href="#1163" id="1163">1163</a>
+<a href="#1164" id="1164">1164</a>
+<a href="#1165" id="1165">1165</a>
+<a href="#1166" id="1166">1166</a>
+<a href="#1167" id="1167">1167</a>
+<a href="#1168" id="1168">1168</a>
+<a href="#1169" id="1169">1169</a>
+<a href="#1170" id="1170">1170</a>
+<a href="#1171" id="1171">1171</a>
+<a href="#1172" id="1172">1172</a>
+<a href="#1173" id="1173">1173</a>
+<a href="#1174" id="1174">1174</a>
+<a href="#1175" id="1175">1175</a>
+<a href="#1176" id="1176">1176</a>
+<a href="#1177" id="1177">1177</a>
+<a href="#1178" id="1178">1178</a>
+<a href="#1179" id="1179">1179</a>
+<a href="#1180" id="1180">1180</a>
+<a href="#1181" id="1181">1181</a>
+<a href="#1182" id="1182">1182</a>
+<a href="#1183" id="1183">1183</a>
+<a href="#1184" id="1184">1184</a>
+<a href="#1185" id="1185">1185</a>
+<a href="#1186" id="1186">1186</a>
+<a href="#1187" id="1187">1187</a>
+<a href="#1188" id="1188">1188</a>
+<a href="#1189" id="1189">1189</a>
+<a href="#1190" id="1190">1190</a>
+<a href="#1191" id="1191">1191</a>
+<a href="#1192" id="1192">1192</a>
+<a href="#1193" id="1193">1193</a>
+<a href="#1194" id="1194">1194</a>
+<a href="#1195" id="1195">1195</a>
+<a href="#1196" id="1196">1196</a>
+<a href="#1197" id="1197">1197</a>
+<a href="#1198" id="1198">1198</a>
+<a href="#1199" id="1199">1199</a>
+<a href="#1200" id="1200">1200</a>
+<a href="#1201" id="1201">1201</a>
+<a href="#1202" id="1202">1202</a>
+<a href="#1203" id="1203">1203</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
+<span class="kw">use </span>std::{collections::HashMap, io::Write};
+
+<span class="kw">use </span>tracing::trace;
 
 <span class="kw">use </span>base64::Engine;
 <span class="kw">use </span>boolinator::Boolinator;
@@ -604,8 +1222,14 @@
 
 <span class="kw">use crate</span>::{
     constants::{BASE64, URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX},
-    types::{resource::Subtitles, streams::StreamSourceTrait},
+    types::{
+        resource::Subtitles,
+        streaming_server::{ArchiveStreamBody, ArchiveStreamOptions, FtpStreamBody},
+        streams::StreamSourceTrait,
+        torrent::InfoHash,
+    },
 };
+<span class="kw">use crate</span>::{runtime::EnvError, types::streams::ConvertedStreamSource};
 
 <span class="doccomment">/// # Examples
 ///
@@ -662,48 +1286,10 @@
     </span><span class="kw">pub </span>behavior_hints: StreamBehaviorHints,
 }
 
-<span class="kw">impl </span>Stream {
-    <span class="kw">pub fn </span>magnet_url(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Magnet&gt; {
-        <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.source {
-            StreamSource::Url { url } <span class="kw">if </span>url.scheme() == <span class="string">"magnet" </span>=&gt; Magnet::new(url.as_str()).ok(),
-            StreamSource::Torrent {
-                info_hash,
-                announce,
-                ..
-            } =&gt; <span class="prelude-val">Some</span>(Magnet {
-                dn: <span class="self">self</span>.name.to_owned(),
-                hash_type: <span class="prelude-val">Some</span>(<span class="string">"btih"</span>.to_string()),
-                xt: <span class="prelude-val">Some</span>(hex::encode(info_hash)),
-                xl: <span class="prelude-val">None</span>,
-                tr: announce
-                    .iter()
-                    <span class="comment">// `tracker` and `dht` prefixes are used internally by the server.js
-                    // we need to remove those prefixes when generating the magnet URL
-                    </span>.map(|tracker| {
-                        tracker
-                            .strip_prefix(<span class="string">"tracker:"</span>)
-                            .map(ToString::to_string)
-                            .unwrap_or_else(|| tracker.to_owned())
-                    })
-                    .map(|tracker| {
-                        tracker
-                            .strip_prefix(<span class="string">"dht:"</span>)
-                            .map(ToString::to_string)
-                            .unwrap_or_else(|| tracker.to_owned())
-                    })
-                    .map(|tracker| {
-                        utf8_percent_encode(<span class="kw-2">&amp;</span>tracker, URI_COMPONENT_ENCODE_SET).to_string()
-                    })
-                    .collect::&lt;Vec&lt;String&gt;&gt;(),
-                kt: <span class="prelude-val">None</span>,
-                ws: <span class="prelude-val">None</span>,
-                acceptable_source: <span class="prelude-val">None</span>,
-                mt: <span class="prelude-val">None</span>,
-                xs: <span class="prelude-val">None</span>,
-            }),
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
-        }
-    }
+<span class="kw">impl</span>&lt;S&gt; Stream&lt;S&gt;
+<span class="kw">where
+    </span>S: StreamSourceTrait + Serialize,
+{
     <span class="kw">pub fn </span>encode(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;String, anyhow::Error&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>encoder = ZlibEncoder::new(Vec::new(), Compression::none());
         <span class="kw">let </span>stream = serde_json::to_string(<span class="kw-2">&amp;</span><span class="self">self</span>)<span class="question-mark">?</span>;
@@ -712,7 +1298,13 @@
         <span class="kw">let </span>stream = BASE64.encode(stream);
         <span class="prelude-val">Ok</span>(stream)
     }
-    <span class="kw">pub fn </span>decode(stream: String) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, anyhow::Error&gt; {
+}
+
+<span class="kw">impl</span>&lt;S&gt; Stream&lt;S&gt;
+<span class="kw">where
+    </span>S: StreamSourceTrait + Serialize + serde::de::DeserializeOwned,
+{
+    <span class="kw">pub fn </span>decode(stream: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, anyhow::Error&gt; {
         <span class="kw">let </span>stream = BASE64.decode(stream)<span class="question-mark">?</span>;
         <span class="kw">let </span><span class="kw-2">mut </span>writer = Vec::new();
         <span class="kw">let </span><span class="kw-2">mut </span>decoder = ZlibDecoder::new(writer);
@@ -722,6 +1314,9 @@
         <span class="kw">let </span>stream = serde_json::from_str(<span class="kw-2">&amp;</span>stream)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(stream)
     }
+}
+
+<span class="kw">impl </span>Stream {
     <span class="kw">pub fn </span>youtube(video_id: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt; {
         video_id
             .starts_with(YOUTUBE_ADDON_ID_PREFIX)
@@ -740,40 +1335,371 @@
             })
     }
 
-    <span class="kw">pub fn </span>download_url(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
-        <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.source {
-            StreamSource::Url { url } <span class="kw">if </span>url.scheme() == <span class="string">"magnet" </span>=&gt; {
-                <span class="self">self</span>.magnet_url().map(|magnet_url| magnet_url.to_string())
-            }
-            StreamSource::Url { url } =&gt; <span class="prelude-val">Some</span>(url.to_string()),
-            <span class="comment">// we do not support RAR &amp; Zip at this point!
-            </span>StreamSource::Rar { .. } | StreamSource::Zip { .. } =&gt; <span class="prelude-val">None</span>,
-            StreamSource::Torrent { .. } =&gt; {
-                <span class="self">self</span>.magnet_url().map(|magnet_url| magnet_url.to_string())
-            }
-            StreamSource::YouTube { .. } =&gt; <span class="self">self</span>.youtube_url(),
-            StreamSource::External { external_url, .. } =&gt; {
-                external_url.as_ref().map(|url| url.to_string())
-            }
-            StreamSource::PlayerFrame { player_frame_url } =&gt; <span class="prelude-val">Some</span>(player_frame_url.to_string()),
+    <span class="attr">#[inline]
+    </span><span class="kw">pub fn </span>is_source_match(<span class="kw-2">&amp;</span><span class="self">self</span>, other_stream: <span class="kw-2">&amp;</span>Stream) -&gt; bool {
+        <span class="self">self</span>.source == other_stream.source
+    }
+
+    <span class="attr">#[inline]
+    </span><span class="kw">pub fn </span>is_binge_match(<span class="kw-2">&amp;</span><span class="self">self</span>, other_stream: <span class="kw-2">&amp;</span>Stream) -&gt; bool {
+        <span class="kw">match </span>(
+            <span class="kw-2">&amp;</span><span class="self">self</span>.behavior_hints.binge_group,
+            <span class="kw-2">&amp;</span>other_stream.behavior_hints.binge_group,
+        ) {
+            (<span class="prelude-val">Some</span>(a), <span class="prelude-val">Some</span>(b)) =&gt; a == b,
+            <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
         }
     }
 
-    <span class="kw">pub fn </span>m3u_data_uri(<span class="kw-2">&amp;</span><span class="self">self</span>, streaming_server_url: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Url&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
-        <span class="self">self</span>.streaming_url(streaming_server_url).map(|url| {
-            <span class="macro">format!</span>(
-                <span class="string">"data:application/octet-stream;charset=utf-8;base64,{}"</span>,
-                BASE64.encode(<span class="macro">format!</span>(<span class="string">"#EXTM3U\n#EXTINF:0\n{url}"</span>))
-            )
-        })
+    <span class="kw">pub fn </span>to_converted(<span class="kw-2">&amp;</span><span class="self">self</span>, converted: ConvertedStreamSource) -&gt; Stream&lt;ConvertedStreamSource&gt; {
+        Stream {
+            source: converted,
+            name: <span class="self">self</span>.name.clone(),
+            description: <span class="self">self</span>.description.clone(),
+            thumbnail: <span class="self">self</span>.thumbnail.clone(),
+            subtitles: <span class="self">self</span>.subtitles.clone(),
+            behavior_hints: <span class="self">self</span>.behavior_hints.clone(),
+        }
     }
 
-    <span class="kw">pub fn </span>streaming_url(<span class="kw-2">&amp;</span><span class="self">self</span>, streaming_server_url: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Url&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;Url&gt; {
-        <span class="kw">match </span>(<span class="kw-2">&amp;</span><span class="self">self</span>.source, streaming_server_url) {
-            (StreamSource::Url { url }, streaming_server_url) <span class="kw">if </span>url.scheme() != <span class="string">"magnet" </span>=&gt; {
+    <span class="doccomment">/// # Examples
+    /// ```
+    /// use stremio_core::types::resource::{Stream, StreamSource};
+    ///
+    /// assert_eq!("file.rar".to_string(), Stream::ftp_filename(&amp;"ftp://example.com/file.rar".parse().unwrap()).unwrap());
+    /// assert_eq!("0x00000000000000000000".to_string(), Stream::ftp_filename(&amp;"ftp://example.com/0x00000000000000000000".parse().unwrap()).unwrap());
+    /// ```
+    </span><span class="kw">pub fn </span>ftp_filename(url: <span class="kw-2">&amp;</span>Url) -&gt; <span class="prelude-ty">Result</span>&lt;String, EnvError&gt; {
+        url.path_segments()
+            .and_then(|segments| segments.last())
+            .map(|s| s.to_string())
+            .ok_or(EnvError::Other(
+                <span class="string">"Ftp(s) filepath is missing in the url"</span>.into(),
+            ))
+    }
+
+    <span class="doccomment">/// Converts an `ftp://` or `ftps://` url to a proxied streaming server url
+    ///
+    /// # Returns
+    ///
+    /// Err(EnvError::Other) - If streaming server is not available
+    /// Err(EnvError::Other) - If filename cannot be extracted from the url, either `/file_name.ext`
+    /// or `/0x0adf0120` string path with no extension are supported
+    /// Ok(Url) - if stream is converted or left unchanged (non-ftp url)
+    </span><span class="kw">fn </span>ftp_url_handler(streaming_server_url: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Url&gt;, url: Url) -&gt; <span class="prelude-ty">Result</span>&lt;Url, EnvError&gt; {
+        <span class="kw">match </span>(streaming_server_url, url.scheme()) {
+            (<span class="prelude-val">Some</span>(streaming_server_url), <span class="string">"ftp"</span>) | (<span class="prelude-val">Some</span>(streaming_server_url), <span class="string">"ftps"</span>) =&gt; {
+                <span class="kw">let </span>filename = <span class="self">Self</span>::ftp_filename(<span class="kw-2">&amp;</span>url)<span class="question-mark">?</span>;
+
+                <span class="kw">let </span><span class="kw-2">mut </span>stream_url = streaming_server_url
+                    .join(<span class="string">"ftp/"</span>)
+                    .map_err(|err| EnvError::Other(err.to_string()))<span class="question-mark">?
+                    </span>.join(<span class="kw-2">&amp;</span>filename)
+                    .map_err(|err| EnvError::Other(err.to_string()))<span class="question-mark">?</span>;
+
+                <span class="kw">let </span>payload = FtpStreamBody { ftp_url: url };
+
+                <span class="kw">let </span>stream_data = serde_json::to_string(<span class="kw-2">&amp;</span>payload)<span class="question-mark">?</span>;
+                stream_url.query_pairs_mut().append_pair(
+                    <span class="string">"lz"</span>,
+                    <span class="kw-2">&amp;</span>lz_str::compress_to_encoded_uri_component(<span class="kw-2">&amp;</span>stream_data),
+                );
+
+                <span class="macro">trace!</span>(%stream_url, json_payload=<span class="question-mark">?</span>payload, <span class="string">"Ftp(s) Streaming Server Request"</span>);
+
+                <span class="prelude-val">Ok</span>(stream_url)
+            }
+            (<span class="prelude-val">None</span>, <span class="kw">_</span>) =&gt; <span class="prelude-val">Err</span>(EnvError::Other(
+                <span class="string">"Can't play Ftp(s) because streaming server is not running"</span>.into(),
+            )),
+            <span class="kw">_ </span>=&gt; <span class="prelude-val">Ok</span>(url),
+        }
+    }
+
+    <span class="doccomment">/// Updates a `StreamSource` if it's Rar, Zip, 7zip, Tar, Tgz and Nzb
+    /// and creates a [`ConvertedStreamSource::Url`]
+    </span><span class="kw">pub fn </span>convert(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        streaming_server_url: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Url&gt;,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;Stream&lt;ConvertedStreamSource&gt;, EnvError&gt; {
+        <span class="kw">match </span>(streaming_server_url, <span class="self">self</span>.source.to_owned()) {
+            (
+                <span class="prelude-val">Some</span>(streaming_server_url),
+                StreamSource::Rar {
+                    urls,
+                    file_idx,
+                    file_must_include,
+                },
+            ) =&gt; {
+                <span class="kw">if </span>urls.is_empty() {
+                    <span class="kw">return </span><span class="prelude-val">Err</span>(EnvError::Other(<span class="string">"No Rar URLs provided"</span>.into()));
+                }
+
+                <span class="kw">let </span><span class="kw-2">mut </span>stream_url = streaming_server_url
+                    .join(<span class="string">"rar/create"</span>)
+                    .map_err(|err| EnvError::Other(err.to_string()))<span class="question-mark">?</span>;
+
+                <span class="kw">let </span>payload = ArchiveStreamBody {
+                    urls: urls
+                        .into_iter()
+                        .map(|archive_url| {
+                            <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), archive_url.url).map(
+                                |url| ArchiveUrl {
+                                    url,
+                                    bytes: archive_url.bytes,
+                                },
+                            )
+                        })
+                        .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()
+                        .expect(<span class="string">"Streaming server availability is already checked"</span>),
+                    options: ArchiveStreamOptions {
+                        file_idx,
+                        file_must_include,
+                    },
+                };
+
+                <span class="kw">let </span>stream_data = serde_json::to_string(<span class="kw-2">&amp;</span>payload)<span class="question-mark">?</span>;
+                stream_url.query_pairs_mut().append_pair(
+                    <span class="string">"lz"</span>,
+                    <span class="kw-2">&amp;</span>lz_str::compress_to_encoded_uri_component(<span class="kw-2">&amp;</span>stream_data),
+                );
+                <span class="macro">trace!</span>(%stream_url, json_payload=<span class="question-mark">?</span>payload, <span class="string">"Rar Streaming Server Request"</span>);
+
+                <span class="prelude-val">Ok</span>(<span class="self">self</span>.to_converted(ConvertedStreamSource::Url { url: stream_url }))
+            }
+            (
+                <span class="prelude-val">Some</span>(streaming_server_url),
+                StreamSource::Zip {
+                    urls,
+                    file_idx,
+                    file_must_include,
+                },
+            ) =&gt; {
+                <span class="kw">if </span>urls.is_empty() {
+                    <span class="kw">return </span><span class="prelude-val">Err</span>(EnvError::Other(<span class="string">"No Zip URLs provided"</span>.into()));
+                }
+
+                <span class="kw">let </span><span class="kw-2">mut </span>stream_url = streaming_server_url
+                    .clone()
+                    .join(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"zip/create"</span>))
+                    .expect(<span class="string">"Url should always be valid"</span>);
+
+                <span class="kw">let </span>payload = ArchiveStreamBody {
+                    urls: urls
+                        .into_iter()
+                        .map(|archive_url| {
+                            <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), archive_url.url).map(
+                                |url| ArchiveUrl {
+                                    url,
+                                    bytes: archive_url.bytes,
+                                },
+                            )
+                        })
+                        .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()
+                        .expect(<span class="string">"Streaming server availability is already checked"</span>),
+                    options: ArchiveStreamOptions {
+                        file_idx,
+                        file_must_include,
+                    },
+                };
+
+                <span class="kw">let </span>stream_data = serde_json::to_string(<span class="kw-2">&amp;</span>payload)<span class="question-mark">?</span>;
+                stream_url.query_pairs_mut().append_pair(
+                    <span class="string">"lz"</span>,
+                    <span class="kw-2">&amp;</span>lz_str::compress_to_encoded_uri_component(<span class="kw-2">&amp;</span>stream_data),
+                );
+
+                <span class="macro">trace!</span>(stream_url=%stream_url, json_payload=<span class="question-mark">?</span>payload, <span class="string">"Zip Streaming Server Request"</span>);
+
+                <span class="prelude-val">Ok</span>(<span class="self">self</span>.to_converted(ConvertedStreamSource::Url { url: stream_url }))
+            }
+            (
+                <span class="prelude-val">Some</span>(streaming_server_url),
+                StreamSource::Zip7 {
+                    urls,
+                    file_idx,
+                    file_must_include,
+                },
+            ) =&gt; {
+                <span class="kw">if </span>urls.is_empty() {
+                    <span class="kw">return </span><span class="prelude-val">Err</span>(EnvError::Other(<span class="string">"No 7zip URLs provided"</span>.into()));
+                }
+
+                <span class="kw">let </span><span class="kw-2">mut </span>stream_url = streaming_server_url
+                    .clone()
+                    .join(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"7zip/create"</span>))
+                    .expect(<span class="string">"Url should always be valid"</span>);
+                <span class="kw">let </span>payload = ArchiveStreamBody {
+                    urls: urls
+                        .into_iter()
+                        .map(|archive_url| {
+                            <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), archive_url.url).map(
+                                |url| ArchiveUrl {
+                                    url,
+                                    bytes: archive_url.bytes,
+                                },
+                            )
+                        })
+                        .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()
+                        .expect(<span class="string">"Streaming server availability is already checked"</span>),
+                    options: ArchiveStreamOptions {
+                        file_idx,
+                        file_must_include,
+                    },
+                };
+
+                <span class="kw">let </span>stream_data = serde_json::to_string(<span class="kw-2">&amp;</span>payload)<span class="question-mark">?</span>;
+                stream_url.query_pairs_mut().append_pair(
+                    <span class="string">"lz"</span>,
+                    <span class="kw-2">&amp;</span>lz_str::compress_to_encoded_uri_component(<span class="kw-2">&amp;</span>stream_data),
+                );
+                <span class="macro">trace!</span>(%stream_url, json_payload=<span class="question-mark">?</span>payload, <span class="string">"7Zip Streaming Server Request"</span>);
+
+                <span class="prelude-val">Ok</span>(<span class="self">self</span>.to_converted(ConvertedStreamSource::Url { url: stream_url }))
+            }
+            (
+                <span class="prelude-val">Some</span>(streaming_server_url),
+                StreamSource::Tgz {
+                    urls,
+                    file_idx,
+                    file_must_include,
+                },
+            ) =&gt; {
+                <span class="kw">if </span>urls.is_empty() {
+                    <span class="kw">return </span><span class="prelude-val">Err</span>(EnvError::Other(<span class="string">"No tgz URLs provided"</span>.into()));
+                }
+
+                <span class="kw">let </span><span class="kw-2">mut </span>stream_url = streaming_server_url
+                    .clone()
+                    .join(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"tgz/create"</span>))
+                    .expect(<span class="string">"Url should always be valid"</span>);
+
+                <span class="kw">let </span>payload = ArchiveStreamBody {
+                    urls: urls
+                        .into_iter()
+                        .map(|archive_url| {
+                            <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), archive_url.url).map(
+                                |url| ArchiveUrl {
+                                    url,
+                                    bytes: archive_url.bytes,
+                                },
+                            )
+                        })
+                        .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()
+                        .expect(<span class="string">"Streaming server availability is already checked"</span>),
+                    options: ArchiveStreamOptions {
+                        file_idx,
+                        file_must_include,
+                    },
+                };
+
+                <span class="kw">let </span>stream_data = serde_json::to_string(<span class="kw-2">&amp;</span>payload)<span class="question-mark">?</span>;
+                stream_url.query_pairs_mut().append_pair(
+                    <span class="string">"lz"</span>,
+                    <span class="kw-2">&amp;</span>lz_str::compress_to_encoded_uri_component(<span class="kw-2">&amp;</span>stream_data),
+                );
+                <span class="macro">trace!</span>(%stream_url, json_payload=<span class="question-mark">?</span>payload, <span class="string">"Tgz Streaming Server Request"</span>);
+
+                <span class="prelude-val">Ok</span>(<span class="self">self</span>.to_converted(ConvertedStreamSource::Url { url: stream_url }))
+            }
+            (
+                <span class="prelude-val">Some</span>(streaming_server_url),
+                StreamSource::Tar {
+                    urls,
+                    file_idx,
+                    file_must_include,
+                },
+            ) =&gt; {
+                <span class="kw">if </span>urls.is_empty() {
+                    <span class="kw">return </span><span class="prelude-val">Err</span>(EnvError::Other(<span class="string">"No tar URLs provided"</span>.into()));
+                }
+
+                <span class="kw">let </span>payload = ArchiveStreamBody {
+                    urls: urls
+                        .into_iter()
+                        .map(|archive_url| {
+                            <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), archive_url.url).map(
+                                |url| ArchiveUrl {
+                                    url,
+                                    bytes: archive_url.bytes,
+                                },
+                            )
+                        })
+                        .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()
+                        .expect(<span class="string">"Streaming server availability is already checked"</span>),
+                    options: ArchiveStreamOptions {
+                        file_idx,
+                        file_must_include,
+                    },
+                };
+
+                <span class="kw">let </span><span class="kw-2">mut </span>stream_url = streaming_server_url
+                    .clone()
+                    .join(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"tar/create"</span>))
+                    .expect(<span class="string">"Url should always be valid"</span>);
+
+                <span class="kw">let </span>stream_data = serde_json::to_string(<span class="kw-2">&amp;</span>payload)<span class="question-mark">?</span>;
+                stream_url.query_pairs_mut().append_pair(
+                    <span class="string">"lz"</span>,
+                    <span class="kw-2">&amp;</span>lz_str::compress_to_encoded_uri_component(<span class="kw-2">&amp;</span>stream_data),
+                );
+                <span class="macro">trace!</span>(%stream_url, json_payload=<span class="question-mark">?</span>payload, <span class="string">"Tar Streaming Server Request"</span>);
+
+                <span class="prelude-val">Ok</span>(<span class="self">self</span>.to_converted(ConvertedStreamSource::Url { url: stream_url }))
+            }
+            (<span class="prelude-val">Some</span>(streaming_server_url), StreamSource::Nzb { nzb_url, servers }) =&gt; {
+                <span class="kw">if </span>servers.is_empty() {
+                    <span class="kw">return </span><span class="prelude-val">Err</span>(EnvError::Other(<span class="string">"No nzb server URLs provided"</span>.into()));
+                }
+
+                <span class="kw">let </span>servers = servers
+                    .into_iter()
+                    .map(|server_url| <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), server_url))
+                    .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()
+                    .expect(<span class="string">"Streaming server availability is already checked"</span>);
+
+                <span class="kw">let </span><span class="kw-2">mut </span>stream_url = streaming_server_url
+                    .clone()
+                    .join(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"nzb/create"</span>))
+                    .expect(<span class="string">"Url should always be valid"</span>);
+
+                <span class="kw">let </span>payload = StreamSource::Nzb {
+                    nzb_url: <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), nzb_url)
+                        .expect(<span class="string">"Streaming server availability is already checked"</span>),
+                    servers,
+                };
+
+                <span class="kw">let </span>stream_data = serde_json::to_string(<span class="kw-2">&amp;</span>payload)<span class="question-mark">?</span>;
+                stream_url.query_pairs_mut().append_pair(
+                    <span class="string">"lz"</span>,
+                    <span class="kw-2">&amp;</span>lz_str::compress_to_encoded_uri_component(<span class="kw-2">&amp;</span>stream_data),
+                );
+                <span class="macro">trace!</span>(%stream_url, json_payload=<span class="question-mark">?</span>payload, <span class="string">"Nzb Streaming Server Request"</span>);
+
+                <span class="prelude-val">Ok</span>(<span class="self">self</span>.to_converted(ConvertedStreamSource::Url { url: stream_url }))
+            }
+            (
+                <span class="prelude-val">None</span>,
+                StreamSource::Rar { .. }
+                | StreamSource::Zip { .. }
+                | StreamSource::Zip7 { .. }
+                | StreamSource::Tgz { .. }
+                | StreamSource::Tar { .. }
+                | StreamSource::Nzb { .. },
+            ) =&gt; <span class="prelude-val">Err</span>(EnvError::Other(
+                <span class="string">"Can't play Rar/Zip/Zip7/Tar/Tgz/Nzb because the streaming server is not running"
+                    </span>.into(),
+            )),
+            <span class="comment">// no further changes are needed for now
+            // we still need to create torrents, etc. in stremio-video
+            // as it's not part of the current scope
+            // This keeps the `magnet:` urls working until we get the the streaming url
+            </span>(streaming_server_url, StreamSource::Url { url }) <span class="kw">if </span>url.scheme() != <span class="string">"magnet" </span>=&gt; {
+                <span class="kw">let </span>url = <span class="self">Self</span>::ftp_url_handler(streaming_server_url, url)<span class="question-mark">?</span>;
+
                 <span class="comment">// If proxy headers are set and streaming server is available, build the proxied streaming url from streaming server url
                 // Otherwise return the url
-                </span><span class="kw">match </span>(<span class="kw-2">&amp;</span><span class="self">self</span>.behavior_hints.proxy_headers, streaming_server_url) {
+                </span><span class="kw">let </span>url = <span class="kw">match </span>(<span class="kw-2">&amp;</span><span class="self">self</span>.behavior_hints.proxy_headers, streaming_server_url) {
                     (
                         <span class="prelude-val">Some</span>(StreamProxyHeaders { request, response }),
                         <span class="prelude-val">Some</span>(streaming_server_url),
@@ -800,23 +1726,55 @@
                         ));
 
                         streaming_url.set_query(url.query());
-                        <span class="prelude-val">Some</span>(streaming_url)
+                        streaming_url
                     }
-                    <span class="kw">_ </span>=&gt; <span class="prelude-val">Some</span>(url.to_owned()),
-                }
+                    <span class="kw">_ </span>=&gt; url.to_owned(),
+                };
+
+                <span class="prelude-val">Ok</span>(<span class="self">self</span>.to_converted(ConvertedStreamSource::Url { url }))
             }
-            (
+            <span class="comment">// Magnet URL stream source handling
+            // we keep the magnet url and return None for Steaming url later on
+            </span>(_streaming_server_url, StreamSource::Url { url: streaming_url }) =&gt; {
+                <span class="prelude-val">Ok</span>(<span class="self">self</span>.to_converted(ConvertedStreamSource::Url { url: streaming_url }))
+            }
+            (<span class="prelude-val">Some</span>(streaming_server_url), StreamSource::YouTube { yt_id }) =&gt; {
+                <span class="prelude-val">Ok</span>(<span class="self">self</span>.to_converted(ConvertedStreamSource::YouTube {
+                    url: {
+                        <span class="kw">let </span><span class="kw-2">mut </span>url = streaming_server_url.to_owned();
+                        {
+                            <span class="kw">let </span><span class="kw-2">mut </span>path = url
+                                .path_segments_mut()
+                                .expect(<span class="string">"Streaming server should always be base"</span>);
+                            path.push(<span class="string">"yt"</span>);
+                            path.push(
+                                <span class="kw-2">&amp;</span>utf8_percent_encode(<span class="kw-2">&amp;</span>yt_id, URI_COMPONENT_ENCODE_SET).to_string(),
+                            );
+                        }
+
+                        url
+                    },
+                    yt_id,
+                }))
+            }
+            (<span class="prelude-val">None</span>, StreamSource::YouTube { .. }) =&gt; <span class="prelude-val">Err</span>(EnvError::Other(
+                <span class="string">"Can't play Youtube videos because streaming server is not running"</span>.into(),
+            )),
+            <span class="comment">// Torrent stream source handling
+            </span>(
+                <span class="prelude-val">Some</span>(streaming_server_url),
                 StreamSource::Torrent {
                     info_hash,
                     file_idx,
                     announce,
                     file_must_include,
                 },
-                <span class="prelude-val">Some</span>(streaming_server_url),
             ) =&gt; {
-                <span class="kw">let </span><span class="kw-2">mut </span>url = streaming_server_url.to_owned();
-                <span class="kw">match </span>url.path_segments_mut() {
-                    <span class="prelude-val">Ok</span>(<span class="kw-2">mut </span>path) =&gt; {
+                <span class="kw">let </span>streaming_url = {
+                    <span class="kw">let </span><span class="kw-2">mut </span>url = streaming_server_url.to_owned();
+
+                    {
+                        <span class="kw">let </span><span class="kw-2">mut </span>path = url.path_segments_mut().expect(<span class="string">"Should always be base url"</span>);
                         path.extend([
                             <span class="kw-2">&amp;</span>hex::encode(info_hash),
                             <span class="comment">// When fileIndex is not provided use -1, which will tell the
@@ -824,72 +1782,57 @@
                             </span><span class="kw-2">&amp;</span>file_idx.map_or_else(|| <span class="string">"-1"</span>.to_string(), |idx| idx.to_string()),
                         ]);
                     }
-                    <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">None</span>,
-                }
 
-                <span class="comment">// setup query params
-                </span>{
-                    <span class="kw">let </span><span class="kw-2">mut </span>query_params = url.query_pairs_mut();
+                    <span class="comment">// setup query params
+                    </span>{
+                        <span class="kw">let </span><span class="kw-2">mut </span>query_params = url.query_pairs_mut();
 
-                    <span class="kw">if </span>!announce.is_empty() {
-                        query_params.extend_pairs(
-                            announce.iter().map(|tracker| (<span class="string">"tr"</span>, tracker.to_owned())),
-                        );
+                        <span class="kw">if </span>!announce.is_empty() {
+                            query_params.extend_pairs(
+                                announce.iter().map(|tracker| (<span class="string">"tr"</span>, tracker.to_owned())),
+                            );
+                        }
+
+                        <span class="kw">if </span>!file_must_include.is_empty() {
+                            query_params.extend_pairs(
+                                file_must_include
+                                    .iter()
+                                    .map(|file_must_include| (<span class="string">"f"</span>, file_must_include.to_owned())),
+                            );
+                        }
                     }
-
-                    <span class="kw">if </span>!file_must_include.is_empty() {
-                        query_params.extend_pairs(
-                            file_must_include
-                                .iter()
-                                .map(|file_must_include| (<span class="string">"f"</span>, file_must_include.to_owned())),
-                        );
-                    }
-                }
-
-                <span class="prelude-val">Some</span>(url)
-            }
-            <span class="comment">// we do not support Rar &amp; Zip at this point
-            </span>(StreamSource::Zip { .. }, <span class="prelude-val">Some</span>(_streaming_server_url)) =&gt; <span class="prelude-val">None</span>,
-            (StreamSource::Rar { .. }, <span class="prelude-val">Some</span>(_streaming_server_url)) =&gt; <span class="prelude-val">None</span>,
-            (StreamSource::YouTube { yt_id }, <span class="prelude-val">Some</span>(streaming_server_url)) =&gt; {
-                <span class="kw">let </span><span class="kw-2">mut </span>url = streaming_server_url.to_owned();
-                <span class="kw">match </span>url.path_segments_mut() {
-                    <span class="prelude-val">Ok</span>(<span class="kw-2">mut </span>path) =&gt; {
-                        path.push(<span class="string">"yt"</span>);
-                        path.push(
-                            <span class="kw-2">&amp;</span>utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET).to_string(),
-                        );
-                    }
-                    <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">None</span>,
+                    url
                 };
-                <span class="prelude-val">Some</span>(url)
+
+                <span class="prelude-val">Ok</span>(<span class="self">self</span>.to_converted(ConvertedStreamSource::Torrent {
+                    <span class="comment">// this needs to change once conversion of torrents is also moved to core
+                    </span>url: streaming_url,
+                    info_hash: InfoHash::new(info_hash),
+                    file_idx,
+                    announce,
+                    file_must_include,
+                }))
             }
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
-        }
-    }
-    <span class="kw">pub fn </span>youtube_url(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
-        <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.source {
-            StreamSource::YouTube { yt_id } =&gt; <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
-                <span class="string">"https://youtube.com/watch?v={}"</span>,
-                utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET)
+            (<span class="prelude-val">None</span>, StreamSource::Torrent { .. }) =&gt; <span class="prelude-val">Err</span>(EnvError::Other(
+                <span class="string">"Can't play Torrents because streaming server is not running"</span>.into(),
             )),
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
-        }
-    }
-
-    <span class="attr">#[inline]
-    </span><span class="kw">pub fn </span>is_source_match(<span class="kw-2">&amp;</span><span class="self">self</span>, other_stream: <span class="kw-2">&amp;</span>Stream) -&gt; bool {
-        <span class="self">self</span>.source == other_stream.source
-    }
-
-    <span class="attr">#[inline]
-    </span><span class="kw">pub fn </span>is_binge_match(<span class="kw-2">&amp;</span><span class="self">self</span>, other_stream: <span class="kw-2">&amp;</span>Stream) -&gt; bool {
-        <span class="kw">match </span>(
-            <span class="kw-2">&amp;</span><span class="self">self</span>.behavior_hints.binge_group,
-            <span class="kw-2">&amp;</span>other_stream.behavior_hints.binge_group,
-        ) {
-            (<span class="prelude-val">Some</span>(a), <span class="prelude-val">Some</span>(b)) =&gt; a == b,
-            <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
+            (<span class="kw">_</span>, StreamSource::PlayerFrame { player_frame_url }) =&gt; {
+                <span class="prelude-val">Ok</span>(<span class="self">self</span>.to_converted(ConvertedStreamSource::PlayerFrame { player_frame_url }))
+            }
+            (
+                <span class="kw">_</span>,
+                StreamSource::External {
+                    external_url,
+                    android_tv_url,
+                    tizen_url,
+                    webos_url,
+                },
+            ) =&gt; <span class="prelude-val">Ok</span>(<span class="self">self</span>.to_converted(ConvertedStreamSource::External {
+                external_url,
+                android_tv_url,
+                tizen_url,
+                webos_url,
+            })),
         }
     }
 }
@@ -902,26 +1845,26 @@
 /// [`StreamSource::Rar`] with `rarUrls` field:
 ///
 /// ```
-/// use stremio_core::types::resource::StreamSource;
+/// use stremio_core::types::resource::{ArchiveUrl, StreamSource};
 ///
 /// let streams_json = serde_json::json!([
 /// {
-///     "rarUrls": ["https://example-source.com/file.rar", "https://example-source2.com/file2.rar"],
+///     "rarUrls": [["https://example-source.com/file.rar", 10000], ["https://example-source2.com/file2.rar", null ]],
 ///     // ...Stream
 /// },
 /// {
-///     "rarUrls": ["https://example-source3.com/file.rar", "https://example-source4.com/file2.rar"],
+///     "rarUrls": [["https://example-source3.com/file.rar"], ["https://example-source4.com/file2.rar"]],
 ///     "fileIdx": 1,
 ///     "fileMustInclude": ["includeFile1"],
 ///     // ...Stream
 /// },
 /// {
-///     "rarUrls": ["https://example-source5.com/file.rar", "https://example-source6.com/file2.rar"],
+///     "rarUrls": [["https://example-source5.com/file.rar"], ["https://example-source6.com/file2.rar"]],
 ///     "fileMustInclude": ["includeFile2"],
 ///     // ...Stream
 /// },
 /// {
-///     "rarUrls": ["https://example-source7.com/file.rar", "https://example-source8.com/file2.rar"],
+///     "rarUrls": [["https://example-source7.com/file.rar"], ["https://example-source8.com/file2.rar"]],
 ///     "fileIdx": 2,
 ///     // ...Stream
 /// }
@@ -929,22 +1872,24 @@
 ///
 /// let expected = vec![
 ///     StreamSource::Rar {
-///         rar_urls: vec!["https://example-source.com/file.rar".parse().unwrap(), "https://example-source2.com/file2.rar".parse().unwrap()],
+///         urls: vec![ArchiveUrl { url: "https://example-source.com/file.rar".parse().unwrap(), bytes: Some(10_000) }, ArchiveUrl {url: "https://example-source2.com/file2.rar".parse().unwrap(), bytes: None }],
 ///         file_idx: None,
 ///         file_must_include: vec![],
 ///     },
 ///     StreamSource::Rar {
-///         rar_urls: vec!["https://example-source3.com/file.rar".parse().unwrap(), "https://example-source4.com/file2.rar".parse().unwrap()],
+///         urls: vec![ArchiveUrl { url: "https://example-source3.com/file.rar".parse().unwrap(), bytes: None }, ArchiveUrl {url: "https://example-source4.com/file2.rar".parse().unwrap(), bytes: None }],
 ///         file_idx: Some(1),
 ///         file_must_include: vec!["includeFile1".into()]
 ///     },
 ///     StreamSource::Rar {
-///         rar_urls: vec!["https://example-source5.com/file.rar".parse().unwrap(), "https://example-source6.com/file2.rar".parse().unwrap()],
+///         urls: vec![ArchiveUrl { url: "https://example-source5.com/file.rar".parse().unwrap(), bytes: None }, ArchiveUrl {url: "https://example-source6.com/file2.rar".parse().unwrap(), bytes: None }],
 ///         file_idx: None,
 ///         file_must_include: vec!["includeFile2".into()]
 ///     },
 ///     StreamSource::Rar {
-///         rar_urls: vec!["https://example-source7.com/file.rar".parse().unwrap(), "https://example-source8.com/file2.rar".parse().unwrap()],
+///         urls: vec![
+///             ArchiveUrl { url: "https://example-source7.com/file.rar".parse().unwrap(), bytes: None }, ArchiveUrl {url: "https://example-source8.com/file2.rar".parse().unwrap(), bytes: None }
+///         ],
 ///         file_idx: Some(2),
 ///         file_must_include: vec![],
 ///     },
@@ -958,26 +1903,26 @@
 /// [`StreamSource::Zip`] with `zipUrls` field:
 ///
 /// ```
-/// use stremio_core::types::resource::StreamSource;
+/// use stremio_core::types::resource::{ArchiveUrl, StreamSource};
 ///
 /// let streams_json = serde_json::json!([
 /// {
-///     "zipUrls": ["https://example-source.com/file.rar", "https://example-source2.com/file2.rar"],
+///     "zipUrls": [["https://example-source.com/file.rar", 20000], ["https://example-source2.com/file2.rar"]],
 ///     // ...Stream
 /// },
 /// {
-///     "zipUrls": ["https://example-source3.com/file.rar", "https://example-source4.com/file2.rar"],
+///     "zipUrls": [["https://example-source3.com/file.rar"], ["https://example-source4.com/file2.rar"]],
 ///     "fileIdx": 1,
 ///     "fileMustInclude": ["includeFile1"],
 ///     // ...Stream
 /// },
 /// {
-///     "zipUrls": ["https://example-source5.com/file.rar", "https://example-source6.com/file2.rar"],
+///     "zipUrls": [["https://example-source5.com/file.rar"], ["https://example-source6.com/file2.rar"]],
 ///     "fileMustInclude": ["includeFile2"],
 ///     // ...Stream
 /// },
 /// {
-///     "zipUrls": ["https://example-source7.com/file.rar", "https://example-source8.com/file2.rar"],
+///     "zipUrls": [["https://example-source7.com/file.rar"], ["https://example-source8.com/file2.rar"]],
 ///     "fileIdx": 2,
 ///     // ...Stream
 /// }
@@ -985,22 +1930,22 @@
 ///
 /// let expected = vec![
 ///     StreamSource::Zip {
-///         zip_urls: vec!["https://example-source.com/file.rar".parse().unwrap(), "https://example-source2.com/file2.rar".parse().unwrap()],
+///         urls: vec![ArchiveUrl {url: "https://example-source.com/file.rar".parse().unwrap(), bytes: Some(20_000) }, ArchiveUrl {url: "https://example-source2.com/file2.rar".parse().unwrap(), bytes: None}],
 ///         file_idx: None,
 ///         file_must_include: vec![],
 ///     },
 ///     StreamSource::Zip {
-///         zip_urls: vec!["https://example-source3.com/file.rar".parse().unwrap(), "https://example-source4.com/file2.rar".parse().unwrap()],
+///         urls: vec![ArchiveUrl {url: "https://example-source3.com/file.rar".parse().unwrap(), bytes: None}, ArchiveUrl {url: "https://example-source4.com/file2.rar".parse().unwrap(), bytes: None}],
 ///         file_idx: Some(1),
 ///         file_must_include: vec!["includeFile1".into()],
 ///     },
 ///     StreamSource::Zip {
-///         zip_urls: vec!["https://example-source5.com/file.rar".parse().unwrap(), "https://example-source6.com/file2.rar".parse().unwrap()],
+///         urls: vec![ArchiveUrl {url: "https://example-source5.com/file.rar".parse().unwrap(), bytes: None}, ArchiveUrl {url: "https://example-source6.com/file2.rar".parse().unwrap(), bytes: None}],
 ///         file_idx: None,
 ///         file_must_include: vec!["includeFile2".into()],
 ///     },
 ///     StreamSource::Zip {
-///         zip_urls: vec!["https://example-source7.com/file.rar".parse().unwrap(), "https://example-source8.com/file2.rar".parse().unwrap()],
+///         urls: vec![ArchiveUrl {url: "https://example-source7.com/file.rar".parse().unwrap(), bytes: None}, ArchiveUrl {url: "https://example-source8.com/file2.rar".parse().unwrap(), bytes: None}],
 ///         file_idx: Some(2),
 ///         file_must_include: vec![],
 ///     },
@@ -1024,23 +1969,67 @@
     </span>YouTube {
         yt_id: String,
     },
-    <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
+    <span class="doccomment">/// Rar archive source
+    </span><span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>Rar {
-        rar_urls: Vec&lt;Url&gt;,
+        <span class="attr">#[serde(rename = <span class="string">"rarUrls"</span>)]
+        </span>urls: Vec&lt;ArchiveUrl&gt;,
         <span class="attr">#[serde(default)]
         </span>file_idx: <span class="prelude-ty">Option</span>&lt;u16&gt;,
         <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Vec::is_empty"</span>)]
         #[serde_as(deserialize_as = <span class="string">"DefaultOnNull"</span>)]
         </span>file_must_include: Vec&lt;String&gt;,
     },
-    <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
+    <span class="doccomment">/// Zip archive source
+    </span><span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>Zip {
-        zip_urls: Vec&lt;Url&gt;,
+        <span class="attr">#[serde(rename = <span class="string">"zipUrls"</span>)]
+        </span>urls: Vec&lt;ArchiveUrl&gt;,
         <span class="attr">#[serde(default)]
         </span>file_idx: <span class="prelude-ty">Option</span>&lt;u16&gt;,
         <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Vec::is_empty"</span>)]
         #[serde_as(deserialize_as = <span class="string">"DefaultOnNull"</span>)]
         </span>file_must_include: Vec&lt;String&gt;,
+    },
+    <span class="doccomment">/// 7zip archive source
+    </span><span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
+    </span>Zip7 {
+        <span class="attr">#[serde(rename = <span class="string">"7zipUrls"</span>)]
+        </span>urls: Vec&lt;ArchiveUrl&gt;,
+        <span class="attr">#[serde(default)]
+        </span>file_idx: <span class="prelude-ty">Option</span>&lt;u16&gt;,
+        <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Vec::is_empty"</span>)]
+        #[serde_as(deserialize_as = <span class="string">"DefaultOnNull"</span>)]
+        </span>file_must_include: Vec&lt;String&gt;,
+    },
+    <span class="doccomment">/// Tgz archive source
+    </span><span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
+    </span>Tgz {
+        <span class="attr">#[serde(rename = <span class="string">"tgzUrls"</span>)]
+        </span>urls: Vec&lt;ArchiveUrl&gt;,
+        <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+        </span>file_idx: <span class="prelude-ty">Option</span>&lt;u16&gt;,
+        <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Vec::is_empty"</span>)]
+        #[serde_as(deserialize_as = <span class="string">"DefaultOnNull"</span>)]
+        </span>file_must_include: Vec&lt;String&gt;,
+    },
+    <span class="doccomment">/// Tar archive source
+    </span><span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
+    </span>Tar {
+        <span class="attr">#[serde(rename = <span class="string">"tarUrls"</span>)]
+        </span>urls: Vec&lt;ArchiveUrl&gt;,
+        <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+        </span>file_idx: <span class="prelude-ty">Option</span>&lt;u16&gt;,
+        <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Vec::is_empty"</span>)]
+        #[serde_as(deserialize_as = <span class="string">"DefaultOnNull"</span>)]
+        </span>file_must_include: Vec&lt;String&gt;,
+    },
+    <span class="doccomment">/// Nzb sourced
+    </span><span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
+    </span>Nzb {
+        nzb_url: Url,
+        <span class="attr">#[serde(default)]
+        </span>servers: Vec&lt;Url&gt;,
     },
     <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>Torrent {
@@ -1075,9 +2064,81 @@
     },
 }
 
+<span class="doccomment">/// ```
+/// use stremio_core::types::resource::ArchiveUrl;
+///
+/// let expected = serde_json::json!([
+///     ["http://example.com/file0.rar"],
+///     ["http://example.com/file1.rar", 123]
+/// ]);
+/// let archive_urls = vec![ArchiveUrl { url: "http://example.com/file0.rar".parse().unwrap(), bytes: None }, ArchiveUrl { url: "http://example.com/file1.rar".parse().unwrap(), bytes: Some(123) }];
+///
+/// let ser_stream_source = serde_json::to_value(&amp;archive_urls).expect("Should serialize");
+/// assert_eq!(ser_stream_source, expected);
+/// println!("{:?}", ser_stream_source);
+/// let stream_source = serde_json::from_value::&lt;Vec&lt;ArchiveUrl&gt;&gt;(expected).expect("Should deserialize");
+/// assert_eq!(archive_urls, stream_source);
+/// ```
+</span><span class="attr">#[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(from = <span class="string">"ArchiveUrlShort"</span>, into = <span class="string">"ArchiveUrlShort"</span>)]
+</span><span class="kw">pub struct </span>ArchiveUrl {
+    <span class="kw">pub </span>url: Url,
+    <span class="doccomment">/// File size (if known) in Bytes
+    </span><span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+    </span><span class="kw">pub </span>bytes: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+}
+
+<span class="kw">impl </span>fmt::Debug <span class="kw">for </span>ArchiveUrl {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>std::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; std::fmt::Result {
+        f.debug_struct(<span class="string">"ArchiveUrl"</span>)
+            .field(<span class="string">"url"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.url.as_str())
+            .field(<span class="string">"bytes"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.bytes)
+            .finish()
+    }
+}
+
+<span class="kw">impl </span>From&lt;ArchiveUrlShort&gt; <span class="kw">for </span>ArchiveUrl {
+    <span class="kw">fn </span>from(value: ArchiveUrlShort) -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{
+            url: value.<span class="number">0</span>,
+            bytes: value.<span class="number">1</span>,
+        }
+    }
+}
+<span class="kw">impl </span>From&lt;ArchiveUrl&gt; <span class="kw">for </span>ArchiveUrlShort {
+    <span class="kw">fn </span>from(value: ArchiveUrl) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>(value.url, value.bytes)
+    }
+}
+
+<span class="comment">// TODO:
+</span><span class="doccomment">/// ```
+/// use stremio_core::types::resource::ArchiveUrlShort;
+///
+/// let stream_source = serde_json::from_value::&lt;Vec&lt;ArchiveUrlShort&gt;&gt;(serde_json::json!([
+///     ["https://example.com"],
+///     ["https://example.com", 123]
+/// ]))
+/// .expect("Should deserialize");
+/// ```
+</span><span class="attr">#[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
+</span><span class="kw">pub struct </span>ArchiveUrlShort(
+    Url,
+    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)] </span><span class="prelude-ty">Option</span>&lt;u64&gt;,
+);
+
+<span class="kw">impl </span>fmt::Debug <span class="kw">for </span>ArchiveUrlShort {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>std::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; std::fmt::Result {
+        f.debug_struct(<span class="string">"ArchiveUrl"</span>)
+            .field(<span class="string">"url"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>.as_str())
+            .field(<span class="string">"bytes"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">1</span>)
+            .finish()
+    }
+}
+
 <span class="kw">type </span>ExternalStreamSource = (<span class="prelude-ty">Option</span>&lt;Url&gt;, <span class="prelude-ty">Option</span>&lt;Url&gt;, <span class="prelude-ty">Option</span>&lt;String&gt;, <span class="prelude-ty">Option</span>&lt;String&gt;);
 
-<span class="kw">fn </span>deserialize_stream_source_external&lt;<span class="lifetime">'de</span>, D&gt;(
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>deserialize_stream_source_external&lt;<span class="lifetime">'de</span>, D&gt;(
     deserializer: D,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;ExternalStreamSource, D::Error&gt;
 <span class="kw">where
@@ -1142,35 +2203,204 @@
     <span class="kw-2">*</span>value == T::default()
 }
 
+<span class="attr">#[derive(Clone, derivative::Derivative, Serialize, PartialEq, Eq)]
+</span><span class="kw">pub struct </span>StreamUrls {
+    <span class="attr">#[serde(default)]
+    </span><span class="kw">pub </span>magnet_url: <span class="prelude-ty">Option</span>&lt;Url&gt;,
+    <span class="attr">#[serde(default)]
+    </span><span class="kw">pub </span>download_url: <span class="prelude-ty">Option</span>&lt;Url&gt;,
+    <span class="attr">#[serde(default)]
+    </span><span class="kw">pub </span>streaming_url: <span class="prelude-ty">Option</span>&lt;Url&gt;,
+    <span class="attr">#[serde(default)]
+    </span><span class="kw">pub </span>m3u_data_uri: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="doccomment">/// The Stream for which the Urls were generated
+    /// This is very important to have since the stream can change in a model
+    /// and allows us it check if the Urls are generated for the same Stream.
+    </span><span class="kw">pub </span>stream: Stream&lt;ConvertedStreamSource&gt;,
+}
+
+<span class="kw">impl </span>fmt::Debug <span class="kw">for </span>StreamUrls {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>std::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; std::fmt::Result {
+        f.debug_struct(<span class="string">"StreamUrls"</span>)
+            .field(
+                <span class="string">"magnet_url"</span>,
+                <span class="kw-2">&amp;</span><span class="self">self</span>.magnet_url.as_ref().map(ToString::to_string),
+            )
+            .field(
+                <span class="string">"download_url"</span>,
+                <span class="kw-2">&amp;</span><span class="self">self</span>.download_url.as_ref().map(ToString::to_string),
+            )
+            .field(
+                <span class="string">"streaming_url"</span>,
+                <span class="kw-2">&amp;</span><span class="self">self</span>.streaming_url.as_ref().map(ToString::to_string),
+            )
+            .field(<span class="string">"m3u_data_uri"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.m3u_data_uri)
+            .field(<span class="string">"stream"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.stream)
+            .finish()
+    }
+}
+
+<span class="kw">impl </span>StreamUrls {
+    <span class="doccomment">/// For a stream with an already converted source we can directly use the URL
+    </span><span class="kw">pub fn </span>new(
+        converted: Stream&lt;ConvertedStreamSource&gt;,
+        streaming_server_url: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Url&gt;,
+    ) -&gt; <span class="self">Self </span>{
+        <span class="kw">let </span>streaming_url = get_streaming_url(<span class="kw-2">&amp;</span>converted);
+        <span class="kw">let </span>download_url = get_download_url(<span class="kw-2">&amp;</span>converted, streaming_server_url);
+        <span class="kw">let </span>magnet_url = get_magnet_url(<span class="kw-2">&amp;</span>converted);
+
+        <span class="kw">let </span>m3u_data_uri = streaming_url.as_ref().map(|url| get_m3u_data_uri(url));
+
+        <span class="self">Self </span>{
+            magnet_url,
+            download_url,
+            streaming_url,
+            m3u_data_uri,
+            stream: converted.to_owned(),
+        }
+    }
+}
+
+<span class="kw">fn </span>get_magnet_url(converted: <span class="kw-2">&amp;</span>Stream&lt;ConvertedStreamSource&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;Url&gt; {
+    <span class="kw">match </span><span class="kw-2">&amp;</span>converted.source {
+        ConvertedStreamSource::Url { url } <span class="kw">if </span>url.scheme() == <span class="string">"magnet" </span>=&gt; Magnet::new(url.as_str())
+            .as_ref()
+            .map(ToString::to_string)
+            .ok()
+            .and_then(|url_string| url_string.parse().ok()),
+        <span class="comment">//Current Stream::download_url gets the magnet link and returns it as a download_url
+        </span>ConvertedStreamSource::Torrent {
+            info_hash,
+            announce,
+            ..
+        } =&gt; {
+            <span class="kw">let </span>torrent_magnet = Magnet {
+                dn: converted.name.to_owned(),
+                hash_type: <span class="prelude-val">Some</span>(<span class="string">"btih"</span>.to_string()),
+                xt: <span class="prelude-val">Some</span>(hex::encode(info_hash)),
+                xl: <span class="prelude-val">None</span>,
+                tr: announce
+                    .iter()
+                    <span class="comment">// `tracker` and `dht` prefixes are used internally by the server.js
+                    // we need to remove those prefixes when generating the magnet URL
+                    </span>.map(|tracker| {
+                        tracker
+                            .strip_prefix(<span class="string">"tracker:"</span>)
+                            .map(ToString::to_string)
+                            .unwrap_or_else(|| tracker.to_owned())
+                    })
+                    .map(|tracker| {
+                        tracker
+                            .strip_prefix(<span class="string">"dht:"</span>)
+                            .map(ToString::to_string)
+                            .unwrap_or_else(|| tracker.to_owned())
+                    })
+                    .map(|tracker| {
+                        utf8_percent_encode(<span class="kw-2">&amp;</span>tracker, URI_COMPONENT_ENCODE_SET).to_string()
+                    })
+                    .collect::&lt;Vec&lt;String&gt;&gt;(),
+                kt: <span class="prelude-val">None</span>,
+                ws: <span class="prelude-val">None</span>,
+                acceptable_source: <span class="prelude-val">None</span>,
+                mt: <span class="prelude-val">None</span>,
+                xs: <span class="prelude-val">None</span>,
+            };
+
+            torrent_magnet.to_string().parse().ok()
+        }
+        <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+    }
+}
+
+<span class="kw">fn </span>get_m3u_data_uri(streaming_url: <span class="kw-2">&amp;</span>Url) -&gt; String {
+    <span class="macro">format!</span>(
+        <span class="string">"data:application/octet-stream;charset=utf-8;base64,{}"</span>,
+        BASE64.encode(<span class="macro">format!</span>(<span class="string">"#EXTM3U\n#EXTINF:0\n{streaming_url}"</span>))
+    )
+}
+
+<span class="kw">fn </span>get_download_url(
+    converted: <span class="kw-2">&amp;</span>Stream&lt;ConvertedStreamSource&gt;,
+    streaming_server_url: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Url&gt;,
+) -&gt; <span class="prelude-ty">Option</span>&lt;Url&gt; {
+    <span class="kw">match </span><span class="kw-2">&amp;</span>converted.source {
+        ConvertedStreamSource::Url { url } <span class="kw">if </span>url.scheme() == <span class="string">"magnet" </span>=&gt; Magnet::new(url.as_str())
+            .as_ref()
+            .map(ToString::to_string)
+            .ok()
+            .and_then(|url_string| url_string.parse().ok()),
+        ConvertedStreamSource::Url { url } =&gt; <span class="prelude-val">Some</span>(url.to_owned()),
+        ConvertedStreamSource::Torrent { url, .. } =&gt; {
+            <span class="comment">// we just need to know that the server is running
+            </span>streaming_server_url.as_ref().map(|<span class="kw">_</span>| {
+                <span class="kw">let </span><span class="kw-2">mut </span>torrent_stream_url = url.clone();
+                {
+                    <span class="kw">let </span><span class="kw-2">mut </span>query_pairs = torrent_stream_url.query_pairs_mut();
+                    query_pairs
+                        <span class="comment">// clear any existing query parameters!
+                        </span>.clear()
+                        .append_pair(<span class="string">"external"</span>, <span class="string">"1"</span>)
+                        .append_pair(<span class="string">"download"</span>, <span class="string">"1"</span>);
+                }
+                torrent_stream_url
+            })
+        }
+        <span class="comment">// generate the Youtube video URL instead of providing the streaming url
+        </span>ConvertedStreamSource::YouTube { yt_id, .. } =&gt; <span class="prelude-val">Some</span>(
+            <span class="macro">format!</span>(
+                <span class="string">"https://youtube.com/watch?v={}"</span>,
+                utf8_percent_encode(yt_id.as_str(), URI_COMPONENT_ENCODE_SET)
+            )
+            .parse()
+            .expect(<span class="string">"Should always be a valid URL"</span>),
+        ),
+        ConvertedStreamSource::External { external_url, .. } =&gt; external_url.as_ref().cloned(),
+        ConvertedStreamSource::PlayerFrame { player_frame_url } =&gt; {
+            <span class="prelude-val">Some</span>(player_frame_url.to_owned())
+        }
+    }
+}
+
+<span class="kw">fn </span>get_streaming_url(converted: <span class="kw-2">&amp;</span>Stream&lt;ConvertedStreamSource&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;Url&gt; {
+    <span class="kw">match </span><span class="kw-2">&amp;</span>converted.source {
+        ConvertedStreamSource::Url { url } <span class="kw">if </span>url.scheme() == <span class="string">"magnet" </span>=&gt; <span class="prelude-val">None</span>,
+        ConvertedStreamSource::Url { url: streaming_url } =&gt; <span class="prelude-val">Some</span>(streaming_url.to_owned()),
+        ConvertedStreamSource::Torrent {
+            url: streaming_url, ..
+        } =&gt; <span class="prelude-val">Some</span>(streaming_url.to_owned()),
+        ConvertedStreamSource::YouTube {
+            url: streaming_url, ..
+        } =&gt; <span class="prelude-val">Some</span>(streaming_url.clone()),
+        <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+    }
+}
+
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
-    <span class="kw">use super</span>::<span class="kw-2">*</span>;
-
     <span class="attr">#[test]
-    </span><span class="kw">fn </span>test_stream_url_source_with_proxy_headers_to_streaming_url() {
-        <span class="kw">let </span>stream_json = <span class="macro">serde_json::json!</span>({
-            <span class="string">"url"</span>: <span class="string">"https://webdav.premiumize.me/%5B%20Torrent911.vc%20%5D%20The.Beekeeper.2024.FRENCH.1080p.WEBRip.x264-RZP.mkv"</span>,
-            <span class="string">"name"</span>: <span class="string">"webDav Premiumize"</span>,
-            <span class="string">"description"</span>: <span class="string">"[ Torrent911.vc ] The.Beekeeper.2024.FRENCH.1080p.WEBRip.x264-RZP.mkv"</span>,
-            <span class="string">"behaviorHints"</span>: {
-                <span class="string">"notWebReady"</span>: <span class="bool-val">true</span>,
-                <span class="string">"proxyHeaders"</span>: {
-                    <span class="string">"request"</span>: {
-                        <span class="string">"Authorization"</span>: <span class="string">"Basic 'XXXXXXXXXXXXXXXXXXXXXXX='"
-                    </span>}
-                }
-            }
+    </span><span class="kw">fn </span>test_lz_string_decompress() {
+        <span class="kw">let </span>url = <span class="string">"http://127.0.0.1:11470/nzb/create?lz=N4IgdgXgRgqgTgGxALhACwC4YA4GdkD0BAJnAK5gDWApmLgmQOYB0AxgPYC2Bj1GkUAgEMAjAA4RAdlYBOSQFYx1GQBYAZqwDMa6cXmyha6spmbRalWM0A2KBOYCAZAEsAvFIAM16x8dxX8tZqHjLUrFBCUAZCmqyRYqxiPvIATB4qItRQ1EIgADQguNRwAG7FuCgA2uBgOPhEUACekpweYNjU1sgAQswpMABqAPpiAEoeUACk8gCiAI4AAmDUAO64zGRFyxhFpcVsXMgqKpoEKvk1dYQEAFZC5BHIMAAilCsDalBqC0WsZHDUByrdY5XCNZZrA6cI4nM4XMC1PDXCjYSQpTSSFQeESaE7IZ4qFZiGSTdEARRUAC1GAANMQAYVJ3Umkm6AA8ABSklTTGZiFIAWlJmmmzxuC2oZA2Wz42Dgzk4gI40OOp3OBQRVyIrDiKhS1E0gREevkeigyEmmgAggB5STEXnsSmW%2BnWGRWoRLYHMVbUShCBwIZCBNUgAC6AF8gA"</span>.parse::&lt;url::Url&gt;().unwrap();
+        <span class="kw">let </span>lz_str = url
+            .query_pairs()
+            .find_map(|(key, value)| {
+                <span class="kw">if </span>key == <span class="string">"lz" </span>{
+                    <span class="prelude-val">Some</span>(value.to_string())
+                } <span class="kw">else </span>{
+                    <span class="prelude-val">None
+                </span>}
+            })
+            .unwrap();
+        <span class="kw">let </span>decomp =
+            lz_str::decompress_from_encoded_uri_component(<span class="kw-2">&amp;</span>lz_str).expect(<span class="string">"Should decompress"</span>);
 
-        });
+        <span class="kw">let </span>decomp_string =
+            String::from_utf16(<span class="kw-2">&amp;</span>decomp).expect(<span class="string">"Decompressed data is not valid UTF-16"</span>);
 
-        <span class="kw">let </span>stream = serde_json::from_value::&lt;Stream&gt;(stream_json)
-            .expect(<span class="string">"Should be able to deserialize valid Stream"</span>);
-        <span class="kw">let </span>expected = <span class="string">"http://127.0.0.1:3000/proxy/d=https%3A%2F%2Fwebdav.premiumize.me&amp;h=Authorization%3ABasic+%27XXXXXXXXXXXXXXXXXXXXXXX%3D%27/%5B%20Torrent911.vc%20%5D%20The.Beekeeper.2024.FRENCH.1080p.WEBRip.x264-RZP.mkv"</span>.parse::&lt;Url&gt;().expect(<span class="string">"Valid url"</span>);
-        <span class="macro">assert_eq!</span>(
-            expected,
-            stream
-                .streaming_url(<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="string">"http://127.0.0.1:3000/"</span>.parse().unwrap()))
-                .expect(<span class="string">"Should be able to generate streaming_url for Stream"</span>)
+        <span class="macro">println!</span>(
+            <span class="string">"Compressed string length: {}\nServer Url total Length: {}\n\t{decomp_string}"</span>,
+            decomp_string.len(),
+            url.as_str().len(),
         );
     }
 }

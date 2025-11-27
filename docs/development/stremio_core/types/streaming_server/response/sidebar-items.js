@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["GetHTTPSResponse","OpensubtitlesParamsResponse","SettingsResponse"]};
+window.SIDEBAR_ITEMS = {"struct":["ArchiveCreateResponse","GetHTTPSResponse","OpensubtitlesParamsResponse","SettingsResponse"]};

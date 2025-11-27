@@ -242,15 +242,28 @@
 <a href="#241" id="241">241</a>
 <a href="#242" id="242">242</a>
 <a href="#243" id="243">243</a>
-<a href="#244" id="244">244</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::sync::RwLock;
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::sync::RwLock;
 
 <span class="kw">use </span>enclose::enclose;
 <span class="kw">use </span>futures::{future, try_join, FutureExt, StreamExt};
 <span class="kw">use </span>gloo_utils::format::JsValueSerdeExt;
 <span class="kw">use </span>once_cell::sync::Lazy;
-<span class="kw">use </span>tracing::{info, Level};
+<span class="kw">use </span>tracing::{error, info, Level};
 <span class="kw">use </span>tracing_wasm::WASMLayerConfigBuilder;
-<span class="kw">use </span>wasm_bindgen::{prelude::wasm_bindgen, JsValue};
+<span class="kw">use </span>wasm_bindgen::{prelude::wasm_bindgen, JsValue, UnwrapThrowExt};
 
 <span class="kw">use </span>stremio_core::{
     constants::{
@@ -261,9 +274,14 @@
     models::common::Loadable,
     runtime::{msg::Action, Env, EnvError, Runtime, RuntimeAction, RuntimeEvent},
     types::{
-        events::DismissedEventsBucket, library::LibraryBucket, notifications::NotificationsBucket,
-        profile::Profile, resource::Stream, search_history::SearchHistoryBucket,
-        server_urls::ServerUrlsBucket, streams::StreamsBucket,
+        events::DismissedEventsBucket,
+        library::LibraryBucket,
+        notifications::NotificationsBucket,
+        profile::Profile,
+        resource::{Stream, StreamSource},
+        search_history::SearchHistoryBucket,
+        server_urls::ServerUrlsBucket,
+        streams::StreamsBucket,
     },
 };
 
@@ -433,8 +451,14 @@
 
 <span class="attr">#[wasm_bindgen]
 </span><span class="kw">pub fn </span>dispatch(action: JsValue, field: JsValue, location_hash: JsValue) {
-    <span class="kw">let </span>action: Action =
-        JsValueSerdeExt::into_serde(<span class="kw-2">&amp;</span>action).expect(<span class="string">"dispatch failed because of Action"</span>);
+    <span class="kw">let </span>action_json = js_sys::JSON::stringify(<span class="kw-2">&amp;</span>action)
+        .map(String::from)
+        .unwrap_throw();
+    <span class="kw">let </span>action: Action = JsValueSerdeExt::into_serde(<span class="kw-2">&amp;</span>action)
+        .inspect_err(|err| {
+            <span class="macro">error!</span>(action_json, <span class="string">"dispatch failed because of Action: {err}"</span>);
+        })
+        .expect(<span class="string">"dispatch failed because of Action"</span>);
     <span class="kw">let </span>field: <span class="prelude-ty">Option</span>&lt;WebModelField&gt; =
         JsValueSerdeExt::into_serde(<span class="kw-2">&amp;</span>field).expect(<span class="string">"dispatch failed because of Field"</span>);
     <span class="kw">let </span>runtime = RUNTIME.read().expect(<span class="string">"runtime read failed"</span>);
@@ -478,7 +502,9 @@
 
 <span class="attr">#[wasm_bindgen]
 </span><span class="kw">pub fn </span>decode_stream(stream: JsValue) -&gt; JsValue {
-    <span class="kw">let </span>stream = stream.as_string().map(Stream::decode);
+    <span class="kw">let </span>stream = stream
+        .as_string()
+        .map(|base64_string| Stream::&lt;StreamSource&gt;::decode(<span class="kw-2">&amp;</span>base64_string));
     <span class="kw">match </span>stream {
         <span class="prelude-val">Some</span>(<span class="prelude-val">Ok</span>(stream)) =&gt; {
             &lt;JsValue <span class="kw">as </span>JsValueSerdeExt&gt;::from_serde(<span class="kw-2">&amp;</span>stream).expect(<span class="string">"JsValue from Stream"</span>)

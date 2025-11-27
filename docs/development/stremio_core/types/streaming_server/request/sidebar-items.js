@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["CreateMagnetBody","CreateMagnetRequest","CreateMagnetTorrent","CreateTorrentBlobBody","CreateTorrentBlobRequest","StatisticsRequest","TorrentStatisticsRequest"]};
+window.SIDEBAR_ITEMS = {"struct":["ArchiveStreamBody","ArchiveStreamOptions","CreateMagnetBody","CreateMagnetRequest","CreateMagnetTorrent","CreateTorrentBlobBody","CreateTorrentBlobRequest","FtpStreamBody","StatisticsRequest","TorrentStatisticsRequest"]};
