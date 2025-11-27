@@ -1221,8 +1221,6 @@ fn stream_update(
     streaming_server_url: &Url,
 ) -> Effects {
     match selected {
-        // update it only if the result is for the same original
-        // stream that the request was made for
         Some(selected) => {
             let next_stream = match selected.stream.convert(Some(&streaming_server_url)) {
                 Ok(converted_stream) => {
@@ -1236,7 +1234,7 @@ fn stream_update(
 
             eq_update(stream, Some(next_stream))
         }
-        _ => Effects::none().unchanged(),
+        None => eq_update(stream, None),
     }
 }
 
