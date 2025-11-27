@@ -194,6 +194,10 @@ impl WatchedBitField {
             false
         }
     }
+    pub fn all_watched(&self) -> bool {
+        // self.video_ids.iter()
+        todo!()
+    }
 
     pub fn set(&mut self, idx: usize, v: bool) {
         self.bitfield.set(idx, v);
