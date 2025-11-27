@@ -131,7 +131,7 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
                 stream: selected.stream.clone(),
                 deep_links: StreamDeepLinks::from((
                     &selected.stream,
-                    &streaming_server.base_url,
+                    streaming_server.base_url.as_ref(),
                     &ctx.profile.settings,
                 ))
                 .into_web_deep_links(),
