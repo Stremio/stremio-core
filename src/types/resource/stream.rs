@@ -114,48 +114,6 @@ where
 }
 
 impl Stream {
-    pub fn magnet_url(&self) -> Option<Magnet> {
-        match &self.source {
-            StreamSource::Url { url } if url.scheme() == "magnet" => Magnet::new(url.as_str()).ok(),
-            StreamSource::Torrent {
-                info_hash,
-                announce,
-                ..
-            } => Some(Magnet {
-                dn: self.name.to_owned(),
-                hash_type: Some("btih".to_string()),
-                xt: Some(hex::encode(info_hash)),
-                xl: None,
-                tr: announce
-                    .iter()
-                    // `tracker` and `dht` prefixes are used internally by the server.js
-                    // we need to remove those prefixes when generating the magnet URL
-                    .map(|tracker| {
-                        tracker
-                            .strip_prefix("tracker:")
-                            .map(ToString::to_string)
-                            .unwrap_or_else(|| tracker.to_owned())
-                    })
-                    .map(|tracker| {
-                        tracker
-                            .strip_prefix("dht:")
-                            .map(ToString::to_string)
-                            .unwrap_or_else(|| tracker.to_owned())
-                    })
-                    .map(|tracker| {
-                        utf8_percent_encode(&tracker, URI_COMPONENT_ENCODE_SET).to_string()
-                    })
-                    .collect::<Vec<String>>(),
-                kt: None,
-                ws: None,
-                acceptable_source: None,
-                mt: None,
-                xs: None,
-            }),
-            _ => None,
-        }
-    }
-
     pub fn youtube(video_id: &str) -> Option<Self> {
         video_id
             .starts_with(YOUTUBE_ADDON_ID_PREFIX)
