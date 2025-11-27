@@ -3,6 +3,7 @@
 use enclose::enclose;
 use futures::FutureExt;
 use http::Request;
+use magnet_url::Magnet;
 use num::{rational::Ratio, ToPrimitive};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnError, NoneAsEmptyString};
@@ -182,9 +183,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LocalSearch {
                 search_query,
                 max_results,
             })) => {
-                match &self.searcher {
+                let magnet = Magnet::new(search_query).ok();
+                match (&self.searcher, magnet) {
                     // local search can be performed
-                    Some(searcher) => {
+                    (Some(searcher), None) => {
                         let new_search_results = searcher
                             .search(search_query, *max_results)
                             .into_iter()
@@ -194,7 +196,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LocalSearch {
                         eq_update(&mut self.search_results, new_search_results)
                     }
                     // we first need to load the Searchable records from Cinemeta
-                    None => Effects::none().unchanged(),
+                    // or search query is a magnet link
+                    _ => Effects::none().unchanged(),
                 }
             }
             Msg::Internal(Internal::LoadLocalSearchResult(_url, result)) => {
