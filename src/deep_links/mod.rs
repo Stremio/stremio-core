@@ -580,14 +580,14 @@ pub struct StreamDeepLinks {
     pub external_player: ExternalPlayerLink,
 }
 
-impl From<(&Stream, &Option<Url>, &Settings)> for StreamDeepLinks {
+impl From<(&Stream, Option<&Url>, &Settings)> for StreamDeepLinks {
     /// Create a [`StreamDeepLinks`] using the [`Stream`],
     /// the server url (from [`StreamingServer::base_url`] which indicates a running or not server)
     /// and the user's [`Settings`] in order to use the [`Settings::player_type`] for generating a
     /// player-specific url.
     ///
     /// [`StreamingServer::base_url`]: crate::models::streaming_server::StreamingServer::base_url
-    fn from((stream, streaming_server_url, settings): (&Stream, &Option<Url>, &Settings)) -> Self {
+    fn from((stream, streaming_server_url, settings): (&Stream, Option<&Url>, &Settings)) -> Self {
         StreamDeepLinks {
             player: stream
                 .encode()
@@ -598,11 +598,7 @@ impl From<(&Stream, &Option<Url>, &Settings)> for StreamDeepLinks {
                     )
                 })
                 .unwrap_or_else(|error| ErrorLink::from(error).into()),
-            external_player: ExternalPlayerLink::from((
-                stream,
-                streaming_server_url.as_ref(),
-                settings,
-            )),
+            external_player: ExternalPlayerLink::from((stream, streaming_server_url, settings)),
         }
     }
 }
@@ -640,7 +636,7 @@ impl
         &Stream,
         &ResourceRequest,
         &ResourceRequest,
-        &Option<Url>,
+        Option<&Url>,
         &Settings,
     )> for StreamDeepLinks
 {
@@ -655,7 +651,7 @@ impl
             &Stream,
             &ResourceRequest,
             &ResourceRequest,
-            &Option<Url>,
+            Option<&Url>,
             &Settings,
         ),
     ) -> Self {
@@ -674,11 +670,7 @@ impl
                     )
                 })
                 .unwrap_or_else(|error| ErrorLink::from(error).into()),
-            external_player: ExternalPlayerLink::from((
-                stream,
-                streaming_server_url.as_ref(),
-                settings,
-            )),
+            external_player: ExternalPlayerLink::from((stream, streaming_server_url, settings)),
         }
     }
 }
