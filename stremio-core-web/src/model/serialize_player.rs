@@ -141,8 +141,7 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
             subtitles_path: &selected.subtitles_path,
         }),
         stream: player.stream.as_ref().map(|stream| {
-            stream.as_ref().map(|(urls, stream)| {
-                tracing::trace!(?urls, "StreamUrls");
+            stream.as_ref().map(|(_urls, stream)| {
                 let mut url_stream = stream.clone();
                 // make sure we clear any proxy_headers as they have already been applied by core
                 // stremio-video can apply them a second time if they exist.
