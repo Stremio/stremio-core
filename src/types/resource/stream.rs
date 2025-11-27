@@ -13,7 +13,7 @@ use magnet_url::Magnet;
 use percent_encoding::utf8_percent_encode;
 use serde::{de::Error, Deserialize, Deserializer, Serialize};
 use serde_with::{serde_as, DefaultOnNull, VecSkipError};
-use url::Url;
+use url::{form_urlencoded, Url};
 
 use stremio_serde_hex::{SerHex, Strict};
 
@@ -533,10 +533,49 @@ impl Stream {
             // we still need to create torrents, etc. in stremio-video
             // as it's not part of the current scope
             // This keeps the `magnet:` urls working until we get the the streaming url
-            (_, StreamSource::Url { url }) => {
+            (streaming_server_url, StreamSource::Url { url }) if url.scheme() != "magnet" => {
                 let url = Self::ftp_url_handler(streaming_server_url, url)?;
 
+                // If proxy headers are set and streaming server is available, build the proxied streaming url from streaming server url
+                // Otherwise return the url
+                let url = match (&self.behavior_hints.proxy_headers, streaming_server_url) {
+                    (
+                        Some(StreamProxyHeaders { request, response }),
+                        Some(streaming_server_url),
+                    ) => {
+                        let mut streaming_url = streaming_server_url.to_owned();
+                        let mut proxy_query = form_urlencoded::Serializer::new(String::new());
+                        let origin = format!("{}://{}", url.scheme(), url.authority());
+                        proxy_query.append_pair("d", origin.as_str());
+                        proxy_query.extend_pairs(
+                            request
+                                .iter()
+                                .map(|header| ("h", format!("{}:{}", header.0, header.1))),
+                        );
+                        proxy_query.extend_pairs(
+                            response
+                                .iter()
+                                .map(|header| ("r", format!("{}:{}", header.0, header.1))),
+                        );
+
+                        streaming_url.set_path(&format!(
+                            "proxy/{query}/{url_path}",
+                            query = proxy_query.finish().as_str(),
+                            url_path = &url.path().strip_prefix('/').unwrap_or(url.path()),
+                        ));
+
+                        streaming_url.set_query(url.query());
+                        streaming_url
+                    }
+                    _ => url.to_owned(),
+                };
+
                 Ok(self.to_converted(ConvertedStreamSource::Url { url }))
+            }
+            // Magnet URL stream source handling
+            // we keep the magnet url and return None for Steaming url later on
+            (_streaming_server_url, StreamSource::Url { url: streaming_url }) => {
+                Ok(self.to_converted(ConvertedStreamSource::Url { url: streaming_url }))
             }
             (Some(streaming_server_url), StreamSource::YouTube { yt_id }) => {
                 Ok(self.to_converted(ConvertedStreamSource::YouTube {
@@ -560,6 +599,7 @@ impl Stream {
             (None, StreamSource::YouTube { .. }) => Err(EnvError::Other(
                 "Can't play Youtube videos because streaming server is not running".into(),
             )),
+            // Torrent stream source handling
             (
                 Some(streaming_server_url),
                 StreamSource::Torrent {
