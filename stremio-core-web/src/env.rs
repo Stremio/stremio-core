@@ -295,26 +295,9 @@ impl Env for WebEnv {
                 .expect("WebEnv::fetch: JsValue from Headers failed to be built")
         };
 
-        // let body = if parts.method != Method::GET {
-        //     let js_value = <JsValue as JsValueSerdeExt>::from_serde(&body).expect(
-        //         "JsValue of the Body failed to be built from a serializable using JSON format",
-        //     );
-        //     tracing::info!("JsValue from Serialize-able struct: {:?}", &js_value);
-
-        //     if js_value != JsValue::null() {
-        //         tracing::info!("url: {}", url);
-        //         Some(js_value.into_serde::<String>().unwrap())
-        //     } else {
-        //         None
-        //     }
-        // } else {
-        //     None
-        // };
-
         let body = match serde_json::to_string(&body) {
             Ok(ref body) if body != "null" && parts.method != Method::GET => {
                 let js_value = JsValue::from_str(body);
-                // tracing::info!("url: {} JsValue Body: {:?}", &url, &js_value);
                 Some(js_value)
             }
             _ => None,
@@ -333,12 +316,30 @@ impl Env for WebEnv {
             let js_fut = JsFuture::from(promise);
             let resp = js_fut.await.map_err(|error| {
                 tracing::error!(
-                    "{:?}\n Method: {} Url: {}\nBody{}",
-                    error,
+                    "{:?}\n Method: {} Url: {} {body_nobody}",
+                    error
+                        .clone()
+                        .dyn_into::<js_sys::Error>()
+                        .map(|error| String::from(error.message()))
+                        .unwrap_or_else(|_err| {
+                            tracing::error!("Failed to dyn_into Js Error, use '{UNKNOWN_ERROR}'");
+                            UNKNOWN_ERROR.to_owned()
+                        }),
                     parts.method,
                     url,
-                    body.map(|js_value| js_value.as_string().unwrap_or_default())
-                        .unwrap_or_default()
+                    body_nobody = if Method::GET == parts.method {
+                        "".to_owned()
+                    } else {
+                        let body_content = body
+                            .map(|js_value| js_value.as_string().unwrap_or_default())
+                            .unwrap_or_default();
+
+                        if body_content.is_empty() {
+                            "\nNo JSON body".to_owned()
+                        } else {
+                            format!("\nBody: {}", body_content)
+                        }
+                    }
                 );
                 EnvError::Fetch(
                     error
