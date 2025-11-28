@@ -206,7 +206,7 @@ impl Stream {
 
                 Ok(stream_url)
             }
-            (None, _) => Err(EnvError::Other(
+            (None, "ftp") | (None, "ftps") => Err(EnvError::Other(
                 "Can't play Ftp(s) because streaming server is not running".into(),
             )),
             _ => Ok(url),
