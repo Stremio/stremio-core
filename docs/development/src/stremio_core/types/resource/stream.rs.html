@@ -1409,7 +1409,7 @@
 
                 <span class="prelude-val">Ok</span>(stream_url)
             }
-            (<span class="prelude-val">None</span>, <span class="kw">_</span>) =&gt; <span class="prelude-val">Err</span>(EnvError::Other(
+            (<span class="prelude-val">None</span>, <span class="string">"ftp"</span>) | (<span class="prelude-val">None</span>, <span class="string">"ftps"</span>) =&gt; <span class="prelude-val">Err</span>(EnvError::Other(
                 <span class="string">"Can't play Ftp(s) because streaming server is not running"</span>.into(),
             )),
             <span class="kw">_ </span>=&gt; <span class="prelude-val">Ok</span>(url),

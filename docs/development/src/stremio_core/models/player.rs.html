@@ -1602,16 +1602,7 @@
 <a href="#1601" id="1601">1601</a>
 <a href="#1602" id="1602">1602</a>
 <a href="#1603" id="1603">1603</a>
-<a href="#1604" id="1604">1604</a>
-<a href="#1605" id="1605">1605</a>
-<a href="#1606" id="1606">1606</a>
-<a href="#1607" id="1607">1607</a>
-<a href="#1608" id="1608">1608</a>
-<a href="#1609" id="1609">1609</a>
-<a href="#1610" id="1610">1610</a>
-<a href="#1611" id="1611">1611</a>
-<a href="#1612" id="1612">1612</a>
-<a href="#1613" id="1613">1613</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#1604" id="1604">1604</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>std::ops::Div;
 
 <span class="kw">use </span>base64::Engine;
@@ -1639,7 +1630,7 @@
 };
 <span class="kw">use </span><span class="kw">crate</span>::types::library::{LibraryBucket, LibraryItem};
 <span class="kw">use </span><span class="kw">crate</span>::types::player::{IntroData, IntroOutro};
-<span class="kw">use </span><span class="kw">crate</span>::types::profile::{Profile, Settings <span class="kw">as </span>ProfileSettings};
+<span class="kw">use </span><span class="kw">crate</span>::types::profile::Profile;
 <span class="kw">use </span><span class="kw">crate</span>::types::resource::{
     MetaItem, SeriesInfo, Stream, StreamSource, StreamUrls, Subtitles, Video,
 };
@@ -1816,12 +1807,8 @@
                     <span class="kw-2">&amp;</span><span class="self">self</span>.next_video,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
                 );
-                <span class="kw">let </span>next_stream_effects = next_stream_update(
-                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.next_stream,
-                    <span class="kw-2">&amp;</span><span class="self">self</span>.next_streams,
-                    <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
-                    <span class="kw-2">&amp;</span>ctx.profile.settings,
-                );
+                <span class="kw">let </span>next_stream_effects =
+                    next_stream_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.next_stream, <span class="kw-2">&amp;</span><span class="self">self</span>.next_streams, <span class="kw-2">&amp;</span><span class="self">self</span>.selected);
                 <span class="comment">// Make sure to update the steams and in term the StreamsBucket
                 // once the player loads the newly selected item
                 </span><span class="kw">let </span>update_streams_effects = <span class="kw">match </span>(<span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_item) {
@@ -2422,12 +2409,8 @@
                     <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
                 ));
 
-                <span class="kw">let </span>next_stream_effects = next_stream_update(
-                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.next_stream,
-                    <span class="kw-2">&amp;</span><span class="self">self</span>.next_streams,
-                    <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
-                    <span class="kw-2">&amp;</span>ctx.profile.settings,
-                );
+                <span class="kw">let </span>next_stream_effects =
+                    next_stream_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.next_stream, <span class="kw-2">&amp;</span><span class="self">self</span>.next_streams, <span class="kw-2">&amp;</span><span class="self">self</span>.selected);
 
                 <span class="kw">let </span>series_info_effects =
                     series_info_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.series_info, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_item);
@@ -2700,7 +2683,6 @@
     stream: <span class="kw-2">&amp;mut </span><span class="prelude-ty">Option</span>&lt;Stream&gt;,
     next_streams: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;ResourceLoadable&lt;Vec&lt;Stream&gt;&gt;&gt;,
     selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
-    settings: <span class="kw-2">&amp;</span>ProfileSettings,
 ) -&gt; Effects {
     <span class="kw">let </span>next_stream = <span class="kw">match </span>(selected, next_streams) {
         (
@@ -2709,7 +2691,7 @@
                 content: <span class="prelude-val">Some</span>(Loadable::Ready(streams)),
                 ..
             }),
-        ) <span class="kw">if </span>settings.binge_watching =&gt; streams
+        ) =&gt; streams
             .iter()
             .find(|next_stream| next_stream.is_binge_match(stream))
             .cloned(),
