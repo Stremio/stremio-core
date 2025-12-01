@@ -26,7 +26,7 @@ use crate::types::api::{
 };
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::player::{IntroData, IntroOutro};
-use crate::types::profile::{Profile, Settings as ProfileSettings};
+use crate::types::profile::Profile;
 use crate::types::resource::{
     MetaItem, SeriesInfo, Stream, StreamSource, StreamUrls, Subtitles, Video,
 };
@@ -203,12 +203,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.next_video,
                     &self.selected,
                 );
-                let next_stream_effects = next_stream_update(
-                    &mut self.next_stream,
-                    &self.next_streams,
-                    &self.selected,
-                    &ctx.profile.settings,
-                );
+                let next_stream_effects =
+                    next_stream_update(&mut self.next_stream, &self.next_streams, &self.selected);
                 // Make sure to update the steams and in term the StreamsBucket
                 // once the player loads the newly selected item
                 let update_streams_effects = match (&self.selected, &self.meta_item) {
@@ -809,12 +805,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.selected,
                 ));
 
-                let next_stream_effects = next_stream_update(
-                    &mut self.next_stream,
-                    &self.next_streams,
-                    &self.selected,
-                    &ctx.profile.settings,
-                );
+                let next_stream_effects =
+                    next_stream_update(&mut self.next_stream, &self.next_streams, &self.selected);
 
                 let series_info_effects =
                     series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
@@ -1087,7 +1079,6 @@ fn next_stream_update(
     stream: &mut Option<Stream>,
     next_streams: &Option<ResourceLoadable<Vec<Stream>>>,
     selected: &Option<Selected>,
-    settings: &ProfileSettings,
 ) -> Effects {
     let next_stream = match (selected, next_streams) {
         (
@@ -1096,7 +1087,7 @@ fn next_stream_update(
                 content: Some(Loadable::Ready(streams)),
                 ..
             }),
-        ) if settings.binge_watching => streams
+        ) => streams
             .iter()
             .find(|next_stream| next_stream.is_binge_match(stream))
             .cloned(),

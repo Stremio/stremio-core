@@ -29,7 +29,7 @@ where
     }
 }
 
-#[derive(Default, Clone, Serialize)]
+#[derive(Default, Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AddonDetails {
     pub selected: Option<Selected>,
