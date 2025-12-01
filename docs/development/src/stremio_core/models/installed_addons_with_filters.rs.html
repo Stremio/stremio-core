@@ -169,19 +169,19 @@
     <span class="kw">pub </span>request: InstalledAddonsRequest,
 }
 
-<span class="attr">#[derive(Clone, PartialEq, Eq, Serialize)]
+<span class="attr">#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 </span><span class="kw">pub struct </span>SelectableType {
     <span class="kw">pub </span>r#type: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>selected: bool,
     <span class="kw">pub </span>request: InstalledAddonsRequest,
 }
 
-<span class="attr">#[derive(Default, Clone, PartialEq, Eq, Serialize)]
+<span class="attr">#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize)]
 </span><span class="kw">pub struct </span>Selectable {
     <span class="kw">pub </span>types: Vec&lt;SelectableType&gt;,
 }
 
-<span class="attr">#[derive(Default, Clone, Serialize)]
+<span class="attr">#[derive(Default, Debug, Clone, Serialize)]
 </span><span class="kw">pub struct </span>InstalledAddonsWithFilters {
     <span class="kw">pub </span>selected: <span class="prelude-ty">Option</span>&lt;Selected&gt;,
     <span class="kw">pub </span>selectable: Selectable,
