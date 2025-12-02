@@ -6,7 +6,7 @@ use gloo_utils::format::JsValueSerdeExt;
 use once_cell::sync::Lazy;
 use tracing::{error, info, Level};
 use tracing_wasm::WASMLayerConfigBuilder;
-use wasm_bindgen::{prelude::wasm_bindgen, JsValue, UnwrapThrowExt};
+use wasm_bindgen::{prelude::wasm_bindgen, JsCast as _, JsValue, UnwrapThrowExt};
 
 use stremio_core::{
     constants::{
