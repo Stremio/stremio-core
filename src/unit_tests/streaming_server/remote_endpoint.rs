@@ -56,6 +56,12 @@ fn remote_endpoint() {
     fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
         match request {
             Request { url, method, .. }
+                if method == "GET" && url == "http://127.0.0.1:11470/heartbeat" =>
+            {
+                future::ok(Box::new(SuccessResponse { success: True }) as Box<dyn Any + Send>)
+                    .boxed_env()
+            }
+            Request { url, method, .. }
                 if method == "GET" && url == "http://127.0.0.1:11470/settings" =>
             {
                 future::ok(Box::new(SettingsResponse {
