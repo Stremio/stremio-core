@@ -569,15 +569,52 @@ pub fn create_torrent_request<E: Env + 'static>(
     .into()
 }
 
-fn parse_magnet(magnet: &Url) -> Result<(InfoHash, Vec<String>), MagnetError> {
-    let magnet = Magnet::new(magnet.as_str())?;
-    let info_hash = magnet.xt.ok_or(MagnetError::NotAMagnetURL)?;
-    let info_hash = info_hash
-        .parse()
-        .map_err(|_err| MagnetError::NotAMagnetURL)?;
+/// Decode the BTIH hash from a magnet link into raw bytes.
+/// Supports Base32 (32 or 52 chars) and hex (40 or 64 chars).
+fn decode_btih(magnet_uri: &str) -> Result<(Magnet, Vec<u8>), Box<dyn std::error::Error>> {
+    let magnet = Magnet::new(magnet_uri).map_err(|err| err.to_string())?;
 
-    let announce = magnet.tr;
-    Ok((info_hash, announce))
+    /// Only BTIH is currently supported
+    const BTIH_TYPE: &str = "btih";
+    // (exact topic) parameters
+    let (_hash_type, hash_str) = match (magnet.hash_type(), magnet.hash()) {
+        (None, Some(_)) => return Err("No hash type in exact topic parameter found".into()),
+        (Some(_), None) => return Err("No hash in exact topic parameter found".into()),
+        (Some(btih_type), Some(hash_str)) if btih_type == BTIH_TYPE => (btih_type, hash_str),
+        (Some(_other_type), Some(_hash_str)) => {
+            return Err("No BTIH hash type in exact topic parameter found".into())
+        }
+        (None, None) => return Err("No hash and no hash type provided".into()),
+    };
+    let hash_str = hash_str.trim();
+
+    // Choose decoder based on length and character set
+    let decoded = match hash_str.len() {
+        // Base32 (SHA-1 or SHA-256)
+        32 | 52 => data_encoding::BASE32.decode(hash_str.as_bytes())?,
+        40 | 64 if hash_str.chars().all(|c| c.is_ascii_hexdigit()) => {
+            hex::decode(hash_str.as_bytes())?
+        }
+        _ => return Err(format!("Unrecognized hash format: {}", hash_str).into()),
+    };
+
+    Ok((magnet, decoded))
+}
+
+fn parse_magnet(magnet: &Url) -> Result<(InfoHash, Vec<String>), MagnetError> {
+    let (magnet, hash_vec) =
+        decode_btih(magnet.as_str()).map_err(|_err| MagnetError::NotAMagnetURL)?;
+    let mut hash: [u8; 20] = [0_u8; 20];
+
+    if hash_vec.len() != 20 {
+        return Err(MagnetError::NotAMagnetURL);
+    }
+    hash.copy_from_slice(&hash_vec[..20]);
+
+    let info_hash = InfoHash::new(hash);
+
+    let announce = magnet.trackers();
+    Ok((info_hash, announce.to_vec()))
 }
 
 fn parse_torrent(torrent: &[u8]) -> Result<(InfoHash, Vec<String>), serde_bencode::Error> {
@@ -709,11 +746,26 @@ fn update_remote_url<E: Env + 'static>(
 mod tests {
     use magnet_url::Magnet;
 
+    use crate::models::streaming_server::decode_btih;
+
     #[test]
     fn test_magnet_hash() {
         let magnet = Magnet::new("magnet:?xt=urn:btih:0d54e2339706f173ac20f4effb4ad42d9c7a84e9&dn=Halo.S02.1080p.WEBRip.x265.DDP5.1.Atmos-WAR").expect("Should be valid magnet Url");
 
         // assert_eq!(magnet.xt)
         dbg!(magnet);
+    }
+
+    #[test]
+    fn test_magnet() {
+        {
+            let magnet_1 = "magnet:?xt=urn:btih:8C3C23F2D1635FA63968C43D3366329E7A14EB39&dn=Pluribus%20S01E05%201080p%20WEB%20h264-ETHEL&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Fpublic.popcorn-tracker.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dler.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Fglotorrents.pw%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Ftorrent.gresille.org%3A80%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337&tr=udp%3A%2F%2Ftracker.internetwarriors.net%3A1337";
+
+            let (_magnet, _hash) = decode_btih(magnet_1).expect("Should parse BTIH hash");
+        }
+        {
+            let magnet_2 = "magnet:?xt=urn:btih:AA145F3937E74AA9235A4AB00D5B9BCFDBB08C78&dn=Pluribus.S01E01.1080p.x265-ELiTE&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=http%3A%2F%2Ftracker.bt4g.com%3A2095%2Fannounce&tr=http%3A%2F%2Ftracker.renfei.net%3A8080%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=http%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&tr=udp%3A%2F%2Fopentracker.i2p.rocks%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.internetwarriors.net%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcoppersurfer.tk%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.zer0day.to%3A1337%2Fannounce";
+            let (_magnet, _hash) = decode_btih(magnet_2).expect("Should parse BTIH hash");
+        }
     }
 }
