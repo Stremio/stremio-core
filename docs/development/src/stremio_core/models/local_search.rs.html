@@ -401,11 +401,15 @@
 <a href="#400" id="400">400</a>
 <a href="#401" id="401">401</a>
 <a href="#402" id="402">402</a>
-<a href="#403" id="403">403</a></pre></div><pre class="rust"><code><span class="doccomment">//! Local autocompletion search
+<a href="#403" id="403">403</a>
+<a href="#404" id="404">404</a>
+<a href="#405" id="405">405</a>
+<a href="#406" id="406">406</a></pre></div><pre class="rust"><code><span class="doccomment">//! Local autocompletion search
 
 </span><span class="kw">use </span>enclose::enclose;
 <span class="kw">use </span>futures::FutureExt;
 <span class="kw">use </span>http::Request;
+<span class="kw">use </span>magnet_url::Magnet;
 <span class="kw">use </span>num::{rational::Ratio, ToPrimitive};
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>serde_with::{serde_as, DefaultOnError, NoneAsEmptyString};
@@ -585,9 +589,10 @@
                 search_query,
                 max_results,
             })) =&gt; {
-                <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.searcher {
+                <span class="kw">let </span>magnet = Magnet::new(search_query).ok();
+                <span class="kw">match </span>(<span class="kw-2">&amp;</span><span class="self">self</span>.searcher, magnet) {
                     <span class="comment">// local search can be performed
-                    </span><span class="prelude-val">Some</span>(searcher) =&gt; {
+                    </span>(<span class="prelude-val">Some</span>(searcher), <span class="prelude-val">None</span>) =&gt; {
                         <span class="kw">let </span>new_search_results = searcher
                             .search(search_query, <span class="kw-2">*</span>max_results)
                             .into_iter()
@@ -597,7 +602,8 @@
                         eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.search_results, new_search_results)
                     }
                     <span class="comment">// we first need to load the Searchable records from Cinemeta
-                    </span><span class="prelude-val">None </span>=&gt; Effects::none().unchanged(),
+                    // or search query is a magnet link
+                    </span><span class="kw">_ </span>=&gt; Effects::none().unchanged(),
                 }
             }
             Msg::Internal(Internal::LoadLocalSearchResult(_url, result)) =&gt; {

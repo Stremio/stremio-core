@@ -717,7 +717,59 @@
 <a href="#716" id="716">716</a>
 <a href="#717" id="717">717</a>
 <a href="#718" id="718">718</a>
-<a href="#719" id="719">719</a></pre></div><pre class="rust"><code><span class="kw">use </span>enclose::enclose;
+<a href="#719" id="719">719</a>
+<a href="#720" id="720">720</a>
+<a href="#721" id="721">721</a>
+<a href="#722" id="722">722</a>
+<a href="#723" id="723">723</a>
+<a href="#724" id="724">724</a>
+<a href="#725" id="725">725</a>
+<a href="#726" id="726">726</a>
+<a href="#727" id="727">727</a>
+<a href="#728" id="728">728</a>
+<a href="#729" id="729">729</a>
+<a href="#730" id="730">730</a>
+<a href="#731" id="731">731</a>
+<a href="#732" id="732">732</a>
+<a href="#733" id="733">733</a>
+<a href="#734" id="734">734</a>
+<a href="#735" id="735">735</a>
+<a href="#736" id="736">736</a>
+<a href="#737" id="737">737</a>
+<a href="#738" id="738">738</a>
+<a href="#739" id="739">739</a>
+<a href="#740" id="740">740</a>
+<a href="#741" id="741">741</a>
+<a href="#742" id="742">742</a>
+<a href="#743" id="743">743</a>
+<a href="#744" id="744">744</a>
+<a href="#745" id="745">745</a>
+<a href="#746" id="746">746</a>
+<a href="#747" id="747">747</a>
+<a href="#748" id="748">748</a>
+<a href="#749" id="749">749</a>
+<a href="#750" id="750">750</a>
+<a href="#751" id="751">751</a>
+<a href="#752" id="752">752</a>
+<a href="#753" id="753">753</a>
+<a href="#754" id="754">754</a>
+<a href="#755" id="755">755</a>
+<a href="#756" id="756">756</a>
+<a href="#757" id="757">757</a>
+<a href="#758" id="758">758</a>
+<a href="#759" id="759">759</a>
+<a href="#760" id="760">760</a>
+<a href="#761" id="761">761</a>
+<a href="#762" id="762">762</a>
+<a href="#763" id="763">763</a>
+<a href="#764" id="764">764</a>
+<a href="#765" id="765">765</a>
+<a href="#766" id="766">766</a>
+<a href="#767" id="767">767</a>
+<a href="#768" id="768">768</a>
+<a href="#769" id="769">769</a>
+<a href="#770" id="770">770</a>
+<a href="#771" id="771">771</a></pre></div><pre class="rust"><code><span class="kw">use </span>enclose::enclose;
 <span class="kw">use </span>futures::{FutureExt, TryFutureExt};
 <span class="kw">use </span>http::request::Request;
 <span class="kw">use </span>magnet_url::{Magnet, MagnetError};
@@ -1288,15 +1340,52 @@
     .into()
 }
 
-<span class="kw">fn </span>parse_magnet(magnet: <span class="kw-2">&amp;</span>Url) -&gt; <span class="prelude-ty">Result</span>&lt;(InfoHash, Vec&lt;String&gt;), MagnetError&gt; {
-    <span class="kw">let </span>magnet = Magnet::new(magnet.as_str())<span class="question-mark">?</span>;
-    <span class="kw">let </span>info_hash = magnet.xt.ok_or(MagnetError::NotAMagnetURL)<span class="question-mark">?</span>;
-    <span class="kw">let </span>info_hash = info_hash
-        .parse()
-        .map_err(|_err| MagnetError::NotAMagnetURL)<span class="question-mark">?</span>;
+<span class="doccomment">/// Decode the BTIH hash from a magnet link into raw bytes.
+/// Supports Base32 (32 or 52 chars) and hex (40 or 64 chars).
+</span><span class="kw">fn </span>decode_btih(magnet_uri: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;(Magnet, Vec&lt;u8&gt;), Box&lt;<span class="kw">dyn </span>std::error::Error&gt;&gt; {
+    <span class="kw">let </span>magnet = Magnet::new(magnet_uri).map_err(|err| err.to_string())<span class="question-mark">?</span>;
 
-    <span class="kw">let </span>announce = magnet.tr;
-    <span class="prelude-val">Ok</span>((info_hash, announce))
+    <span class="doccomment">/// Only BTIH is currently supported
+    </span><span class="kw">const </span>BTIH_TYPE: <span class="kw-2">&amp;</span>str = <span class="string">"btih"</span>;
+    <span class="comment">// (exact topic) parameters
+    </span><span class="kw">let </span>(_hash_type, hash_str) = <span class="kw">match </span>(magnet.hash_type(), magnet.hash()) {
+        (<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw">_</span>)) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">"No hash type in exact topic parameter found"</span>.into()),
+        (<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="prelude-val">None</span>) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">"No hash in exact topic parameter found"</span>.into()),
+        (<span class="prelude-val">Some</span>(btih_type), <span class="prelude-val">Some</span>(hash_str)) <span class="kw">if </span>btih_type == BTIH_TYPE =&gt; (btih_type, hash_str),
+        (<span class="prelude-val">Some</span>(_other_type), <span class="prelude-val">Some</span>(_hash_str)) =&gt; {
+            <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">"No BTIH hash type in exact topic parameter found"</span>.into())
+        }
+        (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">"No hash and no hash type provided"</span>.into()),
+    };
+    <span class="kw">let </span>hash_str = hash_str.trim();
+
+    <span class="comment">// Choose decoder based on length and character set
+    </span><span class="kw">let </span>decoded = <span class="kw">match </span>hash_str.len() {
+        <span class="comment">// Base32 (SHA-1 or SHA-256)
+        </span><span class="number">32 </span>| <span class="number">52 </span>=&gt; data_encoding::BASE32.decode(hash_str.as_bytes())<span class="question-mark">?</span>,
+        <span class="number">40 </span>| <span class="number">64 </span><span class="kw">if </span>hash_str.chars().all(|c| c.is_ascii_hexdigit()) =&gt; {
+            hex::decode(hash_str.as_bytes())<span class="question-mark">?
+        </span>}
+        <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">"Unrecognized hash format: {}"</span>, hash_str).into()),
+    };
+
+    <span class="prelude-val">Ok</span>((magnet, decoded))
+}
+
+<span class="kw">fn </span>parse_magnet(magnet: <span class="kw-2">&amp;</span>Url) -&gt; <span class="prelude-ty">Result</span>&lt;(InfoHash, Vec&lt;String&gt;), MagnetError&gt; {
+    <span class="kw">let </span>(magnet, hash_vec) =
+        decode_btih(magnet.as_str()).map_err(|_err| MagnetError::NotAMagnetURL)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>hash: [u8; <span class="number">20</span>] = [<span class="number">0_u8</span>; <span class="number">20</span>];
+
+    <span class="kw">if </span>hash_vec.len() != <span class="number">20 </span>{
+        <span class="kw">return </span><span class="prelude-val">Err</span>(MagnetError::NotAMagnetURL);
+    }
+    hash.copy_from_slice(<span class="kw-2">&amp;</span>hash_vec[..<span class="number">20</span>]);
+
+    <span class="kw">let </span>info_hash = InfoHash::new(hash);
+
+    <span class="kw">let </span>announce = magnet.trackers();
+    <span class="prelude-val">Ok</span>((info_hash, announce.to_vec()))
 }
 
 <span class="kw">fn </span>parse_torrent(torrent: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;(InfoHash, Vec&lt;String&gt;), serde_bencode::Error&gt; {
@@ -1428,12 +1517,27 @@
 </span><span class="kw">mod </span>tests {
     <span class="kw">use </span>magnet_url::Magnet;
 
+    <span class="kw">use </span><span class="kw">crate</span>::models::streaming_server::decode_btih;
+
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_magnet_hash() {
         <span class="kw">let </span>magnet = Magnet::new(<span class="string">"magnet:?xt=urn:btih:0d54e2339706f173ac20f4effb4ad42d9c7a84e9&amp;dn=Halo.S02.1080p.WEBRip.x265.DDP5.1.Atmos-WAR"</span>).expect(<span class="string">"Should be valid magnet Url"</span>);
 
         <span class="comment">// assert_eq!(magnet.xt)
         </span><span class="macro">dbg!</span>(magnet);
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_magnet() {
+        {
+            <span class="kw">let </span>magnet_1 = <span class="string">"magnet:?xt=urn:btih:8C3C23F2D1635FA63968C43D3366329E7A14EB39&amp;dn=Pluribus%20S01E05%201080p%20WEB%20h264-ETHEL&amp;tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337&amp;tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&amp;tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&amp;tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&amp;tr=udp%3A%2F%2Fpublic.popcorn-tracker.org%3A6969%2Fannounce&amp;tr=udp%3A%2F%2Ftracker.dler.org%3A6969%2Fannounce&amp;tr=udp%3A%2F%2Fexodus.desync.com%3A6969&amp;tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&amp;tr=udp%3A%2F%2Fglotorrents.pw%3A6969%2Fannounce&amp;tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&amp;tr=udp%3A%2F%2Ftorrent.gresille.org%3A80%2Fannounce&amp;tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337&amp;tr=udp%3A%2F%2Ftracker.internetwarriors.net%3A1337"</span>;
+
+            <span class="kw">let </span>(_magnet, _hash) = decode_btih(magnet_1).expect(<span class="string">"Should parse BTIH hash"</span>);
+        }
+        {
+            <span class="kw">let </span>magnet_2 = <span class="string">"magnet:?xt=urn:btih:AA145F3937E74AA9235A4AB00D5B9BCFDBB08C78&amp;dn=Pluribus.S01E01.1080p.x265-ELiTE&amp;tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&amp;tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&amp;tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&amp;tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&amp;tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&amp;tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&amp;tr=http%3A%2F%2Ftracker.bt4g.com%3A2095%2Fannounce&amp;tr=http%3A%2F%2Ftracker.renfei.net%3A8080%2Fannounce&amp;tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&amp;tr=http%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&amp;tr=udp%3A%2F%2Fopentracker.i2p.rocks%3A6969%2Fannounce&amp;tr=udp%3A%2F%2Ftracker.internetwarriors.net%3A1337%2Fannounce&amp;tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&amp;tr=udp%3A%2F%2Fcoppersurfer.tk%3A6969%2Fannounce&amp;tr=udp%3A%2F%2Ftracker.zer0day.to%3A1337%2Fannounce"</span>;
+            <span class="kw">let </span>(_magnet, _hash) = decode_btih(magnet_2).expect(<span class="string">"Should parse BTIH hash"</span>);
+        }
     }
 }
 </code></pre></div></section></main></body></html>

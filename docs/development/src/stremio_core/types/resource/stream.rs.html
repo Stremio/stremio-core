@@ -1201,7 +1201,13 @@
 <a href="#1200" id="1200">1200</a>
 <a href="#1201" id="1201">1201</a>
 <a href="#1202" id="1202">1202</a>
-<a href="#1203" id="1203">1203</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
+<a href="#1203" id="1203">1203</a>
+<a href="#1204" id="1204">1204</a>
+<a href="#1205" id="1205">1205</a>
+<a href="#1206" id="1206">1206</a>
+<a href="#1207" id="1207">1207</a>
+<a href="#1208" id="1208">1208</a>
+<a href="#1209" id="1209">1209</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
 <span class="kw">use </span>std::{collections::HashMap, io::Write};
 
 <span class="kw">use </span>tracing::trace;
@@ -2275,39 +2281,45 @@
             announce,
             ..
         } =&gt; {
-            <span class="kw">let </span>torrent_magnet = Magnet {
-                dn: converted.name.to_owned(),
-                hash_type: <span class="prelude-val">Some</span>(<span class="string">"btih"</span>.to_string()),
-                xt: <span class="prelude-val">Some</span>(hex::encode(info_hash)),
-                xl: <span class="prelude-val">None</span>,
-                tr: announce
-                    .iter()
-                    <span class="comment">// `tracker` and `dht` prefixes are used internally by the server.js
-                    // we need to remove those prefixes when generating the magnet URL
-                    </span>.map(|tracker| {
-                        tracker
-                            .strip_prefix(<span class="string">"tracker:"</span>)
-                            .map(ToString::to_string)
-                            .unwrap_or_else(|| tracker.to_owned())
-                    })
-                    .map(|tracker| {
-                        tracker
-                            .strip_prefix(<span class="string">"dht:"</span>)
-                            .map(ToString::to_string)
-                            .unwrap_or_else(|| tracker.to_owned())
-                    })
-                    .map(|tracker| {
-                        utf8_percent_encode(<span class="kw-2">&amp;</span>tracker, URI_COMPONENT_ENCODE_SET).to_string()
-                    })
-                    .collect::&lt;Vec&lt;String&gt;&gt;(),
-                kt: <span class="prelude-val">None</span>,
-                ws: <span class="prelude-val">None</span>,
-                acceptable_source: <span class="prelude-val">None</span>,
-                mt: <span class="prelude-val">None</span>,
-                xs: <span class="prelude-val">None</span>,
-            };
+            <span class="kw">let </span>trackers = announce
+                .iter()
+                <span class="comment">// `tracker` and `dht` prefixes are used internally by the server.js
+                // we need to remove those prefixes when generating the magnet URL
+                </span>.map(|tracker| {
+                    tracker
+                        .strip_prefix(<span class="string">"tracker:"</span>)
+                        .map(ToString::to_string)
+                        .unwrap_or_else(|| tracker.to_owned())
+                })
+                .map(|tracker| {
+                    tracker
+                        .strip_prefix(<span class="string">"dht:"</span>)
+                        .map(ToString::to_string)
+                        .unwrap_or_else(|| tracker.to_owned())
+                })
+                .map(|tracker| utf8_percent_encode(<span class="kw-2">&amp;</span>tracker, URI_COMPONENT_ENCODE_SET).to_string())
+                .collect::&lt;Vec&lt;String&gt;&gt;();
+            <span class="kw">let </span>trackers = <span class="kw">if </span>!trackers.is_empty() {
+                <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"&amp;tr={}"</span>, trackers.join(<span class="string">"&amp;tr="</span>)))
+            } <span class="kw">else </span>{
+                <span class="prelude-val">None
+            </span>};
 
-            torrent_magnet.to_string().parse().ok()
+            Magnet::new(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
+                <span class="string">"magnet:?{dn}xt=urn:btih:{hash}{trackers}"</span>,
+                dn = <span class="kw">if let </span><span class="prelude-val">Some</span>(name) = converted.name.as_ref() {
+                    <span class="macro">format!</span>(
+                        <span class="string">"dn={}&amp;"</span>,
+                        utf8_percent_encode(name, URI_COMPONENT_ENCODE_SET)
+                    )
+                } <span class="kw">else </span>{
+                    String::new()
+                },
+                hash = hex::encode(info_hash),
+                trackers = trackers.unwrap_or_default(),
+            ))
+            .ok()
+            .and_then(|magnet| magnet.to_string().parse::&lt;Url&gt;().ok())
         }
         <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
     }
