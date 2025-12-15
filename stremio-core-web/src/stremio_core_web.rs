@@ -54,6 +54,20 @@ impl From<DispatchError> for JsValue {
         <JsValue as JsValueSerdeExt>::from_serde(&value).expect("JsValue from DispatchError")
     }
 }
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum GetStateError {
+    #[serde(rename_all = "camelCase")]
+    Field { error: String, json: Option<String> },
+    #[serde(rename_all = "camelCase")]
+    State(State),
+}
+
+impl From<GetStateError> for JsValue {
+    fn from(value: GetStateError) -> Self {
+        <JsValue as JsValueSerdeExt>::from_serde(&value).expect("JsValue from GetStateError")
+    }
+}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -208,16 +222,25 @@ pub fn get_debug_state() -> JsValue {
 }
 
 #[wasm_bindgen]
-pub fn get_state(field: JsValue) -> JsValue {
-    let field = JsValueSerdeExt::into_serde(&field).expect("get state failed");
+pub fn get_state(field: JsValue) -> Result<JsValue, JsValue> {
+    let field_json = stringify(&field);
+
+    let field: WebModelField =
+        JsValueSerdeExt::into_serde(&field).map_err(|err| GetStateError::Field {
+            error: err.to_string(),
+            json: field_json,
+        })?;
     let runtime = RUNTIME.read().expect("runtime read failed");
     let runtime = runtime
         .as_ref()
-        .expect("runtime is not ready")
-        .as_ref()
-        .expect("runtime is not ready");
-    let model = runtime.model().expect("model read failed");
-    model.get_state(&field)
+        .ok_or(GetStateError::State(State::RuntimeNotSet))?
+        .ready()
+        .ok_or(GetStateError::State(State::RuntimeNotReady))?;
+
+    let model = runtime
+        .model()
+        .map_err(|_| GetStateError::State(State::ModelReadFailed))?;
+    Ok(model.get_state(&field))
 }
 
 #[wasm_bindgen]
