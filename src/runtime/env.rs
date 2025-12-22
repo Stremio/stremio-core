@@ -301,6 +301,12 @@ pub trait Env {
                         .await?;
                     schema_version = 20;
                 }
+                if schema_version == 20 {
+                    migrate_storage_schema_to_v21::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 21;
+                }
                 if schema_version != SCHEMA_VERSION {
                     panic!(
                         "Storage schema version must be upgraded from {} to {}",
@@ -740,6 +746,29 @@ fn migrate_storage_schema_to_v20<E: Env>() -> TryEnvFuture<()> {
         .boxed_env()
 }
 
+fn migrate_storage_schema_to_v21<E: Env>() -> TryEnvFuture<()> {
+    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
+        .and_then(|mut profile| {
+            match profile
+                .as_mut()
+                .and_then(|profile| profile.as_object_mut())
+                .and_then(|profile| profile.get_mut("settings"))
+                .and_then(|settings| settings.as_object_mut())
+            {
+                Some(settings) => {
+                    settings.insert(
+                        "discordRpcEnabled".to_owned(),
+                        serde_json::Value::Bool(false),
+                    );
+                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
+                }
+                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+            }
+        })
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&21)))
+        .boxed_env()
+}
+
 #[cfg(test)]
 mod test {
     use serde_json::{json, Value};
@@ -755,9 +784,9 @@ mod test {
                 migrate_storage_schema_to_v14, migrate_storage_schema_to_v15,
                 migrate_storage_schema_to_v16, migrate_storage_schema_to_v17,
                 migrate_storage_schema_to_v18, migrate_storage_schema_to_v19,
-                migrate_storage_schema_to_v20, migrate_storage_schema_to_v6,
-                migrate_storage_schema_to_v7, migrate_storage_schema_to_v8,
-                migrate_storage_schema_to_v9,
+                migrate_storage_schema_to_v20, migrate_storage_schema_to_v21,
+                migrate_storage_schema_to_v6, migrate_storage_schema_to_v7,
+                migrate_storage_schema_to_v8, migrate_storage_schema_to_v9,
             },
             Env,
         },

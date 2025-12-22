@@ -45,6 +45,7 @@ pub struct Settings {
     pub streaming_server_warning_dismissed: Option<DateTime<Utc>>,
     pub server_in_foreground: bool,
     pub send_crash_reports: bool,
+    pub discord_rpc_enabled: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -90,6 +91,7 @@ impl Default for Settings {
             streaming_server_warning_dismissed: None,
             server_in_foreground: false,
             send_crash_reports: true,
+            discord_rpc_enabled: false,
         }
     }
 }
