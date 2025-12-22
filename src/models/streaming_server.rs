@@ -719,7 +719,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     }))
                     .unchanged(),
                     Err(error) => {
-                        // TODO: confirm what we should do if settings fail to update
                         let torrent_effects = eq_update(&mut self.torrent, None);
                         let state_effects = if self.state.is_some() {
                             let not_running = State::NotRunning;
