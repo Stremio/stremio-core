@@ -107,7 +107,6 @@ pub enum ServerAvailability {
 }
 
 impl StreamingServer {
-    // todo: server available
     // pub fn new<E: Env + 'static>(profile: &Profile, server_available: bool) -> (Self, Effects) {
     pub fn new<E: Env + 'static>(profile: &Profile) -> (Self, Effects) {
         // e.g. for iOS due to apple policies:
@@ -184,7 +183,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     )
                 };
 
-                // if self.torrent.is_none() {
                 let (get_settings_effects, new_settings_request_effects) = if self.settings.is_err()
                 {
                     let (get_settings_url, get_settings_effect) =
@@ -264,13 +262,21 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     .join(new_playback_devices_request_effects)
                     .join(new_network_info_request_effects)
                     .join(new_device_info_request_effects);
-                // }
-
-                // get_heartbeat_effects
-                //     .unchanged()
-                //     .join(new_heartbeat_request_effects)
             }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::Reload)) => {
+                let (get_heartbeat_effects, new_heartbeat_request_effects) = {
+                    let (get_heartbeat_url, get_heartbeat_effect) =
+                        get_heartbeat::<E>(&ctx.profile.settings.streaming_server_url);
+                    let new_heartbeat_request = LoadableRequest::loading(get_heartbeat_url);
+                    let new_heartbeat_request_effects =
+                        eq_update(&mut self.heartbeat_request, new_heartbeat_request);
+
+                    (
+                        Effects::one(get_heartbeat_effect).unchanged(),
+                        new_heartbeat_request_effects,
+                    )
+                };
+
                 let (get_settings_url, get_settings_effect) =
                     get_settings::<E>(&ctx.profile.settings.streaming_server_url);
                 let new_settings_request = LoadableRequest::loading(get_settings_url);
@@ -298,17 +304,19 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 let new_device_info_request_effects =
                     eq_update(&mut self.device_info_request, new_device_info_request);
 
-                Effects::many(vec![
-                    get_settings_effect,
-                    get_playback_devices_effect,
-                    get_network_info_effect,
-                    get_device_info_effect,
-                ])
-                .unchanged()
-                .join(new_settings_request_effects)
-                .join(new_playback_devices_request_effects)
-                .join(new_network_info_request_effects)
-                .join(new_device_info_request_effects)
+                get_heartbeat_effects
+                    .join(Effects::many(vec![
+                        get_settings_effect,
+                        get_playback_devices_effect,
+                        get_network_info_effect,
+                        get_device_info_effect,
+                    ]))
+                    .unchanged()
+                    .join(new_heartbeat_request_effects)
+                    .join(new_settings_request_effects)
+                    .join(new_playback_devices_request_effects)
+                    .join(new_network_info_request_effects)
+                    .join(new_device_info_request_effects)
             }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::UpdateSettings(
                 settings,
@@ -429,6 +437,17 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
             Msg::Internal(Internal::ProfileChanged)
                 if self.selected.transport_url != ctx.profile.settings.streaming_server_url =>
             {
+                let (get_heartbeat_effects, new_heartbeat_request) = {
+                    let (get_heartbeat_url, get_heartbeat_effect) =
+                        get_heartbeat::<E>(&ctx.profile.settings.streaming_server_url);
+                    let new_heartbeat_request = LoadableRequest::loading(get_heartbeat_url);
+
+                    (
+                        Effects::one(get_heartbeat_effect).unchanged(),
+                        new_heartbeat_request,
+                    )
+                };
+
                 let (get_settings_url, get_settings_effect) =
                     get_settings::<E>(&ctx.profile.settings.streaming_server_url);
                 let settings_request = LoadableRequest::loading(get_settings_url);
@@ -449,8 +468,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     transport_url: ctx.profile.settings.streaming_server_url.to_owned(),
                     statistics: None,
                 };
+                self.heartbeat_request = new_heartbeat_request;
+                self.state = Some(Loadable::Loading);
                 self.settings = Loadable::Loading;
-                // todo: check if we should alos set these to Loading as they were missing, even though we made a request to get playback devices.
                 self.playback_devices = Loadable::Loading;
                 self.network_info = Loadable::Loading;
                 self.device_info = Loadable::Loading;
@@ -464,12 +484,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 self.torrent = None;
                 self.statistics = None;
 
-                Effects::many(vec![
+                get_heartbeat_effects.join(Effects::many(vec![
                     get_settings_effect,
                     get_playback_devices_effect,
                     get_network_info_effect,
                     get_device_info_effect,
-                ])
+                ]))
             }
             Msg::Internal(Internal::StreamingServerSettingsResult(url, result))
                 if self.selected.transport_url == *url
