@@ -37,6 +37,7 @@ fn settings() {
             pause_on_minimize: true,
             quit_on_close: true,
             surround_sound: false,
+            discord_rpc_enabled: false,
             streaming_server_warning_dismissed: Some(
                 Utc.with_ymd_and_hms(2021, 1, 1, 0, 0, 0).unwrap(),
             ),
@@ -46,7 +47,7 @@ fn settings() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 33,
+                len: 34,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -117,6 +118,8 @@ fn settings() {
             Token::Bool(true),
             Token::Str("surroundSound"),
             Token::Bool(false),
+            Token::Str("discordRpcEnabled"),
+            Token::Bool(false),
             Token::Str("streamingServerWarningDismissed"),
             Token::Some,
             Token::Str("2021-01-01T00:00:00Z"),
@@ -136,7 +139,7 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 33,
+                len: 34,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -198,6 +201,8 @@ fn settings_de() {
             Token::Str("quitOnClose"),
             Token::Bool(true),
             Token::Str("surroundSound"),
+            Token::Bool(false),
+            Token::Str("discordRpcEnabled"),
             Token::Bool(false),
             Token::Str("streamingServerWarningDismissed"),
             Token::None,

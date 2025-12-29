@@ -1519,4 +1519,45 @@ mod test {
             );
         }
     }
+
+    #[tokio::test]
+    async fn test_migration_from_20_to_21() {
+        {
+            let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+            let profile_before = json!({
+                "settings": {}
+            });
+
+            let migrated_profile = json!({
+                "settings": {
+                    "discordRpcEnabled": false,
+                }
+            });
+
+            // setup storage for migration
+            set_profile_and_schema_version(&profile_before, 20);
+
+            // migrate storage
+            migrate_storage_schema_to_v21::<TestEnv>()
+                .await
+                .expect("Should migrate");
+
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &21.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+            assert_eq!(
+                &migrated_profile.to_string(),
+                storage
+                    .get(PROFILE_STORAGE_KEY)
+                    .expect("Should have the profile set"),
+                "Profile should match"
+            );
+        }
+    }
 }
