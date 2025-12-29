@@ -37,12 +37,12 @@ fn settings() {
             pause_on_minimize: true,
             quit_on_close: true,
             surround_sound: false,
-            discord_rpc_enabled: false,
             streaming_server_warning_dismissed: Some(
                 Utc.with_ymd_and_hms(2021, 1, 1, 0, 0, 0).unwrap(),
             ),
             server_in_foreground: false,
             send_crash_reports: true,
+            discord_rpc_enabled: false,
         },
         &[
             Token::Struct {
@@ -118,8 +118,6 @@ fn settings() {
             Token::Bool(true),
             Token::Str("surroundSound"),
             Token::Bool(false),
-            Token::Str("discordRpcEnabled"),
-            Token::Bool(false),
             Token::Str("streamingServerWarningDismissed"),
             Token::Some,
             Token::Str("2021-01-01T00:00:00Z"),
@@ -127,6 +125,8 @@ fn settings() {
             Token::Bool(false),
             Token::Str("sendCrashReports"),
             Token::Bool(true),
+            Token::Str("discordRpcEnabled"),
+            Token::Bool(false),
             Token::StructEnd,
         ],
     );
@@ -202,14 +202,14 @@ fn settings_de() {
             Token::Bool(true),
             Token::Str("surroundSound"),
             Token::Bool(false),
-            Token::Str("discordRpcEnabled"),
-            Token::Bool(false),
             Token::Str("streamingServerWarningDismissed"),
             Token::None,
             Token::Str("serverInForeground"),
             Token::Bool(false),
             Token::Str("sendCrashReports"),
             Token::Bool(true),
+            Token::Str("discordRpcEnabled"),
+            Token::Bool(false),
             Token::StructEnd,
         ],
     );
