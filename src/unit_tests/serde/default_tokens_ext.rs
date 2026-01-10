@@ -432,7 +432,7 @@ impl DefaultTokens for Settings {
             Token::Str("subtitlesOpacity"),
             Token::U8(100),
             Token::Str("assSubtitlesStyling"),
-            Token::Bool(true),
+            Token::Bool(false),
             Token::Str("escExitFullscreen"),
             Token::Bool(true),
             Token::Str("seekTimeDuration"),

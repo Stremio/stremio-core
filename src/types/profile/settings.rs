@@ -82,7 +82,7 @@ impl Default for Settings {
             subtitles_background_color: "#00000000".to_owned(),
             subtitles_outline_color: "#000000".to_owned(),
             subtitles_opacity: 100,
-            ass_subtitles_styling: true,
+            ass_subtitles_styling: false,
             esc_exit_fullscreen: true,
             seek_time_duration: 10000,
             seek_short_time_duration: 3000,
