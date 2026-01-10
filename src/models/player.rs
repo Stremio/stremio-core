@@ -137,6 +137,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Player(selected))) => {
+                // make sure we send the correct Trakt event if the model hasn't been unloaded
+                let trakt_event_effects = if self.selected.is_some() {
+                    Effects::msg(Msg::Event(Event::TraktPaused {
+                        context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                    }))
+                    .unchanged()
+                } else {
+                    Effects::none().unchanged()
+                };
                 let item_state_update_effects = if self
                     .selected
                     .as_ref()
@@ -283,7 +292,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.loaded = false;
                 self.ended = false;
                 self.paused = None;
-                item_state_update_effects
+                trakt_event_effects
+                    .join(item_state_update_effects)
                     .join(selected_effects)
                     .join(meta_item_effects)
                     .join(stream_state_effects)
@@ -303,6 +313,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(notification_effects)
             }
             Msg::Action(Action::Unload) => {
+                let trakt_event_effects = if self.selected.is_some() {
+                    Effects::msg(Msg::Event(Event::TraktPaused {
+                        context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                    }))
+                    .unchanged()
+                } else {
+                    Effects::none().unchanged()
+                };
+
                 let ended_effects = if !self.ended && self.selected.is_some() {
                     Effects::msg(Msg::Event(Event::PlayerStopped {
                         context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
@@ -350,7 +369,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.ended = false;
                 self.paused = None;
 
-                seek_history_effects
+                trakt_event_effects
+                    .join(seek_history_effects)
                     .join(item_state_update_effects)
                     .join(push_to_library_effects)
                     .join(selected_effects)
