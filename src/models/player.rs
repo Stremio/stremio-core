@@ -190,6 +190,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &mut self.subtitles,
                     &self.selected,
                     &self.video_params,
+                    self.stream.as_ref(),
                     &ctx.profile.addons,
                 );
                 let next_video_effects = next_video_update(
@@ -376,6 +377,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &mut self.subtitles,
                     &self.selected,
                     &self.video_params,
+                    self.stream.as_ref(),
                     &ctx.profile.addons,
                 );
                 let skip_gaps_effects = skip_gaps_update::<E>(
@@ -1233,33 +1235,64 @@ fn subtitles_update<E: Env + 'static>(
     subtitles: &mut Vec<ResourceLoadable<Vec<Subtitles>>>,
     selected: &Option<Selected>,
     video_params: &Option<VideoParams>,
+    stream: Option<&Loadable<(StreamUrls, Stream<ConvertedStreamSource>), EnvError>>,
     addons: &[Descriptor],
 ) -> Effects {
-    match (selected, video_params) {
+    match (selected, stream) {
         (
             Some(Selected {
                 subtitles_path: Some(subtitles_path),
                 ..
             }),
-            Some(video_params),
-        ) => resources_update_with_vector_content::<E, _>(
-            subtitles,
-            ResourcesAction::force_request(
-                &AggrRequest::AllOfResource(ResourcePath {
-                    extra: subtitles_path
-                        .extra
-                        .to_owned()
-                        .extend_one(&VIDEO_HASH_EXTRA_PROP, video_params.hash.to_owned())
-                        .extend_one(
-                            &VIDEO_SIZE_EXTRA_PROP,
-                            video_params.size.as_ref().map(|size| size.to_string()),
-                        )
-                        .extend_one(&VIDEO_FILENAME_EXTRA_PROP, video_params.filename.to_owned()),
-                    ..subtitles_path.to_owned()
-                }),
-                addons,
-            ),
-        ),
+            Some(Loadable::Ready((_stream_urls, converted_stream))),
+        ) => {
+            resources_update_with_vector_content::<E, _>(
+                subtitles,
+                ResourcesAction::force_request(
+                    &AggrRequest::AllOfResource(ResourcePath {
+                        extra: {
+                            // Always prefer the Stream field if such is set by the addon
+                            // otherwise we can use the VideoParams as a fallback.
+                            subtitles_path
+                                .extra
+                                .to_owned()
+                                .extend_one(
+                                    &VIDEO_HASH_EXTRA_PROP,
+                                    converted_stream.behavior_hints.video_hash.clone().or(
+                                        video_params
+                                            .as_ref()
+                                            .and_then(|video_params| video_params.hash.to_owned())
+                                            .to_owned(),
+                                    ),
+                                )
+                                .extend_one(
+                                    &VIDEO_SIZE_EXTRA_PROP,
+                                    converted_stream
+                                        .behavior_hints
+                                        .video_size
+                                        .or(video_params
+                                            .as_ref()
+                                            .and_then(|video_params| video_params.size))
+                                        .map(|size| size.to_string()),
+                                )
+                                .extend_one(
+                                    &VIDEO_FILENAME_EXTRA_PROP,
+                                    converted_stream
+                                        .behavior_hints
+                                        .filename
+                                        .to_owned()
+                                        .or(video_params
+                                            .as_ref()
+                                            .and_then(|video_params| video_params.filename.clone()))
+                                        .to_owned(),
+                                )
+                        },
+                        ..subtitles_path.to_owned()
+                    }),
+                    addons,
+                ),
+            )
+        }
         _ => eq_update(subtitles, vec![]),
     }
 }
