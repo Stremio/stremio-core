@@ -26,7 +26,8 @@ use crate::types::api::{
 };
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::player::{IntroData, IntroOutro};
-use crate::types::profile::Profile;
+use crate::types::profile::{AuthKey, Profile};
+use crate::types::rating::{Rating, RatingSendRequest, RatingSendResponse};
 use crate::types::resource::{
     MetaItem, SeriesInfo, Stream, StreamSource, StreamUrls, Subtitles, Video,
 };
@@ -519,7 +520,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         duration.clone_into(&mut library_item.state.duration);
                     }
 
-                    if library_item.state.flagged_watched == 0
+                    // Watched threshold for marking an episode/movie as watched
+                    let should_send_watched = if library_item.state.flagged_watched == 0
                         && library_item.state.time_watched as f64
                             > library_item.state.duration as f64 * WATCHED_THRESHOLD_COEF
                     {
@@ -531,7 +533,29 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                             watched_bit_field.set_video(video_id, true);
                             library_item.state.watched = Some(watched_bit_field.into());
                         }
-                    }
+
+                        true
+                    } else {
+                        false
+                    };
+
+                    // send Watched for MetaDetail id
+                    // single episode should mark the item as watched.
+                    let send_watched_effects =
+                        match (should_send_watched, ctx.profile.auth_key(), self.selected.as_ref()) {
+                            (
+                                true,
+                                Some(auth_key),
+                                Some(Selected {
+                                    meta_request:
+                                        Some(ResourceRequest {
+                                            path: meta_path, ..
+                                        }),
+                                    ..
+                                }),
+                            ) => Effects::one(send_watched::<E>(auth_key.to_owned(), meta_path)).unchanged(),
+                            _ => Effects::none().unchanged(),
+                        };
 
                     if library_item.temp && library_item.state.times_watched == 0 {
                         library_item.removed = true;
@@ -553,7 +577,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         analytics_context.player_duration = Some(duration.to_owned());
                     };
 
-                    push_to_library::<E>(&mut self.push_library_item_time, library_item)
+                    send_watched_effects.join(push_to_library::<E>(
+                        &mut self.push_library_item_time,
+                        library_item,
+                    ))
                 }
                 _ => Effects::none().unchanged(),
             },
@@ -1546,6 +1573,30 @@ fn get_skip_gaps<E: Env + 'static>(skip_gaps_request: SkipGapsRequest) -> Effect
     )
     .into()
 }
+
+/// Sends watched state for meta item on every Watched state change of the library item
+fn send_watched<E: Env + 'static>(auth_key: AuthKey, meta_path: &ResourcePath) -> Effect {
+    let meta_id = meta_path.id.to_owned();
+
+    let request = RatingSendRequest {
+        auth_key,
+        meta_item_id: meta_id.to_owned(),
+        meta_item_type: meta_path.r#type.to_owned(),
+        rating: Some(Rating::Watched),
+    };
+
+    EffectFuture::Concurrent(
+        E::fetch::<_, RatingSendResponse>(request.into())
+            .map(enclose::enclose!((meta_id) move |result| {
+                Msg::Internal(Internal::WatchedSendResult(
+                    meta_id, result,
+                ))
+            }))
+            .boxed_env(),
+    )
+    .into()
+}
+
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
