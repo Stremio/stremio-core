@@ -133,15 +133,15 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
                         // Either a query that's url-safe or encoded.
                         // https://support.firecore.com/hc/en-us/articles/215090997-API-for-Third-Party-Apps-Services#h_01HDS4GZEG00ME3VJJ77SEFF5V
                         "infuse" => Some(OpenPlayerLink {
-                            ios: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url}")),
-                            macos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url}")),
-                            visionos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url}")),
-                            tvos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url}")),
+                            ios: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
+                            macos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
+                            visionos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
+                            tvos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
                             ..Default::default()
                         }),
                         "vidhub" => Some(OpenPlayerLink {
-                            ios: Some(format!("open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url}")),
-                            macos: Some(format!("open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url}")),
+                            ios: Some(format!("open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
+                            macos: Some(format!("open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
                             ..Default::default()
                         }),
                         "iina" => Some(OpenPlayerLink {
