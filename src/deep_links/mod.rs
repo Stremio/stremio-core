@@ -38,6 +38,7 @@ pub struct OpenPlayerLink {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     /// VisionOS
     pub visionos: Option<String>,
+    pub tvos: Option<String>,
 }
 
 #[derive(Default, Serialize, Debug, PartialEq, Eq)]
