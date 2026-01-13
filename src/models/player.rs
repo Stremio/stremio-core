@@ -541,21 +541,25 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
 
                     // send Watched for MetaDetail id
                     // single episode should mark the item as watched.
-                    let send_watched_effects =
-                        match (should_send_watched, ctx.profile.auth_key(), self.selected.as_ref()) {
-                            (
-                                true,
-                                Some(auth_key),
-                                Some(Selected {
-                                    meta_request:
-                                        Some(ResourceRequest {
-                                            path: meta_path, ..
-                                        }),
-                                    ..
-                                }),
-                            ) => Effects::one(send_watched::<E>(auth_key.to_owned(), meta_path)).unchanged(),
-                            _ => Effects::none().unchanged(),
-                        };
+                    let send_watched_effects = match (
+                        should_send_watched,
+                        ctx.profile.auth_key(),
+                        self.selected.as_ref(),
+                    ) {
+                        (
+                            true,
+                            Some(auth_key),
+                            Some(Selected {
+                                meta_request:
+                                    Some(ResourceRequest {
+                                        path: meta_path, ..
+                                    }),
+                                ..
+                            }),
+                        ) => Effects::one(send_watched::<E>(auth_key.to_owned(), meta_path))
+                            .unchanged(),
+                        _ => Effects::none().unchanged(),
+                    };
 
                     if library_item.temp && library_item.state.times_watched == 0 {
                         library_item.removed = true;
