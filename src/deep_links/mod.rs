@@ -163,7 +163,6 @@ impl From<(&Stream, Option<&Url>, &Settings, Option<&str>)> for ExternalPlayerLi
                         }),
                         "vidhub" => Some(OpenPlayerLink {
                             ios: Some(vidhub_url.clone()),
-                            tvos: Some(vidhub_url.clone()),
                             macos: Some(vidhub_url),
                         ..Default::default()
                         }),
@@ -320,7 +319,6 @@ impl
 	                    }),
                      	"vidhub" => Some(OpenPlayerLink {
                             ios: Some(vidhub_url.clone()),
-                            tvos: Some(vidhub_url.clone()),
                             macos: Some(vidhub_url),
                         ..Default::default()
                         }),
