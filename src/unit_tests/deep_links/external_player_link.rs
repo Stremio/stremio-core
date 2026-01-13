@@ -327,7 +327,7 @@ fn external_player_link_with_infuse() {
 
 #[test]
 fn external_player_link_and_callback_with_vidhub() {
-	let stream = Stream {
+    let stream = Stream {
         source: StreamSource::Url {
             url: Url::from_str("http://example.com/stream").unwrap(),
         },
