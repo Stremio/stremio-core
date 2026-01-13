@@ -593,42 +593,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 };
                 trakt_event_effects.join(update_library_item_effects)
             }
-            Msg::Action(Action::Player(ActionPlayer::PausedChanged { paused }))
-                if self.selected.is_some() =>
-            {
-                self.paused = Some(*paused);
-                let trakt_event_effects = if !self.loaded {
-                    self.loaded = true;
-                    Effects::msg(Msg::Event(Event::PlayerPlaying {
-                        load_time: self
-                            .load_time
-                            .map(|load_time| {
-                                E::now().timestamp_millis() - load_time.timestamp_millis()
-                            })
-                            .unwrap_or(-1),
-                        context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
-                    }))
-                    .unchanged()
-                } else if *paused {
-                    Effects::msg(Msg::Event(Event::TraktPaused {
-                        context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
-                    }))
-                    .unchanged()
-                } else {
-                    Effects::msg(Msg::Event(Event::TraktPlaying {
-                        context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
-                    }))
-                    .unchanged()
-                };
-                let update_library_item_effects = match &self.library_item {
-                    Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                        library_item.to_owned(),
-                    )))
-                    .unchanged(),
-                    _ => Effects::none().unchanged(),
-                };
-                trakt_event_effects.join(update_library_item_effects)
-            }
             Msg::Action(Action::Player(ActionPlayer::NextVideo)) => {
                 let seek_history_effects = seek_update::<E>(
                     self.selected.as_ref(),
