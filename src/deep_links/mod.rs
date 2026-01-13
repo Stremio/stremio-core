@@ -99,25 +99,21 @@ impl From<(&Stream, Option<&Url>, &Settings, Option<&str>)> for ExternalPlayerLi
                 // >(Note: callback URLs in parameters should be encoded. They were left decoded for legibility)
                 // https://x-callback-url.com/examples/
                 let url_encoded = utf8_percent_encode(url.as_str(), URI_COMPONENT_ENCODE_SET);
-                let infuse_url = {
-                    match player_url {
-                        Some(player_url) => {
-                            let success_callback = format!("{player_url}?externalPlayerSuccess=1");
-                            let failure_callback = format!("{player_url}?externalPlayerSuccess=0");
-                            let success_encoded =
-                                utf8_percent_encode(&success_callback, URI_COMPONENT_ENCODE_SET);
-                            let failure_encoded =
-                                utf8_percent_encode(&failure_callback, URI_COMPONENT_ENCODE_SET);
-
-                            format!(
-                                "infuse://x-callback-url/play?x-success={}&x-error={}&url={}",
-                                success_encoded, failure_encoded, url_encoded
-                            )
-                        }
-                        None => {
-                            format!("infuse://x-callback-url/play?url={}", url_encoded)
-                        }
+                let (infuse_url, vidhub_url) = match player_url {
+                    Some(player_url) => {
+                        let success_callback = format!("{player_url}?externalPlayerSuccess=1");
+                        let failure_callback = format!("{player_url}?externalPlayerSuccess=0");
+                        let success_encoded = utf8_percent_encode(&success_callback, URI_COMPONENT_ENCODE_SET);
+                        let failure_encoded = utf8_percent_encode(&failure_callback, URI_COMPONENT_ENCODE_SET);
+                        (
+                            format!("infuse://x-callback-url/play?x-success={}&x-error={}&url={}", success_encoded, failure_encoded, url_encoded),
+                            format!("open-vidhub://x-callback-url/open?on-success={}&on-failed={}&url={}", success_encoded, failure_encoded, url_encoded),
+                        )
                     }
+                    None => (
+                        format!("infuse://x-callback-url/play?url={}", url_encoded),
+                        format!("open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2F&on-failed=stremio%3A%2F%2F&url={}", url_encoded)
+                    ),
                 };
                 match settings.player_type.as_ref() {
                     Some(player_type) => match player_type.as_str() {
@@ -165,7 +161,12 @@ impl From<(&Stream, Option<&Url>, &Settings, Option<&str>)> for ExternalPlayerLi
                             visionos: Some(infuse_url),
                         ..Default::default()
                         }),
-
+                        "vidhub" => Some(OpenPlayerLink {
+                            ios: Some(vidhub_url.clone()),
+                            tvos: Some(vidhub_url.clone()),
+                            macos: Some(vidhub_url),
+                        ..Default::default()
+                        }),
                         "iina" => Some(OpenPlayerLink {
                             macos: Some(format!("iina://weblink?url={url_encoded}")),
                         ..Default::default()
@@ -257,26 +258,22 @@ impl
 
         let open_player = match &streaming {
             Some(url) => {
-                let infuse_url = {
-                    match player_url {
-                        Some(player_url) => {
-                            let success_callback = format!("{player_url}?externalPlayerSuccess=1");
-                            let failure_callback = format!("{player_url}?externalPlayerSuccess=0");
-                            let success_encoded =
-                                utf8_percent_encode(&success_callback, URI_COMPONENT_ENCODE_SET);
-                            let failure_encoded =
-                                utf8_percent_encode(&failure_callback, URI_COMPONENT_ENCODE_SET);
-
-                            format!(
-                                "infuse://x-callback-url/play?x-success={}&x-error={}&url={}",
-                                success_encoded, failure_encoded, url
-                            )
-                        }
-                        None => {
-                            format!("infuse://x-callback-url/play?url={}", url)
-                        }
-                    }
-                };
+                let (infuse_url, vidhub_url) = match player_url {
+	                Some(player_url) => {
+	                    let success_callback = format!("{player_url}?externalPlayerSuccess=1");
+	                    let failure_callback = format!("{player_url}?externalPlayerSuccess=0");
+	                    let success_encoded = utf8_percent_encode(&success_callback, URI_COMPONENT_ENCODE_SET);
+	                    let failure_encoded = utf8_percent_encode(&failure_callback, URI_COMPONENT_ENCODE_SET);
+	                    (
+	                        format!("infuse://x-callback-url/play?x-success={}&x-error={}&url={}", success_encoded, failure_encoded, url),
+	                        format!("open-vidhub://x-callback-url/open?on-success={}&on-failed={}&url={}", success_encoded, failure_encoded, url),
+	                    )
+	                }
+	                None => (
+	                    format!("infuse://x-callback-url/play?url={}", url),
+	                    format!("open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2F&on-failed=stremio%3A%2F%2F&url={}", url)
+	                ),
+            	};
                 match settings.player_type.as_ref() {
 	                Some(player_type) => match player_type.as_str() {
 	                    "choose" => Some(OpenPlayerLink {
@@ -321,6 +318,12 @@ impl
 		                    visionos: Some(infuse_url),
 	                       ..Default::default()
 	                    }),
+                     	"vidhub" => Some(OpenPlayerLink {
+                            ios: Some(vidhub_url.clone()),
+                            tvos: Some(vidhub_url.clone()),
+                            macos: Some(vidhub_url),
+                        ..Default::default()
+                        }),
 	                    "iina" => Some(OpenPlayerLink {
 	                        macos: Some(format!("iina://weblink?url={url}")),
 	                       ..Default::default()

@@ -360,3 +360,44 @@ fn external_player_link_and_callback_with_infuse() {
         Some("infuse://x-callback-url/play?x-success=stremio%3A%2F%2Fplayer%2Fexample%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2Fplayer%2Fexample%3FexternalPlayerSuccess%3D0&url=http%3A%2F%2Fexample.com%2Fstream".to_string())
     );
 }
+
+#[test]
+fn external_player_link_and_callback_with_vidhub() {
+    let stream = Stream {
+        source: StreamSource::Url {
+            url: Url::from_str("http://example.com/stream").unwrap(),
+        },
+        name: None,
+        description: None,
+        thumbnail: None,
+        subtitles: vec![],
+        behavior_hints: Default::default(),
+    };
+
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
+
+    let settings = Settings {
+        player_type: Some("vidhub".to_string()),
+        streaming_server_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
+        ..Default::default()
+    };
+
+    let player_url = Some("stremio://player/example");
+
+    let epl = ExternalPlayerLink::from((
+        &stream,
+        streaming_server_url.as_ref(),
+        &settings,
+        player_url,
+    ));
+
+    let open_player = epl.open_player.as_ref().unwrap();
+
+    assert_eq!(
+        open_player.ios,
+        Some(
+            "open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2Fplayer%2Fexample%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2Fplayer%2Fexample%3FexternalPlayerSuccess%3D0&url=http%3A%2F%2Fexample.com%2Fstream"
+                .to_string()
+        )
+    );
+}
