@@ -48,11 +48,14 @@ impl LibraryItem {
         let recently_removed = self.removed && self.mtime > year_ago;
         self.r#type != "other" && (!self.removed || recently_removed)
     }
+    const CONTINUE_WATCHING_COMPLETION_THRESHOLD: f64 = 95.0;
+
     #[inline]
     pub fn is_in_continue_watching(&self) -> bool {
-        // re-added (!self.removed || temp) check
-        // makes sure to add only relevant Library Items to the Continue Watching
-        self.r#type != "other" && (!self.removed || self.temp) && self.state.time_offset > 0
+        self.r#type != "other"
+            && (!self.removed || self.temp)
+            && self.state.time_offset > 0
+            && self.progress() < Self::CONTINUE_WATCHING_COMPLETION_THRESHOLD
     }
 
     /// Returns watch progress percentage
