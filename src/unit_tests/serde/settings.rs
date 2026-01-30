@@ -191,7 +191,7 @@ fn settings_de() {
             Token::Str("subtitlesOpacity"),
             Token::U8(100),
             Token::Str("assSubtitlesStyling"),
-            Token::Bool(false),
+            Token::Bool(true),
             Token::Str("escExitFullscreen"),
             Token::Bool(true),
             Token::Str("seekTimeDuration"),
