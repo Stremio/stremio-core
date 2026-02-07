@@ -14,6 +14,21 @@ use crate::{
 
 pub type LibraryItemId = String;
 
+/// A library item represents a piece of media content that a user has interacted with.
+///
+/// Library items track playback state, watch progress, and metadata for movies and series
+/// that users have added to their library or started watching. Items can be marked as
+/// removed or temporary, and contain timestamps for creation and modification.
+///
+/// # Fields
+///
+/// - `id`: Unique identifier for the library item (stored as `_id` in JSON)
+/// - `name`: Display name of the media content
+/// - `type`: Content type (e.g., "movie", "series", "other")
+/// - `poster`: Optional URL to the poster image
+/// - `removed`: Whether the item has been removed from the library
+/// - `temp`: Whether the item is temporary (not permanently in library)
+/// - `state`: Playback state and watch progress information
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -200,6 +215,14 @@ impl From<(&MetaItemPreview, &LibraryItem)> for LibraryItem {
     }
 }
 
+/// Tracks the playback state and watch progress for a [`LibraryItem`].
+///
+/// This struct contains all the timing information, watch history, and notification
+/// preferences for a specific piece of media content. It is persisted alongside
+/// the library item and synchronized across devices.
+///
+/// Time values (`time_watched`, `time_offset`, `duration`, `overall_time_watched`)
+/// are stored in **milliseconds**.
 #[serde_as]
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

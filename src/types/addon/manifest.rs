@@ -14,6 +14,19 @@ use crate::types::{UniqueVec, UniqueVecAdapter};
 /// Re-export the semver::Version
 pub use semver::Version;
 
+/// The addon manifest describes an addon's capabilities, resources, and metadata.
+///
+/// A manifest is the primary way addons communicate what content they provide (catalogs,
+/// meta, streams, subtitles) and how clients should interact with them. It follows the
+/// [Stremio Addon Protocol](https://stremio.github.io/stremio-addon-sdk/docs/).
+///
+/// # Key Fields
+///
+/// - `id`: Unique identifier for the addon (e.g., "com.example.myaddon")
+/// - `version`: Semantic version of the addon
+/// - `resources`: The types of resources this addon can serve (catalog, meta, stream, subtitles)
+/// - `catalogs`: Content catalogs provided by this addon
+/// - `types`: Content types supported (movie, series, anime, etc.)
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Derivative))]
@@ -148,6 +161,10 @@ impl Manifest {
     }
 }
 
+/// A lightweight preview of an addon manifest containing essential display information.
+///
+/// Used in addon listings and UI components where the full manifest details
+/// are not needed. Can be created from a full [`Manifest`] using `From`.
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Derivative))]
