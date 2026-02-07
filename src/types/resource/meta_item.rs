@@ -146,6 +146,10 @@ struct MetaItemPreviewLegacy {
 /// let meta_preview = serde_json::from_value::<MetaItemPreview>(no_fields).unwrap();
 /// assert_eq!(expected, meta_preview);
 /// ```
+/// A lightweight preview of a [`MetaItem`] for catalog listings.
+///
+/// Contains essential display information (poster, name, type) suitable for
+/// rendering in browse/search results without the full video list.
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]
 #[serde(rename_all = "camelCase", try_from = "MetaItemPreviewLegacy")]
@@ -241,6 +245,10 @@ impl From<MetaItemPreviewLegacy> for MetaItemPreview {
     }
 }
 
+/// Full metadata for a content item (movie, series, channel, etc.).
+///
+/// Extends [`MetaItemPreview`] with the complete list of [`Video`]s.
+/// For series, videos are sorted by season and episode number.
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]
@@ -292,10 +300,13 @@ pub enum PosterShape {
     Poster,
 }
 
+/// Season and episode information for series content.
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]
 pub struct SeriesInfo {
+    /// Season number (0 typically indicates specials/extras).
     pub season: u32,
+    /// Episode number within the season.
     pub episode: u32,
 }
 
@@ -304,6 +315,10 @@ pub struct SeriesInfo {
 /// For example when using the id as key in a [`HashMap`].
 pub type VideoId = String;
 
+/// A single playable video within a [`MetaItem`].
+///
+/// For movies, there's typically one video. For series, each episode is a video.
+/// Videos can have embedded streams or reference external streams.
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]

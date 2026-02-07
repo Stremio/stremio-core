@@ -1,3 +1,59 @@
+//! # Runtime - The Core Event Loop
+//!
+//! The [`Runtime`] is the central coordinator for stremio-core's architecture.
+//! It manages the application state ([`Model`]) and processes user actions through
+//! a message-passing system.
+//!
+//! ## Architecture Overview
+//!
+//! ```text
+//! ┌─────────────────┐     dispatch()     ┌─────────────────┐
+//! │   UI / Client   │ ─────────────────▶ │     Runtime     │
+//! └─────────────────┘                    └────────┬────────┘
+//!         ▲                                       │
+//!         │  RuntimeEvent::NewState               │ update()
+//!         │                                       ▼
+//! ┌───────┴─────────┐                    ┌─────────────────┐
+//! │   Rx (Receiver) │ ◀───────────────── │      Model      │
+//! └─────────────────┘                    └─────────────────┘
+//! ```
+//!
+//! ## Important Gotchas
+//!
+//! 1. **The `dispatch()` method executes effects immediately**: When you call
+//!    [`Runtime::dispatch`], it synchronously updates the model and spawns any
+//!    resulting effect futures. Make sure your [`Env`] is properly configured
+//!    to handle async execution.
+//!
+//! 2. **The receiver never closes automatically**: The [`Receiver`] from
+//!    [`Runtime::new`] stays open as long as the Runtime exists. Drop the
+//!    Runtime to close the channel.
+//!
+//! 3. **Effects must not resolve to Actions**: Effects can only produce
+//!    [`Event`] or [`Internal`](crate::runtime::msg::Internal) messages.
+//!    Attempting to dispatch an Action from an effect will panic.
+//!
+//! ## Usage Example
+//!
+//! ```ignore
+//! // Create runtime with initial model
+//! let (runtime, rx) = Runtime::<MyEnv, MyModel>::new(model, effects, 1000);
+//!
+//! // Dispatch user actions
+//! runtime.dispatch(RuntimeAction { field: None, action: my_action });
+//!
+//! // Listen for state changes
+//! while let Some(event) = rx.recv().await {
+//!     match event {
+//!         RuntimeEvent::NewState(fields, ..) => { /* re-render UI */ }
+//!         RuntimeEvent::CoreEvent(event) => { /* handle event */ }
+//!     }
+//! }
+//! ```
+//!
+//! [`Model`]: crate::runtime::Model
+//! [`Env`]: crate::runtime::Env
+
 use crate::runtime::msg::{Action, Event, Msg};
 use crate::runtime::{Effect, EffectFuture, Env, Model};
 use derivative::Derivative;
@@ -10,19 +66,38 @@ use serde::Serialize;
 use std::marker::PhantomData;
 use std::sync::{Arc, LockResult, RwLock, RwLockReadGuard};
 
+/// Events emitted by the [`Runtime`] to notify clients of state changes.
+///
+/// These events are sent through the channel returned by [`Runtime::new`].
 #[derive(Serialize, Debug, PartialEq, Eq)]
 #[serde(tag = "name", content = "args")]
 pub enum RuntimeEvent<E: Env, M: Model<E>> {
+    /// The model state has changed. Contains the list of fields that were modified.
     NewState(Vec<M::Field>, #[cfg(test)] M),
+    /// A core event was emitted (e.g., error, notification, or other internal event).
     CoreEvent(Event),
 }
 
+/// An action to be dispatched to the [`Runtime`].
+///
+/// # Fields
+/// - `field`: Optional field to target for partial model updates
+/// - `action`: The user action to process
 #[derive(Debug)]
 pub struct RuntimeAction<E: Env, M: Model<E>> {
+    /// Optional field for targeted updates. If `None`, the entire model is updated.
     pub field: Option<M::Field>,
+    /// The action to dispatch (e.g., load content, play media, update settings).
     pub action: Action,
 }
 
+/// The core application runtime that manages state and processes actions.
+///
+/// Generic over:
+/// - `E`: The environment providing async execution and storage capabilities
+/// - `M`: The application model containing all state
+///
+/// See the [module-level documentation](self) for usage details and gotchas.
 #[derive(Derivative)]
 #[derivative(Clone(bound = ""))]
 pub struct Runtime<E: Env, M: Model<E>> {

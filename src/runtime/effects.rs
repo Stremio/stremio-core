@@ -1,3 +1,34 @@
+//! # Effects System
+//!
+//! Effects represent side-effects that occur as a result of model updates.
+//! They allow models to trigger async operations (API calls, storage, etc.)
+//! without directly performing I/O.
+//!
+//! ## Effect Types
+//!
+//! - **Synchronous** ([`Effect::Msg`]): Immediately dispatches a message back to the model
+//! - **Concurrent** ([`EffectFuture::Concurrent`]): Runs async without blocking other effects
+//! - **Sequential** ([`EffectFuture::Sequential`]): Runs async, but serialized with other sequential effects
+//!
+//! ## Creating Effects
+//!
+//! ```ignore
+//! // Return no effects but mark model as changed
+//! Effects::none()
+//!
+//! // Return effects without marking model as changed
+//! Effects::none().unchanged()
+//!
+//! // Return a single effect
+//! Effects::one(Effect::Future(EffectFuture::Concurrent(my_future)))
+//!
+//! // Shorthand for message effect
+//! Effects::msg(Msg::Internal(Internal::SomeAction))
+//!
+//! // Combine multiple effects
+//! effects_a.join(effects_b)
+//! ```
+
 use crate::runtime::msg::Msg;
 use derive_more::{From, IntoIterator};
 
@@ -5,14 +36,27 @@ use super::EnvFuture;
 
 type Future = EnvFuture<'static, Msg>;
 
+/// Wraps an async future that will eventually produce a [`Msg`].
+///
+/// The execution strategy determines how the runtime schedules this future:
+/// - [`Concurrent`](Self::Concurrent): Execute immediately, potentially in parallel with others
+/// - [`Sequential`](Self::Sequential): Execute in order, waiting for previous sequential effects
 pub enum EffectFuture {
+    /// Execute concurrently with other effects. Best for independent operations.
     Concurrent(Future),
+    /// Execute sequentially. Use when order matters or to prevent race conditions.
     Sequential(Future),
 }
 
+/// A single side-effect produced by a model update.
+///
+/// Effects can be either synchronous (a message to dispatch immediately) or
+/// asynchronous (a future that will produce a message when complete).
 #[derive(From)]
 pub enum Effect {
+    /// A synchronous message to dispatch immediately.
     Msg(Box<Msg>),
+    /// An async future that will produce a message when complete.
     Future(EffectFuture),
 }
 
