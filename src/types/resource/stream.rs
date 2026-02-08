@@ -159,6 +159,22 @@ impl Stream {
         }
     }
 
+    /// Resolves all relative URLs in this stream to absolute URLs.
+    ///
+    /// This processes:
+    /// - The stream source URL (for Url, PlayerFrame, Nzb, External variants)
+    /// - Archive URLs (for Rar, Zip, Zip7, Tgz, Tar variants)
+    /// - Embedded subtitle URLs
+    ///
+    /// # Arguments
+    /// * `base_url` - The addon's base URL to resolve relative paths against
+    pub fn resolve_relative_urls(&mut self, base_url: &Url) {
+        self.source.resolve_relative_urls(base_url);
+        for subtitle in &mut self.subtitles {
+            subtitle.resolve_relative_urls(base_url);
+        }
+    }
+
     /// # Examples
     /// ```
     /// use stremio_core::types::resource::{Stream, StreamSource};
@@ -859,6 +875,71 @@ pub enum StreamSource {
         #[serde(skip_serializing_if = "Option::is_none")]
         webos_url: Option<String>,
     },
+}
+
+/// Helper function to resolve a URL if it's relative.
+fn resolve_url(url: &mut Url, base_url: &Url) {
+    if url.host().is_none() {
+        if let Ok(absolute) = base_url.join(url.as_str()) {
+            *url = absolute;
+        }
+    }
+}
+
+/// Helper function to resolve an optional URL if it's relative.
+fn resolve_option_url(url: &mut Option<Url>, base_url: &Url) {
+    if let Some(ref mut u) = url {
+        resolve_url(u, base_url);
+    }
+}
+
+impl StreamSource {
+    /// Resolves relative URLs in the stream source to absolute URLs.
+    ///
+    /// Different variants have different URL fields that need resolution:
+    /// - `Url`: single url field
+    /// - `PlayerFrame`: player_frame_url field
+    /// - `Nzb`: nzb_url and servers fields
+    /// - `External`: external_url and android_tv_url fields
+    /// - Archive types (`Rar`, `Zip`, etc.): urls in the Vec<ArchiveUrl>
+    ///
+    /// # Arguments
+    /// * `base_url` - The addon's base URL to resolve relative paths against
+    pub fn resolve_relative_urls(&mut self, base_url: &Url) {
+        match self {
+            StreamSource::Url { url } => {
+                resolve_url(url, base_url);
+            }
+            StreamSource::PlayerFrame { player_frame_url } => {
+                resolve_url(player_frame_url, base_url);
+            }
+            StreamSource::Nzb { nzb_url, servers } => {
+                resolve_url(nzb_url, base_url);
+                for server in servers {
+                    resolve_url(server, base_url);
+                }
+            }
+            StreamSource::External {
+                external_url,
+                android_tv_url,
+                ..
+            } => {
+                resolve_option_url(external_url, base_url);
+                resolve_option_url(android_tv_url, base_url);
+            }
+            StreamSource::Rar { urls, .. }
+            | StreamSource::Zip { urls, .. }
+            | StreamSource::Zip7 { urls, .. }
+            | StreamSource::Tgz { urls, .. }
+            | StreamSource::Tar { urls, .. } => {
+                for archive_url in urls {
+                    resolve_url(&mut archive_url.url, base_url);
+                }
+            }
+            // YouTube and Torrent don't have URLs that need resolution
+            StreamSource::YouTube { .. } | StreamSource::Torrent { .. } => {}
+        }
+    }
 }
 
 /// ```

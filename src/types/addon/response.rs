@@ -122,6 +122,70 @@ pub enum ResourceResponse {
     },
 }
 
+impl ResourceResponse {
+    /// Resolves all relative URLs in the response to absolute URLs.
+    ///
+    /// This should be called after receiving a response from an addon to convert
+    /// any relative paths (like `/stream/video.mp4`) to absolute URLs using the
+    /// addon's base URL.
+    ///
+    /// # Arguments
+    /// * `addon_base_url` - The addon's manifest URL to use as the base for relative paths
+    pub fn resolve_relative_urls(&mut self, addon_base_url: &url::Url) {
+        match self {
+            ResourceResponse::Streams { streams } => {
+                for stream in streams {
+                    stream.resolve_relative_urls(addon_base_url);
+                }
+            }
+            ResourceResponse::Subtitles { subtitles } => {
+                for subtitle in subtitles {
+                    subtitle.resolve_relative_urls(addon_base_url);
+                }
+            }
+            ResourceResponse::Meta { meta } => {
+                // Resolve trailer streams
+                for stream in &mut meta.preview.trailer_streams {
+                    stream.resolve_relative_urls(addon_base_url);
+                }
+                // Resolve video streams
+                for video in &mut meta.videos {
+                    for stream in &mut video.streams {
+                        stream.resolve_relative_urls(addon_base_url);
+                    }
+                    for stream in &mut video.trailer_streams {
+                        stream.resolve_relative_urls(addon_base_url);
+                    }
+                }
+            }
+            ResourceResponse::Metas { metas } => {
+                for meta in metas {
+                    for stream in &mut meta.trailer_streams {
+                        stream.resolve_relative_urls(addon_base_url);
+                    }
+                }
+            }
+            ResourceResponse::MetasDetailed { metas_detailed } => {
+                for meta in metas_detailed {
+                    for stream in &mut meta.preview.trailer_streams {
+                        stream.resolve_relative_urls(addon_base_url);
+                    }
+                    for video in &mut meta.videos {
+                        for stream in &mut video.streams {
+                            stream.resolve_relative_urls(addon_base_url);
+                        }
+                        for stream in &mut video.trailer_streams {
+                            stream.resolve_relative_urls(addon_base_url);
+                        }
+                    }
+                }
+            }
+            // Addons don't contain URLs that need resolution
+            ResourceResponse::Addons { .. } => {}
+        }
+    }
+}
+
 #[serde_as]
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(transparent)]
