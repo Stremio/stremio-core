@@ -16,6 +16,7 @@ pub struct Subtitles {
         test,
         derivative(Default(value = "Url::parse(\"protocol://host\").unwrap()"))
     )]
+    #[serde(with = "crate::types::serde_ext::url_serde")]
     pub url: Url,
 }
 
@@ -28,9 +29,12 @@ impl Subtitles {
     /// # Arguments
     /// * `base_url` - The addon's base URL to use for resolving relative paths
     pub fn resolve_relative_urls(&mut self, base_url: &Url) {
-        // Check if URL is relative (no host means it's relative)
-        if self.url.host().is_none() {
-            if let Ok(absolute) = base_url.join(self.url.as_str()) {
+        // If the URL has "relative" scheme, it means it was a relative path
+        // that we forced into a URL during deserialization.
+        if self.url.scheme() == "relative" {
+            // relative:///path -> path is /path
+            // relative:path -> path is path
+            if let Ok(absolute) = base_url.join(self.url.path()) {
                 self.url = absolute;
             }
         }
@@ -45,25 +49,19 @@ mod tests {
     fn test_resolve_relative_url() {
         let base_url = Url::parse("https://addon.example.com/manifest.json").unwrap();
         
-        // Create a subtitle with a relative-like path using file: scheme without host
-        // In practice, addons might return various forms, but the key test is
-        // that URLs without a host get resolved against the base
+        // Create a subtitle with a relative-like path using relative: scheme
+        // This simulates what our custom deserializer produces
         let mut subtitle = Subtitles {
             id: "sub1".to_string(),
             lang: "en".to_string(),
-            url: Url::parse("file:///subtitles/english.srt").unwrap(),
+            url: Url::parse("relative:///subtitles/english.srt").unwrap(),
         };
 
-        // This has host() = None since file URLs can have empty host
-        // But file URL host is actually empty string, not None
-        // So we test absolute URL behavior
         subtitle.resolve_relative_urls(&base_url);
 
-        // file:/// URLs have host() returning Some("") not None
-        // So this should remain unchanged
         assert_eq!(
             subtitle.url.as_str(),
-            "file:///subtitles/english.srt"
+            "https://addon.example.com/subtitles/english.srt"
         );
     }
 

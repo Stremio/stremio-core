@@ -77,3 +77,54 @@ pub mod empty_string_as_null {
         }
     }
 }
+
+pub mod url_serde {
+    use serde::{Deserialize, Deserializer, Serializer};
+    use url::Url;
+
+    pub fn serialize<S>(value: &Url, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(value.as_str())
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Url, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Url::parse(&s)
+            .or_else(|_| Url::parse(&format!("relative:{}", s)))
+            .map_err(serde::de::Error::custom)
+    }
+
+    pub mod option {
+        use super::*;
+        pub fn serialize<S>(value: &Option<Url>, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match value {
+                Some(u) => serializer.serialize_some(u),
+                None => serializer.serialize_none(),
+            }
+        }
+
+        pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<Url>, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s: Option<String> = Option::deserialize(deserializer)?;
+            match s {
+                Some(s) => {
+                    let u = Url::parse(&s)
+                        .or_else(|_| Url::parse(&format!("relative:{}", s)))
+                        .map_err(serde::de::Error::custom)?;
+                    Ok(Some(u))
+                }
+                None => Ok(None),
+            }
+        }
+    }
+}

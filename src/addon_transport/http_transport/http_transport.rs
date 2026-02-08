@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use futures::future;
+use futures::{future, TryFutureExt};
 use http::Request;
 use once_cell::sync::Lazy;
 use percent_encoding::utf8_percent_encode;
@@ -94,7 +94,13 @@ impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
         }
 
         let request = Request::get(url).body(()).expect("request builder failed");
+        let transport_url = self.transport_url.clone();
         E::fetch(request)
+            .map_ok(move |mut response: ResourceResponse| {
+                response.resolve_relative_urls(&transport_url);
+                response
+            })
+            .boxed_env()
     }
     fn manifest(&self) -> TryEnvFuture<Manifest> {
         if self.transport_url.path().ends_with(ADDON_LEGACY_PATH) {

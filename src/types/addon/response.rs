@@ -379,3 +379,60 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod resolution_tests {
+    use super::*;
+    use url::Url;
+    use crate::types::resource::{Stream, StreamSource, StreamBehaviorHints};
+
+    #[test]
+    fn test_resolve_resource_response_streams() {
+        let base_url = Url::parse("https://addon.example.com/manifest.json").unwrap();
+        let mut response = ResourceResponse::Streams {
+            streams: vec![
+                Stream {
+                    source: StreamSource::Url { url: Url::parse("relative:/video.mp4").unwrap() },
+                    name: None,
+                    description: None,
+                    thumbnail: None,
+                    subtitles: vec![],
+                    behavior_hints: StreamBehaviorHints::default(),
+                }
+            ]
+        };
+
+        response.resolve_relative_urls(&base_url);
+
+        if let ResourceResponse::Streams { streams } = response {
+            match &streams[0].source {
+                StreamSource::Url { url } => assert_eq!(url.as_str(), "https://addon.example.com/video.mp4"),
+                _ => panic!("Wrong stream source"),
+            }
+        } else {
+            panic!("Wrong response type");
+        }
+    }
+
+    #[test]
+    fn test_resolve_resource_response_subtitles() {
+        let base_url = Url::parse("https://addon.example.com/manifest.json").unwrap();
+        let mut response = ResourceResponse::Subtitles {
+            subtitles: vec![
+                Subtitles {
+                    id: "sub1".into(),
+                    lang: "en".into(),
+                    url: Url::parse("relative:/subs.srt").unwrap(),
+                }
+            ]
+        };
+
+        response.resolve_relative_urls(&base_url);
+
+        if let ResourceResponse::Subtitles { subtitles } = response {
+            assert_eq!(subtitles[0].url.as_str(), "https://addon.example.com/subs.srt");
+        } else {
+            panic!("Wrong response type");
+        }
+    }
+}

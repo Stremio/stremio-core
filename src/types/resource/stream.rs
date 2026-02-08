@@ -775,6 +775,7 @@ impl Stream {
 #[serde(untagged, expecting = "Valid StreamSource")]
 pub enum StreamSource {
     Url {
+        #[serde(with = "crate::types::serde_ext::url_serde")]
         url: Url,
     },
     #[cfg_attr(test, derivative(Default))]
@@ -840,6 +841,7 @@ pub enum StreamSource {
     /// Nzb sourced
     #[serde(rename_all = "camelCase")]
     Nzb {
+        #[serde(with = "crate::types::serde_ext::url_serde")]
         nzb_url: Url,
         #[serde(default)]
         servers: Vec<Url>,
@@ -859,6 +861,7 @@ pub enum StreamSource {
     },
     #[serde(rename_all = "camelCase")]
     PlayerFrame {
+        #[serde(with = "crate::types::serde_ext::url_serde")]
         player_frame_url: Url,
     },
     #[serde(
@@ -867,8 +870,10 @@ pub enum StreamSource {
     )]
     External {
         #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, with = "crate::types::serde_ext::url_serde::option")]
         external_url: Option<Url>,
         #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, with = "crate::types::serde_ext::url_serde::option")]
         android_tv_url: Option<Url>,
         #[serde(skip_serializing_if = "Option::is_none")]
         tizen_url: Option<String>,
@@ -879,8 +884,10 @@ pub enum StreamSource {
 
 /// Helper function to resolve a URL if it's relative.
 fn resolve_url(url: &mut Url, base_url: &Url) {
-    if url.host().is_none() {
-        if let Ok(absolute) = base_url.join(url.as_str()) {
+    if url.scheme() == "relative" {
+        // relative:///path -> path is /path
+        // relative:path -> path is path
+        if let Ok(absolute) = base_url.join(url.path()) {
             *url = absolute;
         }
     }
@@ -1286,5 +1293,25 @@ mod tests {
             decomp_string.len(),
             url.as_str().len(),
         );
+    }
+
+    #[test]
+    fn test_deserialize_relative_url() {
+        use crate::types::resource::StreamSource;
+
+
+        let json = serde_json::json!({
+            "url": "/relative/path.mp4"
+        });
+
+        let source: StreamSource = serde_json::from_value(json).unwrap();
+
+        match source {
+            StreamSource::Url { url } => {
+                assert_eq!(url.scheme(), "relative");
+                assert_eq!(url.path(), "/relative/path.mp4");
+            }
+            _ => panic!("Wrong variant, expected Url"),
+        }
     }
 }
