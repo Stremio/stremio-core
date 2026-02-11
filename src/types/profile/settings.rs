@@ -65,7 +65,7 @@ impl Default for Settings {
             video_mode: None,
             hide_spoilers: false,
             gamepad_support: false,
-            frame_rate_matching_strategy: FrameRateMatchingStrategy::FrameRateOnly,
+            frame_rate_matching_strategy: FrameRateMatchingStrategy::Disabled,
             next_video_notification_duration: 35000,
             audio_passthrough: false,
             streaming_server_url: STREAMING_SERVER_URL.to_owned(),
