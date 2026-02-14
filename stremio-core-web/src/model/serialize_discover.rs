@@ -67,6 +67,7 @@ mod model {
         pub catalogs: Vec<SelectableCatalog<'a>>,
         pub extra: Vec<SelectableExtra<'a>>,
         pub next_page: bool,
+        pub loading_next_page: bool,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -170,6 +171,12 @@ pub fn serialize_discover(
                 })
                 .collect(),
             next_page: discover.selectable.next_page.is_some(),
+            loading_next_page: discover.catalog.len() > 1
+                && discover
+                    .catalog
+                    .last()
+                    .map(|page| matches!(&page.content, Some(Loadable::Loading) | None))
+                    .unwrap_or(false),
         },
         catalog: (!discover.catalog.is_empty()).as_option().map(|_| {
             let first_page = discover
