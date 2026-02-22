@@ -1199,31 +1199,36 @@ fn subtitles_update<E: Env + 'static>(
     video_params: &Option<VideoParams>,
     addons: &[Descriptor],
 ) -> Effects {
-    match (selected, video_params) {
-        (
-            Some(Selected {
-                subtitles_path: Some(subtitles_path),
-                ..
-            }),
-            Some(video_params),
-        ) => resources_update_with_vector_content::<E, _>(
-            subtitles,
-            ResourcesAction::force_request(
-                &AggrRequest::AllOfResource(ResourcePath {
-                    extra: subtitles_path
-                        .extra
-                        .to_owned()
-                        .extend_one(&VIDEO_HASH_EXTRA_PROP, video_params.hash.to_owned())
-                        .extend_one(
-                            &VIDEO_SIZE_EXTRA_PROP,
-                            video_params.size.as_ref().map(|size| size.to_string()),
-                        )
-                        .extend_one(&VIDEO_FILENAME_EXTRA_PROP, video_params.filename.to_owned()),
-                    ..subtitles_path.to_owned()
-                }),
-                addons,
-            ),
-        ),
+    match selected {
+        Some(Selected {
+            subtitles_path: Some(subtitles_path),
+            ..
+        }) => {
+            let mut extra = subtitles_path.extra.clone();
+            if let Some(video_params) = video_params {
+                extra = extra
+                    .extend_one(&VIDEO_HASH_EXTRA_PROP, video_params.hash.clone())
+                    .extend_one(
+                        &VIDEO_SIZE_EXTRA_PROP,
+                        video_params.size.map(|size| size.to_string()),
+                    )
+                    .extend_one(&VIDEO_FILENAME_EXTRA_PROP, video_params.filename.clone());
+            }
+
+            resources_update_with_vector_content::<E, _>(
+                subtitles,
+                ResourcesAction::ResourcesRequested {
+                    request: &AggrRequest::AllOfResource(ResourcePath {
+                        resource: SUBTITLES_RESOURCE_NAME.to_owned(),
+                        r#type: subtitles_path.r#type.to_owned(),
+                        id: subtitles_path.id.to_owned(),
+                        extra,
+                    }),
+                    addons,
+                    force: false,
+                },
+            )
+        }
         _ => eq_update(subtitles, vec![]),
     }
 }
