@@ -22,6 +22,7 @@ pub struct Settings {
     pub secondary_audio_language: Option<String>,
     pub subtitles_language: Option<String>,
     pub secondary_subtitles_language: Option<String>,
+    pub subtitles_auto_select: bool,
     pub subtitles_size: u8,
     pub subtitles_font: String,
     pub subtitles_bold: bool,
@@ -30,6 +31,7 @@ pub struct Settings {
     pub subtitles_background_color: String,
     pub subtitles_outline_color: String,
     pub subtitles_opacity: u8,
+    pub ass_subtitles_styling: bool,
     /// Whether or not the Escape key should exists from the app when in Full screen.
     pub esc_exit_fullscreen: bool,
     /// The Seek time duration (in milliseconds) is when using the Arrow keys
@@ -73,6 +75,7 @@ impl Default for Settings {
             secondary_audio_language: None,
             subtitles_language: Some("eng".to_owned()),
             secondary_subtitles_language: None,
+            subtitles_auto_select: true,
             subtitles_size: 100,
             subtitles_font: "Roboto".to_owned(),
             subtitles_bold: false,
@@ -81,6 +84,7 @@ impl Default for Settings {
             subtitles_background_color: "#00000000".to_owned(),
             subtitles_outline_color: "#000000".to_owned(),
             subtitles_opacity: 100,
+            ass_subtitles_styling: false,
             esc_exit_fullscreen: true,
             seek_time_duration: 10000,
             seek_short_time_duration: 3000,
