@@ -75,7 +75,7 @@ impl Default for Settings {
             secondary_audio_language: None,
             subtitles_language: Some("eng".to_owned()),
             secondary_subtitles_language: None,
-            subtitles_auto_select: false,
+            subtitles_auto_select: true,
             subtitles_size: 100,
             subtitles_font: "Roboto".to_owned(),
             subtitles_bold: false,

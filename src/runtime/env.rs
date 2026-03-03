@@ -787,7 +787,7 @@ fn migrate_storage_schema_to_v22<E: Env>() -> TryEnvFuture<()> {
                 Some(settings) => {
                     settings.insert(
                         "subtitlesAutoSelect".to_owned(),
-                        serde_json::Value::Bool(false),
+                        serde_json::Value::Bool(true),
                     );
                     E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
                 }
@@ -1601,7 +1601,7 @@ mod test {
 
             let migrated_profile = json!({
                 "settings": {
-                    "subtitlesAutoSelect": false,
+                    "subtitlesAutoSelect": true,
                 }
             });
 

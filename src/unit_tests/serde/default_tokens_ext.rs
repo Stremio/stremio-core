@@ -416,7 +416,7 @@ impl DefaultTokens for Settings {
             Token::Str("secondarySubtitlesLanguage"),
             Token::None,
             Token::Str("subtitlesAutoSelect"),
-            Token::Bool(false),
+            Token::Bool(true),
             Token::Str("subtitlesSize"),
             Token::U8(100),
             Token::Str("subtitlesFont"),
