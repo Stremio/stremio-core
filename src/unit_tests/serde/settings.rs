@@ -23,6 +23,7 @@ fn settings() {
             secondary_audio_language: Some("secondary_audio_language".to_owned()),
             subtitles_language: Some("subtitles_language".to_owned()),
             secondary_subtitles_language: Some("secondary_subtitles_language".to_owned()),
+            subtitles_auto_select: false,
             subtitles_size: 1,
             subtitles_font: "subtitles_font".to_owned(),
             subtitles_bold: true,
@@ -47,7 +48,7 @@ fn settings() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 34,
+                len: 35,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -90,6 +91,8 @@ fn settings() {
             Token::Str("secondarySubtitlesLanguage"),
             Token::Some,
             Token::Str("secondary_subtitles_language"),
+            Token::Str("subtitlesAutoSelect"),
+            Token::Bool(false),
             Token::Str("subtitlesSize"),
             Token::U8(1),
             Token::Str("subtitlesFont"),
@@ -139,7 +142,7 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 34,
+                len: 35,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -174,6 +177,8 @@ fn settings_de() {
             Token::Str("subtitlesLanguage"),
             Token::Some,
             Token::Str("eng"),
+            Token::Str("subtitlesAutoSelect"),
+            Token::Bool(false),
             Token::Str("subtitlesSize"),
             Token::U8(100),
             Token::Str("subtitlesFont"),
