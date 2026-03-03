@@ -14,7 +14,9 @@ use crate::{
         library::LibraryItem,
         profile::Settings,
         query_params_encode,
-        resource::{MetaItem, MetaItemPreview, Stream, StreamUrls, Video},
+        resource::{
+            get_download_url_from_source, MetaItem, MetaItemPreview, Stream, StreamUrls, Video,
+        },
         streams::{ConvertedStreamSource, StreamsItem},
     },
 };
@@ -77,7 +79,8 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
             .map(|converted| StreamUrls::new(converted, streaming_server_url));
         let download = stream_urls
             .as_ref()
-            .and_then(|urls| urls.download_url.as_ref().map(ToString::to_string));
+            .and_then(|urls| urls.download_url.as_ref().map(ToString::to_string))
+            .or_else(|| get_download_url_from_source(stream).map(|url| url.to_string()));
         let streaming = stream_urls
             .as_ref()
             .and_then(|urls| urls.streaming_url.clone());
