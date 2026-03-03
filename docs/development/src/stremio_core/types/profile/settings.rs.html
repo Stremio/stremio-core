@@ -95,7 +95,9 @@
 <a href="#94" id="94">94</a>
 <a href="#95" id="95">95</a>
 <a href="#96" id="96">96</a>
-<a href="#97" id="97">97</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::STREAMING_SERVER_URL;
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::STREAMING_SERVER_URL;
 <span class="kw">use </span>chrono::{DateTime, Utc};
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>url::Url;
@@ -119,6 +121,7 @@
     <span class="kw">pub </span>secondary_audio_language: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>subtitles_language: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>secondary_subtitles_language: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>subtitles_auto_select: bool,
     <span class="kw">pub </span>subtitles_size: u8,
     <span class="kw">pub </span>subtitles_font: String,
     <span class="kw">pub </span>subtitles_bold: bool,
@@ -171,6 +174,7 @@
             secondary_audio_language: <span class="prelude-val">None</span>,
             subtitles_language: <span class="prelude-val">Some</span>(<span class="string">"eng"</span>.to_owned()),
             secondary_subtitles_language: <span class="prelude-val">None</span>,
+            subtitles_auto_select: <span class="bool-val">true</span>,
             subtitles_size: <span class="number">100</span>,
             subtitles_font: <span class="string">"Roboto"</span>.to_owned(),
             subtitles_bold: <span class="bool-val">false</span>,
