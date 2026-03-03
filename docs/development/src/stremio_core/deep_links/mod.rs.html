@@ -849,7 +849,10 @@
 <a href="#848" id="848">848</a>
 <a href="#849" id="849">849</a>
 <a href="#850" id="850">850</a>
-<a href="#851" id="851">851</a></pre></div><pre class="rust"><code><span class="kw">use </span>percent_encoding::utf8_percent_encode;
+<a href="#851" id="851">851</a>
+<a href="#852" id="852">852</a>
+<a href="#853" id="853">853</a>
+<a href="#854" id="854">854</a></pre></div><pre class="rust"><code><span class="kw">use </span>percent_encoding::utf8_percent_encode;
 <span class="kw">use </span>regex::Regex;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>url::Url;
@@ -865,7 +868,9 @@
         library::LibraryItem,
         profile::Settings,
         query_params_encode,
-        resource::{MetaItem, MetaItemPreview, Stream, StreamUrls, Video},
+        resource::{
+            get_download_url_from_source, MetaItem, MetaItemPreview, Stream, StreamUrls, Video,
+        },
         streams::{ConvertedStreamSource, StreamsItem},
     },
 };
@@ -928,7 +933,8 @@
             .map(|converted| StreamUrls::new(converted, streaming_server_url));
         <span class="kw">let </span>download = stream_urls
             .as_ref()
-            .and_then(|urls| urls.download_url.as_ref().map(ToString::to_string));
+            .and_then(|urls| urls.download_url.as_ref().map(ToString::to_string))
+            .or_else(|| get_download_url_from_source(stream).map(|url| url.to_string()));
         <span class="kw">let </span>streaming = stream_urls
             .as_ref()
             .and_then(|urls| urls.streaming_url.clone());
