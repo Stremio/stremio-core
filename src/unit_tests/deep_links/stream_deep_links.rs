@@ -73,10 +73,12 @@ fn stream_deep_links_torrent_magnet() {
         "download URL should be present when server is running"
     );
 
-    let sdl_no_server =
-        StreamDeepLinks::from((&stream, None::<&Url>, &settings));
+    let sdl_no_server = StreamDeepLinks::from((&stream, None::<&Url>, &settings));
     let magnet = sdl_no_server.external_player.magnet.as_deref().unwrap();
-    assert!(magnet.starts_with("magnet:"), "magnet missing without server");
+    assert!(
+        magnet.starts_with("magnet:"),
+        "magnet missing without server"
+    );
     assert!(magnet.contains("xt=urn:btih:"), "magnet missing xt param");
     assert_eq!(
         sdl_no_server.external_player.download, None,

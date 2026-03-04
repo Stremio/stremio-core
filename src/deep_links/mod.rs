@@ -116,7 +116,9 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
         // Use streaming_server_url from settings if streaming_server is reachable
         let streaming_server_url = streaming_server_url.map(|_| &settings.streaming_server_url);
         match stream.convert(streaming_server_url) {
-            Ok(ref converted) => ExternalPlayerLink::from((converted, streaming_server_url, settings)),
+            Ok(ref converted) => {
+                ExternalPlayerLink::from((converted, streaming_server_url, settings))
+            }
             Err(_) => ExternalPlayerLink {
                 magnet: magnet_url_from_raw(stream),
                 ..Default::default()
