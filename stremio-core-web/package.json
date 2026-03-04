@@ -7,7 +7,8 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/stremio/stremio-core-web.git"
+        "url": "https://github.com/Stremio/stremio-core.git",
+        "directory": "stremio-core-web"
     },
     "publishConfig": {
         "access": "public",
