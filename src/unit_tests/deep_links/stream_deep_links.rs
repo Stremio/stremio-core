@@ -32,11 +32,56 @@ fn stream_deep_links_magnet() {
     let settings = Settings::default();
     let sdl = StreamDeepLinks::from((&stream, streaming_server_url.as_ref(), &settings));
     assert_eq!(sdl.player, "stremio:///player/eAEBRgC5%2F3sidXJsIjoibWFnbmV0Oj94dD11cm46YnRpaDpkZDgyNTVlY2RjN2NhNTVmYjBiYmY4MTMyM2Q4NzA2MmRiMWY2ZDFjIn0%2BMhZF".to_string());
-    assert_eq!(
-        sdl.external_player.download,
-        Some(MAGNET_STR_URL.to_owned()),
-    );
+    assert_eq!(sdl.external_player.download, None);
+    assert_eq!(sdl.external_player.magnet, Some(MAGNET_STR_URL.to_owned()),);
     assert_eq!(sdl.external_player.file_name, None);
+}
+
+#[test]
+fn stream_deep_links_torrent_magnet() {
+    let info_hash = [
+        0xdd, 0x82, 0x55, 0xec, 0xdc, 0x7c, 0xa5, 0x5f, 0xb0, 0xbb, 0xf8, 0x13, 0x23, 0xd8, 0x70,
+        0x62, 0xdb, 0x1f, 0x6d, 0x1c,
+    ];
+    let announce = vec!["http://bt1.archive.org:6969/announce".to_string()];
+    let stream = Stream {
+        source: StreamSource::Torrent {
+            info_hash,
+            file_idx: Some(0),
+            announce,
+            file_must_include: vec![],
+        },
+        name: Some("Test Torrent".to_string()),
+        description: None,
+        thumbnail: None,
+        subtitles: vec![],
+        behavior_hints: Default::default(),
+    };
+    let settings = Settings::default();
+
+    let sdl_with_server = StreamDeepLinks::from((
+        &stream,
+        Some(Url::parse(STREAMING_SERVER_URL).unwrap()).as_ref(),
+        &settings,
+    ));
+    let magnet = sdl_with_server.external_player.magnet.as_deref().unwrap();
+    assert!(magnet.starts_with("magnet:"), "magnet missing with server");
+    assert!(magnet.contains("xt=urn:btih:"), "magnet missing xt param");
+    assert!(magnet.contains("tr="), "magnet missing tracker");
+    assert!(
+        sdl_with_server.external_player.download.is_some(),
+        "download URL should be present when server is running"
+    );
+
+    let sdl_no_server =
+        StreamDeepLinks::from((&stream, None::<&Url>, &settings));
+    let magnet = sdl_no_server.external_player.magnet.as_deref().unwrap();
+    assert!(magnet.starts_with("magnet:"), "magnet missing without server");
+    assert!(magnet.contains("xt=urn:btih:"), "magnet missing xt param");
+    assert_eq!(
+        sdl_no_server.external_player.download, None,
+        "download URL must be None when server is not running"
+    );
 }
 
 #[test]
