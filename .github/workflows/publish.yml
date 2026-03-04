@@ -5,7 +5,7 @@ on:
     types: [released]
 
 env:
-  NODE_VERSION: 12
+  NODE_VERSION: 18
   WASM_PACK_VERSION: 0.13.1
   RUST_VERSION: '1.77'
 
@@ -49,4 +49,4 @@ jobs:
 
       - name: Publish to NPM
         working-directory: stremio-core-web
-        run: npm publish --access public
+        run: npm publish --access public --provenance
