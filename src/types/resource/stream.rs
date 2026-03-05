@@ -1128,11 +1128,7 @@ fn get_download_url(
     streaming_server_url: Option<&Url>,
 ) -> Option<Url> {
     match &converted.source {
-        ConvertedStreamSource::Url { url } if url.scheme() == "magnet" => Magnet::new(url.as_str())
-            .as_ref()
-            .map(ToString::to_string)
-            .ok()
-            .and_then(|url_string| url_string.parse().ok()),
+        ConvertedStreamSource::Url { url } if url.scheme() == "magnet" => None,
         ConvertedStreamSource::Url { url } => Some(url.to_owned()),
         ConvertedStreamSource::Torrent { url, .. } => {
             // we just need to know that the server is running

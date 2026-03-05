@@ -151,7 +151,10 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
         let file_name = playlist.as_ref().map(|_| "playlist.m3u".to_owned());
 
         let open_player = match &streaming {
-            Some(url) => match settings.player_type.as_ref() {
+            Some(url) => {
+                let url_encoded = utf8_percent_encode(url.as_str(), URI_COMPONENT_ENCODE_SET);
+
+                match settings.player_type.as_ref() {
                 Some(player_type) => match player_type.as_str() {
                     "choose" => Some(OpenPlayerLink {
                         android: Some(format!(
@@ -161,8 +164,8 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
                         ..Default::default()
                     }),
                     "vlc" => Some(OpenPlayerLink {
-                        ios: Some(format!("vlc-x-callback://x-callback-url/stream?url={url}")),
-                        visionos: Some(format!("vlc-x-callback://x-callback-url/stream?url={url}")),
+                        ios: Some(format!("vlc-x-callback://x-callback-url/stream?url={url_encoded}")),
+                        visionos: Some(format!("vlc-x-callback://x-callback-url/stream?url={url_encoded}")),
                         android: Some(format!(
                             "{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
                             http_regex.replace(url.as_str(), "intent://"),
@@ -189,19 +192,19 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
                         ..Default::default()
                     }),
                     "infuse" => Some(OpenPlayerLink {
-                        ios: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url}")),
-                        macos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url}")),
-                        visionos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url}")),
-                        tvos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url}")),
+                        ios: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
+                        macos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
+                        visionos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
+                        tvos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
                        ..Default::default()
                     }),
                     "vidhub" => Some(OpenPlayerLink {
-                        ios: Some(format!("open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url}")),
-                        macos: Some(format!("open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url}")),
+                        ios: Some(format!("open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
+                        macos: Some(format!("open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
                         ..Default::default()
                     }),
                     "iina" => Some(OpenPlayerLink {
-                        macos: Some(format!("iina://weblink?url={url}")),
+                        macos: Some(format!("iina://weblink?url={url_encoded}")),
                        ..Default::default()
                     }),
                     "mpv" => Some(OpenPlayerLink {
@@ -223,7 +226,8 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
                     _ => None,
                 },
                 None => None,
-            },
+            }
+            }
             None => None,
         };
         let (web, android_tv, tizen, webos) = match &stream.source {
