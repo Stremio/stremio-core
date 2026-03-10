@@ -444,7 +444,7 @@ impl Stream {
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
-            (Some(streaming_server_url), StreamSource::Nzb { nzb_url, servers }) => {
+            (Some(streaming_server_url), StreamSource::Nzb { url, urls, servers }) => {
                 if servers.is_empty() {
                     return Err(EnvError::Other("No nzb server URLs provided".into()));
                 }
@@ -461,8 +461,17 @@ impl Stream {
                     .expect("Url should always be valid");
 
                 let payload = StreamSource::Nzb {
-                    nzb_url: Self::ftp_url_handler(Some(streaming_server_url), nzb_url)
-                        .expect("Streaming server availability is already checked"),
+                    url: url.map(|url| {
+                        Self::ftp_url_handler(Some(streaming_server_url), url)
+                            .expect("Streaming server availability is already checked")
+                    }),
+                    urls: urls
+                        .iter()
+                        .map(|url| {
+                            Self::ftp_url_handler(Some(streaming_server_url), url.clone())
+                                .expect("Streaming server availability is already checked")
+                        })
+                        .collect(),
                     servers,
                 };
 
@@ -824,8 +833,13 @@ pub enum StreamSource {
     /// Nzb sourced
     #[serde(rename_all = "camelCase")]
     Nzb {
-        nzb_url: Url,
-        #[serde(default)]
+        #[serde(rename = "nzbUrl")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        url: Option<Url>,
+        #[serde(rename = "nzbUrls")]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde_as(deserialize_as = "DefaultOnNull")]
+        urls: Vec<Url>,
         servers: Vec<Url>,
     },
     #[serde(rename_all = "camelCase")]
