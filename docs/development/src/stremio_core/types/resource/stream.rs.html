@@ -1267,7 +1267,21 @@
 <a href="#1266" id="1266">1266</a>
 <a href="#1267" id="1267">1267</a>
 <a href="#1268" id="1268">1268</a>
-<a href="#1269" id="1269">1269</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
+<a href="#1269" id="1269">1269</a>
+<a href="#1270" id="1270">1270</a>
+<a href="#1271" id="1271">1271</a>
+<a href="#1272" id="1272">1272</a>
+<a href="#1273" id="1273">1273</a>
+<a href="#1274" id="1274">1274</a>
+<a href="#1275" id="1275">1275</a>
+<a href="#1276" id="1276">1276</a>
+<a href="#1277" id="1277">1277</a>
+<a href="#1278" id="1278">1278</a>
+<a href="#1279" id="1279">1279</a>
+<a href="#1280" id="1280">1280</a>
+<a href="#1281" id="1281">1281</a>
+<a href="#1282" id="1282">1282</a>
+<a href="#1283" id="1283">1283</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
 <span class="kw">use </span>std::{collections::HashMap, io::Write};
 
 <span class="kw">use </span>tracing::trace;
@@ -1713,7 +1727,7 @@
 
                 <span class="prelude-val">Ok</span>(<span class="self">self</span>.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
-            (<span class="prelude-val">Some</span>(streaming_server_url), StreamSource::Nzb { nzb_url, servers }) =&gt; {
+            (<span class="prelude-val">Some</span>(streaming_server_url), StreamSource::Nzb { url, urls, servers }) =&gt; {
                 <span class="kw">if </span>servers.is_empty() {
                     <span class="kw">return </span><span class="prelude-val">Err</span>(EnvError::Other(<span class="string">"No nzb server URLs provided"</span>.into()));
                 }
@@ -1730,8 +1744,17 @@
                     .expect(<span class="string">"Url should always be valid"</span>);
 
                 <span class="kw">let </span>payload = StreamSource::Nzb {
-                    nzb_url: <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), nzb_url)
-                        .expect(<span class="string">"Streaming server availability is already checked"</span>),
+                    url: url.map(|url| {
+                        <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), url)
+                            .expect(<span class="string">"Streaming server availability is already checked"</span>)
+                    }),
+                    urls: urls
+                        .iter()
+                        .map(|url| {
+                            <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), url.clone())
+                                .expect(<span class="string">"Streaming server availability is already checked"</span>)
+                        })
+                        .collect(),
                     servers,
                 };
 
@@ -2093,9 +2116,14 @@
     <span class="doccomment">/// Nzb sourced
     </span><span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>Nzb {
-        nzb_url: Url,
-        <span class="attr">#[serde(default)]
-        </span>servers: Vec&lt;Url&gt;,
+        <span class="attr">#[serde(rename = <span class="string">"nzbUrl"</span>)]
+        #[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+        </span>url: <span class="prelude-ty">Option</span>&lt;Url&gt;,
+        <span class="attr">#[serde(rename = <span class="string">"nzbUrls"</span>)]
+        #[serde(default, skip_serializing_if = <span class="string">"Vec::is_empty"</span>)]
+        #[serde_as(deserialize_as = <span class="string">"DefaultOnNull"</span>)]
+        </span>urls: Vec&lt;Url&gt;,
+        servers: Vec&lt;Url&gt;,
     },
     <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>Torrent {
