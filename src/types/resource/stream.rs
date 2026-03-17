@@ -1073,6 +1073,42 @@ impl StreamUrls {
     }
 }
 
+pub(crate) fn build_magnet_uri(
+    info_hash: &[u8],
+    announce: &[String],
+    name: Option<&String>,
+) -> String {
+    let trackers = announce
+        .iter()
+        .map(|tracker| {
+                .strip_prefix("tracker:")
+                .unwrap_or(tracker)
+                .strip_prefix("dht:")
+                .unwrap_or(tracker)
+        })
+        .map(|tracker| utf8_percent_encode(tracker, URI_COMPONENT_ENCODE_SET).to_string())
+        .collect::<Vec<String>>();
+    let trackers = if !trackers.is_empty() {
+        format!("&tr={}", trackers.join("&tr="))
+    } else {
+        String::new()
+    };
+
+    let dn = if let Some(name) = name {
+        format!(
+            "dn={}&",
+            utf8_percent_encode(name, URI_COMPONENT_ENCODE_SET)
+        )
+    } else {
+        String::new()
+    };
+
+    format!(
+        "magnet:?{dn}xt=urn:btih:{hash}{trackers}",
+        hash = hex::encode(info_hash),
+    )
+}
+
 fn get_magnet_url(converted: &Stream<ConvertedStreamSource>) -> Option<Url> {
     match &converted.source {
         ConvertedStreamSource::Url { url } if url.scheme() == "magnet" => Magnet::new(url.as_str())
@@ -1085,47 +1121,13 @@ fn get_magnet_url(converted: &Stream<ConvertedStreamSource>) -> Option<Url> {
             info_hash,
             announce,
             ..
-        } => {
-            let trackers = announce
-                .iter()
-                // `tracker` and `dht` prefixes are used internally by the server.js
-                // we need to remove those prefixes when generating the magnet URL
-                .map(|tracker| {
-                    tracker
-                        .strip_prefix("tracker:")
-                        .map(ToString::to_string)
-                        .unwrap_or_else(|| tracker.to_owned())
-                })
-                .map(|tracker| {
-                    tracker
-                        .strip_prefix("dht:")
-                        .map(ToString::to_string)
-                        .unwrap_or_else(|| tracker.to_owned())
-                })
-                .map(|tracker| utf8_percent_encode(&tracker, URI_COMPONENT_ENCODE_SET).to_string())
-                .collect::<Vec<String>>();
-            let trackers = if !trackers.is_empty() {
-                Some(format!("&tr={}", trackers.join("&tr=")))
-            } else {
-                None
-            };
-
-            Magnet::new(&format!(
-                "magnet:?{dn}xt=urn:btih:{hash}{trackers}",
-                dn = if let Some(name) = converted.name.as_ref() {
-                    format!(
-                        "dn={}&",
-                        utf8_percent_encode(name, URI_COMPONENT_ENCODE_SET)
-                    )
-                } else {
-                    String::new()
-                },
-                hash = hex::encode(info_hash),
-                trackers = trackers.unwrap_or_default(),
-            ))
-            .ok()
-            .and_then(|magnet| magnet.to_string().parse::<Url>().ok())
-        }
+        } => Magnet::new(&build_magnet_uri(
+            info_hash.as_ref(),
+            announce,
+            converted.name.as_ref(),
+        ))
+        .ok()
+        .and_then(|magnet| magnet.to_string().parse::<Url>().ok()),
         _ => None,
     }
 }
@@ -1183,46 +1185,9 @@ pub fn get_download_url_from_source(stream: &Stream) -> Option<Url> {
             info_hash,
             announce,
             ..
-        } => {
-            // generate magnet from torrent info
-            let trackers = announce
-                .iter()
-                .map(|tracker| {
-                    tracker
-                        .strip_prefix("tracker:")
-                        .map(ToString::to_string)
-                        .unwrap_or_else(|| tracker.to_owned())
-                })
-                .map(|tracker| {
-                    tracker
-                        .strip_prefix("dht:")
-                        .map(ToString::to_string)
-                        .unwrap_or_else(|| tracker.to_owned())
-                })
-                .map(|tracker| utf8_percent_encode(&tracker, URI_COMPONENT_ENCODE_SET).to_string())
-                .collect::<Vec<String>>();
-            let trackers = if !trackers.is_empty() {
-                Some(format!("&tr={}", trackers.join("&tr=")))
-            } else {
-                None
-            };
-
-            format!(
-                "magnet:?{dn}xt=urn:btih:{hash}{trackers}",
-                dn = if let Some(name) = stream.name.as_ref() {
-                    format!(
-                        "dn={}&",
-                        utf8_percent_encode(name, URI_COMPONENT_ENCODE_SET)
-                    )
-                } else {
-                    String::new()
-                },
-                hash = hex::encode(info_hash),
-                trackers = trackers.unwrap_or_default(),
-            )
+        } => build_magnet_uri(info_hash, announce, stream.name.as_ref())
             .parse()
-            .ok()
-        }
+            .ok(),
         StreamSource::YouTube { yt_id } => format!(
             "https://youtube.com/watch?v={}",
             utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET)

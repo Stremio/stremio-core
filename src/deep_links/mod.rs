@@ -14,7 +14,9 @@ use crate::{
         library::LibraryItem,
         profile::Settings,
         query_params_encode,
-        resource::{MetaItem, MetaItemPreview, Stream, StreamSource, StreamUrls, Video},
+        resource::{
+            build_magnet_uri, MetaItem, MetaItemPreview, Stream, StreamSource, StreamUrls, Video,
+        },
         streams::{ConvertedStreamSource, StreamsItem},
     },
 };
@@ -70,37 +72,11 @@ fn magnet_url_from_raw(stream: &Stream) -> Option<String> {
             info_hash,
             announce,
             ..
-        } => {
-            let trackers = announce
-                .iter()
-                .map(|t| {
-                    t.strip_prefix("tracker:")
-                        .map(ToString::to_string)
-                        .unwrap_or_else(|| t.to_owned())
-                })
-                .map(|t| {
-                    t.strip_prefix("dht:")
-                        .map(ToString::to_string)
-                        .unwrap_or_else(|| t.to_owned())
-                })
-                .map(|t| utf8_percent_encode(&t, URI_COMPONENT_ENCODE_SET).to_string())
-                .collect::<Vec<_>>();
-            let trackers_str = if !trackers.is_empty() {
-                format!("&tr={}", trackers.join("&tr="))
-            } else {
-                String::new()
-            };
-            let dn = stream
-                .name
-                .as_ref()
-                .map(|n| format!("dn={}&", utf8_percent_encode(n, URI_COMPONENT_ENCODE_SET)))
-                .unwrap_or_default();
-            Some(format!(
-                "magnet:?{dn}xt=urn:btih:{hash}{trackers}",
-                hash = hex::encode(info_hash),
-                trackers = trackers_str,
-            ))
-        }
+        } => Some(build_magnet_uri(
+            info_hash,
+            announce,
+            stream.name.as_ref(),
+        )),
         _ => None,
     }
 }
