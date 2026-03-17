@@ -1081,6 +1081,7 @@ pub(crate) fn build_magnet_uri(
     let trackers = announce
         .iter()
         .map(|tracker| {
+            tracker
                 .strip_prefix("tracker:")
                 .unwrap_or(tracker)
                 .strip_prefix("dht:")
