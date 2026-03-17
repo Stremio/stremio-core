@@ -72,11 +72,7 @@ fn magnet_url_from_raw(stream: &Stream) -> Option<String> {
             info_hash,
             announce,
             ..
-        } => Some(build_magnet_uri(
-            info_hash,
-            announce,
-            stream.name.as_ref(),
-        )),
+        } => Some(build_magnet_uri(info_hash, announce, stream.name.as_ref())),
         _ => None,
     }
 }
