@@ -13,6 +13,7 @@ mod remove_from_library;
 mod rewind_library_item;
 mod sync_library_with_api;
 mod uninstall_addon;
+mod update_addons;
 mod update_search_history;
 mod update_settings;
 mod update_streaming_server_urls;

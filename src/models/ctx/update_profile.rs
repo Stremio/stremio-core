@@ -131,6 +131,27 @@ pub fn update_profile<E: Env + 'static>(
                 }
             }
         },
+        Msg::Action(Action::Ctx(ActionCtx::UpdateAddons(addons))) => {
+            if profile.addons_locked {
+                return addons_update_error_effects(addons, OtherError::UserAddonsAreLocked);
+            }
+
+            if profile.addons != *addons {
+                addons.clone_into(&mut profile.addons);
+
+                let push_to_api_effects = match profile.auth_key() {
+                    Some(auth_key) => {
+                        Effects::one(push_addons_to_api::<E>(profile.addons.to_owned(), auth_key))
+                            .unchanged()
+                    }
+                    _ => Effects::none().unchanged(),
+                };
+
+                push_to_api_effects.join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+            } else {
+                Effects::none().unchanged()
+            }
+        }
         Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon))) => {
             Effects::msg(Msg::Internal(Internal::InstallAddon(addon.to_owned()))).unchanged()
         }
@@ -589,6 +610,20 @@ fn addon_action_error_effects(error: OtherError, source: Event) -> Effects {
     Effects::msg(Msg::Event(Event::Error {
         error: CtxError::from(error),
         source: Box::new(source),
+    }))
+    .unchanged()
+}
+
+fn addons_update_error_effects(addons: &[Descriptor], error: OtherError) -> Effects {
+    Effects::msg(Msg::Event(Event::Error {
+        error: CtxError::from(error),
+        source: Box::new(Event::AddonsPushedToAPI {
+            transport_urls: addons
+                .iter()
+                .map(|addon| &addon.transport_url)
+                .cloned()
+                .collect(),
+        }),
     }))
     .unchanged()
 }

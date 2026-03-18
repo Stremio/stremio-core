@@ -82,6 +82,7 @@ pub enum ActionCtx {
     },
     PushAddonsToAPI,
     PullAddonsFromAPI,
+    UpdateAddons(Vec<Descriptor>),
     SyncLibraryWithAPI,
     /// Pull notifications for all [`LibraryItem`]s that we should pull notifications for.
     ///
