@@ -15,7 +15,9 @@
 <a href="#14" id="14">14</a>
 <a href="#15" id="15">15</a>
 <a href="#16" id="16">16</a>
-<a href="#17" id="17">17</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(test)]
+<a href="#17" id="17">17</a>
+<a href="#18" id="18">18</a>
+<a href="#19" id="19">19</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(test)]
 </span><span class="kw">use </span>derivative::Derivative;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>url::Url;
@@ -31,5 +33,7 @@
         derivative(Default(value = <span class="string">"Url::parse(\"protocol://host\").unwrap()"</span>))
     )]
     </span><span class="kw">pub </span>url: Url,
+    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+    </span><span class="kw">pub </span>label: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 </code></pre></div></section></main></body></html>
