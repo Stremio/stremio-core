@@ -29,7 +29,8 @@ fn external_player_link_magnet() {
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let settings = Settings::default();
     let epl = ExternalPlayerLink::from((&stream, streaming_server_url.as_ref(), &settings));
-    assert_eq!(epl.download, Some(MAGNET_STR_URL.to_owned()));
+    assert_eq!(epl.download, None);
+    assert_eq!(epl.magnet, Some(MAGNET_STR_URL.to_owned()));
     assert_eq!(epl.file_name, None);
 }
 
