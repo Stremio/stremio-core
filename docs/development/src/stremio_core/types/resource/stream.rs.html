@@ -1243,45 +1243,7 @@
 <a href="#1242" id="1242">1242</a>
 <a href="#1243" id="1243">1243</a>
 <a href="#1244" id="1244">1244</a>
-<a href="#1245" id="1245">1245</a>
-<a href="#1246" id="1246">1246</a>
-<a href="#1247" id="1247">1247</a>
-<a href="#1248" id="1248">1248</a>
-<a href="#1249" id="1249">1249</a>
-<a href="#1250" id="1250">1250</a>
-<a href="#1251" id="1251">1251</a>
-<a href="#1252" id="1252">1252</a>
-<a href="#1253" id="1253">1253</a>
-<a href="#1254" id="1254">1254</a>
-<a href="#1255" id="1255">1255</a>
-<a href="#1256" id="1256">1256</a>
-<a href="#1257" id="1257">1257</a>
-<a href="#1258" id="1258">1258</a>
-<a href="#1259" id="1259">1259</a>
-<a href="#1260" id="1260">1260</a>
-<a href="#1261" id="1261">1261</a>
-<a href="#1262" id="1262">1262</a>
-<a href="#1263" id="1263">1263</a>
-<a href="#1264" id="1264">1264</a>
-<a href="#1265" id="1265">1265</a>
-<a href="#1266" id="1266">1266</a>
-<a href="#1267" id="1267">1267</a>
-<a href="#1268" id="1268">1268</a>
-<a href="#1269" id="1269">1269</a>
-<a href="#1270" id="1270">1270</a>
-<a href="#1271" id="1271">1271</a>
-<a href="#1272" id="1272">1272</a>
-<a href="#1273" id="1273">1273</a>
-<a href="#1274" id="1274">1274</a>
-<a href="#1275" id="1275">1275</a>
-<a href="#1276" id="1276">1276</a>
-<a href="#1277" id="1277">1277</a>
-<a href="#1278" id="1278">1278</a>
-<a href="#1279" id="1279">1279</a>
-<a href="#1280" id="1280">1280</a>
-<a href="#1281" id="1281">1281</a>
-<a href="#1282" id="1282">1282</a>
-<a href="#1283" id="1283">1283</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
+<a href="#1245" id="1245">1245</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
 <span class="kw">use </span>std::{collections::HashMap, io::Write};
 
 <span class="kw">use </span>tracing::trace;
@@ -2356,6 +2318,43 @@
     }
 }
 
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>build_magnet_uri(
+    info_hash: <span class="kw-2">&amp;</span>[u8],
+    announce: <span class="kw-2">&amp;</span>[String],
+    name: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>String&gt;,
+) -&gt; String {
+    <span class="kw">let </span>trackers = announce
+        .iter()
+        .map(|tracker| {
+            tracker
+                .strip_prefix(<span class="string">"tracker:"</span>)
+                .unwrap_or(tracker)
+                .strip_prefix(<span class="string">"dht:"</span>)
+                .unwrap_or(tracker)
+        })
+        .map(|tracker| utf8_percent_encode(tracker, URI_COMPONENT_ENCODE_SET).to_string())
+        .collect::&lt;Vec&lt;String&gt;&gt;();
+    <span class="kw">let </span>trackers = <span class="kw">if </span>!trackers.is_empty() {
+        <span class="macro">format!</span>(<span class="string">"&amp;tr={}"</span>, trackers.join(<span class="string">"&amp;tr="</span>))
+    } <span class="kw">else </span>{
+        String::new()
+    };
+
+    <span class="kw">let </span>dn = <span class="kw">if let </span><span class="prelude-val">Some</span>(name) = name {
+        <span class="macro">format!</span>(
+            <span class="string">"dn={}&amp;"</span>,
+            utf8_percent_encode(name, URI_COMPONENT_ENCODE_SET)
+        )
+    } <span class="kw">else </span>{
+        String::new()
+    };
+
+    <span class="macro">format!</span>(
+        <span class="string">"magnet:?{dn}xt=urn:btih:{hash}{trackers}"</span>,
+        hash = hex::encode(info_hash),
+    )
+}
+
 <span class="kw">fn </span>get_magnet_url(converted: <span class="kw-2">&amp;</span>Stream&lt;ConvertedStreamSource&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;Url&gt; {
     <span class="kw">match </span><span class="kw-2">&amp;</span>converted.source {
         ConvertedStreamSource::Url { url } <span class="kw">if </span>url.scheme() == <span class="string">"magnet" </span>=&gt; Magnet::new(url.as_str())
@@ -2368,47 +2367,13 @@
             info_hash,
             announce,
             ..
-        } =&gt; {
-            <span class="kw">let </span>trackers = announce
-                .iter()
-                <span class="comment">// `tracker` and `dht` prefixes are used internally by the server.js
-                // we need to remove those prefixes when generating the magnet URL
-                </span>.map(|tracker| {
-                    tracker
-                        .strip_prefix(<span class="string">"tracker:"</span>)
-                        .map(ToString::to_string)
-                        .unwrap_or_else(|| tracker.to_owned())
-                })
-                .map(|tracker| {
-                    tracker
-                        .strip_prefix(<span class="string">"dht:"</span>)
-                        .map(ToString::to_string)
-                        .unwrap_or_else(|| tracker.to_owned())
-                })
-                .map(|tracker| utf8_percent_encode(<span class="kw-2">&amp;</span>tracker, URI_COMPONENT_ENCODE_SET).to_string())
-                .collect::&lt;Vec&lt;String&gt;&gt;();
-            <span class="kw">let </span>trackers = <span class="kw">if </span>!trackers.is_empty() {
-                <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"&amp;tr={}"</span>, trackers.join(<span class="string">"&amp;tr="</span>)))
-            } <span class="kw">else </span>{
-                <span class="prelude-val">None
-            </span>};
-
-            Magnet::new(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
-                <span class="string">"magnet:?{dn}xt=urn:btih:{hash}{trackers}"</span>,
-                dn = <span class="kw">if let </span><span class="prelude-val">Some</span>(name) = converted.name.as_ref() {
-                    <span class="macro">format!</span>(
-                        <span class="string">"dn={}&amp;"</span>,
-                        utf8_percent_encode(name, URI_COMPONENT_ENCODE_SET)
-                    )
-                } <span class="kw">else </span>{
-                    String::new()
-                },
-                hash = hex::encode(info_hash),
-                trackers = trackers.unwrap_or_default(),
-            ))
-            .ok()
-            .and_then(|magnet| magnet.to_string().parse::&lt;Url&gt;().ok())
-        }
+        } =&gt; Magnet::new(<span class="kw-2">&amp;</span>build_magnet_uri(
+            info_hash.as_ref(),
+            announce,
+            converted.name.as_ref(),
+        ))
+        .ok()
+        .and_then(|magnet| magnet.to_string().parse::&lt;Url&gt;().ok()),
         <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
     }
 }
@@ -2425,11 +2390,7 @@
     streaming_server_url: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Url&gt;,
 ) -&gt; <span class="prelude-ty">Option</span>&lt;Url&gt; {
     <span class="kw">match </span><span class="kw-2">&amp;</span>converted.source {
-        ConvertedStreamSource::Url { url } <span class="kw">if </span>url.scheme() == <span class="string">"magnet" </span>=&gt; Magnet::new(url.as_str())
-            .as_ref()
-            .map(ToString::to_string)
-            .ok()
-            .and_then(|url_string| url_string.parse().ok()),
+        ConvertedStreamSource::Url { url } <span class="kw">if </span>url.scheme() == <span class="string">"magnet" </span>=&gt; <span class="prelude-val">None</span>,
         ConvertedStreamSource::Url { url } =&gt; <span class="prelude-val">Some</span>(url.to_owned()),
         ConvertedStreamSource::Torrent { url, .. } =&gt; {
             <span class="comment">// we just need to know that the server is running
@@ -2470,46 +2431,9 @@
             info_hash,
             announce,
             ..
-        } =&gt; {
-            <span class="comment">// generate magnet from torrent info
-            </span><span class="kw">let </span>trackers = announce
-                .iter()
-                .map(|tracker| {
-                    tracker
-                        .strip_prefix(<span class="string">"tracker:"</span>)
-                        .map(ToString::to_string)
-                        .unwrap_or_else(|| tracker.to_owned())
-                })
-                .map(|tracker| {
-                    tracker
-                        .strip_prefix(<span class="string">"dht:"</span>)
-                        .map(ToString::to_string)
-                        .unwrap_or_else(|| tracker.to_owned())
-                })
-                .map(|tracker| utf8_percent_encode(<span class="kw-2">&amp;</span>tracker, URI_COMPONENT_ENCODE_SET).to_string())
-                .collect::&lt;Vec&lt;String&gt;&gt;();
-            <span class="kw">let </span>trackers = <span class="kw">if </span>!trackers.is_empty() {
-                <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"&amp;tr={}"</span>, trackers.join(<span class="string">"&amp;tr="</span>)))
-            } <span class="kw">else </span>{
-                <span class="prelude-val">None
-            </span>};
-
-            <span class="macro">format!</span>(
-                <span class="string">"magnet:?{dn}xt=urn:btih:{hash}{trackers}"</span>,
-                dn = <span class="kw">if let </span><span class="prelude-val">Some</span>(name) = stream.name.as_ref() {
-                    <span class="macro">format!</span>(
-                        <span class="string">"dn={}&amp;"</span>,
-                        utf8_percent_encode(name, URI_COMPONENT_ENCODE_SET)
-                    )
-                } <span class="kw">else </span>{
-                    String::new()
-                },
-                hash = hex::encode(info_hash),
-                trackers = trackers.unwrap_or_default(),
-            )
+        } =&gt; build_magnet_uri(info_hash, announce, stream.name.as_ref())
             .parse()
-            .ok()
-        }
+            .ok(),
         StreamSource::YouTube { yt_id } =&gt; <span class="macro">format!</span>(
             <span class="string">"https://youtube.com/watch?v={}"</span>,
             utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET)
