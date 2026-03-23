@@ -1566,7 +1566,62 @@
 <a href="#1565" id="1565">1565</a>
 <a href="#1566" id="1566">1566</a>
 <a href="#1567" id="1567">1567</a>
-<a href="#1568" id="1568">1568</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#1568" id="1568">1568</a>
+<a href="#1569" id="1569">1569</a>
+<a href="#1570" id="1570">1570</a>
+<a href="#1571" id="1571">1571</a>
+<a href="#1572" id="1572">1572</a>
+<a href="#1573" id="1573">1573</a>
+<a href="#1574" id="1574">1574</a>
+<a href="#1575" id="1575">1575</a>
+<a href="#1576" id="1576">1576</a>
+<a href="#1577" id="1577">1577</a>
+<a href="#1578" id="1578">1578</a>
+<a href="#1579" id="1579">1579</a>
+<a href="#1580" id="1580">1580</a>
+<a href="#1581" id="1581">1581</a>
+<a href="#1582" id="1582">1582</a>
+<a href="#1583" id="1583">1583</a>
+<a href="#1584" id="1584">1584</a>
+<a href="#1585" id="1585">1585</a>
+<a href="#1586" id="1586">1586</a>
+<a href="#1587" id="1587">1587</a>
+<a href="#1588" id="1588">1588</a>
+<a href="#1589" id="1589">1589</a>
+<a href="#1590" id="1590">1590</a>
+<a href="#1591" id="1591">1591</a>
+<a href="#1592" id="1592">1592</a>
+<a href="#1593" id="1593">1593</a>
+<a href="#1594" id="1594">1594</a>
+<a href="#1595" id="1595">1595</a>
+<a href="#1596" id="1596">1596</a>
+<a href="#1597" id="1597">1597</a>
+<a href="#1598" id="1598">1598</a>
+<a href="#1599" id="1599">1599</a>
+<a href="#1600" id="1600">1600</a>
+<a href="#1601" id="1601">1601</a>
+<a href="#1602" id="1602">1602</a>
+<a href="#1603" id="1603">1603</a>
+<a href="#1604" id="1604">1604</a>
+<a href="#1605" id="1605">1605</a>
+<a href="#1606" id="1606">1606</a>
+<a href="#1607" id="1607">1607</a>
+<a href="#1608" id="1608">1608</a>
+<a href="#1609" id="1609">1609</a>
+<a href="#1610" id="1610">1610</a>
+<a href="#1611" id="1611">1611</a>
+<a href="#1612" id="1612">1612</a>
+<a href="#1613" id="1613">1613</a>
+<a href="#1614" id="1614">1614</a>
+<a href="#1615" id="1615">1615</a>
+<a href="#1616" id="1616">1616</a>
+<a href="#1617" id="1617">1617</a>
+<a href="#1618" id="1618">1618</a>
+<a href="#1619" id="1619">1619</a>
+<a href="#1620" id="1620">1620</a>
+<a href="#1621" id="1621">1621</a>
+<a href="#1622" id="1622">1622</a>
+<a href="#1623" id="1623">1623</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>std::ops::Div;
 
 <span class="kw">use </span>base64::Engine;
@@ -1594,7 +1649,8 @@
 };
 <span class="kw">use </span><span class="kw">crate</span>::types::library::{LibraryBucket, LibraryItem};
 <span class="kw">use </span><span class="kw">crate</span>::types::player::{IntroData, IntroOutro};
-<span class="kw">use </span><span class="kw">crate</span>::types::profile::Profile;
+<span class="kw">use </span><span class="kw">crate</span>::types::profile::{AuthKey, Profile};
+<span class="kw">use </span><span class="kw">crate</span>::types::rating::{Rating, RatingSendRequest, RatingSendResponse};
 <span class="kw">use </span><span class="kw">crate</span>::types::resource::{
     MetaItem, SeriesInfo, Stream, StreamSource, StreamUrls, Subtitles, Video,
 };
@@ -2087,7 +2143,8 @@
                         duration.clone_into(<span class="kw-2">&amp;mut </span>library_item.state.duration);
                     }
 
-                    <span class="kw">if </span>library_item.state.flagged_watched == <span class="number">0
+                    <span class="comment">// Watched threshold for marking an episode/movie as watched
+                    </span><span class="kw">let </span>should_send_watched = <span class="kw">if </span>library_item.state.flagged_watched == <span class="number">0
                         </span>&amp;&amp; library_item.state.time_watched <span class="kw">as </span>f64
                             &gt; library_item.state.duration <span class="kw">as </span>f64 * WATCHED_THRESHOLD_COEF
                     {
@@ -2099,7 +2156,33 @@
                             watched_bit_field.set_video(video_id, <span class="bool-val">true</span>);
                             library_item.state.watched = <span class="prelude-val">Some</span>(watched_bit_field.into());
                         }
-                    }
+
+                        <span class="bool-val">true
+                    </span>} <span class="kw">else </span>{
+                        <span class="bool-val">false
+                    </span>};
+
+                    <span class="comment">// send Watched for MetaDetail id
+                    // single episode should mark the item as watched.
+                    </span><span class="kw">let </span>send_watched_effects = <span class="kw">match </span>(
+                        should_send_watched,
+                        ctx.profile.auth_key(),
+                        <span class="self">self</span>.selected.as_ref(),
+                    ) {
+                        (
+                            <span class="bool-val">true</span>,
+                            <span class="prelude-val">Some</span>(auth_key),
+                            <span class="prelude-val">Some</span>(Selected {
+                                meta_request:
+                                    <span class="prelude-val">Some</span>(ResourceRequest {
+                                        path: meta_path, ..
+                                    }),
+                                ..
+                            }),
+                        ) =&gt; Effects::one(send_watched::&lt;E&gt;(auth_key.to_owned(), meta_path))
+                            .unchanged(),
+                        <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
+                    };
 
                     <span class="kw">if </span>library_item.temp &amp;&amp; library_item.state.times_watched == <span class="number">0 </span>{
                         library_item.removed = <span class="bool-val">true</span>;
@@ -2121,7 +2204,10 @@
                         analytics_context.player_duration = <span class="prelude-val">Some</span>(duration.to_owned());
                     };
 
-                    push_to_library::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.push_library_item_time, library_item)
+                    send_watched_effects.join(push_to_library::&lt;E&gt;(
+                        <span class="kw-2">&amp;mut </span><span class="self">self</span>.push_library_item_time,
+                        library_item,
+                    ))
                 }
                 <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
             },
@@ -3078,6 +3164,30 @@
     )
     .into()
 }
+
+<span class="doccomment">/// Sends watched state for meta item on every Watched state change of the library item
+</span><span class="kw">fn </span>send_watched&lt;E: Env + <span class="lifetime">'static</span>&gt;(auth_key: AuthKey, meta_path: <span class="kw-2">&amp;</span>ResourcePath) -&gt; Effect {
+    <span class="kw">let </span>meta_id = meta_path.id.to_owned();
+
+    <span class="kw">let </span>request = RatingSendRequest {
+        auth_key,
+        meta_item_id: meta_id.to_owned(),
+        meta_item_type: meta_path.r#type.to_owned(),
+        rating: <span class="prelude-val">Some</span>(Rating::Watched),
+    };
+
+    EffectFuture::Concurrent(
+        E::fetch::&lt;<span class="kw">_</span>, RatingSendResponse&gt;(request.into())
+            .map(<span class="macro">enclose::enclose!</span>((meta_id) <span class="kw">move </span>|result| {
+                Msg::Internal(Internal::WatchedSendResult(
+                    meta_id, result,
+                ))
+            }))
+            .boxed_env(),
+    )
+    .into()
+}
+
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
     <span class="kw">use </span>chrono::Utc;

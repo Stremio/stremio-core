@@ -169,7 +169,12 @@
 <a href="#168" id="168">168</a>
 <a href="#169" id="169">169</a>
 <a href="#170" id="170">170</a>
-<a href="#171" id="171">171</a></pre></div><pre class="rust"><code><span class="kw">use </span>url::Url;
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a></pre></div><pre class="rust"><code><span class="kw">use </span>url::Url;
 
 <span class="kw">use </span><span class="kw">crate</span>::models::common::ResourceLoadable;
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::CtxError;
@@ -339,5 +344,10 @@
     </span>DismissedEventsChanged,
     RatingGetStatusResult(MetaItemId, <span class="prelude-ty">Result</span>&lt;RatingGetStatusResponse, EnvError&gt;),
     RatingSendResult(MetaItemId, <span class="prelude-ty">Result</span>&lt;RatingSendResponse, EnvError&gt;),
+    <span class="doccomment">/// Internal to core, sends the watched update when needed:
+    /// Mark video as watched
+    /// Mark Season as watched (meta item)
+    /// Mark move as watched (meta item)
+    </span>WatchedSendResult(MetaItemId, <span class="prelude-ty">Result</span>&lt;RatingSendResponse, EnvError&gt;),
 }
 </code></pre></div></section></main></body></html>
