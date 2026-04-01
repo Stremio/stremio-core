@@ -141,10 +141,17 @@
 <a href="#140" id="140">140</a>
 <a href="#141" id="141">141</a>
 <a href="#142" id="142">142</a>
-<a href="#143" id="143">143</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
 
 <span class="kw">use </span>once_cell::sync::Lazy;
 <span class="kw">use </span>percent_encoding::{AsciiSet, NON_ALPHANUMERIC};
+<span class="kw">use </span>tracing::trace;
 <span class="kw">use </span>url::Url;
 
 <span class="kw">use </span><span class="kw">crate</span>::types::addon::{Descriptor, ExtraProp, OptionsLimit};
@@ -233,8 +240,13 @@
 <span class="kw">pub static </span>IMDB_URL: Lazy&lt;Url&gt; =
     Lazy::new(|| Url::parse(<span class="string">"https://imdb.com"</span>).expect(<span class="string">"IMDB_URL parse failed"</span>));
 <span class="kw">pub static </span>OFFICIAL_ADDONS: Lazy&lt;Vec&lt;Descriptor&gt;&gt; = Lazy::new(|| {
-    <span class="kw">let </span>addons_str = stremio_official_addons::get_addons_string();
-    serde_json::from_slice(<span class="kw-2">&amp;</span>addons_str).expect(<span class="string">"OFFICIAL_ADDONS parse failed"</span>)
+    <span class="kw">if </span>std::env::var(<span class="string">"EMPTY_OFFICIAL_ADDONS"</span>).unwrap_or(<span class="string">"0"</span>.to_string()) == <span class="string">"1" </span>{
+        <span class="macro">trace!</span>(<span class="string">"Official addons are disabled"</span>);
+        <span class="kw">return </span>serde_json::from_str(<span class="string">"[]"</span>).expect(<span class="string">"OFFICIAL_ADDONS parse failed"</span>);
+    } <span class="kw">else </span>{
+        <span class="kw">let </span>addons_str = stremio_official_addons::get_addons_string();
+        <span class="kw">return </span>serde_json::from_slice(<span class="kw-2">&amp;</span>addons_str).expect(<span class="string">"OFFICIAL_ADDONS parse failed"</span>);
+    }
 });
 <span class="kw">pub static </span>SKIP_EXTRA_PROP: Lazy&lt;ExtraProp&gt; = Lazy::new(|| ExtraProp {
     name: <span class="string">"skip"</span>.to_owned(),
