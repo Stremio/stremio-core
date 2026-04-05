@@ -161,8 +161,7 @@ pub fn update_library<E: Env + 'static>(
                 _ => LibraryItem::from((meta_item, PhantomData::<E>)),
             };
             library_item.mark_as_watched::<E>(*is_watched);
-            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
-                .unchanged()
+            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item))).unchanged()
         }
         Msg::Internal(Internal::UpdateLibraryItem(library_item))
             if library
