@@ -49,6 +49,21 @@ pub enum ActionCtx {
         id: LibraryItemId,
         is_watched: bool,
     },
+    /// Marks a meta item as watched, creating a temporary [`LibraryItem`] if one doesn't exist.
+    ///
+    /// Unlike [`LibraryItemMarkAsWatched`] which requires the item to already be in the library,
+    /// this action accepts a [`MetaItemPreview`] and will create a temporary library item
+    /// (`removed: true, temp: true`) when the item is not yet in the library.
+    ///
+    /// This is useful for marking items as watched from catalog/discover views
+    /// without needing to load the full [`MetaDetails`] model.
+    ///
+    /// [`LibraryItem`]: crate::types::library::LibraryItem
+    /// [`MetaDetails`]: crate::models::meta_details::MetaDetails
+    MetaItemMarkAsWatched {
+        meta_item: MetaItemPreview,
+        is_watched: bool,
+    },
     /// If boolean is set to `true` it will disable notifications for the LibraryItem.
     ToggleLibraryItemNotifications(LibraryItemId, bool),
     /// Dismiss all Notification for a given [`MetaItemId`].

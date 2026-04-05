@@ -152,6 +152,18 @@ pub fn update_library<E: Env + 'static>(
                 _ => Effects::none().unchanged(),
             }
         }
+        Msg::Action(Action::Ctx(ActionCtx::MetaItemMarkAsWatched {
+            meta_item,
+            is_watched,
+        })) => {
+            let mut library_item = match library.items.get(&meta_item.id) {
+                Some(library_item) => library_item.to_owned(),
+                _ => LibraryItem::from((meta_item, PhantomData::<E>)),
+            };
+            library_item.mark_as_watched::<E>(*is_watched);
+            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
+                .unchanged()
+        }
         Msg::Internal(Internal::UpdateLibraryItem(library_item))
             if library
                 .items
