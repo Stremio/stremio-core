@@ -334,6 +334,18 @@ pub fn decode_stream(stream: JsValue) -> JsValue {
     }
 }
 
+#[wasm_bindgen]
+pub fn encode_stream(stream: JsValue) -> JsValue {
+    let stream: Result<Stream<StreamSource>, _> = JsValueSerdeExt::into_serde(&stream);
+    match stream {
+        Ok(stream) => match stream.encode() {
+            Ok(encoded) => JsValue::from_str(&encoded),
+            Err(_) => JsValue::NULL,
+        },
+        Err(_) => JsValue::NULL,
+    }
+}
+
 pub fn stringify(js_value: &JsValue) -> Option<String> {
     if js_value.is_undefined() {
         None

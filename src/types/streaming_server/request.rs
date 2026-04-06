@@ -78,14 +78,8 @@ pub struct CreateMagnetRequest {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateMagnetBody {
-    pub stream: CreateMagnetTorrent,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub peer_search: Option<PeerSearch>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CreateMagnetTorrent {
-    pub info_hash: InfoHash,
 }
 
 impl From<CreateMagnetRequest> for Request<CreateMagnetBody> {
@@ -93,9 +87,6 @@ impl From<CreateMagnetRequest> for Request<CreateMagnetBody> {
         let info_hash = val.info_hash;
 
         let body = CreateMagnetBody {
-            stream: CreateMagnetTorrent {
-                info_hash: val.info_hash.to_owned(),
-            },
             peer_search: if !val.announce.is_empty() {
                 Some(PeerSearch::new(40, 200, info_hash, val.announce))
             } else {
