@@ -17,3 +17,4 @@ mod update_search_history;
 mod update_settings;
 mod update_streaming_server_urls;
 mod upgrade_addon;
+mod upgrade_user_addons;

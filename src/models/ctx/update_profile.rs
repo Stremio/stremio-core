@@ -1,18 +1,23 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
+use url::Url;
 
-use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
-use crate::models::ctx::{CtxError, CtxStatus, OtherError};
-use crate::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg};
-use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
-use crate::types::addon::Descriptor;
-use crate::types::api::{
-    fetch_api, APIError, APIRequest, APIResult, CollectionResponse, SuccessResponse,
+use crate::{
+    constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY},
+    models::ctx::{CtxError, CtxStatus, OtherError},
+    runtime::{
+        msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg},
+        Effect, EffectFuture, Effects, Env, EnvFutureExt,
+    },
+    types::{
+        addon::Descriptor,
+        api::{fetch_api, APIError, APIRequest, APIResult, CollectionResponse, SuccessResponse},
+        profile::{Auth, AuthKey, Password, Profile, Settings, User},
+        streams::StreamsBucket,
+    },
 };
-use crate::types::profile::{Auth, AuthKey, Password, Profile, Settings, User};
-use crate::types::streams::StreamsBucket;
 
 pub fn update_profile<E: Env + 'static>(
     profile: &mut Profile,
@@ -174,6 +179,29 @@ pub fn update_profile<E: Env + 'static>(
             }))
             .join(push_to_api_effects)
             .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+        }
+        Msg::Action(Action::Ctx(ActionCtx::UpgradeUserAddons)) => {
+            if profile.addons_locked {
+                return Effects::msg(Msg::Event(Event::Error {
+                    error: CtxError::from(OtherError::UserAddonsAreLocked),
+                    source: Box::new(Event::UserAddonsUpgraded {
+                        upgraded: vec![],
+                        up_to_date: vec![],
+                        skipped: vec![],
+                        failed: vec![],
+                    }),
+                }))
+                .unchanged();
+            }
+            let eligible: Vec<Url> = profile
+                .addons
+                .iter()
+                .filter(|addon| {
+                    !addon.flags.protected && !addon.manifest.behavior_hints.configuration_required
+                })
+                .map(|addon| addon.transport_url.to_owned())
+                .collect();
+            Effects::one(fetch_user_addon_manifests::<E>(eligible)).unchanged()
         }
         Msg::Internal(Internal::UninstallAddon(addon)) => {
             if profile.addons_locked {
@@ -370,6 +398,84 @@ pub fn update_profile<E: Env + 'static>(
 
             addons_locked_effects.join(profile_effects)
         }
+        Msg::Internal(Internal::UserAddonsManifestsResult(results)) => {
+            // Skipped covers two things:
+            //   1. addons whose transport_url is no longer in profile.addons
+            //   2. addons that became protected / configuration_required since
+            let mut upgraded: Vec<(Url, String)> = Vec::new();
+            let mut up_to_date: Vec<Url> = Vec::new();
+            let mut skipped: Vec<Url> = Vec::new();
+            let mut failed: Vec<(Url, CtxError)> = Vec::new();
+
+            let positions: HashMap<Url, usize> = profile
+                .addons
+                .iter()
+                .enumerate()
+                .map(|(idx, addon)| (addon.transport_url.to_owned(), idx))
+                .collect();
+
+            for (transport_url, fetch_result) in results {
+                let position = match positions.get(transport_url) {
+                    Some(position) => *position,
+                    None => {
+                        skipped.push(transport_url.to_owned());
+                        continue;
+                    }
+                };
+
+                match fetch_result {
+                    Ok(manifest) => {
+                        let current = &profile.addons[position];
+                        if current.flags.protected
+                            || current.manifest.behavior_hints.configuration_required
+                        {
+                            skipped.push(transport_url.to_owned());
+                            continue;
+                        }
+                        if manifest.version > current.manifest.version {
+                            let upgraded_descriptor = Descriptor {
+                                transport_url: current.transport_url.to_owned(),
+                                manifest: manifest.to_owned(),
+                                flags: current.flags.to_owned(),
+                            };
+                            profile.addons[position] = upgraded_descriptor;
+                            upgraded.push((transport_url.to_owned(), manifest.id.to_owned()));
+                        } else {
+                            up_to_date.push(transport_url.to_owned());
+                        }
+                    }
+                    Err(error) => {
+                        failed.push((transport_url.to_owned(), CtxError::from(error.to_owned())));
+                    }
+                }
+            }
+
+            let push_to_api_effects = if !upgraded.is_empty() {
+                match profile.auth_key() {
+                    Some(auth_key) => {
+                        Effects::one(push_addons_to_api::<E>(profile.addons.to_owned(), auth_key))
+                            .unchanged()
+                    }
+                    _ => Effects::none().unchanged(),
+                }
+            } else {
+                Effects::none().unchanged()
+            };
+            let profile_changed_effects = if !upgraded.is_empty() {
+                Effects::msg(Msg::Internal(Internal::ProfileChanged))
+            } else {
+                Effects::none().unchanged()
+            };
+
+            Effects::msg(Msg::Event(Event::UserAddonsUpgraded {
+                upgraded,
+                up_to_date,
+                skipped,
+                failed,
+            }))
+            .join(push_to_api_effects)
+            .join(profile_changed_effects)
+        }
         Msg::Internal(Internal::UserAPIResult {
             request: APIRequest::GetUser { auth_key },
             result,
@@ -499,6 +605,19 @@ fn push_user_to_api<E: Env + 'static>(user: User, auth_key: &AuthKey) -> Effect 
                 }),
             })
             .boxed_env(),
+    )
+    .into()
+}
+
+fn fetch_user_addon_manifests<E: Env + 'static>(transport_urls: Vec<Url>) -> Effect {
+    EffectFuture::Concurrent(
+        future::join_all(transport_urls.into_iter().map(|transport_url| {
+            E::addon_transport(&transport_url)
+                .manifest()
+                .map(move |result| (transport_url, result))
+        }))
+        .map(|results| Msg::Internal(Internal::UserAddonsManifestsResult(results)))
+        .boxed_env(),
     )
     .into()
 }

@@ -145,6 +145,8 @@ pub enum Internal {
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for fetching manifest from addon.
     ManifestRequestResult(Url, Result<Manifest, EnvError>),
+    /// Aggregated result for fetching manifests for every eligible user addon
+    UserAddonsManifestsResult(Vec<(Url, Result<Manifest, EnvError>)>),
     /// TODO: write some obvious comment about what it is
     NotificationsRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for requesting a `dataExport` of user data.
