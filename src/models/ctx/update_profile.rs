@@ -201,7 +201,11 @@ pub fn update_profile<E: Env + 'static>(
                 })
                 .map(|addon| addon.transport_url.to_owned())
                 .collect();
-            Effects::one(fetch_user_addon_manifests::<E>(eligible)).unchanged()
+            Effects::one(fetch_user_addon_manifests::<E>(
+                eligible,
+                profile.auth_key().cloned(),
+            ))
+            .unchanged()
         }
         Msg::Internal(Internal::UninstallAddon(addon)) => {
             if profile.addons_locked {
@@ -398,7 +402,9 @@ pub fn update_profile<E: Env + 'static>(
 
             addons_locked_effects.join(profile_effects)
         }
-        Msg::Internal(Internal::UserAddonsManifestsResult(results)) => {
+        Msg::Internal(Internal::UserAddonsManifestsResult { auth_key, results })
+            if profile.auth_key() == auth_key.as_ref() && !profile.addons_locked =>
+        {
             // Skipped covers two things:
             //   1. addons whose transport_url is no longer in profile.addons
             //   2. addons that became protected / configuration_required since
@@ -609,14 +615,19 @@ fn push_user_to_api<E: Env + 'static>(user: User, auth_key: &AuthKey) -> Effect 
     .into()
 }
 
-fn fetch_user_addon_manifests<E: Env + 'static>(transport_urls: Vec<Url>) -> Effect {
+fn fetch_user_addon_manifests<E: Env + 'static>(
+    transport_urls: Vec<Url>,
+    auth_key: Option<AuthKey>,
+) -> Effect {
     EffectFuture::Concurrent(
         future::join_all(transport_urls.into_iter().map(|transport_url| {
             E::addon_transport(&transport_url)
                 .manifest()
                 .map(move |result| (transport_url, result))
         }))
-        .map(|results| Msg::Internal(Internal::UserAddonsManifestsResult(results)))
+        .map(move |results| {
+            Msg::Internal(Internal::UserAddonsManifestsResult { auth_key, results })
+        })
         .boxed_env(),
     )
     .into()

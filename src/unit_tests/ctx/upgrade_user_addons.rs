@@ -9,15 +9,15 @@ use crate::{
     constants::PROFILE_STORAGE_KEY,
     models::ctx::Ctx,
     runtime::{
-        msg::{Action, ActionCtx},
-        EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture,
+        msg::{Action, ActionCtx, Internal, Msg},
+        EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture, Update,
     },
     types::{
         addon::{Descriptor, DescriptorFlags, Manifest, ManifestBehaviorHints},
         events::DismissedEventsBucket,
         library::LibraryBucket,
         notifications::NotificationsBucket,
-        profile::Profile,
+        profile::{Auth, AuthKey, GDPRConsent, Profile, User},
         search_history::SearchHistoryBucket,
         server_urls::ServerUrlsBucket,
         streams::StreamsBucket,
@@ -246,5 +246,124 @@ fn actionctx_upgradeuseraddons_locked_short_circuits() {
     assert!(
         REQUESTS.read().unwrap().is_empty(),
         "no manifest fetches were issued when addons are locked"
+    );
+}
+
+fn test_user(id: &str) -> User {
+    User {
+        id: id.into(),
+        email: format!("{id}@example.test"),
+        fb_id: None,
+        apple_id: None,
+        avatar: None,
+        last_modified: TestEnv::now(),
+        date_registered: TestEnv::now(),
+        trakt: None,
+        premium_expire: None,
+        gdpr_consent: GDPRConsent {
+            tos: true,
+            privacy: true,
+            marketing: true,
+            from: Some("tests".to_owned()),
+        },
+        ..Default::default()
+    }
+}
+
+// Race regression: a user dispatches `UpgradeUserAddons` under auth A, then logs out / swaps
+// to auth B before the concurrent manifest fetches resolve. The result must be discarded —
+// otherwise it would mutate (and persist + push) addons on the wrong profile.
+#[test]
+fn actionctx_upgradeuseraddons_drops_results_after_account_swap() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+
+    let addon_v1 = Descriptor {
+        manifest: manifest("addon1", Version::new(0, 0, 1)),
+        transport_url: Url::parse("https://addon1.example/manifest.json").unwrap(),
+        flags: Default::default(),
+    };
+    let upgraded_manifest = manifest("addon1", Version::new(0, 0, 2));
+
+    // Profile is now logged in as user_b — but the in-flight result was dispatched under user_a.
+    let mut ctx = Ctx::new(
+        Profile {
+            auth: Some(Auth {
+                key: AuthKey("user_b_key".to_owned()),
+                user: test_user("user_b"),
+            }),
+            addons: vec![addon_v1.clone()],
+            ..Default::default()
+        },
+        LibraryBucket::default(),
+        StreamsBucket::default(),
+        ServerUrlsBucket::new::<TestEnv>(None),
+        NotificationsBucket::new::<TestEnv>(None, vec![]),
+        SearchHistoryBucket::default(),
+        DismissedEventsBucket::default(),
+    );
+
+    let stale_msg = Msg::Internal(Internal::UserAddonsManifestsResult {
+        auth_key: Some(AuthKey("user_a_key".to_owned())),
+        results: vec![(addon_v1.transport_url.clone(), Ok(upgraded_manifest))],
+    });
+    let _effects = <Ctx as Update<TestEnv>>::update(&mut ctx, &stale_msg);
+
+    assert_eq!(
+        ctx.profile.addons,
+        vec![addon_v1],
+        "stale UserAddonsManifestsResult must not mutate the current profile's addons"
+    );
+    assert!(
+        REQUESTS.read().unwrap().is_empty(),
+        "stale UserAddonsManifestsResult must not push the mutated collection to the API"
+    );
+}
+
+// Race regression: same user, but `addons_locked` flipped to true between dispatch and result
+// (e.g. an `AddonsAPIResult` error arrived in the meantime). The result must be discarded so
+// the lock is honored.
+#[test]
+fn actionctx_upgradeuseraddons_drops_results_when_locked_mid_flight() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+
+    let addon_v1 = Descriptor {
+        manifest: manifest("addon1", Version::new(0, 0, 1)),
+        transport_url: Url::parse("https://addon1.example/manifest.json").unwrap(),
+        flags: Default::default(),
+    };
+    let upgraded_manifest = manifest("addon1", Version::new(0, 0, 2));
+
+    let mut ctx = Ctx::new(
+        Profile {
+            auth: Some(Auth {
+                key: AuthKey("user_a_key".to_owned()),
+                user: test_user("user_a"),
+            }),
+            addons: vec![addon_v1.clone()],
+            addons_locked: true,
+            ..Default::default()
+        },
+        LibraryBucket::default(),
+        StreamsBucket::default(),
+        ServerUrlsBucket::new::<TestEnv>(None),
+        NotificationsBucket::new::<TestEnv>(None, vec![]),
+        SearchHistoryBucket::default(),
+        DismissedEventsBucket::default(),
+    );
+
+    let in_flight_msg = Msg::Internal(Internal::UserAddonsManifestsResult {
+        auth_key: Some(AuthKey("user_a_key".to_owned())),
+        results: vec![(addon_v1.transport_url.clone(), Ok(upgraded_manifest))],
+    });
+    let _effects = <Ctx as Update<TestEnv>>::update(&mut ctx, &in_flight_msg);
+
+    assert_eq!(
+        ctx.profile.addons,
+        vec![addon_v1],
+        "UserAddonsManifestsResult arriving while addons_locked must not mutate addons"
+    );
+    assert!(
+        REQUESTS.read().unwrap().is_empty(),
+        "UserAddonsManifestsResult arriving while addons_locked must not push to the API"
     );
 }
