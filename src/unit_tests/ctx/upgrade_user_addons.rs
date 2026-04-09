@@ -10,7 +10,7 @@ use crate::{
     models::ctx::Ctx,
     runtime::{
         msg::{Action, ActionCtx, Internal, Msg},
-        EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture, Update,
+        Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture, Update,
     },
     types::{
         addon::{Descriptor, DescriptorFlags, Manifest, ManifestBehaviorHints},
