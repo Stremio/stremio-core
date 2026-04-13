@@ -83,7 +83,6 @@ mod model {
     #[serde(rename_all = "camelCase")]
     pub struct LibraryItemState<'a> {
         pub time_offset: &'a u64,
-        #[serde(rename = "video_id")]
         pub video_id: &'a Option<String>,
     }
     #[derive(Serialize)]
