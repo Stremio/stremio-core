@@ -76,6 +76,7 @@ mod model {
         // overrides the id of the subtitles in a format that avoids
         // conflicts with other subtitle ids
         pub id: String,
+        pub addon_subtitle_id: &'a String,
         pub origin: &'a String,
     }
 
@@ -234,6 +235,7 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
                     .map(move |(position, subtitles)| model::Subtitles {
                         subtitles,
                         id: format!("{}_{}", addon.transport_url, position),
+                        addon_subtitle_id: &subtitles.id,
                         origin: &addon.manifest.name,
                     })
             })
