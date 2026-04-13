@@ -389,7 +389,9 @@
 <a href="#388" id="388">388</a>
 <a href="#389" id="389">389</a>
 <a href="#390" id="390">390</a>
-<a href="#391" id="391">391</a></pre></div><pre class="rust"><code><span class="kw">use </span>semver::Version;
+<a href="#391" id="391">391</a>
+<a href="#392" id="392">392</a>
+<a href="#393" id="393">393</a></pre></div><pre class="rust"><code><span class="kw">use </span>semver::Version;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>url::Url;
 <span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
@@ -467,6 +469,7 @@
         <span class="comment">// overrides the id of the subtitles in a format that avoids
         // conflicts with other subtitle ids
         </span><span class="kw">pub </span>id: String,
+        <span class="kw">pub </span>addon_subtitle_id: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>String,
         <span class="kw">pub </span>origin: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>String,
     }
 
@@ -625,6 +628,7 @@
                     </span>.map(<span class="kw">move </span>|(position, subtitles)| model::Subtitles {
                         subtitles,
                         id: <span class="macro">format!</span>(<span class="string">"{}_{}"</span>, addon.transport_url, position),
+                        addon_subtitle_id: <span class="kw-2">&amp;</span>subtitles.id,
                         origin: <span class="kw-2">&amp;</span>addon.manifest.name,
                     })
             })
