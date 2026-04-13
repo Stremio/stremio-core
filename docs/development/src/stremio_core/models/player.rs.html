@@ -1621,7 +1621,27 @@
 <a href="#1620" id="1620">1620</a>
 <a href="#1621" id="1621">1621</a>
 <a href="#1622" id="1622">1622</a>
-<a href="#1623" id="1623">1623</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#1623" id="1623">1623</a>
+<a href="#1624" id="1624">1624</a>
+<a href="#1625" id="1625">1625</a>
+<a href="#1626" id="1626">1626</a>
+<a href="#1627" id="1627">1627</a>
+<a href="#1628" id="1628">1628</a>
+<a href="#1629" id="1629">1629</a>
+<a href="#1630" id="1630">1630</a>
+<a href="#1631" id="1631">1631</a>
+<a href="#1632" id="1632">1632</a>
+<a href="#1633" id="1633">1633</a>
+<a href="#1634" id="1634">1634</a>
+<a href="#1635" id="1635">1635</a>
+<a href="#1636" id="1636">1636</a>
+<a href="#1637" id="1637">1637</a>
+<a href="#1638" id="1638">1638</a>
+<a href="#1639" id="1639">1639</a>
+<a href="#1640" id="1640">1640</a>
+<a href="#1641" id="1641">1641</a>
+<a href="#1642" id="1642">1642</a>
+<a href="#1643" id="1643">1643</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>std::ops::Div;
 
 <span class="kw">use </span>base64::Engine;
@@ -1761,6 +1781,15 @@
     <span class="kw">fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, msg: <span class="kw-2">&amp;</span>Msg, ctx: <span class="kw-2">&amp;</span>Ctx) -&gt; Effects {
         <span class="kw">match </span>msg {
             Msg::Action(Action::Load(ActionLoad::Player(selected))) =&gt; {
+                <span class="comment">// make sure we send the correct Trakt event if the model hasn't been unloaded
+                </span><span class="kw">let </span>trakt_event_effects = <span class="kw">if </span><span class="self">self</span>.selected.is_some() {
+                    Effects::msg(Msg::Event(Event::TraktPaused {
+                        context: <span class="self">self</span>.analytics_context.as_ref().cloned().unwrap_or_default(),
+                    }))
+                    .unchanged()
+                } <span class="kw">else </span>{
+                    Effects::none().unchanged()
+                };
                 <span class="kw">let </span>item_state_update_effects = <span class="kw">if </span><span class="self">self
                     </span>.selected
                     .as_ref()
@@ -1907,7 +1936,8 @@
                 <span class="self">self</span>.loaded = <span class="bool-val">false</span>;
                 <span class="self">self</span>.ended = <span class="bool-val">false</span>;
                 <span class="self">self</span>.paused = <span class="prelude-val">None</span>;
-                item_state_update_effects
+                trakt_event_effects
+                    .join(item_state_update_effects)
                     .join(selected_effects)
                     .join(meta_item_effects)
                     .join(stream_state_effects)
@@ -1927,6 +1957,15 @@
                     .join(notification_effects)
             }
             Msg::Action(Action::Unload) =&gt; {
+                <span class="kw">let </span>trakt_event_effects = <span class="kw">if </span><span class="self">self</span>.selected.is_some() {
+                    Effects::msg(Msg::Event(Event::TraktPaused {
+                        context: <span class="self">self</span>.analytics_context.as_ref().cloned().unwrap_or_default(),
+                    }))
+                    .unchanged()
+                } <span class="kw">else </span>{
+                    Effects::none().unchanged()
+                };
+
                 <span class="kw">let </span>ended_effects = <span class="kw">if </span>!<span class="self">self</span>.ended &amp;&amp; <span class="self">self</span>.selected.is_some() {
                     Effects::msg(Msg::Event(Event::PlayerStopped {
                         context: <span class="self">self</span>.analytics_context.as_ref().cloned().unwrap_or_default(),
@@ -1974,7 +2013,8 @@
                 <span class="self">self</span>.ended = <span class="bool-val">false</span>;
                 <span class="self">self</span>.paused = <span class="prelude-val">None</span>;
 
-                seek_history_effects
+                trakt_event_effects
+                    .join(seek_history_effects)
                     .join(item_state_update_effects)
                     .join(push_to_library_effects)
                     .join(selected_effects)
