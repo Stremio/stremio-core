@@ -282,7 +282,13 @@
 <a href="#281" id="281">281</a>
 <a href="#282" id="282">282</a>
 <a href="#283" id="283">283</a>
-<a href="#284" id="284">284</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
 
 <span class="kw">use </span>serde::Deserialize;
 <span class="kw">use </span>url::Url;
@@ -331,6 +337,12 @@
     RewindLibraryItem(String),
     LibraryItemMarkAsWatched {
         id: LibraryItemId,
+        is_watched: bool,
+    },
+    <span class="doccomment">/// Marks a meta item as watched, creating a temporary LibraryItem if one doesn't exist.
+    /// Used for discover so we dont need to load metadetails model on each item preview focus
+    </span>MetaItemMarkAsWatched {
+        meta_item: MetaItemPreview,
         is_watched: bool,
     },
     <span class="doccomment">/// If boolean is set to `true` it will disable notifications for the LibraryItem.
