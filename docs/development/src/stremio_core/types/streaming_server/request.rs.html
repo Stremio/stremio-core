@@ -157,9 +157,12 @@
 <a href="#156" id="156">156</a>
 <a href="#157" id="157">157</a>
 <a href="#158" id="158">158</a>
-<a href="#159" id="159">159</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
 
 <span class="kw">use </span>http::Request;
+<span class="kw">use </span>percent_encoding::percent_decode_str;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>url::Url;
 
@@ -245,10 +248,11 @@
     sources
         .into_iter()
         .map(|source| {
-            <span class="kw">if </span>source.starts_with(<span class="string">"dht:"</span>) || source.starts_with(<span class="string">"tracker:"</span>) {
-                source
+            <span class="kw">let </span>decoded = percent_decode_str(<span class="kw-2">&amp;</span>source).decode_utf8_lossy().into_owned();
+            <span class="kw">if </span>decoded.starts_with(<span class="string">"dht:"</span>) || decoded.starts_with(<span class="string">"tracker:"</span>) {
+                decoded
             } <span class="kw">else </span>{
-                <span class="macro">format!</span>(<span class="string">"tracker:{source}"</span>)
+                <span class="macro">format!</span>(<span class="string">"tracker:{decoded}"</span>)
             }
         })
         .collect()
@@ -262,7 +266,7 @@
             peer_search: <span class="kw">if </span>!val.announce.is_empty() {
                 <span class="prelude-val">Some</span>(PeerSearch::new(
                     <span class="number">40</span>,
-                    <span class="number">150</span>,
+                    <span class="number">200</span>,
                     info_hash,
                     normalize_peer_search_sources(val.announce),
                 ))
