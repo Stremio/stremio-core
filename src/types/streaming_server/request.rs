@@ -82,13 +82,31 @@ pub struct CreateMagnetBody {
     pub peer_search: Option<PeerSearch>,
 }
 
+fn normalize_peer_search_sources(sources: Vec<String>) -> Vec<String> {
+    sources
+        .into_iter()
+        .map(|source| {
+            if source.starts_with("dht:") || source.starts_with("tracker:") {
+                source
+            } else {
+                format!("tracker:{source}")
+            }
+        })
+        .collect()
+}
+
 impl From<CreateMagnetRequest> for Request<CreateMagnetBody> {
     fn from(val: CreateMagnetRequest) -> Self {
         let info_hash = val.info_hash;
 
         let body = CreateMagnetBody {
             peer_search: if !val.announce.is_empty() {
-                Some(PeerSearch::new(40, 200, info_hash, val.announce))
+                Some(PeerSearch::new(
+                    40,
+                    150,
+                    info_hash,
+                    normalize_peer_search_sources(val.announce),
+                ))
             } else {
                 None
             },
