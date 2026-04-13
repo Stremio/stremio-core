@@ -120,7 +120,10 @@ fn meta_item_mark_as_watched_existing_item_increments() {
     });
     let model = runtime.model().unwrap();
     let item = model.ctx.library.items.get("tt123").expect("Item exists");
-    assert_eq!(item.state.times_watched, 3, "times_watched incremented to 3");
+    assert_eq!(
+        item.state.times_watched, 3,
+        "times_watched incremented to 3"
+    );
     assert!(!item.temp, "Item remains non-temp");
     assert!(!item.removed, "Item remains non-removed");
 }
@@ -188,6 +191,11 @@ fn meta_item_unwatch_existing_item_resets() {
         })
     });
     let model = runtime.model().unwrap();
-    let item = model.ctx.library.items.get("tt123").expect("Item still exists");
+    let item = model
+        .ctx
+        .library
+        .items
+        .get("tt123")
+        .expect("Item still exists");
     assert_eq!(item.state.times_watched, 0, "times_watched reset to 0");
 }
