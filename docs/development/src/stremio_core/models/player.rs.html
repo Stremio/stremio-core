@@ -1641,7 +1641,40 @@
 <a href="#1640" id="1640">1640</a>
 <a href="#1641" id="1641">1641</a>
 <a href="#1642" id="1642">1642</a>
-<a href="#1643" id="1643">1643</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#1643" id="1643">1643</a>
+<a href="#1644" id="1644">1644</a>
+<a href="#1645" id="1645">1645</a>
+<a href="#1646" id="1646">1646</a>
+<a href="#1647" id="1647">1647</a>
+<a href="#1648" id="1648">1648</a>
+<a href="#1649" id="1649">1649</a>
+<a href="#1650" id="1650">1650</a>
+<a href="#1651" id="1651">1651</a>
+<a href="#1652" id="1652">1652</a>
+<a href="#1653" id="1653">1653</a>
+<a href="#1654" id="1654">1654</a>
+<a href="#1655" id="1655">1655</a>
+<a href="#1656" id="1656">1656</a>
+<a href="#1657" id="1657">1657</a>
+<a href="#1658" id="1658">1658</a>
+<a href="#1659" id="1659">1659</a>
+<a href="#1660" id="1660">1660</a>
+<a href="#1661" id="1661">1661</a>
+<a href="#1662" id="1662">1662</a>
+<a href="#1663" id="1663">1663</a>
+<a href="#1664" id="1664">1664</a>
+<a href="#1665" id="1665">1665</a>
+<a href="#1666" id="1666">1666</a>
+<a href="#1667" id="1667">1667</a>
+<a href="#1668" id="1668">1668</a>
+<a href="#1669" id="1669">1669</a>
+<a href="#1670" id="1670">1670</a>
+<a href="#1671" id="1671">1671</a>
+<a href="#1672" id="1672">1672</a>
+<a href="#1673" id="1673">1673</a>
+<a href="#1674" id="1674">1674</a>
+<a href="#1675" id="1675">1675</a>
+<a href="#1676" id="1676">1676</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>std::ops::Div;
 
 <span class="kw">use </span>base64::Engine;
@@ -1843,6 +1876,7 @@
                     <span class="kw-2">&amp;mut </span><span class="self">self</span>.subtitles,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.video_params,
+                    <span class="self">self</span>.stream.as_ref(),
                     <span class="kw-2">&amp;</span>ctx.profile.addons,
                 );
                 <span class="kw">let </span>next_video_effects = next_video_update(
@@ -2040,6 +2074,7 @@
                     <span class="kw-2">&amp;mut </span><span class="self">self</span>.subtitles,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.video_params,
+                    <span class="self">self</span>.stream.as_ref(),
                     <span class="kw-2">&amp;</span>ctx.profile.addons,
                 );
                 <span class="kw">let </span>skip_gaps_effects = skip_gaps_update::&lt;E&gt;(
@@ -2891,33 +2926,64 @@
     subtitles: <span class="kw-2">&amp;mut </span>Vec&lt;ResourceLoadable&lt;Vec&lt;Subtitles&gt;&gt;&gt;,
     selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
     video_params: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;VideoParams&gt;,
+    stream: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Loadable&lt;(StreamUrls, Stream&lt;ConvertedStreamSource&gt;), EnvError&gt;&gt;,
     addons: <span class="kw-2">&amp;</span>[Descriptor],
 ) -&gt; Effects {
-    <span class="kw">match </span>(selected, video_params) {
+    <span class="kw">match </span>(selected, stream) {
         (
             <span class="prelude-val">Some</span>(Selected {
                 subtitles_path: <span class="prelude-val">Some</span>(subtitles_path),
                 ..
             }),
-            <span class="prelude-val">Some</span>(video_params),
-        ) =&gt; resources_update_with_vector_content::&lt;E, <span class="kw">_</span>&gt;(
-            subtitles,
-            ResourcesAction::force_request(
-                <span class="kw-2">&amp;</span>AggrRequest::AllOfResource(ResourcePath {
-                    extra: subtitles_path
-                        .extra
-                        .to_owned()
-                        .extend_one(<span class="kw-2">&amp;</span>VIDEO_HASH_EXTRA_PROP, video_params.hash.to_owned())
-                        .extend_one(
-                            <span class="kw-2">&amp;</span>VIDEO_SIZE_EXTRA_PROP,
-                            video_params.size.as_ref().map(|size| size.to_string()),
-                        )
-                        .extend_one(<span class="kw-2">&amp;</span>VIDEO_FILENAME_EXTRA_PROP, video_params.filename.to_owned()),
-                    ..subtitles_path.to_owned()
-                }),
-                addons,
-            ),
-        ),
+            <span class="prelude-val">Some</span>(Loadable::Ready((_stream_urls, converted_stream))),
+        ) =&gt; {
+            resources_update_with_vector_content::&lt;E, <span class="kw">_</span>&gt;(
+                subtitles,
+                ResourcesAction::force_request(
+                    <span class="kw-2">&amp;</span>AggrRequest::AllOfResource(ResourcePath {
+                        extra: {
+                            <span class="comment">// Always prefer the Stream field if such is set by the addon
+                            // otherwise we can use the VideoParams as a fallback.
+                            </span>subtitles_path
+                                .extra
+                                .to_owned()
+                                .extend_one(
+                                    <span class="kw-2">&amp;</span>VIDEO_HASH_EXTRA_PROP,
+                                    converted_stream.behavior_hints.video_hash.clone().or(
+                                        video_params
+                                            .as_ref()
+                                            .and_then(|video_params| video_params.hash.to_owned())
+                                            .to_owned(),
+                                    ),
+                                )
+                                .extend_one(
+                                    <span class="kw-2">&amp;</span>VIDEO_SIZE_EXTRA_PROP,
+                                    converted_stream
+                                        .behavior_hints
+                                        .video_size
+                                        .or(video_params
+                                            .as_ref()
+                                            .and_then(|video_params| video_params.size))
+                                        .map(|size| size.to_string()),
+                                )
+                                .extend_one(
+                                    <span class="kw-2">&amp;</span>VIDEO_FILENAME_EXTRA_PROP,
+                                    converted_stream
+                                        .behavior_hints
+                                        .filename
+                                        .to_owned()
+                                        .or(video_params
+                                            .as_ref()
+                                            .and_then(|video_params| video_params.filename.clone()))
+                                        .to_owned(),
+                                )
+                        },
+                        ..subtitles_path.to_owned()
+                    }),
+                    addons,
+                ),
+            )
+        }
         <span class="kw">_ </span>=&gt; eq_update(subtitles, <span class="macro">vec!</span>[]),
     }
 }
