@@ -49,6 +49,12 @@ pub enum ActionCtx {
         id: LibraryItemId,
         is_watched: bool,
     },
+    /// Marks a meta item as watched, creating a temporary [`LibraryItem`] if one doesn't exist.
+    /// Used for discover so we dont need to load metadetails model on each item preview focus
+    MetaItemMarkAsWatched {
+        meta_item: MetaItemPreview,
+        is_watched: bool,
+    },
     /// If boolean is set to `true` it will disable notifications for the LibraryItem.
     ToggleLibraryItemNotifications(LibraryItemId, bool),
     /// Dismiss all Notification for a given [`MetaItemId`].
