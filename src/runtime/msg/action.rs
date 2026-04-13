@@ -49,7 +49,7 @@ pub enum ActionCtx {
         id: LibraryItemId,
         is_watched: bool,
     },
-    /// Marks a meta item as watched, creating a temporary [`LibraryItem`] if one doesn't exist.
+    /// Marks a meta item as watched, creating a temporary LibraryItem if one doesn't exist.
     /// Used for discover so we dont need to load metadetails model on each item preview focus
     MetaItemMarkAsWatched {
         meta_item: MetaItemPreview,
