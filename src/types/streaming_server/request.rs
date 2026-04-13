@@ -1,6 +1,7 @@
 use core::fmt;
 
 use http::Request;
+use percent_encoding::percent_decode_str;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -86,10 +87,11 @@ fn normalize_peer_search_sources(sources: Vec<String>) -> Vec<String> {
     sources
         .into_iter()
         .map(|source| {
-            if source.starts_with("dht:") || source.starts_with("tracker:") {
-                source
+            let decoded = percent_decode_str(&source).decode_utf8_lossy().into_owned();
+            if decoded.starts_with("dht:") || decoded.starts_with("tracker:") {
+                decoded
             } else {
-                format!("tracker:{source}")
+                format!("tracker:{decoded}")
             }
         })
         .collect()
@@ -103,7 +105,7 @@ impl From<CreateMagnetRequest> for Request<CreateMagnetBody> {
             peer_search: if !val.announce.is_empty() {
                 Some(PeerSearch::new(
                     40,
-                    150,
+                    200,
                     info_hash,
                     normalize_peer_search_sources(val.announce),
                 ))
