@@ -1196,9 +1196,9 @@ dependencies = [
 
 [[package]]
 name = "stremio-official-addons"
-version = "2.1.1"
+version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4bb5e344bd639722596917f372885c62b489b8442bca7f75b08f4af19e2230af"
+checksum = "f3aea8b91737b34bf40f8d1ac3d977d98d38b5121415d5dfdf297da48d66401b"
 dependencies = [
  "deflate-macro",
  "flate2",
