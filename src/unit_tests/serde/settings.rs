@@ -8,6 +8,7 @@ fn settings() {
     assert_tokens(
         &Settings {
             interface_language: "interface_language".to_owned(),
+            interface_scale: 1,
             hide_spoilers: false,
             gamepad_support: false,
             streaming_server_url: Url::parse("https://streaming_server_url").unwrap(),
@@ -48,10 +49,12 @@ fn settings() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 35,
+                len: 36,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
+            Token::Str("interfaceScale"),
+            Token::U8(1),
             Token::Str("hideSpoilers"),
             Token::Bool(false),
             Token::Str("gamepadSupport"),
@@ -142,10 +145,12 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 35,
+                len: 36,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
+            Token::Str("interfaceScale"),
+            Token::U8(100),
             Token::Str("hideSpoilers"),
             Token::Bool(false),
             Token::Str("gamepadSupport"),

@@ -376,10 +376,12 @@ impl DefaultTokens for Settings {
         vec![
             Token::Struct {
                 name: "Settings",
-                len: 35,
+                len: 36,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
+            Token::Str("interfaceScale"),
+            Token::U8(100),
             Token::Str("hideSpoilers"),
             Token::Bool(false),
             Token::Str("gamepadSupport"),

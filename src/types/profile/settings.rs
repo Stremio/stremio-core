@@ -7,6 +7,7 @@ use url::Url;
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
     pub interface_language: String,
+    pub interface_scale: u8,
     pub hide_spoilers: bool,
     pub gamepad_support: bool,
     pub streaming_server_url: Url,
@@ -71,6 +72,7 @@ impl Default for Settings {
             audio_passthrough: false,
             streaming_server_url: STREAMING_SERVER_URL.to_owned(),
             interface_language: "eng".to_owned(),
+            interface_scale: 100,
             audio_language: Some("eng".to_owned()),
             secondary_audio_language: None,
             subtitles_language: Some("eng".to_owned()),
