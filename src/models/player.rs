@@ -1261,47 +1261,52 @@ fn subtitles_update<E: Env + 'static>(
             }),
             Some(Loadable::Ready((_stream_urls, converted_stream))),
         ) => {
+            let video_hash = converted_stream
+                .behavior_hints
+                .video_hash
+                .clone()
+                .or_else(|| {
+                    video_params
+                        .as_ref()
+                        .and_then(|video_params| video_params.hash.to_owned())
+                });
+            let video_size = converted_stream.behavior_hints.video_size.or_else(|| {
+                video_params
+                    .as_ref()
+                    .and_then(|video_params| video_params.size)
+            });
+            let video_filename =
+                converted_stream
+                    .behavior_hints
+                    .filename
+                    .to_owned()
+                    .or_else(|| {
+                        video_params
+                            .as_ref()
+                            .and_then(|video_params| video_params.filename.clone())
+                    });
+
+            if video_hash.is_none()
+                && video_size.is_none()
+                && video_filename.is_none()
+                && video_params.is_none()
+            {
+                return Effects::none().unchanged();
+            }
+
             resources_update_with_vector_content::<E, _>(
                 subtitles,
-                ResourcesAction::force_request(
+                ResourcesAction::request(
                     &AggrRequest::AllOfResource(ResourcePath {
-                        extra: {
-                            // Always prefer the Stream field if such is set by the addon
-                            // otherwise we can use the VideoParams as a fallback.
-                            subtitles_path
-                                .extra
-                                .to_owned()
-                                .extend_one(
-                                    &VIDEO_HASH_EXTRA_PROP,
-                                    converted_stream.behavior_hints.video_hash.clone().or(
-                                        video_params
-                                            .as_ref()
-                                            .and_then(|video_params| video_params.hash.to_owned())
-                                            .to_owned(),
-                                    ),
-                                )
-                                .extend_one(
-                                    &VIDEO_SIZE_EXTRA_PROP,
-                                    converted_stream
-                                        .behavior_hints
-                                        .video_size
-                                        .or(video_params
-                                            .as_ref()
-                                            .and_then(|video_params| video_params.size))
-                                        .map(|size| size.to_string()),
-                                )
-                                .extend_one(
-                                    &VIDEO_FILENAME_EXTRA_PROP,
-                                    converted_stream
-                                        .behavior_hints
-                                        .filename
-                                        .to_owned()
-                                        .or(video_params
-                                            .as_ref()
-                                            .and_then(|video_params| video_params.filename.clone()))
-                                        .to_owned(),
-                                )
-                        },
+                        extra: subtitles_path
+                            .extra
+                            .to_owned()
+                            .extend_one(&VIDEO_HASH_EXTRA_PROP, video_hash)
+                            .extend_one(
+                                &VIDEO_SIZE_EXTRA_PROP,
+                                video_size.map(|size| size.to_string()),
+                            )
+                            .extend_one(&VIDEO_FILENAME_EXTRA_PROP, video_filename),
                         ..subtitles_path.to_owned()
                     }),
                     addons,
