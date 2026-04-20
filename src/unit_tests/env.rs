@@ -69,16 +69,27 @@ impl TestEnv {
         env_mutex
     }
     pub fn run<F: FnOnce()>(runnable: F) {
-        tokio_current_thread::block_on_all(future::lazy(|_| {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("tokio runtime");
+        let local = tokio::task::LocalSet::new();
+        local.block_on(&rt, async move {
             runnable();
-        }))
+        });
+        rt.block_on(local);
     }
     pub fn run_with_runtime<M: Model<TestEnv> + Clone + Send + Sync + 'static, F: FnOnce()>(
         rx: Receiver<RuntimeEvent<TestEnv, M>>,
         runtime: Arc<RwLock<Runtime<TestEnv, M>>>,
         runnable: F,
     ) {
-        tokio_current_thread::block_on_all(future::lazy(|_| {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("tokio runtime");
+        let phase1 = tokio::task::LocalSet::new();
+        phase1.block_on(&rt, async {
             {
                 let runtime = runtime.read().expect("runtime read failed");
                 let state = runtime.model().expect("model read failed");
@@ -86,8 +97,10 @@ impl TestEnv {
                 states.push(Box::new(state.to_owned()) as Box<dyn Any + Send + Sync>);
             }
             runnable();
-        }));
-        tokio_current_thread::block_on_all(future::lazy(|_| {
+        });
+        rt.block_on(phase1);
+        let phase2 = tokio::task::LocalSet::new();
+        phase2.block_on(&rt, async {
             TestEnv::exec_concurrent(rx.for_each(move |event| {
                 if let RuntimeEvent::NewState(_, state) = &event {
                     let mut states = STATES.write().expect("states write failed");
@@ -101,7 +114,8 @@ impl TestEnv {
                 let mut runtime = runtime.write().expect("runtime read failed");
                 runtime.close().await.unwrap();
             }));
-        }));
+        });
+        rt.block_on(phase2);
     }
 }
 
@@ -138,10 +152,10 @@ impl Env for TestEnv {
         future::ok(()).boxed_env()
     }
     fn exec_concurrent<F: Future<Output = ()> + 'static>(future: F) {
-        tokio_current_thread::spawn(future);
+        tokio::task::spawn_local(future);
     }
     fn exec_sequential<F: Future<Output = ()> + 'static>(future: F) {
-        tokio_current_thread::spawn(future);
+        tokio::task::spawn_local(future);
     }
     fn now() -> DateTime<Utc> {
         *NOW.read().unwrap()
