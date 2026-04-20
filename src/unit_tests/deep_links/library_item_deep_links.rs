@@ -1,5 +1,5 @@
 use chrono::Utc;
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 use stremio_serde_hex::{SerHex, Strict};
 
 use crate::constants::STREAMING_SERVER_URL;
@@ -16,12 +16,12 @@ use crate::types::streams::StreamsItem;
 
 const META_DETAILS_VIDEOS: &str = "stremio:///detail/series/tt13622776";
 
-static INFUSE_PLAYER_SETTINGS: Lazy<Settings> = Lazy::new(|| Settings {
+static INFUSE_PLAYER_SETTINGS: LazyLock<Settings> = LazyLock::new(|| Settings {
     player_type: Some("infuse".to_owned()),
     ..Settings::default()
 });
 
-static TORRENT_STREAMS_ITEM: Lazy<StreamsItem> = Lazy::new(|| {
+static TORRENT_STREAMS_ITEM: LazyLock<StreamsItem> = LazyLock::new(|| {
     let stream = Stream {
         source: StreamSource::Torrent {
             info_hash: SerHex::<Strict>::from_hex("df2c94aec35f97943c4e432f25081b590cd35326")

@@ -8,23 +8,23 @@ use std::{
 use chrono::{DateTime, Utc};
 use enclose::enclose;
 use futures::{channel::mpsc::Receiver, future, Future, StreamExt, TryFutureExt};
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
+use std::sync::LazyLock;
 
 use crate::{
     models::{ctx::Ctx, streaming_server::StreamingServer},
     runtime::{Env, EnvFuture, EnvFutureExt, Model, Runtime, RuntimeEvent, TryEnvFuture},
 };
 
-pub static FETCH_HANDLER: Lazy<RwLock<FetchHandler>> =
-    Lazy::new(|| RwLock::new(Box::new(default_fetch_handler)));
-pub static REQUESTS: Lazy<RwLock<Vec<Request>>> = Lazy::new(Default::default);
-pub static STORAGE: Lazy<RwLock<BTreeMap<String, String>>> = Lazy::new(Default::default);
-pub static EVENTS: Lazy<RwLock<Vec<Box<dyn Any + Send + Sync + 'static>>>> =
-    Lazy::new(Default::default);
-pub static STATES: Lazy<RwLock<Vec<Box<dyn Any + Send + Sync + 'static>>>> =
-    Lazy::new(Default::default);
-pub static NOW: Lazy<RwLock<DateTime<Utc>>> = Lazy::new(|| RwLock::new(Utc::now()));
+pub static FETCH_HANDLER: LazyLock<RwLock<FetchHandler>> =
+    LazyLock::new(|| RwLock::new(Box::new(default_fetch_handler)));
+pub static REQUESTS: LazyLock<RwLock<Vec<Request>>> = LazyLock::new(Default::default);
+pub static STORAGE: LazyLock<RwLock<BTreeMap<String, String>>> = LazyLock::new(Default::default);
+pub static EVENTS: LazyLock<RwLock<Vec<Box<dyn Any + Send + Sync + 'static>>>> =
+    LazyLock::new(Default::default);
+pub static STATES: LazyLock<RwLock<Vec<Box<dyn Any + Send + Sync + 'static>>>> =
+    LazyLock::new(Default::default);
+pub static NOW: LazyLock<RwLock<DateTime<Utc>>> = LazyLock::new(|| RwLock::new(Utc::now()));
 pub static ENV_MUTEX: Mutex<()> = Mutex::new(());
 
 pub type FetchHandler =

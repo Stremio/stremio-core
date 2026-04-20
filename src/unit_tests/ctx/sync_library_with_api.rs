@@ -20,8 +20,8 @@ use crate::unit_tests::{
 use chrono::prelude::TimeZone;
 use chrono::{Duration, Utc};
 use futures::future;
-use once_cell::sync::Lazy;
 use serde::Deserialize;
+use std::sync::LazyLock;
 use stremio_derive::Model;
 
 #[test]
@@ -61,7 +61,7 @@ fn actionctx_synclibrarywithapi_with_user() {
     struct TestModel {
         ctx: Ctx,
     }
-    static REMOTE_ONLY_ITEM: Lazy<LibraryItem> = Lazy::new(|| LibraryItem {
+    static REMOTE_ONLY_ITEM: LazyLock<LibraryItem> = LazyLock::new(|| LibraryItem {
         id: "id1".to_owned(),
         r#type: "type".to_owned(),
         name: "name".to_owned(),
@@ -74,7 +74,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         state: Default::default(),
         behavior_hints: Default::default(),
     });
-    static LOCAL_NEWER_ITEM: Lazy<LibraryItem> = Lazy::new(|| LibraryItem {
+    static LOCAL_NEWER_ITEM: LazyLock<LibraryItem> = LazyLock::new(|| LibraryItem {
         id: "id2".to_owned(),
         r#type: "type".to_owned(),
         name: "name".to_owned(),
@@ -87,7 +87,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         state: Default::default(),
         behavior_hints: Default::default(),
     });
-    static REMOTE_NEWER_ITEM: Lazy<LibraryItem> = Lazy::new(|| LibraryItem {
+    static REMOTE_NEWER_ITEM: LazyLock<LibraryItem> = LazyLock::new(|| LibraryItem {
         id: "id3".to_owned(),
         r#type: "type".to_owned(),
         name: "name".to_owned(),
@@ -100,7 +100,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         state: Default::default(),
         behavior_hints: Default::default(),
     });
-    static LOCAL_ONLY_ITEM: Lazy<LibraryItem> = Lazy::new(|| LibraryItem {
+    static LOCAL_ONLY_ITEM: LazyLock<LibraryItem> = LazyLock::new(|| LibraryItem {
         id: "id4".to_owned(),
         r#type: "type".to_owned(),
         name: "name".to_owned(),
@@ -113,7 +113,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         state: Default::default(),
         behavior_hints: Default::default(),
     });
-    static LOCAL_OLD_REMOVED_ITEM: Lazy<LibraryItem> = Lazy::new(|| LibraryItem {
+    static LOCAL_OLD_REMOVED_ITEM: LazyLock<LibraryItem> = LazyLock::new(|| LibraryItem {
         id: "id5".to_owned(),
         r#type: "type".to_owned(),
         name: "name".to_owned(),
@@ -126,7 +126,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         state: Default::default(),
         behavior_hints: Default::default(),
     });
-    static LOCAL_NEW_REMOVED_ITEM: Lazy<LibraryItem> = Lazy::new(|| LibraryItem {
+    static LOCAL_NEW_REMOVED_ITEM: LazyLock<LibraryItem> = LazyLock::new(|| LibraryItem {
         id: "id6".to_owned(),
         r#type: "type".to_owned(),
         name: "name".to_owned(),
@@ -139,7 +139,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         state: Default::default(),
         behavior_hints: Default::default(),
     });
-    static LOCAL_OTHER_TYPE_ITEM: Lazy<LibraryItem> = Lazy::new(|| LibraryItem {
+    static LOCAL_OTHER_TYPE_ITEM: LazyLock<LibraryItem> = LazyLock::new(|| LibraryItem {
         id: "id7".to_owned(),
         r#type: "other".to_owned(),
         name: "name".to_owned(),
