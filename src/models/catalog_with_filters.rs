@@ -12,7 +12,6 @@ use crate::types::addon::{
 };
 use crate::types::profile::Profile;
 use crate::types::resource::MetaItemPreview;
-use boolinator::Boolinator;
 use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
@@ -417,32 +416,29 @@ fn selectable_update<T: CatalogResourceAdapter>(
                     extra_prop.name != SKIP_EXTRA_PROP.name && !extra_prop.options.is_empty()
                 })
                 .map(|extra_prop| {
-                    let none_option =
-                        (!extra_prop.is_required)
-                            .as_option()
-                            .map(|_| SelectableExtraOption {
-                                value: None,
-                                selected: selected
+                    let none_option = (!extra_prop.is_required).then(|| SelectableExtraOption {
+                        value: None,
+                        selected: selected
+                            .request
+                            .path
+                            .extra
+                            .iter()
+                            .all(|extra_value| extra_value.name != extra_prop.name),
+                        request: ResourceRequest {
+                            base: selected.request.base.to_owned(),
+                            path: ResourcePath {
+                                id: manifest_catalog.id.to_owned(),
+                                r#type: manifest_catalog.r#type.to_owned(),
+                                resource: selected.request.path.resource.to_owned(),
+                                extra: selected
                                     .request
                                     .path
                                     .extra
-                                    .iter()
-                                    .all(|extra_value| extra_value.name != extra_prop.name),
-                                request: ResourceRequest {
-                                    base: selected.request.base.to_owned(),
-                                    path: ResourcePath {
-                                        id: manifest_catalog.id.to_owned(),
-                                        r#type: manifest_catalog.r#type.to_owned(),
-                                        resource: selected.request.path.resource.to_owned(),
-                                        extra: selected
-                                            .request
-                                            .path
-                                            .extra
-                                            .to_owned()
-                                            .extend_one(&extra_prop, None),
-                                    },
-                                },
-                            });
+                                    .to_owned()
+                                    .extend_one(&extra_prop, None),
+                            },
+                        },
+                    });
                     let options = extra_prop
                         .options
                         .iter()

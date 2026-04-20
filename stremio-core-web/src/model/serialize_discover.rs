@@ -1,7 +1,6 @@
 #[cfg(feature = "wasm")]
 use {
     crate::model::deep_links_ext::DeepLinksExt,
-    boolinator::Boolinator,
     gloo_utils::format::JsValueSerdeExt,
     itertools::Itertools,
     stremio_core::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks},
@@ -171,7 +170,7 @@ pub fn serialize_discover(
                 .collect(),
             next_page: discover.selectable.next_page.is_some(),
         },
-        catalog: (!discover.catalog.is_empty()).as_option().map(|_| {
+        catalog: (!discover.catalog.is_empty()).then(|| {
             let first_page = discover
                 .catalog
                 .first()
