@@ -2,8 +2,8 @@ use std::marker::PhantomData;
 
 use futures::future;
 use http::Request;
-use once_cell::sync::Lazy;
 use percent_encoding::utf8_percent_encode;
+use std::sync::LazyLock;
 use url::Url;
 
 use crate::addon_transport::http_transport::legacy::AddonLegacyTransport;
@@ -67,7 +67,7 @@ impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
             .as_str()
             .replace(ADDON_MANIFEST_PATH, &path);
 
-        static CINEMETA_ADDONS_CATALOG_URL: Lazy<String> = Lazy::new(|| {
+        static CINEMETA_ADDONS_CATALOG_URL: LazyLock<String> = LazyLock::new(|| {
             CINEMETA_URL
                 .as_str()
                 .replace(ADDON_MANIFEST_PATH, "/addon_catalog/all/community.json")

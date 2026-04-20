@@ -3,7 +3,7 @@ use std::collections::{hash_map::Entry, HashMap};
 use chrono::{DateTime, Duration, Utc};
 use futures::FutureExt;
 use lazysort::SortedBy;
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 use tracing::trace;
 
 use crate::{
@@ -28,7 +28,7 @@ use crate::{
     },
 };
 
-static REQUEST_LAST_VIDEOS_EVERY: Lazy<Duration> = Lazy::new(|| Duration::hours(6));
+static REQUEST_LAST_VIDEOS_EVERY: LazyLock<Duration> = LazyLock::new(|| Duration::hours(6));
 
 pub fn update_notifications<E: Env + 'static>(
     notifications: &mut NotificationsBucket,

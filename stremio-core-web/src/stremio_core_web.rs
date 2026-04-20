@@ -3,8 +3,8 @@ use std::sync::RwLock;
 use enclose::enclose;
 use futures::{future, try_join, FutureExt, StreamExt};
 use gloo_utils::format::JsValueSerdeExt;
-use once_cell::sync::Lazy;
 use serde::Serialize;
+use std::sync::LazyLock;
 use tracing::{error, info, Level};
 use tracing_wasm::WASMLayerConfigBuilder;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue, UnwrapThrowExt};
@@ -36,8 +36,8 @@ use crate::{
 };
 
 #[allow(clippy::type_complexity)]
-static RUNTIME: Lazy<RwLock<Option<Loadable<Runtime<WebEnv, WebModel>, EnvError>>>> =
-    Lazy::new(Default::default);
+static RUNTIME: LazyLock<RwLock<Option<Loadable<Runtime<WebEnv, WebModel>, EnvError>>>> =
+    LazyLock::new(Default::default);
 
 #[derive(Debug, Clone, Serialize)]
 pub enum DispatchError {

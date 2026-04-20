@@ -4,10 +4,10 @@ use chrono::{offset::TimeZone, DateTime, Utc};
 use futures::{future, Future, FutureExt, TryFutureExt};
 use gloo_utils::format::JsValueSerdeExt;
 use http::{Method, Request};
-use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::sync::LazyLock;
 
 use tracing::trace;
 use url::Url;
@@ -50,10 +50,10 @@ extern "C" {
     async fn local_storage_remove_item(key: String) -> Result<(), JsValue>;
 }
 
-static INSTALLATION_ID: Lazy<RwLock<Option<String>>> = Lazy::new(Default::default);
-static VISIT_ID: Lazy<String> = Lazy::new(|| hex::encode(WebEnv::random_buffer(10)));
-static ANALYTICS: Lazy<Analytics<WebEnv>> = Lazy::new(Default::default);
-static PLAYER_REGEX: Lazy<Regex> = Lazy::new(|| {
+static INSTALLATION_ID: LazyLock<RwLock<Option<String>>> = LazyLock::new(Default::default);
+static VISIT_ID: LazyLock<String> = LazyLock::new(|| hex::encode(WebEnv::random_buffer(10)));
+static ANALYTICS: LazyLock<Analytics<WebEnv>> = LazyLock::new(Default::default);
+static PLAYER_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"^/player/([^/]*)(?:/([^/]*)/([^/]*)/([^/]*)/([^/]*)/([^/]*))?$")
         .expect("Player Regex failed to build")
 });

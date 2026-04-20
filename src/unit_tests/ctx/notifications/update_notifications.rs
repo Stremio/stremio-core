@@ -8,9 +8,9 @@ use assert_matches::assert_matches;
 use chrono::{TimeZone, Utc};
 use enclose::enclose;
 use futures::future;
-use once_cell::sync::Lazy;
 use semver::Version;
 use serde::Deserialize;
+use std::sync::LazyLock;
 use url::Url;
 
 use stremio_derive::Model;
@@ -68,7 +68,7 @@ fn test_pull_notifications_and_play_in_player() {
     }
 
     /// Addon 1 with lastVideosIds catalog
-    pub static ADDON_1: Lazy<Descriptor> = Lazy::new(|| Descriptor {
+    pub static ADDON_1: LazyLock<Descriptor> = LazyLock::new(|| Descriptor {
         manifest: Manifest {
             id: "addon_1".to_owned(),
             version: Version::new(0, 0, 1),
@@ -96,7 +96,7 @@ fn test_pull_notifications_and_play_in_player() {
     });
 
     /// Meta item 1 with id `tt1` and 7 episodes from season 1
-    pub static META_ITEM_1: Lazy<MetaItem> = Lazy::new(|| MetaItem {
+    pub static META_ITEM_1: LazyLock<MetaItem> = LazyLock::new(|| MetaItem {
         preview: MetaItemPreview {
             id: "tt1".to_string(),
             name: "name".to_string(),

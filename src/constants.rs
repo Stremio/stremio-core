@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use once_cell::sync::Lazy;
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC};
+use std::sync::LazyLock;
 use tracing::trace;
 use url::Url;
 
@@ -72,25 +72,26 @@ pub const PLAYER_IGNORE_SEEK_AFTER: u64 = 600_000;
 pub static BASE64: base64::engine::general_purpose::GeneralPurpose =
     base64::engine::general_purpose::STANDARD;
 
-pub static CINEMETA_CATALOGS_URL: Lazy<Url> = Lazy::new(|| {
+pub static CINEMETA_CATALOGS_URL: LazyLock<Url> = LazyLock::new(|| {
     Url::parse("https://cinemeta-catalogs.strem.io").expect("CINEMETA_URL parse failed")
 });
 
 /// Manifest URL for Cinemeta V3
-pub static CINEMETA_URL: Lazy<Url> = Lazy::new(|| {
+pub static CINEMETA_URL: LazyLock<Url> = LazyLock::new(|| {
     Url::parse("https://v3-cinemeta.strem.io/manifest.json").expect("CINEMETA_URL parse failed")
 });
-pub static USER_LIKES_API_URL: Lazy<Url> =
-    Lazy::new(|| Url::parse("https://likes.stremio.com").expect("API_URL parse failed"));
-pub static API_URL: Lazy<Url> =
-    Lazy::new(|| Url::parse("https://api.strem.io").expect("API_URL parse failed"));
-pub static LINK_API_URL: Lazy<Url> =
-    Lazy::new(|| Url::parse("https://link.stremio.com").expect("LINK_API_URL parse failed"));
-pub static STREAMING_SERVER_URL: Lazy<Url> =
-    Lazy::new(|| Url::parse("http://127.0.0.1:11470").expect("STREAMING_SERVER_URL parse failed"));
-pub static IMDB_URL: Lazy<Url> =
-    Lazy::new(|| Url::parse("https://imdb.com").expect("IMDB_URL parse failed"));
-pub static OFFICIAL_ADDONS: Lazy<Vec<Descriptor>> = Lazy::new(|| {
+pub static USER_LIKES_API_URL: LazyLock<Url> =
+    LazyLock::new(|| Url::parse("https://likes.stremio.com").expect("API_URL parse failed"));
+pub static API_URL: LazyLock<Url> =
+    LazyLock::new(|| Url::parse("https://api.strem.io").expect("API_URL parse failed"));
+pub static LINK_API_URL: LazyLock<Url> =
+    LazyLock::new(|| Url::parse("https://link.stremio.com").expect("LINK_API_URL parse failed"));
+pub static STREAMING_SERVER_URL: LazyLock<Url> = LazyLock::new(|| {
+    Url::parse("http://127.0.0.1:11470").expect("STREAMING_SERVER_URL parse failed")
+});
+pub static IMDB_URL: LazyLock<Url> =
+    LazyLock::new(|| Url::parse("https://imdb.com").expect("IMDB_URL parse failed"));
+pub static OFFICIAL_ADDONS: LazyLock<Vec<Descriptor>> = LazyLock::new(|| {
     if std::env::var("EMPTY_OFFICIAL_ADDONS").unwrap_or("0".to_string()) == "1" {
         trace!("Official addons are disabled");
         return serde_json::from_str("[]").expect("OFFICIAL_ADDONS parse failed");
@@ -99,43 +100,43 @@ pub static OFFICIAL_ADDONS: Lazy<Vec<Descriptor>> = Lazy::new(|| {
         return serde_json::from_slice(&addons_str).expect("OFFICIAL_ADDONS parse failed");
     }
 });
-pub static SKIP_EXTRA_PROP: Lazy<ExtraProp> = Lazy::new(|| ExtraProp {
+pub static SKIP_EXTRA_PROP: LazyLock<ExtraProp> = LazyLock::new(|| ExtraProp {
     name: "skip".to_owned(),
     is_required: false,
     options: vec![],
     options_limit: OptionsLimit::default(),
 });
-pub static VIDEO_HASH_EXTRA_PROP: Lazy<ExtraProp> = Lazy::new(|| ExtraProp {
+pub static VIDEO_HASH_EXTRA_PROP: LazyLock<ExtraProp> = LazyLock::new(|| ExtraProp {
     name: "videoHash".to_owned(),
     is_required: false,
     options: vec![],
     options_limit: OptionsLimit::default(),
 });
-pub static VIDEO_SIZE_EXTRA_PROP: Lazy<ExtraProp> = Lazy::new(|| ExtraProp {
+pub static VIDEO_SIZE_EXTRA_PROP: LazyLock<ExtraProp> = LazyLock::new(|| ExtraProp {
     name: "videoSize".to_owned(),
     is_required: false,
     options: vec![],
     options_limit: OptionsLimit::default(),
 });
-pub static VIDEO_FILENAME_EXTRA_PROP: Lazy<ExtraProp> = Lazy::new(|| ExtraProp {
+pub static VIDEO_FILENAME_EXTRA_PROP: LazyLock<ExtraProp> = LazyLock::new(|| ExtraProp {
     name: "filename".to_owned(),
     is_required: false,
     options: vec![],
     options_limit: OptionsLimit::default(),
 });
-pub static LAST_VIDEOS_IDS_EXTRA_PROP: Lazy<ExtraProp> = Lazy::new(|| ExtraProp {
+pub static LAST_VIDEOS_IDS_EXTRA_PROP: LazyLock<ExtraProp> = LazyLock::new(|| ExtraProp {
     name: "lastVideosIds".to_owned(),
     is_required: false,
     options: vec![],
     options_limit: OptionsLimit(1),
 });
-pub static CALENDAR_IDS_EXTRA_PROP: Lazy<ExtraProp> = Lazy::new(|| ExtraProp {
+pub static CALENDAR_IDS_EXTRA_PROP: LazyLock<ExtraProp> = LazyLock::new(|| ExtraProp {
     name: "calendarVideosIds".to_owned(),
     is_required: false,
     options: vec![],
     options_limit: OptionsLimit(1),
 });
-pub static TYPE_PRIORITIES: Lazy<HashMap<&'static str, i32>> = Lazy::new(|| {
+pub static TYPE_PRIORITIES: LazyLock<HashMap<&'static str, i32>> = LazyLock::new(|| {
     vec![
         ("all", 5),
         ("movie", 4),
