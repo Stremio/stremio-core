@@ -1,6 +1,9 @@
 use crate::deep_links::MetaItemDeepLinks;
 use crate::types::addon::{ResourcePath, ResourceRequest};
-use crate::types::resource::{MetaItem, MetaItemBehaviorHints, MetaItemPreview, PosterShape};
+use crate::types::resource::{
+    MetaItem, MetaItemBehaviorHints, MetaItemPreview, PosterShape, Stream, StreamSource,
+};
+use crate::unit_tests::deep_links::helpers::assert_player_url;
 use std::str::FromStr;
 use url::Url;
 
@@ -128,5 +131,19 @@ fn meta_item_deep_links_behavior_hints_yt_id() {
                 .to_string()
         )
     );
-    assert_eq!(midl.player, Some("stremio:///player/eAEBFgDp%2F3sieXRJZCI6ImFxei1LRS1icEtRIn1RRQb5/http%3A%2F%2Fdomain.root%2F/http%3A%2F%2Fdomain.root%2F/movie/tt1254207/yt_id%3AUCSMOQeBJ2RAnuFungnQOxLg%3Aaqz-KE-bpKQ".to_string()));
+    let expected_stream = Stream {
+        source: StreamSource::YouTube {
+            yt_id: "aqz-KE-bpKQ".to_string(),
+        },
+        name: None,
+        description: None,
+        thumbnail: None,
+        subtitles: vec![],
+        behavior_hints: Default::default(),
+    };
+    assert_player_url(
+        midl.player.as_deref().expect("player URL"),
+        &expected_stream,
+        "/http%3A%2F%2Fdomain.root%2F/http%3A%2F%2Fdomain.root%2F/movie/tt1254207/yt_id%3AUCSMOQeBJ2RAnuFungnQOxLg%3Aaqz-KE-bpKQ",
+    );
 }

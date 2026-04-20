@@ -2,7 +2,8 @@ use crate::constants::BASE64;
 use crate::deep_links::{ExternalPlayerLink, VideoDeepLinks};
 use crate::types::addon::{ResourcePath, ResourceRequest};
 use crate::types::profile::Settings;
-use crate::types::resource::Video;
+use crate::types::resource::{Stream, StreamSource, Video};
+use crate::unit_tests::deep_links::helpers::assert_player_url;
 use base64::Engine;
 use std::str::FromStr;
 use url::Url;
@@ -36,10 +37,21 @@ fn video_deep_links() {
             YT_ID, YT_ID
         )
     );
-    assert_eq!(vdl.player, Some(format!(
-        "stremio:///player/eAEBFgDp%2F3sieXRJZCI6ImFxei1LRS1icEtRIn1RRQb5/http%3A%2F%2Fdomain.root%2F/http%3A%2F%2Fdomain.root%2F/movie/yt_id%3A{}/yt_id%3AUCSMOQeBJ2RAnuFungnQOxLg%3A{}",
-        YT_ID, YT_ID
-    )));
+    let expected_stream = Stream {
+        source: StreamSource::YouTube {
+            yt_id: YT_ID.to_string(),
+        },
+        name: None,
+        description: None,
+        thumbnail: None,
+        subtitles: vec![],
+        behavior_hints: Default::default(),
+    };
+    assert_player_url(
+        vdl.player.as_deref().expect("player URL"),
+        &expected_stream,
+        &format!("/http%3A%2F%2Fdomain.root%2F/http%3A%2F%2Fdomain.root%2F/movie/yt_id%3A{YT_ID}/yt_id%3AUCSMOQeBJ2RAnuFungnQOxLg%3A{YT_ID}"),
+    );
     assert_eq!(
         vdl.external_player,
         Some(ExternalPlayerLink {
