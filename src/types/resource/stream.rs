@@ -4,7 +4,6 @@ use std::{collections::HashMap, io::Write};
 use tracing::trace;
 
 use base64::Engine;
-use boolinator::Boolinator;
 use flate2::{
     write::{ZlibDecoder, ZlibEncoder},
     Compression,
@@ -117,9 +116,9 @@ impl Stream {
     pub fn youtube(video_id: &str) -> Option<Self> {
         video_id
             .starts_with(YOUTUBE_ADDON_ID_PREFIX)
-            .as_option()
             // video id is in format: yt_id:YT_CHANNEL_ID:YT_VIDEO_ID
-            .and_then(|_| video_id.split(':').nth(2))
+            .then(|| video_id.split(':').nth(2))
+            .flatten()
             .map(|yt_id| Self {
                 source: StreamSource::YouTube {
                     yt_id: yt_id.to_owned(),

@@ -12,7 +12,6 @@ use crate::types::addon::{
 };
 use crate::types::profile::Profile;
 use crate::types::resource::MetaItemPreview;
-use boolinator::Boolinator;
 use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
@@ -419,8 +418,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 .map(|extra_prop| {
                     let none_option =
                         (!extra_prop.is_required)
-                            .as_option()
-                            .map(|_| SelectableExtraOption {
+                            .then(|| SelectableExtraOption {
                                 value: None,
                                 selected: selected
                                     .request
