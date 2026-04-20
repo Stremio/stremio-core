@@ -1,6 +1,7 @@
 [toolchain]
-# 1.78 introduces a check which fails on the older
-# version of wasm-bindgen, while the newest wasm-bindgen
-# introduces an unknown panic when transpiled using
-# wasm2js
-channel = "1.77"
+# The wasm-bindgen 0.2.118 upgrade resolves the old 1.78+ incompatibility
+# documented here previously. Channel matches the workspace CI matrix.
+# If a wasm2js transpile step is reintroduced, verify compatibility and pin
+# back as needed.
+channel = "1.85"
+targets = ["wasm32-unknown-unknown"]

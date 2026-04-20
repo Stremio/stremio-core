@@ -43,6 +43,7 @@ mod model {
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
+    #[allow(dead_code)]
     pub struct SelectablePage {
         pub deep_links: LibraryDeepLinks,
     }
