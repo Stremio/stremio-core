@@ -1,5 +1,5 @@
 use crate::error::Error;
-use base64::{decode, encode};
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
 use std::{
     fmt::{Display, Formatter},
@@ -72,7 +72,7 @@ impl BitField8 {
 impl TryFrom<(String, Option<usize>)> for BitField8 {
     type Error = Error;
     fn try_from((encoded, length): (String, Option<usize>)) -> Result<Self, Self::Error> {
-        let compressed = decode(encoded)?;
+        let compressed = BASE64.decode(encoded)?;
         let mut values = vec![];
         let mut decoded = ZlibDecoder::new(&compressed[..]);
         decoded.read_to_end(&mut values)?;
@@ -86,7 +86,7 @@ impl TryFrom<&BitField8> for String {
     fn try_from(bit_field: &BitField8) -> Result<Self, Self::Error> {
         let mut encoder = ZlibEncoder::new(Vec::new(), Compression::new(6));
         encoder.write_all(&bit_field.values)?;
-        Ok(encode(encoder.finish()?))
+        Ok(BASE64.encode(encoder.finish()?))
     }
 }
 

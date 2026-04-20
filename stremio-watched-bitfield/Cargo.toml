@@ -16,7 +16,7 @@ default = ["serde"]
 serde = ["dep:serde"]
 
 [dependencies]
-base64 = "0.13.0"
+base64 = "0.22"
 flate2 = "1.0.*"
 # (de)serialization of WatchedBitField
 serde = { version = "1", default-features = false, optional = true }
