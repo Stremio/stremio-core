@@ -16,7 +16,6 @@ use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, EVENTS, FETCH_HANDLER, REQUESTS, STATES,
 };
 use assert_matches::assert_matches;
-use enclose::enclose;
 use futures::future;
 use std::any::Any;
 use std::sync::{Arc, RwLock};
@@ -63,17 +62,16 @@ fn default_catalog() {
         1000,
     );
     let runtime = Arc::new(RwLock::new(runtime));
-    TestEnv::run_with_runtime(
-        rx,
-        runtime.clone(),
-        enclose!((runtime) move || {
+    TestEnv::run_with_runtime(rx, runtime.clone(), {
+        let runtime = runtime.clone();
+        move || {
             let runtime = runtime.read().unwrap();
             runtime.dispatch(RuntimeAction {
                 field: None,
                 action: Action::Load(ActionLoad::CatalogWithFilters(None)),
             });
-        }),
-    );
+        }
+    });
     let events = EVENTS.read().unwrap();
     assert_eq!(events.len(), 2);
     assert_matches!(
@@ -179,17 +177,17 @@ fn search_catalog() {
             },
         },
     };
-    TestEnv::run_with_runtime(
-        rx,
-        runtime.clone(),
-        enclose!((runtime, selected => selected) move || {
+    TestEnv::run_with_runtime(rx, runtime.clone(), {
+        let runtime = runtime.clone();
+        let selected = selected.clone();
+        move || {
             let runtime = runtime.read().unwrap();
             runtime.dispatch(RuntimeAction {
                 field: None,
                 action: Action::Load(ActionLoad::CatalogWithFilters(Some(selected))),
             });
-        }),
-    );
+        }
+    });
     let events = EVENTS.read().unwrap();
     assert_eq!(events.len(), 2);
     assert_matches!(

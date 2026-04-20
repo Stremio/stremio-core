@@ -38,7 +38,6 @@ regex = {version = "1.8", optional = true }
 # used for Env impl
 hex = { version = "0.4", optional = true }
 either = "1.6.*"
-enclose = "1.1.*"
 itertools = "0.14.*"
 
 # WASM

@@ -30,7 +30,6 @@ use crate::{
 
 #[cfg(test)]
 use derivative::Derivative;
-use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 use serde::Serialize;
 
@@ -382,9 +381,10 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                 library_items_result: datastore_library_result,
             })
         }
-        .map(enclose!((auth_request) move |result| {
-            Msg::Internal(Internal::CtxAuthResult(auth_request, result))
-        }))
+        .map({
+            let auth_request = auth_request.clone();
+            move |result| Msg::Internal(Internal::CtxAuthResult(auth_request, result))
+        })
         .boxed_env(),
     )
     .into()
@@ -406,13 +406,16 @@ fn delete_session<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
                 APIResult::Ok(result) => future::ok(result),
                 APIResult::Err(error) => future::err(CtxError::from(error)),
             })
-            .map(enclose!((auth_key) move |result| match result {
-                Ok(_) => Msg::Event(Event::SessionDeleted { auth_key }),
-                Err(error) => Msg::Event(Event::Error {
-                    error,
-                    source: Box::new(Event::SessionDeleted { auth_key }),
-                }),
-            }))
+            .map({
+                let auth_key = auth_key.clone();
+                move |result| match result {
+                    Ok(_) => Msg::Event(Event::SessionDeleted { auth_key }),
+                    Err(error) => Msg::Event(Event::Error {
+                        error,
+                        source: Box::new(Event::SessionDeleted { auth_key }),
+                    }),
+                }
+            })
             .boxed_env(),
     )
     .into()

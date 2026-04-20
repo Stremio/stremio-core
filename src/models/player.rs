@@ -1608,11 +1608,10 @@ fn send_watched<E: Env + 'static>(auth_key: AuthKey, meta_path: &ResourcePath) -
 
     EffectFuture::Concurrent(
         E::fetch::<_, RatingSendResponse>(request.into())
-            .map(enclose::enclose!((meta_id) move |result| {
-                Msg::Internal(Internal::WatchedSendResult(
-                    meta_id, result,
-                ))
-            }))
+            .map({
+                let meta_id = meta_id.clone();
+                move |result| Msg::Internal(Internal::WatchedSendResult(meta_id, result))
+            })
             .boxed_env(),
     )
     .into()

@@ -1,4 +1,3 @@
-use enclose::enclose;
 use futures::FutureExt;
 use std::collections::hash_map::Entry;
 
@@ -105,13 +104,16 @@ pub fn update_streams<E: Env + 'static>(
 fn push_streams_to_storage<E: Env + 'static>(streams: &StreamsBucket) -> Effect {
     EffectFuture::Sequential(
         E::set_storage(STREAMS_STORAGE_KEY, Some(&streams))
-            .map(enclose!((streams.uid => uid) move |result| match result {
-                Ok(_) => Msg::Event(Event::StreamsPushedToStorage { uid }),
-                Err(error) => Msg::Event(Event::Error {
-                    error: CtxError::from(error),
-                    source: Box::new(Event::StreamsPushedToStorage { uid }),
-                })
-            }))
+            .map({
+                let uid = streams.uid.clone();
+                move |result| match result {
+                    Ok(_) => Msg::Event(Event::StreamsPushedToStorage { uid }),
+                    Err(error) => Msg::Event(Event::Error {
+                        error: CtxError::from(error),
+                        source: Box::new(Event::StreamsPushedToStorage { uid }),
+                    }),
+                }
+            })
             .boxed_env(),
     )
     .into()

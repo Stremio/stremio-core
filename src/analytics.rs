@@ -5,7 +5,6 @@ use std::{
 };
 
 use derivative::Derivative;
-use enclose::enclose;
 use futures::{
     future::{self, Either},
     Future, FutureExt,
@@ -120,19 +119,22 @@ impl<E: Env + 'static> Analytics<E> {
                             Err(EnvError::Fetch(_)) | Err(EnvError::Serde(_)) => Err(()),
                             _ => Ok(()),
                         })
-                        .then(enclose!((self.state => state) move |result| async move {
-                            let mut state = state.lock().expect("analytics state lock failed");
-                            if state.pending == Some(batch) {
-                                match result {
-                                    Ok(_) => {
-                                        state.pending = None;
-                                    }
-                                    Err(_) => {
-                                        state.revert_pending();
-                                    }
+                        .then({
+                            let state = self.state.clone();
+                            move |result| async move {
+                                let mut state = state.lock().expect("analytics state lock failed");
+                                if state.pending == Some(batch) {
+                                    match result {
+                                        Ok(_) => {
+                                            state.pending = None;
+                                        }
+                                        Err(_) => {
+                                            state.revert_pending();
+                                        }
+                                    };
                                 };
-                            };
-                        })),
+                            }
+                        }),
                 );
             };
         };

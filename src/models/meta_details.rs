@@ -1,8 +1,6 @@
-use std::{borrow::Cow, marker::PhantomData};
-
-use enclose::enclose;
 use futures::FutureExt;
 use serde::{Deserialize, Serialize};
+use std::{borrow::Cow, marker::PhantomData};
 
 use stremio_watched_bitfield::WatchedBitField;
 
@@ -526,11 +524,10 @@ fn get_rating<E: Env + 'static>(auth_key: AuthKey, meta_path: &ResourcePath) -> 
 
     EffectFuture::Concurrent(
         E::fetch::<_, RatingGetStatusResponse>(request.into())
-            .map(enclose!((meta_id) move |result| {
-                Msg::Internal(Internal::RatingGetStatusResult(
-                    meta_id, result,
-                ))
-            }))
+            .map({
+                let meta_id = meta_id.clone();
+                move |result| Msg::Internal(Internal::RatingGetStatusResult(meta_id, result))
+            })
             .boxed_env(),
     )
     .into()
@@ -552,11 +549,10 @@ fn send_rating<E: Env + 'static>(
 
     EffectFuture::Concurrent(
         E::fetch::<_, RatingSendResponse>(request.into())
-            .map(enclose!((meta_id) move |result| {
-                Msg::Internal(Internal::RatingSendResult(
-                    meta_id, result,
-                ))
-            }))
+            .map({
+                let meta_id = meta_id.clone();
+                move |result| Msg::Internal(Internal::RatingSendResult(meta_id, result))
+            })
             .boxed_env(),
     )
     .into()

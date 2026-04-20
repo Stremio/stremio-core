@@ -6,7 +6,6 @@ use std::{
 };
 
 use chrono::{DateTime, Utc};
-use enclose::enclose;
 use futures::{channel::mpsc::Receiver, future, Future, StreamExt, TryFutureExt};
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
@@ -110,10 +109,13 @@ impl TestEnv {
                 events.push(Box::new(event) as Box<dyn Any + Send + Sync>);
                 future::ready(())
             }));
-            TestEnv::exec_concurrent(enclose!((runtime) async move {
-                let mut runtime = runtime.write().expect("runtime read failed");
-                runtime.close().await.unwrap();
-            }));
+            TestEnv::exec_concurrent({
+                let runtime = runtime.clone();
+                async move {
+                    let mut runtime = runtime.write().expect("runtime read failed");
+                    runtime.close().await.unwrap();
+                }
+            });
         });
         rt.block_on(phase2);
     }

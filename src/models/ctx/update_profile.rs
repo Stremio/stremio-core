@@ -1,7 +1,5 @@
-use std::collections::HashSet;
-
-use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
+use std::collections::HashSet;
 
 use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
 use crate::models::ctx::{CtxError, CtxStatus, OtherError};
@@ -525,13 +523,16 @@ fn pull_addons_from_api<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
 fn push_profile_to_storage<E: Env + 'static>(profile: &Profile) -> Effect {
     EffectFuture::Sequential(
         E::set_storage(PROFILE_STORAGE_KEY, Some(profile))
-            .map(enclose!((profile.uid() => uid) move |result| match result {
-                Ok(_) => Msg::Event(Event::ProfilePushedToStorage { uid }),
-                Err(error) => Msg::Event(Event::Error {
-                    error: CtxError::from(error),
-                    source: Box::new(Event::ProfilePushedToStorage { uid }),
-                })
-            }))
+            .map({
+                let uid = profile.uid().clone();
+                move |result| match result {
+                    Ok(_) => Msg::Event(Event::ProfilePushedToStorage { uid }),
+                    Err(error) => Msg::Event(Event::Error {
+                        error: CtxError::from(error),
+                        source: Box::new(Event::ProfilePushedToStorage { uid }),
+                    }),
+                }
+            })
             .boxed_env(),
     )
     .into()

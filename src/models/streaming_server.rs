@@ -1,4 +1,3 @@
-use enclose::enclose;
 use futures::{FutureExt, TryFutureExt};
 use http::request::Request;
 use magnet_url::{Magnet, MagnetError};
@@ -414,11 +413,10 @@ fn get_settings<E: Env + 'static>(url: &Url) -> Effect {
         .expect("request builder failed");
     EffectFuture::Concurrent(
         E::fetch::<_, SettingsResponse>(request)
-            .map(enclose!((url) move |result| {
-                Msg::Internal(Internal::StreamingServerSettingsResult(
-                    url, result,
-                ))
-            }))
+            .map({
+                let url = url.clone();
+                move |result| Msg::Internal(Internal::StreamingServerSettingsResult(url, result))
+            })
             .boxed_env(),
     )
     .into()
@@ -432,9 +430,12 @@ fn get_playback_devices<E: Env + 'static>(url: &Url) -> Effect {
     EffectFuture::Concurrent(
         E::fetch::<_, Vec<PlaybackDevice>>(request)
             .map_ok(|resp| resp)
-            .map(enclose!((url) move |result|
-                Msg::Internal(Internal::StreamingServerPlaybackDevicesResult(url, result))
-            ))
+            .map({
+                let url = url.clone();
+                move |result| {
+                    Msg::Internal(Internal::StreamingServerPlaybackDevicesResult(url, result))
+                }
+            })
             .boxed_env(),
     )
     .into()
@@ -448,9 +449,10 @@ fn get_network_info<E: Env + 'static>(url: &Url) -> Effect {
     EffectFuture::Concurrent(
         E::fetch::<_, NetworkInfo>(request)
             .map_ok(|resp| resp)
-            .map(enclose!((url) move |result|
-                Msg::Internal(Internal::StreamingServerNetworkInfoResult(url, result))
-            ))
+            .map({
+                let url = url.clone();
+                move |result| Msg::Internal(Internal::StreamingServerNetworkInfoResult(url, result))
+            })
             .boxed_env(),
     )
     .into()
@@ -464,9 +466,10 @@ fn get_device_info<E: Env + 'static>(url: &Url) -> Effect {
     EffectFuture::Concurrent(
         E::fetch::<_, DeviceInfo>(request)
             .map_ok(|resp| resp)
-            .map(enclose!((url) move |result|
-                Msg::Internal(Internal::StreamingServerDeviceInfoResult(url, result))
-            ))
+            .map({
+                let url = url.clone();
+                move |result| Msg::Internal(Internal::StreamingServerDeviceInfoResult(url, result))
+            })
             .boxed_env(),
     )
     .into()
@@ -508,11 +511,12 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
     EffectFuture::Concurrent(
         E::fetch::<_, SuccessResponse>(request)
             .map_ok(|_| ())
-            .map(enclose!((url) move |result| {
-                Msg::Internal(Internal::StreamingServerUpdateSettingsResult(
-                    url, result,
-                ))
-            }))
+            .map({
+                let url = url.clone();
+                move |result| {
+                    Msg::Internal(Internal::StreamingServerUpdateSettingsResult(url, result))
+                }
+            })
             .boxed_env(),
     )
     .into()
@@ -536,11 +540,14 @@ fn create_magnet<E: Env + 'static>(url: &Url, info_hash: InfoHash, announce: &[S
     EffectFuture::Concurrent(
         create_magnet_request::<E>(url.to_owned(), info_hash, announce.to_vec())
             .map_ok(|_response| ())
-            .map(enclose!((info_hash) move |result| {
-                Msg::Internal(Internal::StreamingServerCreateTorrentResult(
-                    info_hash, result,
-                ))
-            }))
+            .map({
+                let info_hash = info_hash.clone();
+                move |result| {
+                    Msg::Internal(Internal::StreamingServerCreateTorrentResult(
+                        info_hash, result,
+                    ))
+                }
+            })
             .boxed_env(),
     )
     .into()
@@ -559,11 +566,14 @@ pub fn create_torrent_request<E: Env + 'static>(
     EffectFuture::Concurrent(
         E::fetch::<_, serde_json::Value>(request.into())
             .map_ok(|_| ())
-            .map(enclose!((info_hash) move |result| {
-                Msg::Internal(Internal::StreamingServerCreateTorrentResult(
-                    info_hash, result,
-                ))
-            }))
+            .map({
+                let info_hash = info_hash.clone();
+                move |result| {
+                    Msg::Internal(Internal::StreamingServerCreateTorrentResult(
+                        info_hash, result,
+                    ))
+                }
+            })
             .boxed_env(),
     )
     .into()
@@ -647,16 +657,20 @@ fn parse_torrent(torrent: &[u8]) -> Result<(InfoHash, Vec<String>), serde_bencod
 }
 
 fn get_torrent_statistics<E: Env + 'static>(url: &Url, request: &StatisticsRequest) -> Effect {
-    let fetch_fut = enclose!((url, request) async move {
-        let request = TorrentStatisticsRequest {
-            server_url: url,
-            request,
-        };
+    let fetch_fut = {
+        let url = url.clone();
+        let request = request.clone();
+        async move {
+            let request = TorrentStatisticsRequest {
+                server_url: url,
+                request,
+            };
 
-        let statistics: Option<Statistics> = E::fetch(request.into()).await?;
+            let statistics: Option<Statistics> = E::fetch(request.into()).await?;
 
-        Ok(statistics)
-    });
+            Ok(statistics)
+        }
+    };
 
     // let statistics_request = request.to_owned();
     // It's happening when the engine is destroyed for inactivity:
@@ -664,9 +678,16 @@ fn get_torrent_statistics<E: Env + 'static>(url: &Url, request: &StatisticsReque
     // it will create a new engine and return the correct stats
     EffectFuture::Concurrent(
         fetch_fut
-            .map(enclose!((url, request) move |result|
-                Msg::Internal(Internal::StreamingServerStatisticsResult((url, request), result))
-            ))
+            .map({
+                let url = url.clone();
+                let request = request.clone();
+                move |result| {
+                    Msg::Internal(Internal::StreamingServerStatisticsResult(
+                        (url, request),
+                        result,
+                    ))
+                }
+            })
             .boxed_env(),
     )
     .into()
@@ -694,9 +715,9 @@ fn play_on_device<E: Env + 'static>(url: &Url, args: &PlayOnDeviceArgs) -> Effec
     EffectFuture::Concurrent(
         E::fetch::<_, serde_json::Value>(request)
             .map_ok(|_| ())
-            .map(enclose!(() move |result|
+            .map(move |result| {
                 Msg::Internal(Internal::StreamingServerPlayOnDeviceResult(device, result))
-            ))
+            })
             .boxed_env(),
     )
     .into()
@@ -719,9 +740,10 @@ fn get_https_endpoint<E: Env + 'static>(
         .expect("request builder failed");
     EffectFuture::Concurrent(
         E::fetch::<_, GetHTTPSResponse>(request)
-            .map(enclose!((url) move |result|
-                Msg::Internal(Internal::StreamingServerGetHTTPSResult(url, result))
-            ))
+            .map({
+                let url = url.clone();
+                move |result| Msg::Internal(Internal::StreamingServerGetHTTPSResult(url, result))
+            })
             .boxed_env(),
     )
     .into()

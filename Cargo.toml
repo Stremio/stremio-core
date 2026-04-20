@@ -69,7 +69,6 @@ sha1 = "0.10"
 sha2 = "0.10"
 
 either = "1.6"
-enclose = "1.1"
 derivative = "2.2"
 derive_more = { version = "2", features = ["from", "into", "into_iterator", "try_into", "deref"] }
 strum = { version = "0.27", features = ["derive"] }

@@ -6,7 +6,6 @@ use std::{
 
 use assert_matches::assert_matches;
 use chrono::{TimeZone, Utc};
-use enclose::enclose;
 use futures::future;
 use semver::Version;
 use serde::Deserialize;
@@ -372,13 +371,17 @@ fn test_pull_notifications_test_cases() {
 
     for test in tests {
         let _env_lock = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
-        let fetch_handler = enclose!((test.network_requests => network_requests) move |request: Request| -> TryEnvFuture<Box<dyn Any + Send>> {
-            if let Some(result) = network_requests.get(&request.url) {
-                return future::ok(Box::new(result.to_owned()) as Box<dyn Any + Send>).boxed_env();
-            }
+        let fetch_handler = {
+            let network_requests = test.network_requests.clone();
+            move |request: Request| -> TryEnvFuture<Box<dyn Any + Send>> {
+                if let Some(result) = network_requests.get(&request.url) {
+                    return future::ok(Box::new(result.to_owned()) as Box<dyn Any + Send>)
+                        .boxed_env();
+                }
 
-            default_fetch_handler(request)
-        });
+                default_fetch_handler(request)
+            }
+        };
         *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
 
         let (runtime, _rx) = Runtime::<TestEnv, _>::new(
@@ -516,17 +519,16 @@ fn test_dismiss_notification() {
     let expected_last_watched = Utc.with_ymd_and_hms(2023, 8, 14, 0, 0, 0).unwrap();
     *NOW.write().unwrap() = expected_last_watched;
 
-    TestEnv::run_with_runtime(
-        rx,
-        runtime.clone(),
-        enclose!((runtime) move || {
+    TestEnv::run_with_runtime(rx, runtime.clone(), {
+        let runtime = runtime.clone();
+        move || {
             let runtime = runtime.read().unwrap();
             runtime.dispatch(RuntimeAction {
                 field: None,
                 action: Action::Ctx(ActionCtx::DismissNotificationItem("tt1".into())),
             })
-        }),
-    );
+        }
+    });
     let events = EVENTS.read().unwrap();
     assert_eq!(events.len(), 5);
 

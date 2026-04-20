@@ -16,7 +16,6 @@ use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, EVENTS, FETCH_HANDLER, REQUESTS, STATES,
 };
 use assert_matches::assert_matches;
-use enclose::enclose;
 use futures::future;
 use std::any::Any;
 use std::sync::{Arc, RwLock};
@@ -67,17 +66,16 @@ fn data_export_with_user() {
     let data_export = DataExport::default();
     let (runtime, rx) = Runtime::<TestEnv, _>::new(TestModel { ctx, data_export }, vec![], 1000);
     let runtime = Arc::new(RwLock::new(runtime));
-    TestEnv::run_with_runtime(
-        rx,
-        runtime.clone(),
-        enclose!((runtime) move || {
+    TestEnv::run_with_runtime(rx, runtime.clone(), {
+        let runtime = runtime.clone();
+        move || {
             let runtime = runtime.read().unwrap();
             runtime.dispatch(RuntimeAction {
                 field: None,
                 action: Action::Load(ActionLoad::DataExport),
             });
-        }),
-    );
+        }
+    });
     let events = EVENTS.read().unwrap();
     assert_eq!(events.len(), 2);
 
@@ -151,17 +149,16 @@ fn data_export_without_a_user() {
     let data_export = DataExport::default();
     let (runtime, rx) = Runtime::<TestEnv, _>::new(TestModel { ctx, data_export }, vec![], 1000);
     let runtime = Arc::new(RwLock::new(runtime));
-    TestEnv::run_with_runtime(
-        rx,
-        runtime.clone(),
-        enclose!((runtime) move || {
+    TestEnv::run_with_runtime(rx, runtime.clone(), {
+        let runtime = runtime.clone();
+        move || {
             let runtime = runtime.read().unwrap();
             runtime.dispatch(RuntimeAction {
                 field: None,
                 action: Action::Load(ActionLoad::DataExport),
             });
-        }),
-    );
+        }
+    });
     let events = EVENTS.read().unwrap();
     assert!(events.is_empty());
 

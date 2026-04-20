@@ -4,8 +4,6 @@ use crate::models::common::{eq_update, Loadable};
 use crate::runtime::msg::{Internal, Msg};
 use crate::runtime::{EffectFuture, Effects, Env, EnvError, EnvFutureExt};
 use crate::types::addon::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
-
-use enclose::enclose;
 use futures::FutureExt;
 use serde::Serialize;
 
@@ -111,9 +109,15 @@ where
             Effects::future(EffectFuture::Concurrent(
                 E::addon_transport(&request.base)
                     .resource(&request.path)
-                    .map(enclose!((request) move |result| {
-                        Msg::Internal(Internal::ResourceRequestResult(request, Box::new(result)))
-                    }))
+                    .map({
+                        let request = request.clone();
+                        move |result| {
+                            Msg::Internal(Internal::ResourceRequestResult(
+                                request,
+                                Box::new(result),
+                            ))
+                        }
+                    })
                     .boxed_env(),
             ))
         }

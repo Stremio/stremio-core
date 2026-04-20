@@ -316,12 +316,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 
 [[package]]
-name = "enclose"
-version = "1.1.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1056f553da426e9c025a662efa48b52e62e0a3a7648aa2d15aeaaf7f0d329357"
-
-[[package]]
 name = "equivalent"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1081,7 +1075,6 @@ dependencies = [
  "derivative",
  "derive_more",
  "either",
- "enclose",
  "flate2",
  "futures",
  "hex",
@@ -1123,7 +1116,6 @@ dependencies = [
  "chrono",
  "console_error_panic_hook",
  "either",
- "enclose",
  "futures",
  "getrandom",
  "gloo-utils",

@@ -1,7 +1,6 @@
 use crate::runtime::msg::{Action, Event, Msg};
 use crate::runtime::{Effect, EffectFuture, Env, Model};
 use derivative::Derivative;
-use enclose::enclose;
 use futures::channel::mpsc::{channel, Receiver, Sender};
 use futures::FutureExt;
 #[cfg(test)]
@@ -86,25 +85,30 @@ where
                 model.to_owned(),
             ));
         };
-        effects
-            .into_iter()
-            .for_each(enclose!((self.clone() => runtime) move |effect| {
-                match effect {
-                    Effect::Msg(msg) => {
-                        runtime.handle_effect_output(*msg);
-                    }
-                    Effect::Future(EffectFuture::Sequential(future)) => {
-                        E::exec_sequential(future.then(enclose!((runtime) move |msg| async move {
-                            runtime.handle_effect_output(msg);
-                        })))
-                    },
-                    Effect::Future(EffectFuture::Concurrent(future)) => {
-                        E::exec_concurrent(future.then(enclose!((runtime) move |msg| async move {
-                            runtime.handle_effect_output(msg);
-                        })))
-                    }
+        effects.into_iter().for_each({
+            let runtime = self.clone();
+            move |effect| match effect {
+                Effect::Msg(msg) => {
+                    runtime.handle_effect_output(*msg);
                 }
-            }));
+                Effect::Future(EffectFuture::Sequential(future)) => {
+                    E::exec_sequential(future.then({
+                        let runtime = runtime.clone();
+                        move |msg| async move {
+                            runtime.handle_effect_output(msg);
+                        }
+                    }))
+                }
+                Effect::Future(EffectFuture::Concurrent(future)) => {
+                    E::exec_concurrent(future.then({
+                        let runtime = runtime.clone();
+                        move |msg| async move {
+                            runtime.handle_effect_output(msg);
+                        }
+                    }))
+                }
+            }
+        });
     }
     fn handle_effect_output(&self, msg: Msg) {
         match msg {

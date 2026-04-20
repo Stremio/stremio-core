@@ -1,5 +1,4 @@
 use chrono::DateTime;
-use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 
 use crate::constants::DISMISSED_EVENTS_STORAGE_KEY;
@@ -140,15 +139,16 @@ fn push_dismissed_events_to_storage<E: Env + 'static>(
 ) -> Effect {
     EffectFuture::Sequential(
         E::set_storage(DISMISSED_EVENTS_STORAGE_KEY, Some(&dismissed_events))
-            .map(
-                enclose!((dismissed_events.uid => uid) move |result| match result {
+            .map({
+                let uid = dismissed_events.uid.clone();
+                move |result| match result {
                     Ok(_) => Msg::Event(Event::DismissedEventsPushedToStorage { uid }),
                     Err(error) => Msg::Event(Event::Error {
                         error: CtxError::from(error),
                         source: Box::new(Event::DismissedEventsPushedToStorage { uid }),
-                    })
-                }),
-            )
+                    }),
+                }
+            })
             .boxed_env(),
     )
     .into()

@@ -1,10 +1,8 @@
-use std::sync::RwLock;
-
-use enclose::enclose;
 use futures::{future, try_join, FutureExt, StreamExt};
 use gloo_utils::format::JsValueSerdeExt;
 use serde::Serialize;
 use std::sync::LazyLock;
+use std::sync::RwLock;
 use tracing::{error, info, Level};
 use tracing_wasm::WASMLayerConfigBuilder;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue, UnwrapThrowExt};
@@ -166,8 +164,9 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                     );
                     WebEnv::exec_concurrent(rx.for_each(move |event| {
                         if let RuntimeEvent::CoreEvent(event) = &event {
-                            WebEnv::exec_concurrent(WebEnv::get_location_hash().then(
-                                enclose!((event) move |location_hash| async move {
+                            WebEnv::exec_concurrent(WebEnv::get_location_hash().then({
+                                let event = event.clone();
+                                move |location_hash| async move {
                                     let runtime = RUNTIME.read().expect("runtime read failed");
                                     let runtime = runtime
                                         .as_ref()
@@ -175,17 +174,25 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                                         .as_ref()
                                         .expect("runtime is not ready");
                                     let model = runtime.model().expect("model read failed");
-                                    let path = location_hash.split('#').last().map(|path| path.to_owned()).unwrap_or_default();
+                                    let path = location_hash
+                                        .split('#')
+                                        .last()
+                                        .map(|path| path.to_owned())
+                                        .unwrap_or_default();
                                     WebEnv::emit_to_analytics(
                                         &WebEvent::CoreEvent(Box::new(event.to_owned())),
                                         &model,
-                                        &path
+                                        &path,
                                     );
-                                }),
-                            ));
+                                }
+                            }));
                         };
                         emit_to_ui
-                            .call1(&JsValue::NULL, &<JsValue as JsValueSerdeExt>::from_serde(&event).expect("Event handler: JsValue from Event"))
+                            .call1(
+                                &JsValue::NULL,
+                                &<JsValue as JsValueSerdeExt>::from_serde(&event)
+                                    .expect("Event handler: JsValue from Event"),
+                            )
                             .expect("emit event failed");
                         future::ready(())
                     }));

@@ -7,7 +7,6 @@ use crate::types::api::{
 };
 use derivative::Derivative;
 use derive_more::From;
-use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 use serde::Serialize;
 use std::fmt;
@@ -135,9 +134,10 @@ fn read_data<E: Env + 'static>(code: &str) -> Effect {
             APIResult::Ok(result) => future::ok(result),
             APIResult::Err(error) => future::err(LinkError::from(error)),
         })
-        .map(enclose!((code.to_owned() => code) move |result| {
-            Msg::Internal(Internal::LinkDataResult(code, result))
-        }))
+        .map({
+            let code = code.to_owned();
+            move |result| Msg::Internal(Internal::LinkDataResult(code, result))
+        })
         .boxed_env(),
     )
     .into()

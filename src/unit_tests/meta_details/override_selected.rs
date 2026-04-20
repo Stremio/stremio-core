@@ -8,7 +8,6 @@ use crate::types::profile::Profile;
 use crate::types::resource::{MetaItem, MetaItemBehaviorHints, MetaItemPreview};
 use crate::unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, STATES};
 use assert_matches::assert_matches;
-use enclose::enclose;
 use futures::future;
 use std::any::Any;
 use std::sync::{Arc, RwLock};
@@ -65,10 +64,9 @@ fn override_selected_default_video_id() {
         1000,
     );
     let runtime = Arc::new(RwLock::new(runtime));
-    TestEnv::run_with_runtime(
-        rx,
-        runtime.clone(),
-        enclose!((runtime) move || {
+    TestEnv::run_with_runtime(rx, runtime.clone(), {
+        let runtime = runtime.clone();
+        move || {
             let runtime = runtime.read().unwrap();
             runtime.dispatch(RuntimeAction {
                 field: None,
@@ -77,14 +75,14 @@ fn override_selected_default_video_id() {
                         resource: META_RESOURCE_NAME.to_owned(),
                         r#type: "movie".to_owned(),
                         id: "tt1".to_owned(),
-                        extra: vec![]
+                        extra: vec![],
                     },
                     stream_path: None,
                     guess_stream: true,
                 })),
             });
-        }),
-    );
+        }
+    });
     let states = STATES.read().unwrap();
     let states = states
         .iter()
@@ -160,10 +158,9 @@ fn override_selected_meta_id() {
         1000,
     );
     let runtime = Arc::new(RwLock::new(runtime));
-    TestEnv::run_with_runtime(
-        rx,
-        runtime.clone(),
-        enclose!((runtime) move || {
+    TestEnv::run_with_runtime(rx, runtime.clone(), {
+        let runtime = runtime.clone();
+        move || {
             let runtime = runtime.read().unwrap();
             runtime.dispatch(RuntimeAction {
                 field: None,
@@ -172,14 +169,14 @@ fn override_selected_meta_id() {
                         resource: META_RESOURCE_NAME.to_owned(),
                         r#type: "movie".to_owned(),
                         id: "tt1".to_owned(),
-                        extra: vec![]
+                        extra: vec![],
                     },
                     stream_path: None,
                     guess_stream: true,
                 })),
             });
-        }),
-    );
+        }
+    });
     let states = STATES.read().unwrap();
     let states = states
         .iter()

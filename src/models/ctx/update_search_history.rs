@@ -1,4 +1,3 @@
-use enclose::enclose;
 use futures::FutureExt;
 
 use crate::constants::SEARCH_HISTORY_STORAGE_KEY;
@@ -48,15 +47,16 @@ fn push_search_history_to_storage<E: Env + 'static>(
 ) -> Effect {
     EffectFuture::Sequential(
         E::set_storage(SEARCH_HISTORY_STORAGE_KEY, Some(&search_history))
-            .map(
-                enclose!((search_history.uid => uid) move |result| match result {
+            .map({
+                let uid = search_history.uid.clone();
+                move |result| match result {
                     Ok(_) => Msg::Event(Event::SearchHistoryPushedToStorage { uid }),
                     Err(error) => Msg::Event(Event::Error {
                         error: CtxError::from(error),
                         source: Box::new(Event::SearchHistoryPushedToStorage { uid }),
-                    })
-                }),
-            )
+                    }),
+                }
+            })
             .boxed_env(),
     )
     .into()

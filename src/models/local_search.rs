@@ -1,6 +1,4 @@
 //! Local autocompletion search
-
-use enclose::enclose;
 use futures::FutureExt;
 use http::Request;
 use magnet_url::Magnet;
@@ -106,13 +104,14 @@ impl LocalSearch {
 
         EffectFuture::Concurrent(
             E::fetch::<_, SearchableItemsResponse>(request)
-                .map(enclose!((url) move |response| {
-                    let result = response.map(|response| response.0);
+                .map({
+                    let url = url.clone();
+                    move |response| {
+                        let result = response.map(|response| response.0);
 
-                    Msg::Internal(Internal::LoadLocalSearchResult(
-                        url, result,
-                    ))
-                }))
+                        Msg::Internal(Internal::LoadLocalSearchResult(url, result))
+                    }
+                })
                 .boxed_env(),
         )
         .into()
