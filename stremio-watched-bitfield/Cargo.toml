@@ -4,8 +4,9 @@ version = "0.1.0"
 edition = "2021"
 publish = false
 
-# because of `dep:serde` supported after 1.60
-rust-version = "1.60"
+# Aligned with the workspace MSRV. Originally pinned at 1.60 for `dep:serde`
+# syntax; raising to 1.85 keeps all three crates on one Rust version.
+rust-version = "1.85"
 
 [lib]
 doctest = false
