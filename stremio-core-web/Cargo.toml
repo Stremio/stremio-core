@@ -34,7 +34,7 @@ url = { version = "2.4.*", features = ["serde"] }
 chrono = "0.4.*"
 semver = { version = "1", features = ["serde"] }
 # used for Env impl
-regex = {version = "1.8", optional = true }
+regex = {version = "1.11", optional = true }
 # used for Env impl
 hex = { version = "0.4", optional = true }
 either = "1.6.*"

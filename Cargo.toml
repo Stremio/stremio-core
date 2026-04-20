@@ -88,7 +88,7 @@ hex = "0.4"
 anyhow = "1.0"
 thiserror = "2"
 
-regex = "1.8"
+regex = "1.11"
 
 # local search and autocomplete functionallity
 localsearch = { version = "0.1.0", git = "https://github.com/Stremio/local-search", branch = "main" }
