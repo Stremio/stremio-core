@@ -302,11 +302,12 @@ impl Env for WebEnv {
             }
             _ => None,
         };
-        let mut request_options = web_sys::RequestInit::new();
-        request_options
-            .method(method)
-            .headers(&headers)
-            .body(body.as_ref());
+        let request_options = web_sys::RequestInit::new();
+        request_options.set_method(method);
+        request_options.set_headers(&headers);
+        if let Some(body) = body.as_ref() {
+            request_options.set_body(body);
+        }
 
         let request = web_sys::Request::new_with_str_and_init(&url, &request_options)
             .expect("request builder failed");
