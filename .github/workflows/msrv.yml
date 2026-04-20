@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  RUST_MSRV_VERSION: '1.77'
+  RUST_MSRV_VERSION: '1.85'
 
 jobs:
   build:

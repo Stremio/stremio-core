@@ -4,8 +4,8 @@ version = "0.1.0"
 authors = ["Smart Code OOD"]
 edition = "2021"
 
-# When upgrading MSRV make sure to update the msrv.yaml workflow
-rust-version = "1.77"
+# When upgrading MSRV make sure to update the msrv.yml workflow
+rust-version = "1.85"
 
 [profile.release]
 lto = true

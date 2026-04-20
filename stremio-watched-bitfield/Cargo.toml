@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 publish = false
 
-# because of `dep:serde` supported after 1.60
-rust-version = "1.60"
+# Aligned with the workspace MSRV.
+rust-version = "1.85"
 
 [lib]
 doctest = false
