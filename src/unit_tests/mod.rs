@@ -10,4 +10,5 @@ mod link;
 mod meta_details;
 mod player;
 mod serde;
+mod snapshots;
 mod streaming_server;

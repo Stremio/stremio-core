@@ -1,0 +1,11 @@
+---
+source: src/unit_tests/snapshots.rs
+expression: "NotificationsBucket::default()"
+snapshot_kind: text
+---
+{
+  "uid": null,
+  "items": {},
+  "lastUpdated": null,
+  "created": "1970-01-01T00:00:00Z"
+}

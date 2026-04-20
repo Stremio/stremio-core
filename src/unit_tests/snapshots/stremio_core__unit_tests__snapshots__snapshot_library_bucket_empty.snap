@@ -1,0 +1,9 @@
+---
+source: src/unit_tests/snapshots.rs
+expression: "LibraryBucket::default()"
+snapshot_kind: text
+---
+{
+  "uid": null,
+  "items": {}
+}
