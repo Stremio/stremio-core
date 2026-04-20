@@ -1674,7 +1674,12 @@
 <a href="#1673" id="1673">1673</a>
 <a href="#1674" id="1674">1674</a>
 <a href="#1675" id="1675">1675</a>
-<a href="#1676" id="1676">1676</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#1676" id="1676">1676</a>
+<a href="#1677" id="1677">1677</a>
+<a href="#1678" id="1678">1678</a>
+<a href="#1679" id="1679">1679</a>
+<a href="#1680" id="1680">1680</a>
+<a href="#1681" id="1681">1681</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>std::ops::Div;
 
 <span class="kw">use </span>base64::Engine;
@@ -2937,47 +2942,52 @@
             }),
             <span class="prelude-val">Some</span>(Loadable::Ready((_stream_urls, converted_stream))),
         ) =&gt; {
+            <span class="kw">let </span>video_hash = converted_stream
+                .behavior_hints
+                .video_hash
+                .clone()
+                .or_else(|| {
+                    video_params
+                        .as_ref()
+                        .and_then(|video_params| video_params.hash.to_owned())
+                });
+            <span class="kw">let </span>video_size = converted_stream.behavior_hints.video_size.or_else(|| {
+                video_params
+                    .as_ref()
+                    .and_then(|video_params| video_params.size)
+            });
+            <span class="kw">let </span>video_filename =
+                converted_stream
+                    .behavior_hints
+                    .filename
+                    .to_owned()
+                    .or_else(|| {
+                        video_params
+                            .as_ref()
+                            .and_then(|video_params| video_params.filename.clone())
+                    });
+
+            <span class="kw">if </span>video_hash.is_none()
+                &amp;&amp; video_size.is_none()
+                &amp;&amp; video_filename.is_none()
+                &amp;&amp; video_params.is_none()
+            {
+                <span class="kw">return </span>Effects::none().unchanged();
+            }
+
             resources_update_with_vector_content::&lt;E, <span class="kw">_</span>&gt;(
                 subtitles,
-                ResourcesAction::force_request(
+                ResourcesAction::request(
                     <span class="kw-2">&amp;</span>AggrRequest::AllOfResource(ResourcePath {
-                        extra: {
-                            <span class="comment">// Always prefer the Stream field if such is set by the addon
-                            // otherwise we can use the VideoParams as a fallback.
-                            </span>subtitles_path
-                                .extra
-                                .to_owned()
-                                .extend_one(
-                                    <span class="kw-2">&amp;</span>VIDEO_HASH_EXTRA_PROP,
-                                    converted_stream.behavior_hints.video_hash.clone().or(
-                                        video_params
-                                            .as_ref()
-                                            .and_then(|video_params| video_params.hash.to_owned())
-                                            .to_owned(),
-                                    ),
-                                )
-                                .extend_one(
-                                    <span class="kw-2">&amp;</span>VIDEO_SIZE_EXTRA_PROP,
-                                    converted_stream
-                                        .behavior_hints
-                                        .video_size
-                                        .or(video_params
-                                            .as_ref()
-                                            .and_then(|video_params| video_params.size))
-                                        .map(|size| size.to_string()),
-                                )
-                                .extend_one(
-                                    <span class="kw-2">&amp;</span>VIDEO_FILENAME_EXTRA_PROP,
-                                    converted_stream
-                                        .behavior_hints
-                                        .filename
-                                        .to_owned()
-                                        .or(video_params
-                                            .as_ref()
-                                            .and_then(|video_params| video_params.filename.clone()))
-                                        .to_owned(),
-                                )
-                        },
+                        extra: subtitles_path
+                            .extra
+                            .to_owned()
+                            .extend_one(<span class="kw-2">&amp;</span>VIDEO_HASH_EXTRA_PROP, video_hash)
+                            .extend_one(
+                                <span class="kw-2">&amp;</span>VIDEO_SIZE_EXTRA_PROP,
+                                video_size.map(|size| size.to_string()),
+                            )
+                            .extend_one(<span class="kw-2">&amp;</span>VIDEO_FILENAME_EXTRA_PROP, video_filename),
                         ..subtitles_path.to_owned()
                     }),
                     addons,
