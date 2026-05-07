@@ -490,8 +490,19 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
 
                     let push_to_library_effects =
                         push_to_library::<E>(&mut self.push_library_item_time, library_item);
+                    let intro_outro_effects = intro_outro_update::<E>(
+                        &mut self.intro_outro,
+                        &ctx.profile,
+                        self.selected.as_ref(),
+                        self.video_params.as_ref(),
+                        self.series_info.as_ref(),
+                        Some(library_item),
+                        &mut self.skip_gaps,
+                    );
 
-                    trakt_event_effects.join(push_to_library_effects)
+                    trakt_event_effects
+                        .join(push_to_library_effects)
+                        .join(intro_outro_effects)
                 }
                 _ => Effects::none().unchanged(),
             },
@@ -603,10 +614,21 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         analytics_context.player_duration = Some(duration.to_owned());
                     };
 
-                    send_watched_effects.join(push_to_library::<E>(
-                        &mut self.push_library_item_time,
-                        library_item,
-                    ))
+                    let push_to_library_effects =
+                        push_to_library::<E>(&mut self.push_library_item_time, library_item);
+                    let intro_outro_effects = intro_outro_update::<E>(
+                        &mut self.intro_outro,
+                        &ctx.profile,
+                        self.selected.as_ref(),
+                        self.video_params.as_ref(),
+                        self.series_info.as_ref(),
+                        Some(library_item),
+                        &mut self.skip_gaps,
+                    );
+
+                    send_watched_effects
+                        .join(push_to_library_effects)
+                        .join(intro_outro_effects)
                 }
                 _ => Effects::none().unchanged(),
             },
@@ -1426,7 +1448,9 @@ fn intro_outro_update<E: Env + 'static>(
     );
 
     let intro_outro_effects = match (skip_gaps, library_item) {
-        (Some((_, Loadable::Ready(response))), Some(library_item)) => {
+        (Some((_, Loadable::Ready(response))), Some(library_item))
+            if library_item.state.duration > 0 =>
+        {
             let outro_time = {
                 let outro_durations = response.gaps.iter().filter_map(|(duration, skip_gaps)| {
                     skip_gaps.outro.map(|outro| (duration, outro))
