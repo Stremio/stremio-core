@@ -1679,7 +1679,31 @@
 <a href="#1678" id="1678">1678</a>
 <a href="#1679" id="1679">1679</a>
 <a href="#1680" id="1680">1680</a>
-<a href="#1681" id="1681">1681</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#1681" id="1681">1681</a>
+<a href="#1682" id="1682">1682</a>
+<a href="#1683" id="1683">1683</a>
+<a href="#1684" id="1684">1684</a>
+<a href="#1685" id="1685">1685</a>
+<a href="#1686" id="1686">1686</a>
+<a href="#1687" id="1687">1687</a>
+<a href="#1688" id="1688">1688</a>
+<a href="#1689" id="1689">1689</a>
+<a href="#1690" id="1690">1690</a>
+<a href="#1691" id="1691">1691</a>
+<a href="#1692" id="1692">1692</a>
+<a href="#1693" id="1693">1693</a>
+<a href="#1694" id="1694">1694</a>
+<a href="#1695" id="1695">1695</a>
+<a href="#1696" id="1696">1696</a>
+<a href="#1697" id="1697">1697</a>
+<a href="#1698" id="1698">1698</a>
+<a href="#1699" id="1699">1699</a>
+<a href="#1700" id="1700">1700</a>
+<a href="#1701" id="1701">1701</a>
+<a href="#1702" id="1702">1702</a>
+<a href="#1703" id="1703">1703</a>
+<a href="#1704" id="1704">1704</a>
+<a href="#1705" id="1705">1705</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>std::ops::Div;
 
 <span class="kw">use </span>base64::Engine;
@@ -2171,8 +2195,19 @@
 
                     <span class="kw">let </span>push_to_library_effects =
                         push_to_library::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.push_library_item_time, library_item);
+                    <span class="kw">let </span>intro_outro_effects = intro_outro_update::&lt;E&gt;(
+                        <span class="kw-2">&amp;mut </span><span class="self">self</span>.intro_outro,
+                        <span class="kw-2">&amp;</span>ctx.profile,
+                        <span class="self">self</span>.selected.as_ref(),
+                        <span class="self">self</span>.video_params.as_ref(),
+                        <span class="self">self</span>.series_info.as_ref(),
+                        <span class="prelude-val">Some</span>(library_item),
+                        <span class="kw-2">&amp;mut </span><span class="self">self</span>.skip_gaps,
+                    );
 
-                    trakt_event_effects.join(push_to_library_effects)
+                    trakt_event_effects
+                        .join(push_to_library_effects)
+                        .join(intro_outro_effects)
                 }
                 <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
             },
@@ -2284,10 +2319,21 @@
                         analytics_context.player_duration = <span class="prelude-val">Some</span>(duration.to_owned());
                     };
 
-                    send_watched_effects.join(push_to_library::&lt;E&gt;(
-                        <span class="kw-2">&amp;mut </span><span class="self">self</span>.push_library_item_time,
-                        library_item,
-                    ))
+                    <span class="kw">let </span>push_to_library_effects =
+                        push_to_library::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.push_library_item_time, library_item);
+                    <span class="kw">let </span>intro_outro_effects = intro_outro_update::&lt;E&gt;(
+                        <span class="kw-2">&amp;mut </span><span class="self">self</span>.intro_outro,
+                        <span class="kw-2">&amp;</span>ctx.profile,
+                        <span class="self">self</span>.selected.as_ref(),
+                        <span class="self">self</span>.video_params.as_ref(),
+                        <span class="self">self</span>.series_info.as_ref(),
+                        <span class="prelude-val">Some</span>(library_item),
+                        <span class="kw-2">&amp;mut </span><span class="self">self</span>.skip_gaps,
+                    );
+
+                    send_watched_effects
+                        .join(push_to_library_effects)
+                        .join(intro_outro_effects)
                 }
                 <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
             },
@@ -3107,7 +3153,9 @@
     );
 
     <span class="kw">let </span>intro_outro_effects = <span class="kw">match </span>(skip_gaps, library_item) {
-        (<span class="prelude-val">Some</span>((<span class="kw">_</span>, Loadable::Ready(response))), <span class="prelude-val">Some</span>(library_item)) =&gt; {
+        (<span class="prelude-val">Some</span>((<span class="kw">_</span>, Loadable::Ready(response))), <span class="prelude-val">Some</span>(library_item))
+            <span class="kw">if </span>library_item.state.duration &gt; <span class="number">0 </span>=&gt;
+        {
             <span class="kw">let </span>outro_time = {
                 <span class="kw">let </span>outro_durations = response.gaps.iter().filter_map(|(duration, skip_gaps)| {
                     skip_gaps.outro.map(|outro| (duration, outro))
