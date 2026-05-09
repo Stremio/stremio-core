@@ -1438,7 +1438,7 @@ fn intro_db_update<E: Env + 'static>(
         })
         .and_then(|(meta_id, series_info)| {
             let imdb_id = meta_id.split(':').next().unwrap_or(meta_id);
-            if imdb_id.starts_with("tt") {
+            if is_introdb_imdb_id(imdb_id) {
                 Some(IntroDbRequest {
                     imdb_id: imdb_id.to_owned(),
                     season: series_info.season,
@@ -1464,6 +1464,14 @@ fn intro_db_update<E: Env + 'static>(
         Some(_) => Effects::none().unchanged(),
         None => eq_update(intro_db, None),
     }
+}
+
+fn is_introdb_imdb_id(imdb_id: &str) -> bool {
+    let Some(digits) = imdb_id.strip_prefix("tt") else {
+        return false;
+    };
+
+    (7..=12).contains(&digits.len()) && digits.chars().all(|digit| digit.is_ascii_digit())
 }
 
 fn get_intro_db<E: Env + 'static>(intro_db_request: IntroDbRequest) -> Effect {
@@ -1583,7 +1591,7 @@ fn send_watched<E: Env + 'static>(auth_key: AuthKey, meta_path: &ResourcePath) -
 mod tests {
     use serde_json::json;
 
-    use crate::models::player::parse_intro_db_response;
+    use crate::models::player::{is_introdb_imdb_id, parse_intro_db_response};
 
     #[test]
     fn parse_intro_db_response_with_valid_segments() {
@@ -1646,5 +1654,18 @@ mod tests {
 
         assert!(parsed.segments.is_empty());
         assert_eq!(parsed.outro.as_ref().map(|segment| segment.from), Some(1));
+    }
+
+    #[test]
+    fn is_introdb_imdb_id_accepts_realistic_imdb_ids() {
+        assert!(is_introdb_imdb_id("tt1254207"));
+        assert!(is_introdb_imdb_id("tt15264452"));
+    }
+
+    #[test]
+    fn is_introdb_imdb_id_rejects_short_or_non_numeric_ids() {
+        assert!(!is_introdb_imdb_id("tt1"));
+        assert!(!is_introdb_imdb_id("ttabcdefg"));
+        assert!(!is_introdb_imdb_id("kitsu:123"));
     }
 }
