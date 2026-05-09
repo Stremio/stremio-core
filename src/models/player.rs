@@ -1,13 +1,11 @@
 use std::marker::PhantomData;
-use std::ops::Div;
 
 use base64::Engine;
 use futures::{future, FutureExt, TryFutureExt};
-use num::rational::Ratio;
 use url::Url;
 
 use crate::constants::{
-    BASE64, CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, PLAYER_IGNORE_SEEK_AFTER,
+    BASE64, CREDITS_THRESHOLD_COEF, INTRODB_API_URL, META_RESOURCE_NAME, PLAYER_IGNORE_SEEK_AFTER,
     STREAM_RESOURCE_NAME, SUBTITLES_RESOURCE_NAME, VIDEO_FILENAME_EXTRA_PROP,
     VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
 };
@@ -21,12 +19,13 @@ use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, ResourceRequest};
 use crate::types::api::{
-    fetch_api, APIRequest, APIResult, SeekLog, SeekLogRequest, SkipGapsRequest, SkipGapsResponse,
-    SuccessResponse,
+    fetch_api, APIRequest, APIResult, SeekLog, SeekLogRequest, SuccessResponse,
 };
 use crate::types::library::{LibraryBucket, LibraryItem};
-use crate::types::player::{IntroData, IntroOutro};
-use crate::types::profile::{AuthKey, Profile};
+use crate::types::player::{
+    IntroData, IntroDbRequest, IntroDbResponse, IntroOutro, IntroSegment, SegmentRange,
+};
+use crate::types::profile::AuthKey;
 use crate::types::rating::{Rating, RatingSendRequest, RatingSendResponse};
 use crate::types::resource::{
     MetaItem, SeriesInfo, Stream, StreamSource, StreamUrls, Subtitles, Video,
@@ -126,7 +125,7 @@ pub struct Player {
     #[serde(skip_serializing)]
     pub seek_history: Vec<SeekLog>,
     #[serde(skip_serializing)]
-    pub skip_gaps: Option<(SkipGapsRequest, Loadable<SkipGapsResponse, CtxError>)>,
+    pub intro_db: Option<(IntroDbRequest, Loadable<IntroDbResponse, CtxError>)>,
     /// Enable or disable Seek log collection.
     ///
     /// Default: `false` (Do not collect)
@@ -247,15 +246,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
 
-                let skip_gaps_effects = eq_update(&mut self.skip_gaps, None);
+                let intro_db_effects = eq_update(&mut self.intro_db, None);
                 let intro_outro_update_effects = intro_outro_update::<E>(
                     &mut self.intro_outro,
-                    &ctx.profile,
                     self.selected.as_ref(),
-                    self.video_params.as_ref(),
                     self.series_info.as_ref(),
-                    self.library_item.as_ref(),
-                    &mut self.skip_gaps,
+                    &mut self.intro_db,
                 );
 
                 // dismiss LibraryItem notification if we have a LibraryItem to begin with
@@ -310,7 +306,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(library_item_effects)
                     .join(library_item_state_effects)
                     .join(watched_effects)
-                    .join(skip_gaps_effects)
+                    .join(intro_db_effects)
                     .join(intro_outro_update_effects)
                     .join(notification_effects)
             }
@@ -364,7 +360,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let series_info_effects = eq_update(&mut self.series_info, None);
                 let library_item_effects = eq_update(&mut self.library_item, None);
                 let watched_effects = eq_update(&mut self.watched, None);
-                let skip_gaps_effects = eq_update(&mut self.skip_gaps, None);
+                let intro_db_effects = eq_update(&mut self.intro_db, None);
                 self.analytics_context = None;
                 self.load_time = None;
                 self.loaded = false;
@@ -387,7 +383,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
-                    .join(skip_gaps_effects)
+                    .join(intro_db_effects)
                     .join(ended_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::VideoParamsChanged { video_params })) => {
@@ -401,18 +397,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     self.stream.as_ref(),
                     &ctx.profile.addons,
                 );
-                let skip_gaps_effects = skip_gaps_update::<E>(
-                    &ctx.profile,
+                let intro_db_effects = intro_db_update::<E>(
                     self.selected.as_ref(),
-                    self.video_params.as_ref(),
                     self.series_info.as_ref(),
-                    self.library_item.as_ref(),
-                    &mut self.skip_gaps,
+                    &mut self.intro_db,
                 );
 
                 video_params_effects
                     .join(subtitles_effects)
-                    .join(skip_gaps_effects)
+                    .join(intro_db_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::StreamStateChanged { state })) => {
                 Effects::msg(Msg::Internal(Internal::StreamStateChanged {
@@ -843,13 +836,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
 
-                let skip_gaps_effects = skip_gaps_update::<E>(
-                    &ctx.profile,
+                let intro_db_effects = intro_db_update::<E>(
                     self.selected.as_ref(),
-                    self.video_params.as_ref(),
                     self.series_info.as_ref(),
-                    self.library_item.as_ref(),
-                    &mut self.skip_gaps,
+                    &mut self.intro_db,
                 );
 
                 let (id, r#type, name, video_id, time, duration) = self
@@ -884,30 +874,27 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(library_item_effects)
                     .join(library_item_state_effects)
                     .join(watched_effects)
-                    .join(skip_gaps_effects)
+                    .join(intro_db_effects)
             }
-            Msg::Internal(Internal::SkipGapsResult(skip_gaps_request, result)) => {
-                let skip_gaps_next = match result.to_owned() {
+            Msg::Internal(Internal::IntroDbResult(intro_db_request, result)) => {
+                let intro_db_next = match result.to_owned() {
                     Ok(response) => Loadable::Ready(response),
                     Err(err) => Loadable::Err(err),
                 };
 
-                let skip_gaps_effects = eq_update(
-                    &mut self.skip_gaps,
-                    Some((skip_gaps_request.to_owned(), skip_gaps_next)),
+                let intro_db_effects = eq_update(
+                    &mut self.intro_db,
+                    Some((intro_db_request.to_owned(), intro_db_next)),
                 );
 
                 let intro_outro_effects = intro_outro_update::<E>(
                     &mut self.intro_outro,
-                    &ctx.profile,
                     self.selected.as_ref(),
-                    self.video_params.as_ref(),
                     self.series_info.as_ref(),
-                    self.library_item.as_ref(),
-                    &mut self.skip_gaps,
+                    &mut self.intro_db,
                 );
 
-                skip_gaps_effects.join(intro_outro_effects)
+                intro_db_effects.join(intro_outro_effects)
             }
             Msg::Internal(Internal::ProfileChanged) => {
                 if let Some(analytics_context) = &mut self.analytics_context {
@@ -1391,213 +1378,182 @@ fn push_seek_to_api<E: Env + 'static>(seek_log_req: SeekLogRequest) -> Effect {
     .into()
 }
 
-fn calculate_outro(library_item: &LibraryItem, closest_duration: u64, closest_outro: u64) -> u64 {
-    // will floor the result before dividing by 10 again
-    let duration_diff_in_secs =
-        (library_item.state.duration.abs_diff(closest_duration)).div(1000 * 10) / 10;
-    tracing::debug!(
-        closest_duration,
-        closest_outro,
-        "Player: Outro match by duration with difference of {duration_diff_in_secs} seconds"
-    );
-
-    library_item
-        .state
-        .duration
-        .abs_diff(closest_duration.abs_diff(closest_outro))
-}
+const INTRODB_MIN_CONFIDENCE: f64 = 0.5;
+const INTRODB_OUTRO_SEGMENT: &str = "outro";
+const INTRODB_INTRO_SEGMENT: &str = "intro";
 
 fn intro_outro_update<E: Env + 'static>(
     intro_outro: &mut Option<IntroOutro>,
-    profile: &Profile,
     selected: Option<&Selected>,
-    video_params: Option<&VideoParams>,
     series_info: Option<&SeriesInfo>,
-    library_item: Option<&LibraryItem>,
-    skip_gaps: &mut Option<(SkipGapsRequest, Loadable<SkipGapsResponse, CtxError>)>,
+    intro_db: &mut Option<(IntroDbRequest, Loadable<IntroDbResponse, CtxError>)>,
 ) -> Effects {
-    let skip_gaps_effects = skip_gaps_update::<E>(
-        profile,
-        selected,
-        video_params,
-        series_info,
-        library_item,
-        skip_gaps,
-    );
+    let intro_db_effects = intro_db_update::<E>(selected, series_info, intro_db);
 
-    let intro_outro_effects = match (skip_gaps, library_item) {
-        (Some((_, Loadable::Ready(response))), Some(library_item)) => {
-            let outro_time = {
-                let outro_durations = response.gaps.iter().filter_map(|(duration, skip_gaps)| {
-                    skip_gaps.outro.map(|outro| (duration, outro))
+    let intro_outro_effects = match intro_db {
+        Some((_, Loadable::Ready(response))) => {
+            let intro = response
+                .segments
+                .iter()
+                .find(|segment| segment.segment.eq_ignore_ascii_case(INTRODB_INTRO_SEGMENT))
+                .map(|segment| IntroData {
+                    from: segment.from,
+                    to: segment.to,
+                    duration: None,
                 });
 
-                let closest_duration = outro_durations.reduce(
-                    |(previous_duration, previous_outro), (current_duration, current_outro)| {
-                        if current_duration.abs_diff(library_item.state.duration)
-                            < previous_duration.abs_diff(library_item.state.duration)
-                        {
-                            (current_duration, current_outro)
-                        } else {
-                            (previous_duration, previous_outro)
-                        }
-                    },
-                );
-                closest_duration.map(|(closest_duration, closest_outro)| {
-                    calculate_outro(library_item, *closest_duration, closest_outro)
-                })
-            };
+            let outro = response.outro.as_ref().map(|segment| segment.from);
 
-            let intro_time = {
-                let intro_durations = response
-                    .gaps
-                    .iter()
-                    .filter(|(_duration, skip_gaps)| !skip_gaps.seek_history.is_empty());
-                let closest_duration = intro_durations.reduce(
-                    |(previous_duration, previous_skip_gaps),
-                     (current_duration, current_skip_gaps)| {
-                        if current_duration.abs_diff(library_item.state.duration)
-                            < previous_duration.abs_diff(library_item.state.duration)
-                        {
-                            (current_duration, current_skip_gaps)
-                        } else {
-                            (previous_duration, previous_skip_gaps)
-                        }
-                    },
-                );
-
-                closest_duration.and_then(|(closest_duration, skip_gaps)| {
-                let duration_diff_in_secs = (library_item.state.duration.abs_diff(*closest_duration)).div(1000 * 10) / 10;
-                let duration_ration = Ratio::new(library_item.state.duration, *closest_duration);
-                // even though we checked for len() > 0 make sure we don't panic if somebody decides to remove that check!
-                let matched_intro = skip_gaps.seek_history.first().map(|seek_event| {
-                    let intro_data = IntroData {
-                        from: (duration_ration * seek_event.from).to_integer(),
-                        to: (duration_ration * seek_event.to).to_integer(),
-                        duration: if duration_diff_in_secs > 0 { Some(seek_event.to.abs_diff(seek_event.from)) } else { None }
-                    };
-                    tracing::debug!(?seek_event, ?intro_data, "Player: Intro match for event by duration with difference of {duration_diff_in_secs} seconds",);
-                    intro_data
-                })?;
-
-
-                Some(matched_intro)
-              })
-            };
-
-            eq_update(
-                intro_outro,
-                Some(IntroOutro {
-                    intro: intro_time,
-                    outro: outro_time,
-                }),
-            )
+            if intro.is_none() && outro.is_none() && response.segments.is_empty() {
+                eq_update(intro_outro, None)
+            } else {
+                eq_update(
+                    intro_outro,
+                    Some(IntroOutro {
+                        intro,
+                        outro,
+                        segments: response.segments.to_owned(),
+                    }),
+                )
+            }
         }
         _ => eq_update(intro_outro, None),
     };
 
-    skip_gaps_effects.join(intro_outro_effects)
+    intro_db_effects.join(intro_outro_effects)
 }
 
-fn skip_gaps_update<E: Env + 'static>(
-    profile: &Profile,
+fn intro_db_update<E: Env + 'static>(
     selected: Option<&Selected>,
-    video_params: Option<&VideoParams>,
     series_info: Option<&SeriesInfo>,
-    library_item: Option<&LibraryItem>,
-    skip_gaps: &mut Option<(SkipGapsRequest, Loadable<SkipGapsResponse, CtxError>)>,
+    intro_db: &mut Option<(IntroDbRequest, Loadable<IntroDbResponse, CtxError>)>,
 ) -> Effects {
-    let active_premium = profile.auth.as_ref().and_then(|auth| {
-        auth.user
-            .premium_expire
-            .filter(|premium_expire| premium_expire > &E::now())
-            .map(|premium_expire| (premium_expire, auth.key.clone()))
-    });
-
-    let skip_gaps_request_effects = match (
-        active_premium,
-        selected,
-        video_params,
-        series_info,
-        library_item,
-    ) {
-        (
-            Some((_expires, auth_key)),
-            Some(selected),
-            Some(video_params),
-            Some(series_info),
-            Some(library_item),
-        ) => {
-            let stream_source_supported = matches!(
-                &selected.stream.source,
-                StreamSource::Url { .. } | StreamSource::Torrent { .. }
-            );
-            // live streams will not have opensubtitle hash so just relying on URL and Torrent is enough.
-            match (
-                stream_source_supported,
-                selected.stream.name.as_ref(),
-                video_params.hash.clone(),
-            ) {
-                (true, Some(stream_name), Some(os_hash)) => {
-                    let stream_name_hash = {
-                        use sha2::Digest;
-                        let mut sha256 = sha2::Sha256::new();
-                        sha256.update(stream_name);
-                        let sha256_encoded = sha256.finalize();
-
-                        BASE64.encode(sha256_encoded)
-                    };
-
-                    let skip_gaps_request = SkipGapsRequest {
-                        auth_key,
-                        os_hash,
-                        item_id: library_item.id.to_owned(),
-                        series_info: series_info.to_owned(),
-                        stream_name_hash,
-                    };
-
-                    // no previous request, error, or different request
-                    if skip_gaps.is_none()
-                        || matches!(skip_gaps, Some((request, Loadable::Err(_))) | Some((request, _)) if request != &skip_gaps_request)
-                    {
-                        let skip_gaps_request_effects =
-                            get_skip_gaps::<E>(skip_gaps_request.clone());
-
-                        let skip_gaps_effects =
-                            eq_update(skip_gaps, Some((skip_gaps_request, Loadable::Loading)));
-
-                        Effects::one(skip_gaps_request_effects)
-                            .unchanged()
-                            .join(skip_gaps_effects)
-                    } else {
-                        Effects::none().unchanged()
-                    }
-                }
-                _ => Effects::none().unchanged(),
+    let intro_db_request = selected
+        .zip(series_info)
+        .and_then(|(selected, series_info)| {
+            selected
+                .meta_request
+                .as_ref()
+                .map(|meta_request| (meta_request.path.id.as_str(), series_info))
+        })
+        .and_then(|(meta_id, series_info)| {
+            let imdb_id = meta_id.split(':').next().unwrap_or(meta_id);
+            if imdb_id.starts_with("tt") {
+                Some(IntroDbRequest {
+                    imdb_id: imdb_id.to_owned(),
+                    season: series_info.season,
+                    episode: series_info.episode,
+                })
+            } else {
+                None
             }
-        }
-        _ => Effects::none().unchanged(),
-    };
+        });
 
-    skip_gaps_request_effects
+    match intro_db_request {
+        Some(intro_db_request)
+            if intro_db.is_none()
+                || matches!(intro_db, Some((request, Loadable::Err(_))) | Some((request, _)) if request != &intro_db_request) =>
+        {
+            let intro_db_request_effects = get_intro_db::<E>(intro_db_request.to_owned());
+            let intro_db_effects = eq_update(intro_db, Some((intro_db_request, Loadable::Loading)));
+
+            Effects::one(intro_db_request_effects)
+                .unchanged()
+                .join(intro_db_effects)
+        }
+        Some(_) => Effects::none().unchanged(),
+        None => eq_update(intro_db, None),
+    }
 }
 
-fn get_skip_gaps<E: Env + 'static>(skip_gaps_request: SkipGapsRequest) -> Effect {
-    let api_request = APIRequest::SkipGaps(skip_gaps_request.clone());
+fn get_intro_db<E: Env + 'static>(intro_db_request: IntroDbRequest) -> Effect {
+    let mut endpoint = INTRODB_API_URL
+        .join("segments")
+        .expect("url builder failed");
+    endpoint.set_query(Some(
+        &serde_url_params::to_string(&intro_db_request).expect("Serialize query params failed"),
+    ));
+    let request = http::Request::builder()
+        .method(http::Method::GET)
+        .uri(endpoint.as_str())
+        .body(())
+        .expect("request builder failed");
 
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _, SkipGapsResponse>(&api_request)
+        E::fetch::<_, serde_json::Value>(request)
             .map_err(CtxError::from)
-            .and_then(|result| match result {
-                APIResult::Ok(result) => future::ok(result),
-                APIResult::Err(error) => future::err(CtxError::from(error)),
+            .and_then(|response| match parse_intro_db_response(response) {
+                Ok(response) => future::ok(response),
+                Err(error) => future::err(CtxError::from(error)),
             })
-            .map(move |result: Result<SkipGapsResponse, CtxError>| {
-                Msg::Internal(Internal::SkipGapsResult(skip_gaps_request, result))
+            .map(move |result: Result<IntroDbResponse, CtxError>| {
+                Msg::Internal(Internal::IntroDbResult(intro_db_request, result))
             })
             .boxed_env(),
     )
     .into()
+}
+
+fn parse_intro_db_response(response: serde_json::Value) -> Result<IntroDbResponse, EnvError> {
+    let response = response.get("result").cloned().unwrap_or(response);
+    let segments_json = response
+        .as_object()
+        .ok_or_else(|| EnvError::Serde("IntroDB response must be a JSON object".to_owned()))?;
+
+    let mut segments = vec![];
+    let mut outro = None;
+
+    for (segment_name, segment_data) in segments_json {
+        if let Some(segment_range) = parse_intro_db_segment(segment_data) {
+            if segment_name.eq_ignore_ascii_case(INTRODB_OUTRO_SEGMENT) {
+                outro = Some(segment_range);
+            } else {
+                segments.push(IntroSegment {
+                    segment: segment_name.to_owned(),
+                    from: segment_range.from,
+                    to: segment_range.to,
+                });
+            }
+        }
+    }
+
+    segments.sort_by(|a, b| a.from.cmp(&b.from).then_with(|| a.segment.cmp(&b.segment)));
+
+    Ok(IntroDbResponse { segments, outro })
+}
+
+fn parse_intro_db_segment(segment_data: &serde_json::Value) -> Option<SegmentRange> {
+    let segment_data = segment_data.as_object()?;
+    let confidence = segment_data.get("confidence").and_then(json_value_to_f64)?;
+
+    if confidence < INTRODB_MIN_CONFIDENCE {
+        return None;
+    }
+
+    let from = segment_data.get("start_ms").and_then(json_value_to_u64)?;
+    let to = segment_data.get("end_ms").and_then(json_value_to_u64)?;
+
+    if from >= to {
+        return None;
+    }
+
+    Some(SegmentRange { from, to })
+}
+
+fn json_value_to_u64(value: &serde_json::Value) -> Option<u64> {
+    match value {
+        serde_json::Value::Number(number) => number.as_u64(),
+        serde_json::Value::String(number) => number.parse::<u64>().ok(),
+        _ => None,
+    }
+}
+
+fn json_value_to_f64(value: &serde_json::Value) -> Option<f64> {
+    match value {
+        serde_json::Value::Number(number) => number.as_f64(),
+        serde_json::Value::String(number) => number.parse::<f64>().ok(),
+        _ => None,
+    }
 }
 
 /// Sends watched state for meta item on every Watched state change of the library item
@@ -1625,57 +1581,70 @@ fn send_watched<E: Env + 'static>(auth_key: AuthKey, meta_path: &ResourcePath) -
 
 #[cfg(test)]
 mod tests {
-    use chrono::Utc;
+    use serde_json::json;
 
-    use crate::{
-        models::player::calculate_outro,
-        types::{
-            library::{LibraryItem, LibraryItemState},
-            resource::PosterShape,
-        },
-    };
+    use crate::models::player::parse_intro_db_response;
 
     #[test]
-    fn test_underflow_calculate_outro() {
-        let library_item = LibraryItem {
-            id: "tt13622776".to_string(),
-            name: "Ahsoka".to_string(),
-            r#type: "series".to_string(),
-            poster: None,
-            poster_shape: PosterShape::Poster,
-            removed: false,
-            temp: true,
-            ctime: None,
-            mtime: Utc::now(),
-            state: LibraryItemState {
-                last_watched: None,
-                time_watched: 999,
-                time_offset: 0,
-                overall_time_watched: 999,
-                times_watched: 999,
-                flagged_watched: 1,
-                duration: 10_000,
-                video_id: None,
-                watched: None,
-                no_notif: true,
+    fn parse_intro_db_response_with_valid_segments() {
+        let response = json!({
+            "intro": {
+                "start_ms": 1000,
+                "end_ms": 5000,
+                "confidence": 0.95
             },
-            behavior_hints: Default::default(),
-        };
-        {
-            let closest_duration = 11000;
-            let closest_outro = 1;
-            assert_eq!(
-                calculate_outro(&library_item, closest_duration, closest_outro),
-                999
-            );
-        }
-        {
-            let closest_duration = 11000;
-            let closest_outro = 12000;
-            assert_eq!(
-                calculate_outro(&library_item, closest_duration, closest_outro),
-                9000
-            );
-        }
+            "recap": {
+                "start_ms": "7000",
+                "end_ms": "9000",
+                "confidence": "0.80"
+            },
+            "outro": {
+                "start_ms": 1000000,
+                "end_ms": 1100000,
+                "confidence": 0.9
+            }
+        });
+
+        let parsed = parse_intro_db_response(response).expect("IntroDB response should parse");
+
+        assert_eq!(parsed.segments.len(), 2);
+        assert_eq!(parsed.segments[0].segment, "intro");
+        assert_eq!(parsed.segments[0].from, 1000);
+        assert_eq!(parsed.segments[0].to, 5000);
+        assert_eq!(parsed.segments[1].segment, "recap");
+        assert_eq!(
+            parsed.outro.as_ref().map(|segment| segment.from),
+            Some(1_000_000)
+        );
+    }
+
+    #[test]
+    fn parse_intro_db_response_ignores_invalid_or_low_confidence_segments() {
+        let response = json!({
+            "intro": {
+                "start_ms": 1000,
+                "end_ms": 5000
+            },
+            "recap": {
+                "start_ms": 9000,
+                "end_ms": 7000,
+                "confidence": 0.95
+            },
+            "credits": {
+                "start_ms": 10000,
+                "end_ms": 12000,
+                "confidence": 0.1
+            },
+            "outro": {
+                "start_ms": 1,
+                "end_ms": 2,
+                "confidence": 0.9
+            }
+        });
+
+        let parsed = parse_intro_db_response(response).expect("IntroDB response should parse");
+
+        assert!(parsed.segments.is_empty());
+        assert_eq!(parsed.outro.as_ref().map(|segment| segment.from), Some(1));
     }
 }

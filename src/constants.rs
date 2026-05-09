@@ -86,6 +86,8 @@ pub static API_URL: Lazy<Url> =
     Lazy::new(|| Url::parse("https://api.strem.io").expect("API_URL parse failed"));
 pub static LINK_API_URL: Lazy<Url> =
     Lazy::new(|| Url::parse("https://link.stremio.com").expect("LINK_API_URL parse failed"));
+pub static INTRODB_API_URL: Lazy<Url> =
+    Lazy::new(|| Url::parse("https://api.introdb.app").expect("INTRODB_API_URL parse failed"));
 pub static STREAMING_SERVER_URL: Lazy<Url> =
     Lazy::new(|| Url::parse("http://127.0.0.1:11470").expect("STREAMING_SERVER_URL parse failed"));
 pub static IMDB_URL: Lazy<Url> =
