@@ -53,7 +53,7 @@ jobs:
     env:
       NODE_VERSION: 12
       WASM_PACK_VERSION: 0.13.1
-      RUST_VERSION: '1.77'
+      RUST_VERSION: '1.95'
     # No need to check core-web if core itself is not passing
     needs: build-core
     runs-on: ubuntu-latest
