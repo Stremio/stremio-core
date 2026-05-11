@@ -133,12 +133,7 @@
 <a href="#132" id="132">132</a>
 <a href="#133" id="133">133</a>
 <a href="#134" id="134">134</a>
-<a href="#135" id="135">135</a>
-<a href="#136" id="136">136</a>
-<a href="#137" id="137">137</a>
-<a href="#138" id="138">138</a>
-<a href="#139" id="139">139</a>
-<a href="#140" id="140">140</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::model::deep_links_ext::DeepLinksExt;
+<a href="#135" id="135">135</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::model::deep_links_ext::DeepLinksExt;
 <span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
 </span><span class="kw">use </span>gloo_utils::format::JsValueSerdeExt;
 <span class="kw">use </span>serde::Serialize;
@@ -179,11 +174,6 @@
     </span><span class="kw">pub struct </span>SelectableSort&lt;<span class="lifetime">'a</span>&gt; {
         <span class="kw">pub </span>sort: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Sort,
         <span class="kw">pub </span>selected: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>bool,
-        <span class="kw">pub </span>deep_links: LibraryDeepLinks,
-    }
-    <span class="attr">#[derive(Serialize)]
-    #[serde(rename_all = <span class="string">"camelCase"</span>)]
-    </span><span class="kw">pub struct </span>SelectablePage {
         <span class="kw">pub </span>deep_links: LibraryDeepLinks,
     }
     <span class="attr">#[derive(Serialize)]

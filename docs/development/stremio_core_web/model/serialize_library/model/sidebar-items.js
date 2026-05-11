@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["LibraryItem","LibraryWithFilters","Selectable","SelectablePage","SelectableSort","SelectableType"]};
+window.SIDEBAR_ITEMS = {"struct":["LibraryItem","LibraryWithFilters","Selectable","SelectableSort","SelectableType"]};
