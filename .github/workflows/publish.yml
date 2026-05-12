@@ -7,7 +7,7 @@ on:
 env:
   NODE_VERSION: 24
   WASM_PACK_VERSION: 0.14.0
-  RUST_VERSION: '1.95'
+  RUST_VERSION: '1.77'
 
 permissions:
   id-token: write
