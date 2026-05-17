@@ -815,7 +815,7 @@ fn migrate_storage_schema_to_v23<E: Env>() -> TryEnvFuture<()> {
             {
                 Some(settings) => {
                     settings.insert(
-                        "nvidiaVideoProcessing".to_owned(),
+                        "gpuVideoProcessing".to_owned(),
                         serde_json::Value::Bool(false),
                     );
                     E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
@@ -1671,7 +1671,7 @@ mod test {
 
             let migrated_profile = json!({
                 "settings": {
-                    "nvidiaVideoProcessing": false,
+                    "gpuVideoProcessing": false,
                 }
             });
 

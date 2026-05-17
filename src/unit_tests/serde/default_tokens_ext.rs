@@ -394,7 +394,7 @@ impl DefaultTokens for Settings {
             Token::Bool(true),
             Token::Str("hardwareDecoding"),
             Token::Bool(true),
-            Token::Str("nvidiaVideoProcessing"),
+            Token::Str("gpuVideoProcessing"),
             Token::Bool(false),
             Token::Str("videoMode"),
             Token::None,
