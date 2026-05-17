@@ -15,7 +15,7 @@ fn settings() {
             binge_watching: true,
             play_in_background: true,
             hardware_decoding: true,
-            nvidia_video_processing: false,
+            gpu_video_processing: false,
             video_mode: Some("video_mode".to_owned()),
             frame_rate_matching_strategy: FrameRateMatchingStrategy::FrameRateAndResolution,
             next_video_notification_duration: 30,
