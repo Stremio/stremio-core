@@ -19,7 +19,8 @@ use crate::types::empty_string_as_null;
 use crate::types::profile::{AuthKey, Profile};
 use crate::types::streaming_server::{
     CreateMagnetRequest, CreateTorrentBlobRequest, DeviceInfo, GetHTTPSResponse, NetworkInfo,
-    Settings, SettingsResponse, Statistics, StatisticsRequest, TorrentStatisticsRequest,
+    Settings, SettingsOption, SettingsResponse, Statistics, StatisticsRequest,
+    TorrentStatisticsRequest,
 };
 use crate::types::torrent::InfoHash;
 
@@ -44,6 +45,7 @@ pub struct Selected {
 pub struct StreamingServer {
     pub selected: Selected,
     pub settings: Loadable<Settings, EnvError>,
+    pub settings_options: Vec<SettingsOption>,
     pub base_url: Option<Url>,
     pub remote_url: Option<Url>,
     pub playback_devices: Loadable<Vec<PlaybackDevice>, EnvError>,
@@ -69,6 +71,7 @@ impl StreamingServer {
                     statistics: None,
                 },
                 settings: Loadable::Loading,
+                settings_options: vec![],
                 base_url: None,
                 remote_url: None,
                 playback_devices: Loadable::Loading,
@@ -250,6 +253,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                             &mut self.settings,
                             Loadable::Ready(settings.values.to_owned()),
                         );
+                        let settings_options_effects =
+                            eq_update(&mut self.settings_options, settings.options.to_owned());
                         let base_url_effects =
                             eq_update(&mut self.base_url, Some(settings.base_url.to_owned()));
                         let remote_url_effects = update_remote_url::<E>(
@@ -259,6 +264,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                             ctx,
                         );
                         settings_effects
+                            .join(settings_options_effects)
                             .join(base_url_effects)
                             .join(remote_url_effects)
                     }
@@ -477,6 +483,7 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
     #[serde(rename_all = "camelCase")]
     struct Body {
         cache_size: Option<f64>,
+        cache_root: String,
         bt_max_connections: u64,
         bt_handshake_timeout: u64,
         bt_request_timeout: u64,
@@ -490,6 +497,7 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
     }
     let body = Body {
         cache_size: settings.cache_size.to_owned(),
+        cache_root: settings.cache_root.to_owned(),
         bt_max_connections: settings.bt_max_connections.to_owned(),
         bt_handshake_timeout: settings.bt_handshake_timeout.to_owned(),
         bt_request_timeout: settings.bt_request_timeout.to_owned(),
