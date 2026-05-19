@@ -16,7 +16,7 @@ fn settings() {
             play_in_background: true,
             hardware_decoding: true,
             video_mode: Some("video_mode".to_owned()),
-            frame_rate_matching_strategy: FrameRateMatchingStrategy::FrameRateAndResolution,
+            frame_rate_matching_strategy: FrameRateMatchingStrategy::Disabled,
             next_video_notification_duration: 30,
             audio_passthrough: true,
             audio_language: Some("audio_language".to_owned()),
@@ -73,7 +73,7 @@ fn settings() {
             Token::Str("frameRateMatchingStrategy"),
             Token::UnitVariant {
                 name: "FrameRateMatchingStrategy",
-                variant: "FrameRateAndResolution",
+                variant: "Disabled",
             },
             Token::Str("nextVideoNotificationDuration"),
             Token::U32(30),
@@ -165,7 +165,7 @@ fn settings_de() {
             Token::Str("frameRateMatchingStrategy"),
             Token::UnitVariant {
                 name: "FrameRateMatchingStrategy",
-                variant: "FrameRateOnly",
+                variant: "Disabled",
             },
             Token::Str("nextVideoNotificationDuration"),
             Token::U32(35000),
