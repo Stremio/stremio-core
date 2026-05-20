@@ -109,6 +109,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 .join(base_url_effects)
                 .join(remote_url_effects)
             }
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::RefreshPlaybackDevices)) => {
+                Effects::one(get_playback_devices::<E>(&self.selected.transport_url)).unchanged()
+            }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::UpdateSettings(
                 settings,
             ))) if self.settings.is_ready() => {
@@ -297,16 +300,17 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 }
             }
             Msg::Internal(Internal::StreamingServerPlaybackDevicesResult(url, result))
-                if self.selected.transport_url == *url && self.playback_devices.is_loading() =>
+                if self.selected.transport_url == *url =>
             {
                 match result {
                     Ok(playback_devices) => eq_update(
                         &mut self.playback_devices,
                         Loadable::Ready(playback_devices.to_owned()),
                     ),
-                    Err(error) => {
+                    Err(error) if self.playback_devices.is_loading() => {
                         eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()))
                     }
+                    Err(_) => Effects::none().unchanged(),
                 }
             }
             Msg::Internal(Internal::StreamingServerNetworkInfoResult(url, result))
