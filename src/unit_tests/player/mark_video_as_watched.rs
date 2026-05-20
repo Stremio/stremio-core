@@ -118,9 +118,9 @@ fn fetch_handler_s1e1_current(request: Request) -> TryEnvFuture<Box<dyn Any + Se
         Request { url, .. }
             if url == "https://transport_url/stream/series/tt123456%3A1%3A2.json" =>
         {
-            future::ok(Box::new(ResourceResponse::Streams {
-                streams: vec![],
-            }) as Box<dyn Any + Send>)
+            future::ok(
+                Box::new(ResourceResponse::Streams { streams: vec![] }) as Box<dyn Any + Send>
+            )
             .boxed_env()
         }
         _ => default_fetch_handler(request),

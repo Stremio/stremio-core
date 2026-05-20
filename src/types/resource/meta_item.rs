@@ -275,11 +275,7 @@ impl MetaItem {
         self.videos
             .iter()
             .find_position(|v| v.id == video_id)
-            .and_then(|(pos, current)| {
-                self.videos
-                    .get(pos + 1)
-                    .map(|next| (current, next))
-            })
+            .and_then(|(pos, current)| self.videos.get(pos + 1).map(|next| (current, next)))
             .filter(|(current, next)| {
                 let cur_season = current
                     .series_info
