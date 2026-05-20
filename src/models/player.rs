@@ -723,7 +723,20 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     (Some(library_item), Some(watched)) => {
                         let mut library_item = library_item.to_owned();
                         library_item.mark_video_as_watched::<E>(watched, video, *is_watched);
-
+                        if *is_watched
+                            && library_item.state.video_id.as_deref() == Some(video.id.as_str())
+                        {
+                            let next_video_id = self
+                                .meta_item
+                                .as_ref()
+                                .and_then(|m| m.content.as_ref())
+                                .and_then(|m| m.ready())
+                                .and_then(|m| m.next_video(&video.id))
+                                .map(|v| v.id.to_owned());
+                            if let Some(next_video_id) = next_video_id {
+                                library_item.state.video_id = Some(next_video_id);
+                            }
+                        }
                         Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                             .unchanged()
                     }

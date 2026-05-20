@@ -268,6 +268,34 @@ impl MetaItem {
         }
     }
 
+    /// Returns the next video after `video_id` in series order, applying the same
+    /// season-boundary filter used by the player's automatic advancement (season 0
+    /// specials are not crossed unless the current video is also in season 0).
+    pub fn next_video(&self, video_id: &str) -> Option<&Video> {
+        self.videos
+            .iter()
+            .find_position(|v| v.id == video_id)
+            .and_then(|(pos, current)| {
+                self.videos
+                    .get(pos + 1)
+                    .map(|next| (current, next))
+            })
+            .filter(|(current, next)| {
+                let cur_season = current
+                    .series_info
+                    .as_ref()
+                    .map(|s| s.season)
+                    .unwrap_or_default();
+                let next_season = next
+                    .series_info
+                    .as_ref()
+                    .map(|s| s.season)
+                    .unwrap_or_default();
+                next_season != 0 || cur_season == next_season
+            })
+            .map(|(_, next)| next)
+    }
+
     /// Returns a vector of videos for a given season
     pub fn videos_by_season(&self, season: u32) -> Vec<&Video> {
         self.videos
