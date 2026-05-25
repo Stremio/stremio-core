@@ -100,7 +100,9 @@ impl From<LegacyManifest> for Manifest {
                 .collect()
         });
 
-        // resources: only those two are supported by the legacy mapper
+        // resources: meta, stream and subtitles are supported by the legacy mapper.
+        // The method names follow the legacy protocol (and the upstream
+        // stremio-addon-client mapper): `meta.get`, `stream.find`, `subtitles.find`.
         let mut resources: Vec<ManifestResource> = vec![];
         if m.methods.iter().any(|x| x == "meta.get") {
             resources.push(ManifestResource::Short("meta".into()))
@@ -108,7 +110,7 @@ impl From<LegacyManifest> for Manifest {
         if m.methods.iter().any(|x| x == "stream.find") {
             resources.push(ManifestResource::Short("stream".into()))
         }
-        if m.methods.iter().any(|x| x == "subtitles.get") {
+        if m.methods.iter().any(|x| x == "subtitles.find") {
             resources.push(ManifestResource::Short("subtitles".into()))
         }
 
@@ -131,5 +133,47 @@ impl From<LegacyManifest> for Manifest {
             // https://github.com/Stremio/stremio-addon-client/blob/4f4dbbf55498d7fdc6bd41bf49cb2f05915b3f8e/lib/transports/legacy/mapper.js#L70
             behavior_hints: Default::default(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn maps_legacy_methods_to_resources() {
+        // A legacy add-on advertises its capabilities through JSON-RPC method
+        // names. A subtitles add-on uses `subtitles.find` (the same method the
+        // legacy transport issues in `build_legacy_req`), alongside `meta.get`
+        // and `stream.find`. All three must map to the corresponding resources.
+        let json = serde_json::json!({
+            "id": "org.test.legacy",
+            "name": "Test Legacy Addon",
+            "version": "1.0.0",
+            "methods": ["meta.get", "stream.find", "subtitles.find"],
+            "types": ["series"]
+        });
+        let legacy: LegacyManifest =
+            serde_json::from_value(json).expect("legacy manifest should deserialize");
+        let manifest = Manifest::from(legacy);
+
+        assert!(
+            manifest
+                .resources
+                .contains(&ManifestResource::Short("meta".into())),
+            "`meta.get` should map to the `meta` resource"
+        );
+        assert!(
+            manifest
+                .resources
+                .contains(&ManifestResource::Short("stream".into())),
+            "`stream.find` should map to the `stream` resource"
+        );
+        assert!(
+            manifest
+                .resources
+                .contains(&ManifestResource::Short("subtitles".into())),
+            "`subtitles.find` should map to the `subtitles` resource"
+        );
     }
 }
