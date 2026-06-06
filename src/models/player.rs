@@ -831,6 +831,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     _ => Effects::none().unchanged(),
                 };
 
+                let next_stream_effects =
+                    next_stream_update(&mut self.next_stream, &self.next_streams, &self.selected);
+
                 let next_video_effects = next_video_update(
                     &mut self.next_video,
                     &self.next_stream,
@@ -843,9 +846,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.next_video,
                     &self.selected,
                 ));
-
-                let next_stream_effects =
-                    next_stream_update(&mut self.next_stream, &self.next_streams, &self.selected);
 
                 let series_info_effects =
                     series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
