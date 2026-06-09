@@ -430,3 +430,57 @@ pub struct MetaItemBehaviorHints {
     #[serde(flatten)]
     pub other: HashMap<String, serde_json::Value>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_video(id: &str, season: u32, episode: u32) -> Video {
+        Video {
+            id: id.to_owned(),
+            series_info: Some(SeriesInfo { season, episode }),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn next_video() {
+        let meta_item = MetaItem {
+            preview: Default::default(),
+            videos: vec![
+                create_video("s0e1", 0, 1),
+                create_video("s0e2", 0, 2),
+                create_video("s1e1", 1, 1),
+                create_video("s1e2", 1, 2),
+                create_video("s0e3", 0, 3),
+            ],
+        };
+        assert_eq!(
+            meta_item.next_video("s0e1").map(|video| video.id.as_str()),
+            Some("s0e2")
+        );
+        assert_eq!(
+            meta_item.next_video("s0e2").map(|video| video.id.as_str()),
+            Some("s1e1")
+        );
+        assert_eq!(
+            meta_item.next_video("s1e1").map(|video| video.id.as_str()),
+            Some("s1e2")
+        );
+        assert_eq!(
+            meta_item.next_video("s1e2").map(|video| video.id.as_str()),
+            None,
+            "should not cross into season 0 specials"
+        );
+        assert_eq!(
+            meta_item.next_video("s0e3").map(|video| video.id.as_str()),
+            None
+        );
+        assert_eq!(
+            meta_item
+                .next_video("missing")
+                .map(|video| video.id.as_str()),
+            None
+        );
+    }
+}
