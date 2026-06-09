@@ -39,7 +39,6 @@ use stremio_watched_bitfield::WatchedBitField;
 
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use derivative::Derivative;
-use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 use once_cell::sync::Lazy;
@@ -1044,36 +1043,13 @@ fn next_video_update(
                 content: Some(Loadable::Ready(meta_item)),
                 ..
             }),
-        ) => meta_item
-            .videos
-            .iter()
-            .find_position(|video| video.id == *video_id)
-            .and_then(|(position, current_video)| {
-                meta_item
-                    .videos
-                    .get(position + 1)
-                    .map(|next_video| (current_video, next_video))
-            })
-            .filter(|(current_video, next_video)| {
-                let current_season = current_video
-                    .series_info
-                    .as_ref()
-                    .map(|info| info.season)
-                    .unwrap_or_default();
-                let next_season = next_video
-                    .series_info
-                    .as_ref()
-                    .map(|info| info.season)
-                    .unwrap_or_default();
-                next_season != 0 || current_season == next_season
-            })
-            .map(|(_, next_video)| {
-                let mut next_video = next_video.clone();
-                if let Some(stream) = stream {
-                    next_video.streams = vec![stream.clone()];
-                }
-                next_video
-            }),
+        ) => meta_item.next_video(video_id).map(|next_video| {
+            let mut next_video = next_video.clone();
+            if let Some(stream) = stream {
+                next_video.streams = vec![stream.clone()];
+            }
+            next_video
+        }),
         _ => None,
     };
     eq_update(video, next_video)
