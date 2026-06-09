@@ -148,8 +148,21 @@ fn fetch_handler_s1e2_current(request: Request) -> TryEnvFuture<Box<dyn Any + Se
     }
 }
 
+fn dispatch_time_changed(runtime: &Runtime<TestEnv, TestModel>, time: u64) {
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Player(ActionPlayer::TimeChanged {
+                time,
+                duration: 3_600_000,
+                device: "test_device".to_owned(),
+            }),
+        });
+    });
+}
+
 #[test]
-fn mark_video_as_watched_advances_video_id() {
+fn mark_video_as_watched_advances_video_id_on_unload() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler_s1e1_current);
 
@@ -182,12 +195,17 @@ fn mark_video_as_watched_advances_video_id() {
         });
     });
 
+    dispatch_time_changed(&runtime, 600_000);
+
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
             action: Action::Player(ActionPlayer::MarkVideoAsWatched(create_video(1, 1), true)),
         });
     });
+
+    // playback continues after marking and must not lose the advancement
+    dispatch_time_changed(&runtime, 700_000);
 
     assert_eq!(
         runtime
@@ -199,8 +217,27 @@ fn mark_video_as_watched_advances_video_id() {
             .unwrap()
             .state
             .video_id,
+        Some("tt123456:1:1".to_owned()),
+        "video_id should not advance while the video is still playing",
+    );
+
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Unload,
+        });
+    });
+
+    let model = runtime.model().unwrap();
+    let library_item = model.ctx.library.items.get("tt123456").unwrap();
+    assert_eq!(
+        library_item.state.video_id,
         Some("tt123456:1:2".to_owned()),
-        "video_id should advance to the next episode after marking current as watched",
+        "video_id should advance to the next episode on unload after marking current as watched",
+    );
+    assert_eq!(
+        library_item.state.time_offset, 1,
+        "time_offset should be reset when advancing to the next episode",
     );
 }
 
@@ -238,6 +275,8 @@ fn mark_last_episode_as_watched_does_not_advance() {
         });
     });
 
+    dispatch_time_changed(&runtime, 600_000);
+
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
@@ -245,18 +284,23 @@ fn mark_last_episode_as_watched_does_not_advance() {
         });
     });
 
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Unload,
+        });
+    });
+
+    let model = runtime.model().unwrap();
+    let library_item = model.ctx.library.items.get("tt123456").unwrap();
     assert_eq!(
-        runtime
-            .model()
-            .unwrap()
-            .player
-            .library_item
-            .as_ref()
-            .unwrap()
-            .state
-            .video_id,
+        library_item.state.video_id,
         Some("tt123456:1:2".to_owned()),
         "video_id should remain on the last episode when there is no next video",
+    );
+    assert_eq!(
+        library_item.state.time_offset, 0,
+        "time_offset should be reset when the last episode is marked as watched",
     );
 }
 
@@ -297,7 +341,21 @@ fn mark_video_as_unwatched_does_not_advance_video_id() {
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
+            action: Action::Player(ActionPlayer::MarkVideoAsWatched(create_video(1, 1), true)),
+        });
+    });
+
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
             action: Action::Player(ActionPlayer::MarkVideoAsWatched(create_video(1, 1), false)),
+        });
+    });
+
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Unload,
         });
     });
 
@@ -305,13 +363,14 @@ fn mark_video_as_unwatched_does_not_advance_video_id() {
         runtime
             .model()
             .unwrap()
-            .player
-            .library_item
-            .as_ref()
+            .ctx
+            .library
+            .items
+            .get("tt123456")
             .unwrap()
             .state
             .video_id,
         Some("tt123456:1:1".to_owned()),
-        "video_id must not change when marking a video as unwatched",
+        "video_id must not change when the video is marked as unwatched before unload",
     );
 }
