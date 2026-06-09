@@ -155,9 +155,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                             .iter()
                             .find_map(|item| item.content.as_ref().and_then(|c| c.ready()))
                             .and_then(|meta_item| meta_item.next_video(&video.id))
-                            .map(|v| v.id.to_owned());
+                            .map(|video| video.id.to_owned());
                         if let Some(next_video_id) = next_video_id {
-                            library_item.state.video_id = Some(next_video_id);
+                            library_item.advance_to_video(&next_video_id);
                         }
                     }
                     Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))

@@ -983,14 +983,7 @@ fn item_state_update(
         {
             library_item.state.time_offset = 0;
             if let Some(next_video) = next_video {
-                library_item.state.video_id = Some(next_video.id.to_owned());
-                library_item.state.overall_time_watched = library_item
-                    .state
-                    .overall_time_watched
-                    .saturating_add(library_item.state.time_watched);
-                library_item.state.time_watched = 0;
-                library_item.state.flagged_watched = 0;
-                library_item.state.time_offset = 1;
+                library_item.advance_to_video(&next_video.id);
             };
         }
         _ => {}

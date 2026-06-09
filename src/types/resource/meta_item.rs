@@ -268,9 +268,7 @@ impl MetaItem {
         }
     }
 
-    /// Returns the next video after `video_id` in series order, applying the same
-    /// season-boundary filter used by the player's automatic advancement (season 0
-    /// specials are not crossed unless the current video is also in season 0).
+    /// Returns the next video after the given one, without crossing into season 0 specials
     pub fn next_video(&self, video_id: &str) -> Option<&Video> {
         self.videos
             .iter()
