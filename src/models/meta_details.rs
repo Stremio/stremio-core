@@ -158,6 +158,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                             .map(|video| video.id.to_owned());
                         if let Some(next_video_id) = next_video_id {
                             library_item.advance_to_video(&next_video_id);
+                        } else {
+                            library_item.state.time_offset = 0;
                         }
                     }
                     Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
