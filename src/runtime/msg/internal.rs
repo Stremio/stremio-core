@@ -120,7 +120,7 @@ pub enum Internal {
     /// Result for loading streaming server base url.
     StreamingServerBaseURLResult(Url, Result<Url, EnvError>),
     // Result for loading streaming server playback devices.
-    StreamingServerPlaybackDevicesResult(Url, Result<Vec<PlaybackDevice>, EnvError>),
+    StreamingServerPlaybackDevicesResult(Url, u64, Result<Vec<PlaybackDevice>, EnvError>),
     // Result for network info.
     StreamingServerNetworkInfoResult(Url, Result<NetworkInfo, EnvError>),
     // Result for device info.
