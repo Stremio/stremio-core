@@ -769,7 +769,24 @@
 <a href="#768" id="768">768</a>
 <a href="#769" id="769">769</a>
 <a href="#770" id="770">770</a>
-<a href="#771" id="771">771</a></pre></div><pre class="rust"><code><span class="kw">use </span>enclose::enclose;
+<a href="#771" id="771">771</a>
+<a href="#772" id="772">772</a>
+<a href="#773" id="773">773</a>
+<a href="#774" id="774">774</a>
+<a href="#775" id="775">775</a>
+<a href="#776" id="776">776</a>
+<a href="#777" id="777">777</a>
+<a href="#778" id="778">778</a>
+<a href="#779" id="779">779</a>
+<a href="#780" id="780">780</a>
+<a href="#781" id="781">781</a>
+<a href="#782" id="782">782</a>
+<a href="#783" id="783">783</a>
+<a href="#784" id="784">784</a>
+<a href="#785" id="785">785</a>
+<a href="#786" id="786">786</a>
+<a href="#787" id="787">787</a>
+<a href="#788" id="788">788</a></pre></div><pre class="rust"><code><span class="kw">use </span>enclose::enclose;
 <span class="kw">use </span>futures::{FutureExt, TryFutureExt};
 <span class="kw">use </span>http::request::Request;
 <span class="kw">use </span>magnet_url::{Magnet, MagnetError};
@@ -790,7 +807,8 @@
 <span class="kw">use </span><span class="kw">crate</span>::types::profile::{AuthKey, Profile};
 <span class="kw">use </span><span class="kw">crate</span>::types::streaming_server::{
     CreateMagnetRequest, CreateTorrentBlobRequest, DeviceInfo, GetHTTPSResponse, NetworkInfo,
-    Settings, SettingsResponse, Statistics, StatisticsRequest, TorrentStatisticsRequest,
+    Settings, SettingsOption, SettingsResponse, Statistics, StatisticsRequest,
+    TorrentStatisticsRequest,
 };
 <span class="kw">use </span><span class="kw">crate</span>::types::torrent::InfoHash;
 
@@ -815,6 +833,7 @@
 </span><span class="kw">pub struct </span>StreamingServer {
     <span class="kw">pub </span>selected: Selected,
     <span class="kw">pub </span>settings: Loadable&lt;Settings, EnvError&gt;,
+    <span class="kw">pub </span>settings_options: Vec&lt;SettingsOption&gt;,
     <span class="kw">pub </span>base_url: <span class="prelude-ty">Option</span>&lt;Url&gt;,
     <span class="kw">pub </span>remote_url: <span class="prelude-ty">Option</span>&lt;Url&gt;,
     <span class="kw">pub </span>playback_devices: Loadable&lt;Vec&lt;PlaybackDevice&gt;, EnvError&gt;,
@@ -840,6 +859,7 @@
                     statistics: <span class="prelude-val">None</span>,
                 },
                 settings: Loadable::Loading,
+                settings_options: <span class="macro">vec!</span>[],
                 base_url: <span class="prelude-val">None</span>,
                 remote_url: <span class="prelude-val">None</span>,
                 playback_devices: Loadable::Loading,
@@ -860,6 +880,7 @@
                 <span class="kw">let </span>settings_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.settings, Loadable::Loading);
                 <span class="kw">let </span>network_info_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.network_info, Loadable::Loading);
                 <span class="kw">let </span>device_info_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.device_info, Loadable::Loading);
+                <span class="kw">let </span>settings_options_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.settings_options, <span class="macro">vec!</span>[]);
                 <span class="kw">let </span>base_url_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.base_url, <span class="prelude-val">None</span>);
                 <span class="kw">let </span>remote_url_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.remote_url, <span class="prelude-val">None</span>);
                 Effects::many(<span class="macro">vec!</span>[
@@ -870,6 +891,7 @@
                 ])
                 .unchanged()
                 .join(settings_effects)
+                .join(settings_options_effects)
                 .join(network_info_effects)
                 .join(device_info_effects)
                 .join(base_url_effects)
@@ -999,6 +1021,7 @@
                     statistics: <span class="prelude-val">None</span>,
                 };
                 <span class="self">self</span>.settings = Loadable::Loading;
+                <span class="self">self</span>.settings_options = <span class="macro">vec!</span>[];
                 <span class="self">self</span>.network_info = Loadable::Loading;
                 <span class="self">self</span>.device_info = Loadable::Loading;
                 <span class="self">self</span>.base_url = <span class="prelude-val">None</span>;
@@ -1021,6 +1044,8 @@
                             <span class="kw-2">&amp;mut </span><span class="self">self</span>.settings,
                             Loadable::Ready(settings.values.to_owned()),
                         );
+                        <span class="kw">let </span>settings_options_effects =
+                            eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.settings_options, settings.options.to_owned());
                         <span class="kw">let </span>base_url_effects =
                             eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.base_url, <span class="prelude-val">Some</span>(settings.base_url.to_owned()));
                         <span class="kw">let </span>remote_url_effects = update_remote_url::&lt;E&gt;(
@@ -1030,12 +1055,15 @@
                             ctx,
                         );
                         settings_effects
+                            .join(settings_options_effects)
                             .join(base_url_effects)
                             .join(remote_url_effects)
                     }
                     <span class="prelude-val">Err</span>(error) =&gt; {
                         <span class="kw">let </span>base_url_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.base_url, <span class="prelude-val">None</span>);
                         <span class="kw">let </span>remote_url_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.remote_url, <span class="prelude-val">None</span>);
+                        <span class="kw">let </span>settings_options_effects =
+                            eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.settings_options, <span class="macro">vec!</span>[]);
                         <span class="kw">let </span>playback_devices_effects =
                             eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.playback_devices, Loadable::Err(error.to_owned()));
                         <span class="kw">let </span>network_info_effects =
@@ -1047,6 +1075,7 @@
                         <span class="kw">let </span>torrent_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.torrent, <span class="prelude-val">None</span>);
                         base_url_effects
                             .join(remote_url_effects)
+                            .join(settings_options_effects)
                             .join(playback_devices_effects)
                             .join(network_info_effects)
                             .join(device_info_effects)
@@ -1100,6 +1129,8 @@
                     <span class="prelude-val">Err</span>(error) =&gt; {
                         <span class="kw">let </span>base_url_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.base_url, <span class="prelude-val">None</span>);
                         <span class="kw">let </span>remote_url_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.remote_url, <span class="prelude-val">None</span>);
+                        <span class="kw">let </span>settings_options_effects =
+                            eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.settings_options, <span class="macro">vec!</span>[]);
                         <span class="kw">let </span>playback_devices_effects =
                             eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.playback_devices, Loadable::Err(error.to_owned()));
                         <span class="kw">let </span>network_info_effects =
@@ -1111,6 +1142,7 @@
                         <span class="kw">let </span>torrent_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.torrent, <span class="prelude-val">None</span>);
                         base_url_effects
                             .join(remote_url_effects)
+                            .join(settings_options_effects)
                             .join(playback_devices_effects)
                             .join(network_info_effects)
                             .join(device_info_effects)
@@ -1248,6 +1280,7 @@
     #[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span><span class="kw">struct </span>Body {
         cache_size: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+        cache_root: String,
         bt_max_connections: u64,
         bt_handshake_timeout: u64,
         bt_request_timeout: u64,
@@ -1261,6 +1294,7 @@
     }
     <span class="kw">let </span>body = Body {
         cache_size: settings.cache_size.to_owned(),
+        cache_root: settings.cache_root.to_owned(),
         bt_max_connections: settings.bt_max_connections.to_owned(),
         bt_handshake_timeout: settings.bt_handshake_timeout.to_owned(),
         bt_request_timeout: settings.bt_request_timeout.to_owned(),

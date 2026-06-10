@@ -62,7 +62,11 @@
 <a href="#61" id="61">61</a>
 <a href="#62" id="62">62</a>
 <a href="#63" id="63">63</a>
-<a href="#64" id="64">64</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
+<a href="#64" id="64">64</a>
+<a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
+<a href="#67" id="67">67</a>
+<a href="#68" id="68">68</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
 </span><span class="kw">use </span>gloo_utils::format::JsValueSerdeExt;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>stremio_core::deep_links::MetaItemDeepLinks;
@@ -70,7 +74,9 @@
 <span class="kw">use </span>stremio_core::models::streaming_server::{PlaybackDevice, Selected};
 <span class="kw">use </span>stremio_core::runtime::EnvError;
 <span class="kw">use </span>stremio_core::types::addon::ResourcePath;
-<span class="kw">use </span>stremio_core::types::streaming_server::{DeviceInfo, NetworkInfo, Settings, Statistics};
+<span class="kw">use </span>stremio_core::types::streaming_server::{
+    DeviceInfo, NetworkInfo, Settings, SettingsOption, Statistics,
+};
 <span class="kw">use </span>url::Url;
 <span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
 </span><span class="kw">use </span>wasm_bindgen::JsValue;
@@ -85,6 +91,7 @@
     </span><span class="kw">pub struct </span>StreamingServer&lt;<span class="lifetime">'a</span>&gt; {
         <span class="kw">pub </span>selected: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Selected,
         <span class="kw">pub </span>settings: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Loadable&lt;Settings, EnvError&gt;,
+        <span class="kw">pub </span>settings_options: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Vec&lt;SettingsOption&gt;,
         <span class="kw">pub </span>base_url: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;Url&gt;,
         <span class="kw">pub </span>remote_url: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;Url&gt;,
         <span class="kw">pub </span>playback_devices: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Loadable&lt;Vec&lt;PlaybackDevice&gt;, EnvError&gt;,
@@ -103,6 +110,7 @@
     &lt;JsValue <span class="kw">as </span>JsValueSerdeExt&gt;::from_serde(<span class="kw-2">&amp;</span>model::StreamingServer {
         selected: <span class="kw-2">&amp;</span>streaming_server.selected,
         settings: <span class="kw-2">&amp;</span>streaming_server.settings,
+        settings_options: <span class="kw-2">&amp;</span>streaming_server.settings_options,
         base_url: <span class="kw-2">&amp;</span>streaming_server.base_url,
         remote_url: <span class="kw-2">&amp;</span>streaming_server.remote_url,
         playback_devices: <span class="kw-2">&amp;</span>streaming_server.playback_devices,

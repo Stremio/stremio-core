@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["ArchiveCreateResponse","GetHTTPSResponse","OpensubtitlesParamsResponse","SettingsResponse"]};
+window.SIDEBAR_ITEMS = {"enum":["SettingsOptionValue"],"struct":["ArchiveCreateResponse","GetHTTPSResponse","OpensubtitlesParamsResponse","SettingsOption","SettingsOptionSelection","SettingsResponse"]};
