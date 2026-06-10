@@ -1243,7 +1243,94 @@
 <a href="#1242" id="1242">1242</a>
 <a href="#1243" id="1243">1243</a>
 <a href="#1244" id="1244">1244</a>
-<a href="#1245" id="1245">1245</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
+<a href="#1245" id="1245">1245</a>
+<a href="#1246" id="1246">1246</a>
+<a href="#1247" id="1247">1247</a>
+<a href="#1248" id="1248">1248</a>
+<a href="#1249" id="1249">1249</a>
+<a href="#1250" id="1250">1250</a>
+<a href="#1251" id="1251">1251</a>
+<a href="#1252" id="1252">1252</a>
+<a href="#1253" id="1253">1253</a>
+<a href="#1254" id="1254">1254</a>
+<a href="#1255" id="1255">1255</a>
+<a href="#1256" id="1256">1256</a>
+<a href="#1257" id="1257">1257</a>
+<a href="#1258" id="1258">1258</a>
+<a href="#1259" id="1259">1259</a>
+<a href="#1260" id="1260">1260</a>
+<a href="#1261" id="1261">1261</a>
+<a href="#1262" id="1262">1262</a>
+<a href="#1263" id="1263">1263</a>
+<a href="#1264" id="1264">1264</a>
+<a href="#1265" id="1265">1265</a>
+<a href="#1266" id="1266">1266</a>
+<a href="#1267" id="1267">1267</a>
+<a href="#1268" id="1268">1268</a>
+<a href="#1269" id="1269">1269</a>
+<a href="#1270" id="1270">1270</a>
+<a href="#1271" id="1271">1271</a>
+<a href="#1272" id="1272">1272</a>
+<a href="#1273" id="1273">1273</a>
+<a href="#1274" id="1274">1274</a>
+<a href="#1275" id="1275">1275</a>
+<a href="#1276" id="1276">1276</a>
+<a href="#1277" id="1277">1277</a>
+<a href="#1278" id="1278">1278</a>
+<a href="#1279" id="1279">1279</a>
+<a href="#1280" id="1280">1280</a>
+<a href="#1281" id="1281">1281</a>
+<a href="#1282" id="1282">1282</a>
+<a href="#1283" id="1283">1283</a>
+<a href="#1284" id="1284">1284</a>
+<a href="#1285" id="1285">1285</a>
+<a href="#1286" id="1286">1286</a>
+<a href="#1287" id="1287">1287</a>
+<a href="#1288" id="1288">1288</a>
+<a href="#1289" id="1289">1289</a>
+<a href="#1290" id="1290">1290</a>
+<a href="#1291" id="1291">1291</a>
+<a href="#1292" id="1292">1292</a>
+<a href="#1293" id="1293">1293</a>
+<a href="#1294" id="1294">1294</a>
+<a href="#1295" id="1295">1295</a>
+<a href="#1296" id="1296">1296</a>
+<a href="#1297" id="1297">1297</a>
+<a href="#1298" id="1298">1298</a>
+<a href="#1299" id="1299">1299</a>
+<a href="#1300" id="1300">1300</a>
+<a href="#1301" id="1301">1301</a>
+<a href="#1302" id="1302">1302</a>
+<a href="#1303" id="1303">1303</a>
+<a href="#1304" id="1304">1304</a>
+<a href="#1305" id="1305">1305</a>
+<a href="#1306" id="1306">1306</a>
+<a href="#1307" id="1307">1307</a>
+<a href="#1308" id="1308">1308</a>
+<a href="#1309" id="1309">1309</a>
+<a href="#1310" id="1310">1310</a>
+<a href="#1311" id="1311">1311</a>
+<a href="#1312" id="1312">1312</a>
+<a href="#1313" id="1313">1313</a>
+<a href="#1314" id="1314">1314</a>
+<a href="#1315" id="1315">1315</a>
+<a href="#1316" id="1316">1316</a>
+<a href="#1317" id="1317">1317</a>
+<a href="#1318" id="1318">1318</a>
+<a href="#1319" id="1319">1319</a>
+<a href="#1320" id="1320">1320</a>
+<a href="#1321" id="1321">1321</a>
+<a href="#1322" id="1322">1322</a>
+<a href="#1323" id="1323">1323</a>
+<a href="#1324" id="1324">1324</a>
+<a href="#1325" id="1325">1325</a>
+<a href="#1326" id="1326">1326</a>
+<a href="#1327" id="1327">1327</a>
+<a href="#1328" id="1328">1328</a>
+<a href="#1329" id="1329">1329</a>
+<a href="#1330" id="1330">1330</a>
+<a href="#1331" id="1331">1331</a>
+<a href="#1332" id="1332">1332</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
 <span class="kw">use </span>std::{collections::HashMap, io::Write};
 
 <span class="kw">use </span>tracing::trace;
@@ -1458,6 +1545,22 @@
         }
     }
 
+    <span class="kw">fn </span>archive_urls_with_ftp_proxy(
+        streaming_server_url: <span class="kw-2">&amp;</span>Url,
+        urls: Vec&lt;ArchiveUrl&gt;,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;ArchiveUrl&gt;, EnvError&gt; {
+        urls.into_iter()
+            .map(|archive_url| {
+                <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), archive_url.url).map(|url| {
+                    ArchiveUrl {
+                        url,
+                        bytes: archive_url.bytes,
+                    }
+                })
+            })
+            .collect()
+    }
+
     <span class="doccomment">/// Updates a `StreamSource` if it's Rar, Zip, 7zip, Tar, Tgz and Nzb
     /// and creates a [`ConvertedStreamSource::Url`]
     </span><span class="kw">pub fn </span>convert(
@@ -1482,18 +1585,7 @@
                     .map_err(|err| EnvError::Other(err.to_string()))<span class="question-mark">?</span>;
 
                 <span class="kw">let </span>payload = ArchiveStreamBody {
-                    urls: urls
-                        .into_iter()
-                        .map(|archive_url| {
-                            <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), archive_url.url).map(
-                                |url| ArchiveUrl {
-                                    url,
-                                    bytes: archive_url.bytes,
-                                },
-                            )
-                        })
-                        .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()
-                        .expect(<span class="string">"Streaming server availability is already checked"</span>),
+                    urls: <span class="self">Self</span>::archive_urls_with_ftp_proxy(streaming_server_url, urls)<span class="question-mark">?</span>,
                     options: ArchiveStreamOptions {
                         file_idx,
                         file_must_include,
@@ -1522,23 +1614,11 @@
                 }
 
                 <span class="kw">let </span><span class="kw-2">mut </span>stream_url = streaming_server_url
-                    .clone()
                     .join(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"zip/create"</span>))
-                    .expect(<span class="string">"Url should always be valid"</span>);
+                    .map_err(|err| EnvError::Other(err.to_string()))<span class="question-mark">?</span>;
 
                 <span class="kw">let </span>payload = ArchiveStreamBody {
-                    urls: urls
-                        .into_iter()
-                        .map(|archive_url| {
-                            <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), archive_url.url).map(
-                                |url| ArchiveUrl {
-                                    url,
-                                    bytes: archive_url.bytes,
-                                },
-                            )
-                        })
-                        .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()
-                        .expect(<span class="string">"Streaming server availability is already checked"</span>),
+                    urls: <span class="self">Self</span>::archive_urls_with_ftp_proxy(streaming_server_url, urls)<span class="question-mark">?</span>,
                     options: ArchiveStreamOptions {
                         file_idx,
                         file_must_include,
@@ -1568,22 +1648,10 @@
                 }
 
                 <span class="kw">let </span><span class="kw-2">mut </span>stream_url = streaming_server_url
-                    .clone()
                     .join(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"7zip/create"</span>))
-                    .expect(<span class="string">"Url should always be valid"</span>);
+                    .map_err(|err| EnvError::Other(err.to_string()))<span class="question-mark">?</span>;
                 <span class="kw">let </span>payload = ArchiveStreamBody {
-                    urls: urls
-                        .into_iter()
-                        .map(|archive_url| {
-                            <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), archive_url.url).map(
-                                |url| ArchiveUrl {
-                                    url,
-                                    bytes: archive_url.bytes,
-                                },
-                            )
-                        })
-                        .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()
-                        .expect(<span class="string">"Streaming server availability is already checked"</span>),
+                    urls: <span class="self">Self</span>::archive_urls_with_ftp_proxy(streaming_server_url, urls)<span class="question-mark">?</span>,
                     options: ArchiveStreamOptions {
                         file_idx,
                         file_must_include,
@@ -1612,23 +1680,11 @@
                 }
 
                 <span class="kw">let </span><span class="kw-2">mut </span>stream_url = streaming_server_url
-                    .clone()
                     .join(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"tgz/create"</span>))
-                    .expect(<span class="string">"Url should always be valid"</span>);
+                    .map_err(|err| EnvError::Other(err.to_string()))<span class="question-mark">?</span>;
 
                 <span class="kw">let </span>payload = ArchiveStreamBody {
-                    urls: urls
-                        .into_iter()
-                        .map(|archive_url| {
-                            <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), archive_url.url).map(
-                                |url| ArchiveUrl {
-                                    url,
-                                    bytes: archive_url.bytes,
-                                },
-                            )
-                        })
-                        .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()
-                        .expect(<span class="string">"Streaming server availability is already checked"</span>),
+                    urls: <span class="self">Self</span>::archive_urls_with_ftp_proxy(streaming_server_url, urls)<span class="question-mark">?</span>,
                     options: ArchiveStreamOptions {
                         file_idx,
                         file_must_include,
@@ -1657,18 +1713,7 @@
                 }
 
                 <span class="kw">let </span>payload = ArchiveStreamBody {
-                    urls: urls
-                        .into_iter()
-                        .map(|archive_url| {
-                            <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), archive_url.url).map(
-                                |url| ArchiveUrl {
-                                    url,
-                                    bytes: archive_url.bytes,
-                                },
-                            )
-                        })
-                        .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()
-                        .expect(<span class="string">"Streaming server availability is already checked"</span>),
+                    urls: <span class="self">Self</span>::archive_urls_with_ftp_proxy(streaming_server_url, urls)<span class="question-mark">?</span>,
                     options: ArchiveStreamOptions {
                         file_idx,
                         file_must_include,
@@ -1676,9 +1721,8 @@
                 };
 
                 <span class="kw">let </span><span class="kw-2">mut </span>stream_url = streaming_server_url
-                    .clone()
                     .join(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"tar/create"</span>))
-                    .expect(<span class="string">"Url should always be valid"</span>);
+                    .map_err(|err| EnvError::Other(err.to_string()))<span class="question-mark">?</span>;
 
                 <span class="kw">let </span>stream_data = serde_json::to_string(<span class="kw-2">&amp;</span>payload)<span class="question-mark">?</span>;
                 stream_url.query_pairs_mut().append_pair(
@@ -1697,26 +1741,20 @@
                 <span class="kw">let </span>servers = servers
                     .into_iter()
                     .map(|server_url| <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), server_url))
-                    .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()
-                    .expect(<span class="string">"Streaming server availability is already checked"</span>);
+                    .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>;
 
                 <span class="kw">let </span><span class="kw-2">mut </span>stream_url = streaming_server_url
-                    .clone()
                     .join(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"nzb/create"</span>))
-                    .expect(<span class="string">"Url should always be valid"</span>);
+                    .map_err(|err| EnvError::Other(err.to_string()))<span class="question-mark">?</span>;
 
                 <span class="kw">let </span>payload = StreamSource::Nzb {
-                    url: url.map(|url| {
-                        <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), url)
-                            .expect(<span class="string">"Streaming server availability is already checked"</span>)
-                    }),
+                    url: url
+                        .map(|url| <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), url))
+                        .transpose()<span class="question-mark">?</span>,
                     urls: urls
-                        .iter()
-                        .map(|url| {
-                            <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), url.clone())
-                                .expect(<span class="string">"Streaming server availability is already checked"</span>)
-                        })
-                        .collect(),
+                        .into_iter()
+                        .map(|url| <span class="self">Self</span>::ftp_url_handler(<span class="prelude-val">Some</span>(streaming_server_url), url))
+                        .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>,
                     servers,
                 };
 
@@ -1756,6 +1794,11 @@
                         <span class="prelude-val">Some</span>(streaming_server_url),
                     ) =&gt; {
                         <span class="kw">let </span><span class="kw-2">mut </span>streaming_url = streaming_server_url.to_owned();
+                        <span class="kw">if </span>streaming_url.path_segments_mut().is_err() {
+                            <span class="kw">return </span><span class="prelude-val">Err</span>(EnvError::Other(
+                                <span class="string">"Streaming server URL cannot be used as a base"</span>.into(),
+                            ));
+                        }
                         <span class="kw">let </span><span class="kw-2">mut </span>proxy_query = form_urlencoded::Serializer::new(String::new());
                         <span class="kw">let </span>origin = <span class="macro">format!</span>(<span class="string">"{}://{}"</span>, url.scheme(), url.authority());
                         proxy_query.append_pair(<span class="string">"d"</span>, origin.as_str());
@@ -1794,9 +1837,11 @@
                     url: {
                         <span class="kw">let </span><span class="kw-2">mut </span>url = streaming_server_url.to_owned();
                         {
-                            <span class="kw">let </span><span class="kw-2">mut </span>path = url
-                                .path_segments_mut()
-                                .expect(<span class="string">"Streaming server should always be base"</span>);
+                            <span class="kw">let </span><span class="kw-2">mut </span>path = url.path_segments_mut().map_err(|<span class="kw">_</span>| {
+                                EnvError::Other(
+                                    <span class="string">"Streaming server URL cannot be used as a base"</span>.into(),
+                                )
+                            })<span class="question-mark">?</span>;
                             path.push(<span class="string">"yt"</span>);
                             path.push(
                                 <span class="kw-2">&amp;</span>utf8_percent_encode(<span class="kw-2">&amp;</span>yt_id, URI_COMPONENT_ENCODE_SET).to_string(),
@@ -1825,7 +1870,9 @@
                     <span class="kw">let </span><span class="kw-2">mut </span>url = streaming_server_url.to_owned();
 
                     {
-                        <span class="kw">let </span><span class="kw-2">mut </span>path = url.path_segments_mut().expect(<span class="string">"Should always be base url"</span>);
+                        <span class="kw">let </span><span class="kw-2">mut </span>path = url.path_segments_mut().map_err(|<span class="kw">_</span>| {
+                            EnvError::Other(<span class="string">"Streaming server URL cannot be used as a base"</span>.into())
+                        })<span class="question-mark">?</span>;
                         path.extend([
                             <span class="kw-2">&amp;</span>hex::encode(info_hash),
                             <span class="comment">// When fileIndex is not provided use -1, which will tell the
@@ -2462,6 +2509,133 @@
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
+    <span class="kw">use super</span>::{ArchiveUrl, Stream, StreamBehaviorHints, StreamProxyHeaders, StreamSource};
+    <span class="kw">use </span><span class="kw">crate</span>::runtime::EnvError;
+    <span class="kw">use </span>std::collections::HashMap;
+    <span class="kw">use </span>url::Url;
+
+    <span class="kw">fn </span>stream(source: StreamSource) -&gt; Stream {
+        Stream {
+            source,
+            name: <span class="prelude-val">None</span>,
+            description: <span class="prelude-val">None</span>,
+            thumbnail: <span class="prelude-val">None</span>,
+            subtitles: <span class="macro">vec!</span>[],
+            behavior_hints: StreamBehaviorHints::default(),
+        }
+    }
+
+    <span class="kw">fn </span>archive_url() -&gt; ArchiveUrl {
+        ArchiveUrl {
+            url: Url::parse(<span class="string">"https://example.com/archive.zip"</span>).unwrap(),
+            bytes: <span class="prelude-val">None</span>,
+        }
+    }
+
+    <span class="kw">fn </span>assert_convert_error(source_name: <span class="kw-2">&amp;</span>str, source: StreamSource) {
+        <span class="kw">let </span>streaming_server_url = Url::parse(<span class="string">"data:text/plain,server"</span>).unwrap();
+        <span class="kw">let </span>result = stream(source).convert(<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>streaming_server_url));
+
+        <span class="macro">assert!</span>(
+            <span class="macro">matches!</span>(result, <span class="prelude-val">Err</span>(EnvError::Other(<span class="kw">_</span>))),
+            <span class="string">"{source_name} conversion should return EnvError::Other, got {result:?}"
+        </span>);
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>stream_convert_returns_error_for_invalid_archive_server_base() {
+        assert_convert_error(
+            <span class="string">"rar"</span>,
+            StreamSource::Rar {
+                urls: <span class="macro">vec!</span>[archive_url()],
+                file_idx: <span class="prelude-val">None</span>,
+                file_must_include: <span class="macro">vec!</span>[],
+            },
+        );
+        assert_convert_error(
+            <span class="string">"zip"</span>,
+            StreamSource::Zip {
+                urls: <span class="macro">vec!</span>[archive_url()],
+                file_idx: <span class="prelude-val">None</span>,
+                file_must_include: <span class="macro">vec!</span>[],
+            },
+        );
+        assert_convert_error(
+            <span class="string">"7zip"</span>,
+            StreamSource::Zip7 {
+                urls: <span class="macro">vec!</span>[archive_url()],
+                file_idx: <span class="prelude-val">None</span>,
+                file_must_include: <span class="macro">vec!</span>[],
+            },
+        );
+        assert_convert_error(
+            <span class="string">"tgz"</span>,
+            StreamSource::Tgz {
+                urls: <span class="macro">vec!</span>[archive_url()],
+                file_idx: <span class="prelude-val">None</span>,
+                file_must_include: <span class="macro">vec!</span>[],
+            },
+        );
+        assert_convert_error(
+            <span class="string">"tar"</span>,
+            StreamSource::Tar {
+                urls: <span class="macro">vec!</span>[archive_url()],
+                file_idx: <span class="prelude-val">None</span>,
+                file_must_include: <span class="macro">vec!</span>[],
+            },
+        );
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>stream_convert_returns_error_for_invalid_nzb_ftp_proxy_base() {
+        assert_convert_error(
+            <span class="string">"nzb"</span>,
+            StreamSource::Nzb {
+                url: <span class="prelude-val">Some</span>(Url::parse(<span class="string">"ftp://example.com/file.nzb"</span>).unwrap()),
+                urls: <span class="macro">vec!</span>[Url::parse(<span class="string">"ftp://example.com/backup.nzb"</span>).unwrap()],
+                servers: <span class="macro">vec!</span>[Url::parse(<span class="string">"nntps://news.example.com"</span>).unwrap()],
+            },
+        );
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>stream_convert_returns_error_for_invalid_segment_server_base() {
+        assert_convert_error(
+            <span class="string">"youtube"</span>,
+            StreamSource::YouTube {
+                yt_id: <span class="string">"video_id"</span>.to_owned(),
+            },
+        );
+        assert_convert_error(
+            <span class="string">"torrent"</span>,
+            StreamSource::Torrent {
+                info_hash: [<span class="number">1</span>; <span class="number">20</span>],
+                file_idx: <span class="prelude-val">None</span>,
+                announce: <span class="macro">vec!</span>[],
+                file_must_include: <span class="macro">vec!</span>[],
+            },
+        );
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>stream_convert_returns_error_for_invalid_proxy_server_base() {
+        <span class="kw">let </span>streaming_server_url = Url::parse(<span class="string">"data:text/plain,server"</span>).unwrap();
+        <span class="kw">let </span><span class="kw-2">mut </span>stream = stream(StreamSource::Url {
+            url: Url::parse(<span class="string">"https://example.com/video.mp4"</span>).unwrap(),
+        });
+        stream.behavior_hints.proxy_headers = <span class="prelude-val">Some</span>(StreamProxyHeaders {
+            request: HashMap::new(),
+            response: HashMap::new(),
+        });
+
+        <span class="kw">let </span>result = stream.convert(<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>streaming_server_url));
+
+        <span class="macro">assert!</span>(
+            <span class="macro">matches!</span>(result, <span class="prelude-val">Err</span>(EnvError::Other(<span class="kw">_</span>))),
+            <span class="string">"proxied URL conversion should return EnvError::Other, got {result:?}"
+        </span>);
+    }
+
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_lz_string_decompress() {
         <span class="kw">let </span>url = <span class="string">"http://127.0.0.1:11470/nzb/create?lz=N4IgdgXgRgqgTgGxALhACwC4YA4GdkD0BAJnAK5gDWApmLgmQOYB0AxgPYC2Bj1GkUAgEMAjAA4RAdlYBOSQFYx1GQBYAZqwDMa6cXmyha6spmbRalWM0A2KBOYCAZAEsAvFIAM16x8dxX8tZqHjLUrFBCUAZCmqyRYqxiPvIATB4qItRQ1EIgADQguNRwAG7FuCgA2uBgOPhEUACekpweYNjU1sgAQswpMABqAPpiAEoeUACk8gCiAI4AAmDUAO64zGRFyxhFpcVsXMgqKpoEKvk1dYQEAFZC5BHIMAAilCsDalBqC0WsZHDUByrdY5XCNZZrA6cI4nM4XMC1PDXCjYSQpTSSFQeESaE7IZ4qFZiGSTdEARRUAC1GAANMQAYVJ3Umkm6AA8ABSklTTGZiFIAWlJmmmzxuC2oZA2Wz42Dgzk4gI40OOp3OBQRVyIrDiKhS1E0gREevkeigyEmmgAggB5STEXnsSmW%2BnWGRWoRLYHMVbUShCBwIZCBNUgAC6AF8gA"</span>.parse::&lt;url::Url&gt;().unwrap();
