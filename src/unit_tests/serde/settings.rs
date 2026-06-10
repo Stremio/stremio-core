@@ -16,6 +16,7 @@ fn settings() {
             binge_watching: true,
             play_in_background: true,
             hardware_decoding: true,
+            gpu_video_processing: false,
             video_mode: Some("video_mode".to_owned()),
             frame_rate_matching_strategy: FrameRateMatchingStrategy::Disabled,
             next_video_notification_duration: 30,
@@ -50,7 +51,7 @@ fn settings() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 37,
+                len: 38,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -71,6 +72,8 @@ fn settings() {
             Token::Bool(true),
             Token::Str("hardwareDecoding"),
             Token::Bool(true),
+            Token::Str("gpuVideoProcessing"),
+            Token::Bool(false),
             Token::Str("videoMode"),
             Token::Some,
             Token::Str("video_mode"),
@@ -148,7 +151,7 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 37,
+                len: 38,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -168,6 +171,8 @@ fn settings_de() {
             Token::Bool(true),
             Token::Str("hardwareDecoding"),
             Token::Bool(true),
+            Token::Str("gpuVideoProcessing"),
+            Token::Bool(false),
             Token::Str("videoMode"),
             Token::None,
             Token::Str("frameRateMatchingStrategy"),

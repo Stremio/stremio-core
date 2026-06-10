@@ -376,7 +376,7 @@ impl DefaultTokens for Settings {
         vec![
             Token::Struct {
                 name: "Settings",
-                len: 37,
+                len: 38,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -396,6 +396,8 @@ impl DefaultTokens for Settings {
             Token::Bool(true),
             Token::Str("hardwareDecoding"),
             Token::Bool(true),
+            Token::Str("gpuVideoProcessing"),
+            Token::Bool(false),
             Token::Str("videoMode"),
             Token::None,
             Token::Str("frameRateMatchingStrategy"),
