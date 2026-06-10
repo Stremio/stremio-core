@@ -97,7 +97,9 @@
 <a href="#96" id="96">96</a>
 <a href="#97" id="97">97</a>
 <a href="#98" id="98">98</a>
-<a href="#99" id="99">99</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::STREAMING_SERVER_URL;
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::STREAMING_SERVER_URL;
 <span class="kw">use </span>chrono::{DateTime, Utc};
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>url::Url;
@@ -146,6 +148,7 @@
     <span class="kw">pub </span>streaming_server_warning_dismissed: <span class="prelude-ty">Option</span>&lt;DateTime&lt;Utc&gt;&gt;,
     <span class="kw">pub </span>server_in_foreground: bool,
     <span class="kw">pub </span>send_crash_reports: bool,
+    <span class="kw">pub </span>discord_rpc_enabled: bool,
 }
 
 <span class="attr">#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -193,6 +196,7 @@
             streaming_server_warning_dismissed: <span class="prelude-val">None</span>,
             server_in_foreground: <span class="bool-val">false</span>,
             send_crash_reports: <span class="bool-val">true</span>,
+            discord_rpc_enabled: <span class="bool-val">false</span>,
         }
     }
 }
