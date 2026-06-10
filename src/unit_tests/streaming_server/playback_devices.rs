@@ -65,6 +65,7 @@ fn refresh_playback_devices_updates_ready_state() {
                 future::ok(Box::new(SettingsResponse {
                     base_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
                     values: STREAMING_SERVER_SETTINGS,
+                    options: vec![],
                 }) as Box<dyn Any + Send>)
                 .boxed_env()
             }
