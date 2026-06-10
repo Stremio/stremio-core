@@ -92,6 +92,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 let settings_effects = eq_update(&mut self.settings, Loadable::Loading);
                 let network_info_effects = eq_update(&mut self.network_info, Loadable::Loading);
                 let device_info_effects = eq_update(&mut self.device_info, Loadable::Loading);
+                let settings_options_effects = eq_update(&mut self.settings_options, vec![]);
                 let base_url_effects = eq_update(&mut self.base_url, None);
                 let remote_url_effects = eq_update(&mut self.remote_url, None);
                 Effects::many(vec![
@@ -102,6 +103,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 ])
                 .unchanged()
                 .join(settings_effects)
+                .join(settings_options_effects)
                 .join(network_info_effects)
                 .join(device_info_effects)
                 .join(base_url_effects)
@@ -231,6 +233,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     statistics: None,
                 };
                 self.settings = Loadable::Loading;
+                self.settings_options = vec![];
                 self.network_info = Loadable::Loading;
                 self.device_info = Loadable::Loading;
                 self.base_url = None;
@@ -271,6 +274,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     Err(error) => {
                         let base_url_effects = eq_update(&mut self.base_url, None);
                         let remote_url_effects = eq_update(&mut self.remote_url, None);
+                        let settings_options_effects =
+                            eq_update(&mut self.settings_options, vec![]);
                         let playback_devices_effects =
                             eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()));
                         let network_info_effects =
@@ -282,6 +287,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         let torrent_effects = eq_update(&mut self.torrent, None);
                         base_url_effects
                             .join(remote_url_effects)
+                            .join(settings_options_effects)
                             .join(playback_devices_effects)
                             .join(network_info_effects)
                             .join(device_info_effects)
@@ -335,6 +341,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     Err(error) => {
                         let base_url_effects = eq_update(&mut self.base_url, None);
                         let remote_url_effects = eq_update(&mut self.remote_url, None);
+                        let settings_options_effects =
+                            eq_update(&mut self.settings_options, vec![]);
                         let playback_devices_effects =
                             eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()));
                         let network_info_effects =
@@ -346,6 +354,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         let torrent_effects = eq_update(&mut self.torrent, None);
                         base_url_effects
                             .join(remote_url_effects)
+                            .join(settings_options_effects)
                             .join(playback_devices_effects)
                             .join(network_info_effects)
                             .join(device_info_effects)
