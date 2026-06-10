@@ -101,7 +101,9 @@
 <a href="#100" id="100">100</a>
 <a href="#101" id="101">101</a>
 <a href="#102" id="102">102</a>
-<a href="#103" id="103">103</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::STREAMING_SERVER_URL;
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::STREAMING_SERVER_URL;
 <span class="kw">use </span>chrono::{DateTime, Utc};
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>url::Url;
@@ -118,6 +120,7 @@
     <span class="kw">pub </span>binge_watching: bool,
     <span class="kw">pub </span>play_in_background: bool,
     <span class="kw">pub </span>hardware_decoding: bool,
+    <span class="kw">pub </span>gpu_video_processing: bool,
     <span class="kw">pub </span>video_mode: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>frame_rate_matching_strategy: FrameRateMatchingStrategy,
     <span class="kw">pub </span>next_video_notification_duration: u32,
@@ -168,6 +171,7 @@
             binge_watching: <span class="bool-val">true</span>,
             play_in_background: <span class="bool-val">true</span>,
             hardware_decoding: <span class="bool-val">true</span>,
+            gpu_video_processing: <span class="bool-val">false</span>,
             video_mode: <span class="prelude-val">None</span>,
             hide_spoilers: <span class="bool-val">false</span>,
             gamepad_support: <span class="bool-val">false</span>,
