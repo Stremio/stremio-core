@@ -2536,6 +2536,9 @@
                     <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
                 };
 
+                <span class="kw">let </span>next_stream_effects =
+                    next_stream_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.next_stream, <span class="kw-2">&amp;</span><span class="self">self</span>.next_streams, <span class="kw-2">&amp;</span><span class="self">self</span>.selected);
+
                 <span class="kw">let </span>next_video_effects = next_video_update(
                     <span class="kw-2">&amp;mut </span><span class="self">self</span>.next_video,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.next_stream,
@@ -2548,9 +2551,6 @@
                     <span class="kw-2">&amp;</span><span class="self">self</span>.next_video,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
                 ));
-
-                <span class="kw">let </span>next_stream_effects =
-                    next_stream_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.next_stream, <span class="kw-2">&amp;</span><span class="self">self</span>.next_streams, <span class="kw-2">&amp;</span><span class="self">self</span>.selected);
 
                 <span class="kw">let </span>series_info_effects =
                     series_info_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.series_info, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_item);
