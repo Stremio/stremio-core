@@ -1695,15 +1695,7 @@
 <a href="#1694" id="1694">1694</a>
 <a href="#1695" id="1695">1695</a>
 <a href="#1696" id="1696">1696</a>
-<a href="#1697" id="1697">1697</a>
-<a href="#1698" id="1698">1698</a>
-<a href="#1699" id="1699">1699</a>
-<a href="#1700" id="1700">1700</a>
-<a href="#1701" id="1701">1701</a>
-<a href="#1702" id="1702">1702</a>
-<a href="#1703" id="1703">1703</a>
-<a href="#1704" id="1704">1704</a>
-<a href="#1705" id="1705">1705</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#1697" id="1697">1697</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>std::ops::Div;
 
 <span class="kw">use </span>base64::Engine;
@@ -1744,7 +1736,6 @@
 
 <span class="kw">use </span>chrono::{DateTime, Duration, TimeZone, Utc};
 <span class="kw">use </span>derivative::Derivative;
-<span class="kw">use </span>itertools::Itertools;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 
 <span class="kw">use </span>once_cell::sync::Lazy;
@@ -1826,6 +1817,9 @@
     </span><span class="kw">pub </span>loaded: bool,
     <span class="attr">#[serde(skip_serializing)]
     </span><span class="kw">pub </span>ended: bool,
+    <span class="doccomment">/// Whether the selected video has been manually marked as watched
+    </span><span class="attr">#[serde(skip_serializing)]
+    </span><span class="kw">pub </span>marked_video_as_watched: bool,
     <span class="attr">#[serde(skip_serializing)]
     </span><span class="kw">pub </span>paused: <span class="prelude-ty">Option</span>&lt;bool&gt;,
     <span class="attr">#[serde(skip_serializing)]
@@ -1862,7 +1856,11 @@
                         .as_ref()
                         .map(|meta_request| <span class="kw-2">&amp;</span>meta_request.path.id)
                 {
-                    item_state_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="self">self</span>.next_video.as_ref())
+                    item_state_update(
+                        <span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item,
+                        <span class="self">self</span>.next_video.as_ref(),
+                        <span class="self">self</span>.marked_video_as_watched,
+                    )
                 } <span class="kw">else </span>{
                     Effects::none().unchanged()
                 };
@@ -1999,6 +1997,7 @@
                 <span class="self">self</span>.loaded = <span class="bool-val">false</span>;
                 <span class="self">self</span>.ended = <span class="bool-val">false</span>;
                 <span class="self">self</span>.paused = <span class="prelude-val">None</span>;
+                <span class="self">self</span>.marked_video_as_watched = <span class="bool-val">false</span>;
                 trakt_event_effects
                     .join(item_state_update_effects)
                     .join(selected_effects)
@@ -2048,8 +2047,11 @@
                     </span><span class="prelude-val">None</span>,
                 );
 
-                <span class="kw">let </span>item_state_update_effects =
-                    item_state_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="self">self</span>.next_video.as_ref());
+                <span class="kw">let </span>item_state_update_effects = item_state_update(
+                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item,
+                    <span class="self">self</span>.next_video.as_ref(),
+                    <span class="self">self</span>.marked_video_as_watched,
+                );
                 <span class="kw">let </span>push_to_library_effects = <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.library_item {
                     <span class="prelude-val">Some</span>(library_item) =&gt; Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                         library_item.to_owned(),
@@ -2075,6 +2077,7 @@
                 <span class="self">self</span>.loaded = <span class="bool-val">false</span>;
                 <span class="self">self</span>.ended = <span class="bool-val">false</span>;
                 <span class="self">self</span>.paused = <span class="prelude-val">None</span>;
+                <span class="self">self</span>.marked_video_as_watched = <span class="bool-val">false</span>;
 
                 trakt_event_effects
                     .join(seek_history_effects)
@@ -2426,9 +2429,18 @@
             Msg::Action(Action::Player(ActionPlayer::MarkVideoAsWatched(video, is_watched))) =&gt; {
                 <span class="kw">match </span>(<span class="kw-2">&amp;</span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span><span class="self">self</span>.watched) {
                     (<span class="prelude-val">Some</span>(library_item), <span class="prelude-val">Some</span>(watched)) =&gt; {
+                        <span class="comment">// advancing video_id to the next video is deferred to item_state_update,
+                        // otherwise TimeChanged would reset it back to the playing video
+                        </span><span class="kw">let </span>selected_video_id = <span class="self">self
+                            </span>.selected
+                            .as_ref()
+                            .and_then(|selected| selected.stream_request.as_ref())
+                            .map(|stream_request| <span class="kw-2">&amp;</span>stream_request.path.id);
+                        <span class="kw">if </span>selected_video_id == <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>video.id) {
+                            <span class="self">self</span>.marked_video_as_watched = <span class="kw-2">*</span>is_watched;
+                        }
                         <span class="kw">let </span><span class="kw-2">mut </span>library_item = library_item.to_owned();
                         library_item.mark_video_as_watched::&lt;E&gt;(watched, video, <span class="kw-2">*</span>is_watched);
-
                         Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                             .unchanged()
                     }
@@ -2668,22 +2680,17 @@
 <span class="kw">fn </span>item_state_update(
     library_item: <span class="kw-2">&amp;mut </span><span class="prelude-ty">Option</span>&lt;LibraryItem&gt;,
     next_video: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Video&gt;,
+    marked_video_as_watched: bool,
 ) -&gt; Effects {
     <span class="kw">match </span>library_item {
         <span class="prelude-val">Some</span>(library_item)
-            <span class="kw">if </span>library_item.state.time_offset <span class="kw">as </span>f64
-                &gt; library_item.state.duration <span class="kw">as </span>f64 * CREDITS_THRESHOLD_COEF =&gt;
+            <span class="kw">if </span>marked_video_as_watched
+                || library_item.state.time_offset <span class="kw">as </span>f64
+                    &gt; library_item.state.duration <span class="kw">as </span>f64 * CREDITS_THRESHOLD_COEF =&gt;
         {
             library_item.state.time_offset = <span class="number">0</span>;
             <span class="kw">if let </span><span class="prelude-val">Some</span>(next_video) = next_video {
-                library_item.state.video_id = <span class="prelude-val">Some</span>(next_video.id.to_owned());
-                library_item.state.overall_time_watched = library_item
-                    .state
-                    .overall_time_watched
-                    .saturating_add(library_item.state.time_watched);
-                library_item.state.time_watched = <span class="number">0</span>;
-                library_item.state.flagged_watched = <span class="number">0</span>;
-                library_item.state.time_offset = <span class="number">1</span>;
+                library_item.advance_to_video(<span class="kw-2">&amp;</span>next_video.id);
             };
         }
         <span class="kw">_ </span>=&gt; {}
@@ -2736,36 +2743,13 @@
                 content: <span class="prelude-val">Some</span>(Loadable::Ready(meta_item)),
                 ..
             }),
-        ) =&gt; meta_item
-            .videos
-            .iter()
-            .find_position(|video| video.id == <span class="kw-2">*</span>video_id)
-            .and_then(|(position, current_video)| {
-                meta_item
-                    .videos
-                    .get(position + <span class="number">1</span>)
-                    .map(|next_video| (current_video, next_video))
-            })
-            .filter(|(current_video, next_video)| {
-                <span class="kw">let </span>current_season = current_video
-                    .series_info
-                    .as_ref()
-                    .map(|info| info.season)
-                    .unwrap_or_default();
-                <span class="kw">let </span>next_season = next_video
-                    .series_info
-                    .as_ref()
-                    .map(|info| info.season)
-                    .unwrap_or_default();
-                next_season != <span class="number">0 </span>|| current_season == next_season
-            })
-            .map(|(<span class="kw">_</span>, next_video)| {
-                <span class="kw">let </span><span class="kw-2">mut </span>next_video = next_video.clone();
-                <span class="kw">if let </span><span class="prelude-val">Some</span>(stream) = stream {
-                    next_video.streams = <span class="macro">vec!</span>[stream.clone()];
-                }
-                next_video
-            }),
+        ) =&gt; meta_item.next_video(video_id).map(|next_video| {
+            <span class="kw">let </span><span class="kw-2">mut </span>next_video = next_video.clone();
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(stream) = stream {
+                next_video.streams = <span class="macro">vec!</span>[stream.clone()];
+            }
+            next_video
+        }),
         <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
     };
     eq_update(video, next_video)
