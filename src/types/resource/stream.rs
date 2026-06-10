@@ -462,6 +462,11 @@ impl Stream {
                         Some(streaming_server_url),
                     ) => {
                         let mut streaming_url = streaming_server_url.to_owned();
+                        if streaming_url.path_segments_mut().is_err() {
+                            return Err(EnvError::Other(
+                                "Streaming server URL cannot be used as a base".into(),
+                            ));
+                        }
                         let mut proxy_query = form_urlencoded::Serializer::new(String::new());
                         let origin = format!("{}://{}", url.scheme(), url.authority());
                         proxy_query.append_pair("d", origin.as_str());
@@ -1172,8 +1177,9 @@ fn get_streaming_url(converted: &Stream<ConvertedStreamSource>) -> Option<Url> {
 
 #[cfg(test)]
 mod tests {
-    use super::{ArchiveUrl, Stream, StreamBehaviorHints, StreamSource};
+    use super::{ArchiveUrl, Stream, StreamBehaviorHints, StreamProxyHeaders, StreamSource};
     use crate::runtime::EnvError;
+    use std::collections::HashMap;
     use url::Url;
 
     fn stream(source: StreamSource) -> Stream {
@@ -1276,6 +1282,25 @@ mod tests {
                 announce: vec![],
                 file_must_include: vec![],
             },
+        );
+    }
+
+    #[test]
+    fn stream_convert_returns_error_for_invalid_proxy_server_base() {
+        let streaming_server_url = Url::parse("data:text/plain,server").unwrap();
+        let mut stream = stream(StreamSource::Url {
+            url: Url::parse("https://example.com/video.mp4").unwrap(),
+        });
+        stream.behavior_hints.proxy_headers = Some(StreamProxyHeaders {
+            request: HashMap::new(),
+            response: HashMap::new(),
+        });
+
+        let result = stream.convert(Some(&streaming_server_url));
+
+        assert!(
+            matches!(result, Err(EnvError::Other(_))),
+            "proxied URL conversion should return EnvError::Other, got {result:?}"
         );
     }
 
