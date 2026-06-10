@@ -99,7 +99,9 @@
 <a href="#98" id="98">98</a>
 <a href="#99" id="99">99</a>
 <a href="#100" id="100">100</a>
-<a href="#101" id="101">101</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::STREAMING_SERVER_URL;
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::STREAMING_SERVER_URL;
 <span class="kw">use </span>chrono::{DateTime, Utc};
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>url::Url;
@@ -108,6 +110,7 @@
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>Settings {
     <span class="kw">pub </span>interface_language: String,
+    <span class="kw">pub </span>interface_scale: u8,
     <span class="kw">pub </span>hide_spoilers: bool,
     <span class="kw">pub </span>gamepad_support: bool,
     <span class="kw">pub </span>streaming_server_url: Url,
@@ -173,6 +176,7 @@
             audio_passthrough: <span class="bool-val">false</span>,
             streaming_server_url: STREAMING_SERVER_URL.to_owned(),
             interface_language: <span class="string">"eng"</span>.to_owned(),
+            interface_scale: <span class="number">100</span>,
             audio_language: <span class="prelude-val">Some</span>(<span class="string">"eng"</span>.to_owned()),
             secondary_audio_language: <span class="prelude-val">None</span>,
             subtitles_language: <span class="prelude-val">Some</span>(<span class="string">"eng"</span>.to_owned()),
