@@ -1,3 +1,5 @@
+use std::vec;
+
 use crate::types::resource::StreamSource;
 use serde_test::{assert_de_tokens, assert_de_tokens_error, assert_ser_tokens, Token};
 use url::Url;
@@ -56,9 +58,19 @@ fn stream_source() {
             StreamSource::PlayerFrame {
                 player_frame_url: Url::parse("https://player_frame_url").unwrap(),
             },
+            StreamSource::Nzb {
+                url: Some(Url::parse("https://url/").unwrap()),
+                urls: vec![],
+                servers: vec![Url::parse("nntps://server").unwrap()],
+            },
+            StreamSource::Nzb {
+                url: None,
+                urls: vec![Url::parse("https://url").unwrap()],
+                servers: vec![Url::parse("nntps://server").unwrap()],
+            },
         ],
         &[
-            Token::Seq { len: Some(7) },
+            Token::Seq { len: Some(9) },
             // 1st
             Token::Struct {
                 name: "StreamSource",
@@ -137,6 +149,33 @@ fn stream_source() {
             Token::Str("playerFrameUrl"),
             Token::Str("https://player_frame_url/"),
             Token::StructEnd,
+            // Nzb url
+            Token::Struct {
+                name: "StreamSource",
+                len: 2,
+            },
+            Token::Str("nzbUrl"),
+            Token::Some,
+            Token::Str("https://url/"),
+            Token::Str("servers"),
+            Token::Seq { len: Some(1) },
+            Token::Str("nntps://server"),
+            Token::SeqEnd,
+            Token::StructEnd,
+            // Nzb urls
+            Token::Struct {
+                name: "StreamSource",
+                len: 2,
+            },
+            Token::Str("nzbUrls"),
+            Token::Seq { len: Some(1) },
+            Token::Str("https://url/"),
+            Token::SeqEnd,
+            Token::Str("servers"),
+            Token::Seq { len: Some(1) },
+            Token::Str("nntps://server"),
+            Token::SeqEnd,
+            Token::StructEnd,
             Token::SeqEnd,
         ],
     );
@@ -187,9 +226,19 @@ fn stream_source() {
             StreamSource::PlayerFrame {
                 player_frame_url: Url::parse("https://player_frame_url").unwrap(),
             },
+            StreamSource::Nzb {
+                url: Some(Url::parse("https://url").unwrap()),
+                urls: vec![],
+                servers: vec![Url::parse("nntps://server").unwrap()],
+            },
+            StreamSource::Nzb {
+                url: None,
+                urls: vec![Url::parse("https://url").unwrap()],
+                servers: vec![Url::parse("nntps://server").unwrap()],
+            },
         ],
         &[
-            Token::Seq { len: Some(9) },
+            Token::Seq { len: Some(10) },
             // Youtube
             Token::Struct {
                 name: "StreamSource",
@@ -289,6 +338,33 @@ fn stream_source() {
             },
             Token::Str("playerFrameUrl"),
             Token::Str("https://player_frame_url/"),
+            Token::StructEnd,
+            // Nzb url
+            Token::Struct {
+                name: "StreamSource",
+                len: 2,
+            },
+            Token::Str("nzbUrl"),
+            Token::Some,
+            Token::Str("https://url/"),
+            Token::Str("servers"),
+            Token::Seq { len: Some(1) },
+            Token::Str("nntps://server"),
+            Token::SeqEnd,
+            Token::StructEnd,
+            // Nzb urls
+            Token::Struct {
+                name: "StreamSource",
+                len: 2,
+            },
+            Token::Str("nzbUrls"),
+            Token::Seq { len: Some(1) },
+            Token::Str("https://url/"),
+            Token::SeqEnd,
+            Token::Str("servers"),
+            Token::Seq { len: Some(1) },
+            Token::Str("nntps://server"),
+            Token::SeqEnd,
             Token::StructEnd,
             Token::SeqEnd,
         ],

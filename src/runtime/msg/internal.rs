@@ -168,4 +168,9 @@ pub enum Internal {
     DismissedEventsChanged,
     RatingGetStatusResult(MetaItemId, Result<RatingGetStatusResponse, EnvError>),
     RatingSendResult(MetaItemId, Result<RatingSendResponse, EnvError>),
+    /// Internal to core, sends the watched update when needed:
+    /// Mark video as watched
+    /// Mark Season as watched (meta item)
+    /// Mark move as watched (meta item)
+    WatchedSendResult(MetaItemId, Result<RatingSendResponse, EnvError>),
 }

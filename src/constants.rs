@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use once_cell::sync::Lazy;
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC};
+use tracing::trace;
 use url::Url;
 
 use crate::types::addon::{Descriptor, ExtraProp, OptionsLimit};
@@ -42,7 +43,7 @@ pub const NEW_USER_DAYS: chrono::Duration = chrono::Duration::days(30);
 pub const WATCHED_THRESHOLD_COEF: f64 = 0.7;
 pub const CREDITS_THRESHOLD_COEF: f64 = 0.9;
 /// The latest migration scheme version
-pub const SCHEMA_VERSION: u32 = 21;
+pub const SCHEMA_VERSION: u32 = 23;
 pub const IMDB_LINK_CATEGORY: &str = "imdb";
 pub const GENRES_LINK_CATEGORY: &str = "Genres";
 pub const CINEMETA_TOP_CATALOG_ID: &str = "top";
@@ -90,8 +91,13 @@ pub static STREAMING_SERVER_URL: Lazy<Url> =
 pub static IMDB_URL: Lazy<Url> =
     Lazy::new(|| Url::parse("https://imdb.com").expect("IMDB_URL parse failed"));
 pub static OFFICIAL_ADDONS: Lazy<Vec<Descriptor>> = Lazy::new(|| {
-    let addons_str = stremio_official_addons::get_addons_string();
-    serde_json::from_slice(&addons_str).expect("OFFICIAL_ADDONS parse failed")
+    if std::env::var("EMPTY_OFFICIAL_ADDONS").unwrap_or("0".to_string()) == "1" {
+        trace!("Official addons are disabled");
+        return serde_json::from_str("[]").expect("OFFICIAL_ADDONS parse failed");
+    } else {
+        let addons_str = stremio_official_addons::get_addons_string();
+        return serde_json::from_slice(&addons_str).expect("OFFICIAL_ADDONS parse failed");
+    }
 });
 pub static SKIP_EXTRA_PROP: Lazy<ExtraProp> = Lazy::new(|| ExtraProp {
     name: "skip".to_owned(),

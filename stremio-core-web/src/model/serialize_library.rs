@@ -43,11 +43,6 @@ mod model {
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
-    pub struct SelectablePage {
-        pub deep_links: LibraryDeepLinks,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
     pub struct Selectable<'a> {
         pub types: Vec<SelectableType<'a>>,
         pub sorts: Vec<SelectableSort<'a>>,

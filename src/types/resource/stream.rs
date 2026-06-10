@@ -444,7 +444,7 @@ impl Stream {
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
-            (Some(streaming_server_url), StreamSource::Nzb { nzb_url, servers }) => {
+            (Some(streaming_server_url), StreamSource::Nzb { url, urls, servers }) => {
                 if servers.is_empty() {
                     return Err(EnvError::Other("No nzb server URLs provided".into()));
                 }
@@ -461,8 +461,17 @@ impl Stream {
                     .expect("Url should always be valid");
 
                 let payload = StreamSource::Nzb {
-                    nzb_url: Self::ftp_url_handler(Some(streaming_server_url), nzb_url)
-                        .expect("Streaming server availability is already checked"),
+                    url: url.map(|url| {
+                        Self::ftp_url_handler(Some(streaming_server_url), url)
+                            .expect("Streaming server availability is already checked")
+                    }),
+                    urls: urls
+                        .iter()
+                        .map(|url| {
+                            Self::ftp_url_handler(Some(streaming_server_url), url.clone())
+                                .expect("Streaming server availability is already checked")
+                        })
+                        .collect(),
                     servers,
                 };
 
@@ -824,8 +833,13 @@ pub enum StreamSource {
     /// Nzb sourced
     #[serde(rename_all = "camelCase")]
     Nzb {
-        nzb_url: Url,
-        #[serde(default)]
+        #[serde(rename = "nzbUrl")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        url: Option<Url>,
+        #[serde(rename = "nzbUrls")]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde_as(deserialize_as = "DefaultOnNull")]
+        urls: Vec<Url>,
         servers: Vec<Url>,
     },
     #[serde(rename_all = "camelCase")]
@@ -1059,6 +1073,43 @@ impl StreamUrls {
     }
 }
 
+pub(crate) fn build_magnet_uri(
+    info_hash: &[u8],
+    announce: &[String],
+    name: Option<&String>,
+) -> String {
+    let trackers = announce
+        .iter()
+        .map(|tracker| {
+            tracker
+                .strip_prefix("tracker:")
+                .unwrap_or(tracker)
+                .strip_prefix("dht:")
+                .unwrap_or(tracker)
+        })
+        .map(|tracker| utf8_percent_encode(tracker, URI_COMPONENT_ENCODE_SET).to_string())
+        .collect::<Vec<String>>();
+    let trackers = if !trackers.is_empty() {
+        format!("&tr={}", trackers.join("&tr="))
+    } else {
+        String::new()
+    };
+
+    let dn = if let Some(name) = name {
+        format!(
+            "dn={}&",
+            utf8_percent_encode(name, URI_COMPONENT_ENCODE_SET)
+        )
+    } else {
+        String::new()
+    };
+
+    format!(
+        "magnet:?{dn}xt=urn:btih:{hash}{trackers}",
+        hash = hex::encode(info_hash),
+    )
+}
+
 fn get_magnet_url(converted: &Stream<ConvertedStreamSource>) -> Option<Url> {
     match &converted.source {
         ConvertedStreamSource::Url { url } if url.scheme() == "magnet" => Magnet::new(url.as_str())
@@ -1071,47 +1122,13 @@ fn get_magnet_url(converted: &Stream<ConvertedStreamSource>) -> Option<Url> {
             info_hash,
             announce,
             ..
-        } => {
-            let trackers = announce
-                .iter()
-                // `tracker` and `dht` prefixes are used internally by the server.js
-                // we need to remove those prefixes when generating the magnet URL
-                .map(|tracker| {
-                    tracker
-                        .strip_prefix("tracker:")
-                        .map(ToString::to_string)
-                        .unwrap_or_else(|| tracker.to_owned())
-                })
-                .map(|tracker| {
-                    tracker
-                        .strip_prefix("dht:")
-                        .map(ToString::to_string)
-                        .unwrap_or_else(|| tracker.to_owned())
-                })
-                .map(|tracker| utf8_percent_encode(&tracker, URI_COMPONENT_ENCODE_SET).to_string())
-                .collect::<Vec<String>>();
-            let trackers = if !trackers.is_empty() {
-                Some(format!("&tr={}", trackers.join("&tr=")))
-            } else {
-                None
-            };
-
-            Magnet::new(&format!(
-                "magnet:?{dn}xt=urn:btih:{hash}{trackers}",
-                dn = if let Some(name) = converted.name.as_ref() {
-                    format!(
-                        "dn={}&",
-                        utf8_percent_encode(name, URI_COMPONENT_ENCODE_SET)
-                    )
-                } else {
-                    String::new()
-                },
-                hash = hex::encode(info_hash),
-                trackers = trackers.unwrap_or_default(),
-            ))
-            .ok()
-            .and_then(|magnet| magnet.to_string().parse::<Url>().ok())
-        }
+        } => Magnet::new(&build_magnet_uri(
+            info_hash.as_ref(),
+            announce,
+            converted.name.as_ref(),
+        ))
+        .ok()
+        .and_then(|magnet| magnet.to_string().parse::<Url>().ok()),
         _ => None,
     }
 }
@@ -1128,11 +1145,7 @@ fn get_download_url(
     streaming_server_url: Option<&Url>,
 ) -> Option<Url> {
     match &converted.source {
-        ConvertedStreamSource::Url { url } if url.scheme() == "magnet" => Magnet::new(url.as_str())
-            .as_ref()
-            .map(ToString::to_string)
-            .ok()
-            .and_then(|url_string| url_string.parse().ok()),
+        ConvertedStreamSource::Url { url } if url.scheme() == "magnet" => None,
         ConvertedStreamSource::Url { url } => Some(url.to_owned()),
         ConvertedStreamSource::Torrent { url, .. } => {
             // we just need to know that the server is running
@@ -1162,6 +1175,29 @@ fn get_download_url(
         ConvertedStreamSource::PlayerFrame { player_frame_url } => {
             Some(player_frame_url.to_owned())
         }
+    }
+}
+
+/// generate url from source without conversion (no server running)
+pub fn get_download_url_from_source(stream: &Stream) -> Option<Url> {
+    match &stream.source {
+        StreamSource::Url { url } => Some(url.clone()),
+        StreamSource::Torrent {
+            info_hash,
+            announce,
+            ..
+        } => build_magnet_uri(info_hash, announce, stream.name.as_ref())
+            .parse()
+            .ok(),
+        StreamSource::YouTube { yt_id } => format!(
+            "https://youtube.com/watch?v={}",
+            utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET)
+        )
+        .parse()
+        .ok(),
+        StreamSource::External { external_url, .. } => external_url.clone(),
+        StreamSource::PlayerFrame { player_frame_url } => Some(player_frame_url.clone()),
+        _ => None,
     }
 }
 

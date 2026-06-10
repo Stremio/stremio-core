@@ -1,6 +1,7 @@
 use core::fmt;
 
 use http::Request;
+use percent_encoding::percent_decode_str;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -78,14 +79,22 @@ pub struct CreateMagnetRequest {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateMagnetBody {
-    pub stream: CreateMagnetTorrent,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub peer_search: Option<PeerSearch>,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CreateMagnetTorrent {
-    pub info_hash: InfoHash,
+fn normalize_peer_search_sources(sources: Vec<String>) -> Vec<String> {
+    sources
+        .into_iter()
+        .map(|source| {
+            let decoded = percent_decode_str(&source).decode_utf8_lossy().into_owned();
+            if decoded.starts_with("dht:") || decoded.starts_with("tracker:") {
+                decoded
+            } else {
+                format!("tracker:{decoded}")
+            }
+        })
+        .collect()
 }
 
 impl From<CreateMagnetRequest> for Request<CreateMagnetBody> {
@@ -93,11 +102,13 @@ impl From<CreateMagnetRequest> for Request<CreateMagnetBody> {
         let info_hash = val.info_hash;
 
         let body = CreateMagnetBody {
-            stream: CreateMagnetTorrent {
-                info_hash: val.info_hash.to_owned(),
-            },
             peer_search: if !val.announce.is_empty() {
-                Some(PeerSearch::new(40, 200, info_hash, val.announce))
+                Some(PeerSearch::new(
+                    40,
+                    200,
+                    info_hash,
+                    normalize_peer_search_sources(val.announce),
+                ))
             } else {
                 None
             },

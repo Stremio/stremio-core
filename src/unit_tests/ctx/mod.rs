@@ -3,6 +3,7 @@ mod authenticate;
 mod delete_account;
 mod install_addon;
 mod logout;
+mod mark_meta_item_as_watched;
 mod update_events;
 mod notifications {
     mod update_notifications;
