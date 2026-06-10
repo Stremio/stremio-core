@@ -268,6 +268,28 @@ impl MetaItem {
         }
     }
 
+    /// Returns the next video after the given one, without crossing into season 0 specials
+    pub fn next_video(&self, video_id: &str) -> Option<&Video> {
+        self.videos
+            .iter()
+            .find_position(|v| v.id == video_id)
+            .and_then(|(pos, current)| self.videos.get(pos + 1).map(|next| (current, next)))
+            .filter(|(current, next)| {
+                let cur_season = current
+                    .series_info
+                    .as_ref()
+                    .map(|s| s.season)
+                    .unwrap_or_default();
+                let next_season = next
+                    .series_info
+                    .as_ref()
+                    .map(|s| s.season)
+                    .unwrap_or_default();
+                next_season != 0 || cur_season == next_season
+            })
+            .map(|(_, next)| next)
+    }
+
     /// Returns a vector of videos for a given season
     pub fn videos_by_season(&self, season: u32) -> Vec<&Video> {
         self.videos
@@ -407,4 +429,58 @@ pub struct MetaItemBehaviorHints {
     pub has_scheduled_videos: bool,
     #[serde(flatten)]
     pub other: HashMap<String, serde_json::Value>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_video(id: &str, season: u32, episode: u32) -> Video {
+        Video {
+            id: id.to_owned(),
+            series_info: Some(SeriesInfo { season, episode }),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn next_video() {
+        let meta_item = MetaItem {
+            preview: Default::default(),
+            videos: vec![
+                create_video("s0e1", 0, 1),
+                create_video("s0e2", 0, 2),
+                create_video("s1e1", 1, 1),
+                create_video("s1e2", 1, 2),
+                create_video("s0e3", 0, 3),
+            ],
+        };
+        assert_eq!(
+            meta_item.next_video("s0e1").map(|video| video.id.as_str()),
+            Some("s0e2")
+        );
+        assert_eq!(
+            meta_item.next_video("s0e2").map(|video| video.id.as_str()),
+            Some("s1e1")
+        );
+        assert_eq!(
+            meta_item.next_video("s1e1").map(|video| video.id.as_str()),
+            Some("s1e2")
+        );
+        assert_eq!(
+            meta_item.next_video("s1e2").map(|video| video.id.as_str()),
+            None,
+            "should not cross into season 0 specials"
+        );
+        assert_eq!(
+            meta_item.next_video("s0e3").map(|video| video.id.as_str()),
+            None
+        );
+        assert_eq!(
+            meta_item
+                .next_video("missing")
+                .map(|video| video.id.as_str()),
+            None
+        );
+    }
 }

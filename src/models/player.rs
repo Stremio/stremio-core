@@ -39,7 +39,6 @@ use stremio_watched_bitfield::WatchedBitField;
 
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use derivative::Derivative;
-use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 use once_cell::sync::Lazy;
@@ -121,6 +120,9 @@ pub struct Player {
     pub loaded: bool,
     #[serde(skip_serializing)]
     pub ended: bool,
+    /// Whether the selected video has been manually marked as watched
+    #[serde(skip_serializing)]
+    pub marked_video_as_watched: bool,
     #[serde(skip_serializing)]
     pub paused: Option<bool>,
     #[serde(skip_serializing)]
@@ -157,7 +159,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .as_ref()
                         .map(|meta_request| &meta_request.path.id)
                 {
-                    item_state_update(&mut self.library_item, self.next_video.as_ref())
+                    item_state_update(
+                        &mut self.library_item,
+                        self.next_video.as_ref(),
+                        self.marked_video_as_watched,
+                    )
                 } else {
                     Effects::none().unchanged()
                 };
@@ -294,6 +300,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.loaded = false;
                 self.ended = false;
                 self.paused = None;
+                self.marked_video_as_watched = false;
                 trakt_event_effects
                     .join(item_state_update_effects)
                     .join(selected_effects)
@@ -343,8 +350,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     None,
                 );
 
-                let item_state_update_effects =
-                    item_state_update(&mut self.library_item, self.next_video.as_ref());
+                let item_state_update_effects = item_state_update(
+                    &mut self.library_item,
+                    self.next_video.as_ref(),
+                    self.marked_video_as_watched,
+                );
                 let push_to_library_effects = match &self.library_item {
                     Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                         library_item.to_owned(),
@@ -370,6 +380,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.loaded = false;
                 self.ended = false;
                 self.paused = None;
+                self.marked_video_as_watched = false;
 
                 trakt_event_effects
                     .join(seek_history_effects)
@@ -721,9 +732,18 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             Msg::Action(Action::Player(ActionPlayer::MarkVideoAsWatched(video, is_watched))) => {
                 match (&self.library_item, &self.watched) {
                     (Some(library_item), Some(watched)) => {
+                        // advancing video_id to the next video is deferred to item_state_update,
+                        // otherwise TimeChanged would reset it back to the playing video
+                        let selected_video_id = self
+                            .selected
+                            .as_ref()
+                            .and_then(|selected| selected.stream_request.as_ref())
+                            .map(|stream_request| &stream_request.path.id);
+                        if selected_video_id == Some(&video.id) {
+                            self.marked_video_as_watched = *is_watched;
+                        }
                         let mut library_item = library_item.to_owned();
                         library_item.mark_video_as_watched::<E>(watched, video, *is_watched);
-
                         Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                             .unchanged()
                     }
@@ -963,22 +983,17 @@ fn push_to_library<E: Env + 'static>(
 fn item_state_update(
     library_item: &mut Option<LibraryItem>,
     next_video: Option<&Video>,
+    marked_video_as_watched: bool,
 ) -> Effects {
     match library_item {
         Some(library_item)
-            if library_item.state.time_offset as f64
-                > library_item.state.duration as f64 * CREDITS_THRESHOLD_COEF =>
+            if marked_video_as_watched
+                || library_item.state.time_offset as f64
+                    > library_item.state.duration as f64 * CREDITS_THRESHOLD_COEF =>
         {
             library_item.state.time_offset = 0;
             if let Some(next_video) = next_video {
-                library_item.state.video_id = Some(next_video.id.to_owned());
-                library_item.state.overall_time_watched = library_item
-                    .state
-                    .overall_time_watched
-                    .saturating_add(library_item.state.time_watched);
-                library_item.state.time_watched = 0;
-                library_item.state.flagged_watched = 0;
-                library_item.state.time_offset = 1;
+                library_item.advance_to_video(&next_video.id);
             };
         }
         _ => {}
@@ -1031,36 +1046,13 @@ fn next_video_update(
                 content: Some(Loadable::Ready(meta_item)),
                 ..
             }),
-        ) => meta_item
-            .videos
-            .iter()
-            .find_position(|video| video.id == *video_id)
-            .and_then(|(position, current_video)| {
-                meta_item
-                    .videos
-                    .get(position + 1)
-                    .map(|next_video| (current_video, next_video))
-            })
-            .filter(|(current_video, next_video)| {
-                let current_season = current_video
-                    .series_info
-                    .as_ref()
-                    .map(|info| info.season)
-                    .unwrap_or_default();
-                let next_season = next_video
-                    .series_info
-                    .as_ref()
-                    .map(|info| info.season)
-                    .unwrap_or_default();
-                next_season != 0 || current_season == next_season
-            })
-            .map(|(_, next_video)| {
-                let mut next_video = next_video.clone();
-                if let Some(stream) = stream {
-                    next_video.streams = vec![stream.clone()];
-                }
-                next_video
-            }),
+        ) => meta_item.next_video(video_id).map(|next_video| {
+            let mut next_video = next_video.clone();
+            if let Some(stream) = stream {
+                next_video.streams = vec![stream.clone()];
+            }
+            next_video
+        }),
         _ => None,
     };
     eq_update(video, next_video)
