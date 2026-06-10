@@ -376,7 +376,7 @@ impl DefaultTokens for Settings {
         vec![
             Token::Struct {
                 name: "Settings",
-                len: 36,
+                len: 37,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -401,7 +401,7 @@ impl DefaultTokens for Settings {
             Token::Str("frameRateMatchingStrategy"),
             Token::UnitVariant {
                 name: "FrameRateMatchingStrategy",
-                variant: "FrameRateOnly",
+                variant: "Disabled",
             },
             Token::Str("nextVideoNotificationDuration"),
             Token::U32(35000),
@@ -455,6 +455,8 @@ impl DefaultTokens for Settings {
             Token::Bool(false),
             Token::Str("sendCrashReports"),
             Token::Bool(true),
+            Token::Str("discordRpcEnabled"),
+            Token::Bool(false),
             Token::StructEnd,
         ]
     }

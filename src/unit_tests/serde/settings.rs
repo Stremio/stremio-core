@@ -17,7 +17,7 @@ fn settings() {
             play_in_background: true,
             hardware_decoding: true,
             video_mode: Some("video_mode".to_owned()),
-            frame_rate_matching_strategy: FrameRateMatchingStrategy::FrameRateAndResolution,
+            frame_rate_matching_strategy: FrameRateMatchingStrategy::Disabled,
             next_video_notification_duration: 30,
             audio_passthrough: true,
             audio_language: Some("audio_language".to_owned()),
@@ -45,11 +45,12 @@ fn settings() {
             ),
             server_in_foreground: false,
             send_crash_reports: true,
+            discord_rpc_enabled: false,
         },
         &[
             Token::Struct {
                 name: "Settings",
-                len: 36,
+                len: 37,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -76,7 +77,7 @@ fn settings() {
             Token::Str("frameRateMatchingStrategy"),
             Token::UnitVariant {
                 name: "FrameRateMatchingStrategy",
-                variant: "FrameRateAndResolution",
+                variant: "Disabled",
             },
             Token::Str("nextVideoNotificationDuration"),
             Token::U32(30),
@@ -133,6 +134,8 @@ fn settings() {
             Token::Bool(false),
             Token::Str("sendCrashReports"),
             Token::Bool(true),
+            Token::Str("discordRpcEnabled"),
+            Token::Bool(false),
             Token::StructEnd,
         ],
     );
@@ -145,7 +148,7 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 36,
+                len: 37,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -170,7 +173,7 @@ fn settings_de() {
             Token::Str("frameRateMatchingStrategy"),
             Token::UnitVariant {
                 name: "FrameRateMatchingStrategy",
-                variant: "FrameRateOnly",
+                variant: "Disabled",
             },
             Token::Str("nextVideoNotificationDuration"),
             Token::U32(35000),
@@ -220,6 +223,8 @@ fn settings_de() {
             Token::Bool(false),
             Token::Str("sendCrashReports"),
             Token::Bool(true),
+            Token::Str("discordRpcEnabled"),
+            Token::Bool(false),
             Token::StructEnd,
         ],
     );

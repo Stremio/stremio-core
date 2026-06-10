@@ -490,8 +490,19 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
 
                     let push_to_library_effects =
                         push_to_library::<E>(&mut self.push_library_item_time, library_item);
+                    let intro_outro_effects = intro_outro_update::<E>(
+                        &mut self.intro_outro,
+                        &ctx.profile,
+                        self.selected.as_ref(),
+                        self.video_params.as_ref(),
+                        self.series_info.as_ref(),
+                        Some(library_item),
+                        &mut self.skip_gaps,
+                    );
 
-                    trakt_event_effects.join(push_to_library_effects)
+                    trakt_event_effects
+                        .join(push_to_library_effects)
+                        .join(intro_outro_effects)
                 }
                 _ => Effects::none().unchanged(),
             },
@@ -603,10 +614,21 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         analytics_context.player_duration = Some(duration.to_owned());
                     };
 
-                    send_watched_effects.join(push_to_library::<E>(
-                        &mut self.push_library_item_time,
-                        library_item,
-                    ))
+                    let push_to_library_effects =
+                        push_to_library::<E>(&mut self.push_library_item_time, library_item);
+                    let intro_outro_effects = intro_outro_update::<E>(
+                        &mut self.intro_outro,
+                        &ctx.profile,
+                        self.selected.as_ref(),
+                        self.video_params.as_ref(),
+                        self.series_info.as_ref(),
+                        Some(library_item),
+                        &mut self.skip_gaps,
+                    );
+
+                    send_watched_effects
+                        .join(push_to_library_effects)
+                        .join(intro_outro_effects)
                 }
                 _ => Effects::none().unchanged(),
             },
@@ -809,6 +831,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     _ => Effects::none().unchanged(),
                 };
 
+                let next_stream_effects =
+                    next_stream_update(&mut self.next_stream, &self.next_streams, &self.selected);
+
                 let next_video_effects = next_video_update(
                     &mut self.next_video,
                     &self.next_stream,
@@ -821,9 +846,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.next_video,
                     &self.selected,
                 ));
-
-                let next_stream_effects =
-                    next_stream_update(&mut self.next_stream, &self.next_streams, &self.selected);
 
                 let series_info_effects =
                     series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
@@ -1261,47 +1283,52 @@ fn subtitles_update<E: Env + 'static>(
             }),
             Some(Loadable::Ready((_stream_urls, converted_stream))),
         ) => {
+            let video_hash = converted_stream
+                .behavior_hints
+                .video_hash
+                .clone()
+                .or_else(|| {
+                    video_params
+                        .as_ref()
+                        .and_then(|video_params| video_params.hash.to_owned())
+                });
+            let video_size = converted_stream.behavior_hints.video_size.or_else(|| {
+                video_params
+                    .as_ref()
+                    .and_then(|video_params| video_params.size)
+            });
+            let video_filename =
+                converted_stream
+                    .behavior_hints
+                    .filename
+                    .to_owned()
+                    .or_else(|| {
+                        video_params
+                            .as_ref()
+                            .and_then(|video_params| video_params.filename.clone())
+                    });
+
+            if video_hash.is_none()
+                && video_size.is_none()
+                && video_filename.is_none()
+                && video_params.is_none()
+            {
+                return Effects::none().unchanged();
+            }
+
             resources_update_with_vector_content::<E, _>(
                 subtitles,
-                ResourcesAction::force_request(
+                ResourcesAction::request(
                     &AggrRequest::AllOfResource(ResourcePath {
-                        extra: {
-                            // Always prefer the Stream field if such is set by the addon
-                            // otherwise we can use the VideoParams as a fallback.
-                            subtitles_path
-                                .extra
-                                .to_owned()
-                                .extend_one(
-                                    &VIDEO_HASH_EXTRA_PROP,
-                                    converted_stream.behavior_hints.video_hash.clone().or(
-                                        video_params
-                                            .as_ref()
-                                            .and_then(|video_params| video_params.hash.to_owned())
-                                            .to_owned(),
-                                    ),
-                                )
-                                .extend_one(
-                                    &VIDEO_SIZE_EXTRA_PROP,
-                                    converted_stream
-                                        .behavior_hints
-                                        .video_size
-                                        .or(video_params
-                                            .as_ref()
-                                            .and_then(|video_params| video_params.size))
-                                        .map(|size| size.to_string()),
-                                )
-                                .extend_one(
-                                    &VIDEO_FILENAME_EXTRA_PROP,
-                                    converted_stream
-                                        .behavior_hints
-                                        .filename
-                                        .to_owned()
-                                        .or(video_params
-                                            .as_ref()
-                                            .and_then(|video_params| video_params.filename.clone()))
-                                        .to_owned(),
-                                )
-                        },
+                        extra: subtitles_path
+                            .extra
+                            .to_owned()
+                            .extend_one(&VIDEO_HASH_EXTRA_PROP, video_hash)
+                            .extend_one(
+                                &VIDEO_SIZE_EXTRA_PROP,
+                                video_size.map(|size| size.to_string()),
+                            )
+                            .extend_one(&VIDEO_FILENAME_EXTRA_PROP, video_filename),
                         ..subtitles_path.to_owned()
                     }),
                     addons,
@@ -1421,7 +1448,9 @@ fn intro_outro_update<E: Env + 'static>(
     );
 
     let intro_outro_effects = match (skip_gaps, library_item) {
-        (Some((_, Loadable::Ready(response))), Some(library_item)) => {
+        (Some((_, Loadable::Ready(response))), Some(library_item))
+            if library_item.state.duration > 0 =>
+        {
             let outro_time = {
                 let outro_durations = response.gaps.iter().filter_map(|(duration, skip_gaps)| {
                     skip_gaps.outro.map(|outro| (duration, outro))

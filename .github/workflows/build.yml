@@ -52,8 +52,8 @@ jobs:
 
     env:
       NODE_VERSION: 12
-      WASM_PACK_VERSION: 0.13.1
-      RUST_VERSION: '1.77'
+      WASM_PACK_VERSION: 0.14.0
+      RUST_VERSION: '1.95'
     # No need to check core-web if core itself is not passing
     needs: build-core
     runs-on: ubuntu-latest
@@ -75,7 +75,7 @@ jobs:
           tool: wasm-pack@${{ env.WASM_PACK_VERSION }}
 
       - name: Setup chromedriver
-        uses: nanasess/setup-chromedriver@v2
+        uses: nanasess/setup-chromedriver@v3
 
       - name: Run wasm tests (Chrome)
         working-directory: stremio-core-web
