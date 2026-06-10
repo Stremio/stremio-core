@@ -7,6 +7,7 @@ use url::Url;
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
     pub interface_language: String,
+    pub interface_scale: u8,
     pub hide_spoilers: bool,
     pub gamepad_support: bool,
     pub streaming_server_url: Url,
@@ -48,6 +49,7 @@ pub struct Settings {
     pub streaming_server_warning_dismissed: Option<DateTime<Utc>>,
     pub server_in_foreground: bool,
     pub send_crash_reports: bool,
+    pub discord_rpc_enabled: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -68,11 +70,12 @@ impl Default for Settings {
             video_mode: None,
             hide_spoilers: false,
             gamepad_support: false,
-            frame_rate_matching_strategy: FrameRateMatchingStrategy::FrameRateOnly,
+            frame_rate_matching_strategy: FrameRateMatchingStrategy::Disabled,
             next_video_notification_duration: 35000,
             audio_passthrough: false,
             streaming_server_url: STREAMING_SERVER_URL.to_owned(),
             interface_language: "eng".to_owned(),
+            interface_scale: 100,
             audio_language: Some("eng".to_owned()),
             secondary_audio_language: None,
             subtitles_language: Some("eng".to_owned()),
@@ -96,6 +99,7 @@ impl Default for Settings {
             streaming_server_warning_dismissed: None,
             server_in_foreground: false,
             send_crash_reports: true,
+            discord_rpc_enabled: false,
         }
     }
 }
