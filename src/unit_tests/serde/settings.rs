@@ -44,11 +44,12 @@ fn settings() {
             ),
             server_in_foreground: false,
             send_crash_reports: true,
+            discord_rpc_enabled: false,
         },
         &[
             Token::Struct {
                 name: "Settings",
-                len: 35,
+                len: 36,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -130,6 +131,8 @@ fn settings() {
             Token::Bool(false),
             Token::Str("sendCrashReports"),
             Token::Bool(true),
+            Token::Str("discordRpcEnabled"),
+            Token::Bool(false),
             Token::StructEnd,
         ],
     );
@@ -142,7 +145,7 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 35,
+                len: 36,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -215,6 +218,8 @@ fn settings_de() {
             Token::Bool(false),
             Token::Str("sendCrashReports"),
             Token::Bool(true),
+            Token::Str("discordRpcEnabled"),
+            Token::Bool(false),
             Token::StructEnd,
         ],
     );

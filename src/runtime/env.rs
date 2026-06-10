@@ -313,6 +313,12 @@ pub trait Env {
                         .await?;
                     schema_version = 22;
                 }
+                if schema_version == 22 {
+                    migrate_storage_schema_to_v23::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 23;
+                }
                 if schema_version != SCHEMA_VERSION {
                     panic!(
                         "Storage schema version must be upgraded from {} to {}",
@@ -798,6 +804,29 @@ fn migrate_storage_schema_to_v22<E: Env>() -> TryEnvFuture<()> {
         .boxed_env()
 }
 
+fn migrate_storage_schema_to_v23<E: Env>() -> TryEnvFuture<()> {
+    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
+        .and_then(|mut profile| {
+            match profile
+                .as_mut()
+                .and_then(|profile| profile.as_object_mut())
+                .and_then(|profile| profile.get_mut("settings"))
+                .and_then(|settings| settings.as_object_mut())
+            {
+                Some(settings) => {
+                    settings.insert(
+                        "discordRpcEnabled".to_owned(),
+                        serde_json::Value::Bool(false),
+                    );
+                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
+                }
+                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+            }
+        })
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&23)))
+        .boxed_env()
+}
+
 #[cfg(test)]
 mod test {
     use serde_json::{json, Value};
@@ -814,9 +843,9 @@ mod test {
                 migrate_storage_schema_to_v16, migrate_storage_schema_to_v17,
                 migrate_storage_schema_to_v18, migrate_storage_schema_to_v19,
                 migrate_storage_schema_to_v20, migrate_storage_schema_to_v21,
-                migrate_storage_schema_to_v22, migrate_storage_schema_to_v6,
-                migrate_storage_schema_to_v7, migrate_storage_schema_to_v8,
-                migrate_storage_schema_to_v9,
+                migrate_storage_schema_to_v22, migrate_storage_schema_to_v23,
+                migrate_storage_schema_to_v6, migrate_storage_schema_to_v7,
+                migrate_storage_schema_to_v8, migrate_storage_schema_to_v9,
             },
             Env,
         },
@@ -1617,6 +1646,47 @@ mod test {
 
             assert_eq!(
                 &22.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+            assert_eq!(
+                &migrated_profile.to_string(),
+                storage
+                    .get(PROFILE_STORAGE_KEY)
+                    .expect("Should have the profile set"),
+                "Profile should match"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_migration_from_22_to_23() {
+        {
+            let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+            let profile_before = json!({
+                "settings": {}
+            });
+
+            let migrated_profile = json!({
+                "settings": {
+                    "discordRpcEnabled": false,
+                }
+            });
+
+            // setup storage for migration
+            set_profile_and_schema_version(&profile_before, 22);
+
+            // migrate storage
+            migrate_storage_schema_to_v23::<TestEnv>()
+                .await
+                .expect("Should migrate");
+
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &23.to_string(),
                 storage
                     .get(SCHEMA_VERSION_STORAGE_KEY)
                     .expect("Should have the schema set"),
