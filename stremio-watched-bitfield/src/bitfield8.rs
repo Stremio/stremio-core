@@ -15,9 +15,6 @@ pub struct BitField8 {
 
 impl BitField8 {
     pub fn new(length: usize) -> BitField8 {
-        // `length` is the number of bits (videos); the backing buffer needs
-        // `ceil(length / 8)` bytes. Keep `length` in bits to stay consistent
-        // with `new_with_values`, `set` and `last_index_of`.
         let bytes = (length as f64 / 8.0).ceil() as usize;
         BitField8 {
             length,
@@ -199,17 +196,11 @@ mod tests {
 
     #[test]
     fn new_uses_bit_length() {
-        // `new(n)` must store the number of *bits* (videos) in `length`, the
-        // same convention used by `new_with_values` and `set`. Storing the byte
-        // count instead makes `last_index_of` (which iterates over `0..length`)
-        // under-scan the bitfield.
         let bf = BitField8::new(20);
         assert_eq!(bf.length, 20);
 
         let mut bf = BitField8::new(20);
         bf.set(15, true);
-        // The last set bit is at index 15, well past the first ceil(20/8) = 3
-        // positions that the buggy length would limit the scan to.
         assert_eq!(bf.last_index_of(true), Some(15));
     }
 }
