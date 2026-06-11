@@ -100,9 +100,7 @@ impl From<LegacyManifest> for Manifest {
                 .collect()
         });
 
-        // resources: meta, stream and subtitles are supported by the legacy mapper.
-        // The method names follow the legacy protocol (and the upstream
-        // stremio-addon-client mapper): `meta.get`, `stream.find`, `subtitles.find`.
+        // resources supported by the legacy mapper
         let mut resources: Vec<ManifestResource> = vec![];
         if m.methods.iter().any(|x| x == "meta.get") {
             resources.push(ManifestResource::Short("meta".into()))
@@ -142,10 +140,6 @@ mod tests {
 
     #[test]
     fn maps_legacy_methods_to_resources() {
-        // A legacy add-on advertises its capabilities through JSON-RPC method
-        // names. A subtitles add-on uses `subtitles.find` (the same method the
-        // legacy transport issues in `build_legacy_req`), alongside `meta.get`
-        // and `stream.find`. All three must map to the corresponding resources.
         let json = serde_json::json!({
             "id": "org.test.legacy",
             "name": "Test Legacy Addon",
