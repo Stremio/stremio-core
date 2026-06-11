@@ -364,4 +364,19 @@ mod tests {
             })
         );
     }
+
+    #[test]
+    fn watched_field_anchor_points_to_last_watched_video() {
+        let video_ids: Vec<String> = (1..=20).map(|i| format!("tt0:1:{}", i)).collect();
+        let mut watched = WatchedBitField::construct_from_array(vec![], video_ids);
+        watched.set_video("tt0:1:16", true);
+
+        let field: WatchedField = watched.into();
+        let serialized = field.to_string();
+        assert!(
+            serialized.starts_with("tt0:1:16:16:"),
+            "anchor should point to the last watched video, got: {}",
+            serialized
+        );
+    }
 }
