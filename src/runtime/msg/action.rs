@@ -172,6 +172,7 @@ pub struct PlayOnDeviceArgs {
 #[serde(tag = "action", content = "args")]
 pub enum ActionStreamingServer {
     Reload,
+    RefreshPlaybackDevices,
     UpdateSettings(StreamingServerSettings),
     CreateTorrent(CreateTorrentArgs),
     GetStatistics(StreamingServerStatisticsRequest),

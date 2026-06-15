@@ -49,6 +49,8 @@ pub struct StreamingServer {
     pub base_url: Option<Url>,
     pub remote_url: Option<Url>,
     pub playback_devices: Loadable<Vec<PlaybackDevice>, EnvError>,
+    #[serde(skip)]
+    pub playback_devices_generation: u64,
     pub network_info: Loadable<NetworkInfo, EnvError>,
     pub device_info: Loadable<DeviceInfo, EnvError>,
     pub torrent: Option<(InfoHash, Loadable<ResourcePath, EnvError>)>,
@@ -60,7 +62,7 @@ impl StreamingServer {
     pub fn new<E: Env + 'static>(profile: &Profile) -> (Self, Effects) {
         let effects = Effects::many(vec![
             get_settings::<E>(&profile.settings.streaming_server_url),
-            get_playback_devices::<E>(&profile.settings.streaming_server_url),
+            get_playback_devices::<E>(&profile.settings.streaming_server_url, 0),
             get_network_info::<E>(&profile.settings.streaming_server_url),
             get_device_info::<E>(&profile.settings.streaming_server_url),
         ]);
@@ -75,6 +77,7 @@ impl StreamingServer {
                 base_url: None,
                 remote_url: None,
                 playback_devices: Loadable::Loading,
+                playback_devices_generation: 0,
                 network_info: Loadable::Loading,
                 device_info: Loadable::Loading,
                 torrent: None,
@@ -95,9 +98,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 let settings_options_effects = eq_update(&mut self.settings_options, vec![]);
                 let base_url_effects = eq_update(&mut self.base_url, None);
                 let remote_url_effects = eq_update(&mut self.remote_url, None);
+                self.playback_devices_generation += 1;
                 Effects::many(vec![
                     get_settings::<E>(&self.selected.transport_url),
-                    get_playback_devices::<E>(&self.selected.transport_url),
+                    get_playback_devices::<E>(
+                        &self.selected.transport_url,
+                        self.playback_devices_generation,
+                    ),
                     get_network_info::<E>(&self.selected.transport_url),
                     get_device_info::<E>(&self.selected.transport_url),
                 ])
@@ -108,6 +115,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 .join(device_info_effects)
                 .join(base_url_effects)
                 .join(remote_url_effects)
+            }
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::RefreshPlaybackDevices)) => {
+                self.playback_devices_generation += 1;
+                Effects::one(get_playback_devices::<E>(
+                    &self.selected.transport_url,
+                    self.playback_devices_generation,
+                ))
+                .unchanged()
             }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::UpdateSettings(
                 settings,
@@ -240,9 +255,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 self.remote_url = None;
                 self.torrent = None;
                 self.statistics = None;
+                self.playback_devices_generation += 1;
                 Effects::many(vec![
                     get_settings::<E>(&self.selected.transport_url),
-                    get_playback_devices::<E>(&self.selected.transport_url),
+                    get_playback_devices::<E>(
+                        &self.selected.transport_url,
+                        self.playback_devices_generation,
+                    ),
                     get_network_info::<E>(&self.selected.transport_url),
                     get_device_info::<E>(&self.selected.transport_url),
                 ])
@@ -296,17 +315,22 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     }
                 }
             }
-            Msg::Internal(Internal::StreamingServerPlaybackDevicesResult(url, result))
-                if self.selected.transport_url == *url && self.playback_devices.is_loading() =>
+            Msg::Internal(Internal::StreamingServerPlaybackDevicesResult(
+                url,
+                generation,
+                result,
+            )) if self.selected.transport_url == *url
+                && self.playback_devices_generation == *generation =>
             {
                 match result {
                     Ok(playback_devices) => eq_update(
                         &mut self.playback_devices,
                         Loadable::Ready(playback_devices.to_owned()),
                     ),
-                    Err(error) => {
+                    Err(error) if self.playback_devices.is_loading() => {
                         eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()))
                     }
+                    Err(_) => Effects::none().unchanged(),
                 }
             }
             Msg::Internal(Internal::StreamingServerNetworkInfoResult(url, result))
@@ -439,7 +463,7 @@ fn get_settings<E: Env + 'static>(url: &Url) -> Effect {
     .into()
 }
 
-fn get_playback_devices<E: Env + 'static>(url: &Url) -> Effect {
+fn get_playback_devices<E: Env + 'static>(url: &Url, generation: u64) -> Effect {
     let endpoint = url.join("casting").expect("url builder failed");
     let request = Request::get(endpoint.as_str())
         .body(())
@@ -448,7 +472,7 @@ fn get_playback_devices<E: Env + 'static>(url: &Url) -> Effect {
         E::fetch::<_, Vec<PlaybackDevice>>(request)
             .map_ok(|resp| resp)
             .map(enclose!((url) move |result|
-                Msg::Internal(Internal::StreamingServerPlaybackDevicesResult(url, result))
+                Msg::Internal(Internal::StreamingServerPlaybackDevicesResult(url, generation, result))
             ))
             .boxed_env(),
     )
