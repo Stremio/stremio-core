@@ -296,7 +296,7 @@
     <span class="doccomment">/// Result for loading streaming server base url.
     </span>StreamingServerBaseURLResult(Url, <span class="prelude-ty">Result</span>&lt;Url, EnvError&gt;),
     <span class="comment">// Result for loading streaming server playback devices.
-    </span>StreamingServerPlaybackDevicesResult(Url, <span class="prelude-ty">Result</span>&lt;Vec&lt;PlaybackDevice&gt;, EnvError&gt;),
+    </span>StreamingServerPlaybackDevicesResult(Url, u64, <span class="prelude-ty">Result</span>&lt;Vec&lt;PlaybackDevice&gt;, EnvError&gt;),
     <span class="comment">// Result for network info.
     </span>StreamingServerNetworkInfoResult(Url, <span class="prelude-ty">Result</span>&lt;NetworkInfo, EnvError&gt;),
     <span class="comment">// Result for device info.

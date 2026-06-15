@@ -786,7 +786,31 @@
 <a href="#785" id="785">785</a>
 <a href="#786" id="786">786</a>
 <a href="#787" id="787">787</a>
-<a href="#788" id="788">788</a></pre></div><pre class="rust"><code><span class="kw">use </span>enclose::enclose;
+<a href="#788" id="788">788</a>
+<a href="#789" id="789">789</a>
+<a href="#790" id="790">790</a>
+<a href="#791" id="791">791</a>
+<a href="#792" id="792">792</a>
+<a href="#793" id="793">793</a>
+<a href="#794" id="794">794</a>
+<a href="#795" id="795">795</a>
+<a href="#796" id="796">796</a>
+<a href="#797" id="797">797</a>
+<a href="#798" id="798">798</a>
+<a href="#799" id="799">799</a>
+<a href="#800" id="800">800</a>
+<a href="#801" id="801">801</a>
+<a href="#802" id="802">802</a>
+<a href="#803" id="803">803</a>
+<a href="#804" id="804">804</a>
+<a href="#805" id="805">805</a>
+<a href="#806" id="806">806</a>
+<a href="#807" id="807">807</a>
+<a href="#808" id="808">808</a>
+<a href="#809" id="809">809</a>
+<a href="#810" id="810">810</a>
+<a href="#811" id="811">811</a>
+<a href="#812" id="812">812</a></pre></div><pre class="rust"><code><span class="kw">use </span>enclose::enclose;
 <span class="kw">use </span>futures::{FutureExt, TryFutureExt};
 <span class="kw">use </span>http::request::Request;
 <span class="kw">use </span>magnet_url::{Magnet, MagnetError};
@@ -837,6 +861,8 @@
     <span class="kw">pub </span>base_url: <span class="prelude-ty">Option</span>&lt;Url&gt;,
     <span class="kw">pub </span>remote_url: <span class="prelude-ty">Option</span>&lt;Url&gt;,
     <span class="kw">pub </span>playback_devices: Loadable&lt;Vec&lt;PlaybackDevice&gt;, EnvError&gt;,
+    <span class="attr">#[serde(skip)]
+    </span><span class="kw">pub </span>playback_devices_generation: u64,
     <span class="kw">pub </span>network_info: Loadable&lt;NetworkInfo, EnvError&gt;,
     <span class="kw">pub </span>device_info: Loadable&lt;DeviceInfo, EnvError&gt;,
     <span class="kw">pub </span>torrent: <span class="prelude-ty">Option</span>&lt;(InfoHash, Loadable&lt;ResourcePath, EnvError&gt;)&gt;,
@@ -848,7 +874,7 @@
     <span class="kw">pub fn </span>new&lt;E: Env + <span class="lifetime">'static</span>&gt;(profile: <span class="kw-2">&amp;</span>Profile) -&gt; (<span class="self">Self</span>, Effects) {
         <span class="kw">let </span>effects = Effects::many(<span class="macro">vec!</span>[
             get_settings::&lt;E&gt;(<span class="kw-2">&amp;</span>profile.settings.streaming_server_url),
-            get_playback_devices::&lt;E&gt;(<span class="kw-2">&amp;</span>profile.settings.streaming_server_url),
+            get_playback_devices::&lt;E&gt;(<span class="kw-2">&amp;</span>profile.settings.streaming_server_url, <span class="number">0</span>),
             get_network_info::&lt;E&gt;(<span class="kw-2">&amp;</span>profile.settings.streaming_server_url),
             get_device_info::&lt;E&gt;(<span class="kw-2">&amp;</span>profile.settings.streaming_server_url),
         ]);
@@ -863,6 +889,7 @@
                 base_url: <span class="prelude-val">None</span>,
                 remote_url: <span class="prelude-val">None</span>,
                 playback_devices: Loadable::Loading,
+                playback_devices_generation: <span class="number">0</span>,
                 network_info: Loadable::Loading,
                 device_info: Loadable::Loading,
                 torrent: <span class="prelude-val">None</span>,
@@ -883,9 +910,13 @@
                 <span class="kw">let </span>settings_options_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.settings_options, <span class="macro">vec!</span>[]);
                 <span class="kw">let </span>base_url_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.base_url, <span class="prelude-val">None</span>);
                 <span class="kw">let </span>remote_url_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.remote_url, <span class="prelude-val">None</span>);
+                <span class="self">self</span>.playback_devices_generation += <span class="number">1</span>;
                 Effects::many(<span class="macro">vec!</span>[
                     get_settings::&lt;E&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url),
-                    get_playback_devices::&lt;E&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url),
+                    get_playback_devices::&lt;E&gt;(
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url,
+                        <span class="self">self</span>.playback_devices_generation,
+                    ),
                     get_network_info::&lt;E&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url),
                     get_device_info::&lt;E&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url),
                 ])
@@ -896,6 +927,14 @@
                 .join(device_info_effects)
                 .join(base_url_effects)
                 .join(remote_url_effects)
+            }
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::RefreshPlaybackDevices)) =&gt; {
+                <span class="self">self</span>.playback_devices_generation += <span class="number">1</span>;
+                Effects::one(get_playback_devices::&lt;E&gt;(
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url,
+                    <span class="self">self</span>.playback_devices_generation,
+                ))
+                .unchanged()
             }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::UpdateSettings(
                 settings,
@@ -1028,9 +1067,13 @@
                 <span class="self">self</span>.remote_url = <span class="prelude-val">None</span>;
                 <span class="self">self</span>.torrent = <span class="prelude-val">None</span>;
                 <span class="self">self</span>.statistics = <span class="prelude-val">None</span>;
+                <span class="self">self</span>.playback_devices_generation += <span class="number">1</span>;
                 Effects::many(<span class="macro">vec!</span>[
                     get_settings::&lt;E&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url),
-                    get_playback_devices::&lt;E&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url),
+                    get_playback_devices::&lt;E&gt;(
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url,
+                        <span class="self">self</span>.playback_devices_generation,
+                    ),
                     get_network_info::&lt;E&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url),
                     get_device_info::&lt;E&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url),
                 ])
@@ -1084,17 +1127,22 @@
                     }
                 }
             }
-            Msg::Internal(Internal::StreamingServerPlaybackDevicesResult(url, result))
-                <span class="kw">if </span><span class="self">self</span>.selected.transport_url == <span class="kw-2">*</span>url &amp;&amp; <span class="self">self</span>.playback_devices.is_loading() =&gt;
+            Msg::Internal(Internal::StreamingServerPlaybackDevicesResult(
+                url,
+                generation,
+                result,
+            )) <span class="kw">if </span><span class="self">self</span>.selected.transport_url == <span class="kw-2">*</span>url
+                &amp;&amp; <span class="self">self</span>.playback_devices_generation == <span class="kw-2">*</span>generation =&gt;
             {
                 <span class="kw">match </span>result {
                     <span class="prelude-val">Ok</span>(playback_devices) =&gt; eq_update(
                         <span class="kw-2">&amp;mut </span><span class="self">self</span>.playback_devices,
                         Loadable::Ready(playback_devices.to_owned()),
                     ),
-                    <span class="prelude-val">Err</span>(error) =&gt; {
+                    <span class="prelude-val">Err</span>(error) <span class="kw">if </span><span class="self">self</span>.playback_devices.is_loading() =&gt; {
                         eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.playback_devices, Loadable::Err(error.to_owned()))
                     }
+                    <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; Effects::none().unchanged(),
                 }
             }
             Msg::Internal(Internal::StreamingServerNetworkInfoResult(url, result))
@@ -1227,7 +1275,7 @@
     .into()
 }
 
-<span class="kw">fn </span>get_playback_devices&lt;E: Env + <span class="lifetime">'static</span>&gt;(url: <span class="kw-2">&amp;</span>Url) -&gt; Effect {
+<span class="kw">fn </span>get_playback_devices&lt;E: Env + <span class="lifetime">'static</span>&gt;(url: <span class="kw-2">&amp;</span>Url, generation: u64) -&gt; Effect {
     <span class="kw">let </span>endpoint = url.join(<span class="string">"casting"</span>).expect(<span class="string">"url builder failed"</span>);
     <span class="kw">let </span>request = Request::get(endpoint.as_str())
         .body(())
@@ -1236,7 +1284,7 @@
         E::fetch::&lt;<span class="kw">_</span>, Vec&lt;PlaybackDevice&gt;&gt;(request)
             .map_ok(|resp| resp)
             .map(<span class="macro">enclose!</span>((url) <span class="kw">move </span>|result|
-                Msg::Internal(Internal::StreamingServerPlaybackDevicesResult(url, result))
+                Msg::Internal(Internal::StreamingServerPlaybackDevicesResult(url, generation, result))
             ))
             .boxed_env(),
     )

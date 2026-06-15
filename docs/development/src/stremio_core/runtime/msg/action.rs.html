@@ -288,7 +288,8 @@
 <a href="#287" id="287">287</a>
 <a href="#288" id="288">288</a>
 <a href="#289" id="289">289</a>
-<a href="#290" id="290">290</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
 
 <span class="kw">use </span>serde::Deserialize;
 <span class="kw">use </span>url::Url;
@@ -462,6 +463,7 @@
 #[serde(tag = <span class="string">"action"</span>, content = <span class="string">"args"</span>)]
 </span><span class="kw">pub enum </span>ActionStreamingServer {
     Reload,
+    RefreshPlaybackDevices,
     UpdateSettings(StreamingServerSettings),
     CreateTorrent(CreateTorrentArgs),
     GetStatistics(StreamingServerStatisticsRequest),

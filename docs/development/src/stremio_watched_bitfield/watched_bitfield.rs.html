@@ -365,7 +365,22 @@
 <a href="#364" id="364">364</a>
 <a href="#365" id="365">365</a>
 <a href="#366" id="366">366</a>
-<a href="#367" id="367">367</a></pre></div><pre class="rust"><code><span class="kw">use crate</span>::{BitField8, Error};
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
+<a href="#378" id="378">378</a>
+<a href="#379" id="379">379</a>
+<a href="#380" id="380">380</a>
+<a href="#381" id="381">381</a>
+<a href="#382" id="382">382</a></pre></div><pre class="rust"><code><span class="kw">use crate</span>::{BitField8, Error};
 <span class="kw">use </span>std::{
     fmt::{<span class="self">self</span>, Display},
     str::FromStr,
@@ -729,6 +744,21 @@
                 bitfield: BitField8::new(<span class="number">0</span>),
                 video_ids: <span class="macro">vec!</span>[]
             })
+        );
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>watched_field_anchor_points_to_last_watched_video() {
+        <span class="kw">let </span>video_ids: Vec&lt;String&gt; = (<span class="number">1</span>..=<span class="number">20</span>).map(|i| <span class="macro">format!</span>(<span class="string">"tt0:1:{}"</span>, i)).collect();
+        <span class="kw">let </span><span class="kw-2">mut </span>watched = WatchedBitField::construct_from_array(<span class="macro">vec!</span>[], video_ids);
+        watched.set_video(<span class="string">"tt0:1:16"</span>, <span class="bool-val">true</span>);
+
+        <span class="kw">let </span>field: WatchedField = watched.into();
+        <span class="kw">let </span>serialized = field.to_string();
+        <span class="macro">assert!</span>(
+            serialized.starts_with(<span class="string">"tt0:1:16:16:"</span>),
+            <span class="string">"anchor should point to the last watched video, got: {}"</span>,
+            serialized
         );
     }
 }
