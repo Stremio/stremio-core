@@ -19,6 +19,7 @@ fn video() {
                 streams: vec![],
                 series_info: Some(SeriesInfo::default()),
                 trailer_streams: vec![],
+                ..Default::default()
             },
             Video {
                 id: "id".into(),
@@ -29,6 +30,7 @@ fn video() {
                 streams: vec![],
                 series_info: None,
                 trailer_streams: vec![],
+                ..Default::default()
             },
         ]
         .readable(),
@@ -93,6 +95,7 @@ fn video() {
                 streams: vec![],
                 series_info: None,
                 trailer_streams: vec![],
+                ..Default::default()
             },
             Video {
                 id: "id".into(),
@@ -110,6 +113,7 @@ fn video() {
                 }],
                 series_info: None,
                 trailer_streams: vec![],
+                ..Default::default()
             },
             Video {
                 id: "id".into(),
@@ -127,6 +131,7 @@ fn video() {
                 }],
                 series_info: None,
                 trailer_streams: vec![],
+                ..Default::default()
             },
         ]
         .readable(),
@@ -235,6 +240,7 @@ fn videos_minimal() {
                     streams: vec![],
                     series_info: None,
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
                 Video {
                     id: "1".to_owned(),
@@ -245,6 +251,7 @@ fn videos_minimal() {
                     streams: vec![],
                     series_info: None,
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
                 Video {
                     id: "3".to_owned(),
@@ -255,6 +262,7 @@ fn videos_minimal() {
                     streams: vec![],
                     series_info: None,
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
             ],
         }
@@ -310,6 +318,7 @@ fn videos_released_equal() {
                     streams: vec![],
                     series_info: None,
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
                 Video {
                     id: "1".to_owned(),
@@ -320,6 +329,7 @@ fn videos_released_equal() {
                     streams: vec![],
                     series_info: None,
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
                 Video {
                     id: "3".to_owned(),
@@ -330,6 +340,7 @@ fn videos_released_equal() {
                     streams: vec![],
                     series_info: None,
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
             ],
         }
@@ -395,6 +406,7 @@ fn videos_released_sequal() {
                     streams: vec![],
                     series_info: None,
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
                 Video {
                     id: "2".to_owned(),
@@ -405,6 +417,7 @@ fn videos_released_sequal() {
                     streams: vec![],
                     series_info: None,
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
                 Video {
                     id: "1".to_owned(),
@@ -415,6 +428,7 @@ fn videos_released_sequal() {
                     streams: vec![],
                     series_info: None,
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
                 Video {
                     id: "nd1".to_owned(),
@@ -425,6 +439,7 @@ fn videos_released_sequal() {
                     streams: vec![],
                     series_info: None,
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
                 Video {
                     id: "nd2".to_owned(),
@@ -435,6 +450,7 @@ fn videos_released_sequal() {
                     streams: vec![],
                     series_info: None,
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
             ],
         }
@@ -512,6 +528,7 @@ fn various_videos_deserialization() {
                         episode: 1,
                     }),
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
                 Video {
                     id: "S01E02".to_owned(),
@@ -525,6 +542,7 @@ fn various_videos_deserialization() {
                         episode: 2,
                     }),
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
                 Video {
                     id: "S02E01".to_owned(),
@@ -538,6 +556,7 @@ fn various_videos_deserialization() {
                         episode: 1,
                     }),
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
                 Video {
                     id: "special1".to_owned(),
@@ -551,6 +570,7 @@ fn various_videos_deserialization() {
                         episode: 1,
                     }),
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
                 Video {
                     id: "special2".to_owned(),
@@ -564,6 +584,7 @@ fn various_videos_deserialization() {
                         episode: 2,
                     }),
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
                 Video {
                     id: "M1".to_owned(),
@@ -574,6 +595,7 @@ fn various_videos_deserialization() {
                     streams: vec![],
                     series_info: None,
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
                 Video {
                     id: "M2".to_owned(),
@@ -584,6 +606,7 @@ fn various_videos_deserialization() {
                     streams: vec![],
                     series_info: None,
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
                 Video {
                     id: "nd1".to_owned(),
@@ -594,6 +617,7 @@ fn various_videos_deserialization() {
                     streams: vec![],
                     series_info: None,
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
                 Video {
                     id: "nd2".to_owned(),
@@ -604,6 +628,7 @@ fn various_videos_deserialization() {
                     streams: vec![],
                     series_info: None,
                     trailer_streams: vec![],
+                    ..Default::default()
                 },
             ],
         }

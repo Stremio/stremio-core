@@ -347,6 +347,33 @@ pub struct Video {
     pub series_info: Option<SeriesInfo>,
     #[serde(default)]
     pub trailer_streams: Vec<Stream>,
+    // EPG / rich video metadata
+    #[serde(default)]
+    pub start_time: Option<DateTime<Utc>>,
+    #[serde(default)]
+    pub end_time: Option<DateTime<Utc>>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "Option<NumberAsString>")]
+    pub runtime: Option<String>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "Option<NumberAsString>")]
+    pub release_info: Option<String>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub genres: Vec<String>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub cast: Vec<String>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub director: Vec<String>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub links: Vec<Link>,
+    
+    // Optional fallback for future addon fields
+    #[serde(default, flatten)]
+    pub other: HashMap<String, serde_json::Value>,
 }
 
 impl Video {

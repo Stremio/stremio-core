@@ -37,6 +37,7 @@ fn create_video(season: u32, episode: u32) -> Video {
         streams: vec![],
         series_info: Some(SeriesInfo { season, episode }),
         trailer_streams: vec![],
+        ..Default::default()
     }
 }
 

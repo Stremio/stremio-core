@@ -165,6 +165,7 @@ fn test_pull_notifications_and_play_in_player() {
                     episode: 7,
                 }),
                 trailer_streams: vec![],
+                ..Default::default()
             },
         ],
     });

@@ -21,6 +21,7 @@ fn video_deep_links() {
         streams: vec![],
         series_info: None,
         trailer_streams: vec![],
+        ..Default::default()
     };
     let request = ResourceRequest {
         base: Url::from_str("http://domain.root").unwrap(),
