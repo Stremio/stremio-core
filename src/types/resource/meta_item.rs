@@ -348,31 +348,30 @@ pub struct Video {
     #[serde(default)]
     pub trailer_streams: Vec<Stream>,
     // EPG / rich video metadata
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<DateTime<Utc>>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<DateTime<Utc>>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     #[serde_as(deserialize_as = "Option<NumberAsString>")]
     pub runtime: Option<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     #[serde_as(deserialize_as = "Option<NumberAsString>")]
     pub release_info: Option<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub genres: Vec<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub cast: Vec<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub director: Vec<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub links: Vec<Link>,
 
-    // Optional fallback for future addon fields
-    #[serde(default, flatten)]
+    #[serde(default, flatten, skip_serializing_if = "HashMap::is_empty")]
     pub other: HashMap<String, serde_json::Value>,
 }
 
