@@ -370,7 +370,7 @@ pub struct Video {
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub links: Vec<Link>,
-    
+
     // Optional fallback for future addon fields
     #[serde(default, flatten)]
     pub other: HashMap<String, serde_json::Value>,
