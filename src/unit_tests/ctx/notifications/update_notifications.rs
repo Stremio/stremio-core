@@ -126,6 +126,7 @@ fn test_pull_notifications_and_play_in_player() {
                     episode: 4,
                 }),
                 trailer_streams: vec![],
+                ..Default::default()
             },
             Video {
                 id: "tt1:1:5".to_owned(),
@@ -139,6 +140,7 @@ fn test_pull_notifications_and_play_in_player() {
                     episode: 5,
                 }),
                 trailer_streams: vec![],
+                ..Default::default()
             },
             Video {
                 id: "tt1:1:6".to_owned(),
@@ -152,6 +154,7 @@ fn test_pull_notifications_and_play_in_player() {
                     episode: 6,
                 }),
                 trailer_streams: vec![],
+                ..Default::default()
             },
             Video {
                 id: "tt1:1:7".to_owned(),
