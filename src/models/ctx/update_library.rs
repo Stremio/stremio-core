@@ -273,20 +273,28 @@ pub fn update_library<E: Env + 'static>(
         )) if Some(loading_auth_key) == auth_key => match result {
             Ok(items) => {
                 // send an event that the missing library is now present
-                let library_missing_effects = Effects::msg(Msg::Event(Event::UserLibraryMissing {
+                let pulled_events_effects = Effects::msg(Msg::Event(Event::UserLibraryMissing {
                     library_missing: false,
                 }))
                 .unchanged();
 
-                library_missing_effects
-                    .join(Effects::msg(Msg::Event(Event::LibraryItemsPulledFromAPI {
+                let pulled_events_effects = pulled_events_effects.join(
+                    Effects::msg(Msg::Event(Event::LibraryItemsPulledFromAPI {
                         ids: ids.to_owned(),
-                    })))
-                    .join(Effects::one(update_and_push_items_to_storage::<E>(
-                        library,
-                        items.to_owned(),
-                    )))
-                    .join(Effects::msg(Msg::Internal(Internal::LibraryChanged(true))))
+                    }))
+                    .unchanged(),
+                );
+
+                if should_update_library_with_items(library, items) {
+                    pulled_events_effects
+                        .join(Effects::one(update_and_push_items_to_storage::<E>(
+                            library,
+                            items.to_owned(),
+                        )))
+                        .join(Effects::msg(Msg::Internal(Internal::LibraryChanged(true))))
+                } else {
+                    pulled_events_effects
+                }
             }
             Err(error) => Effects::msg(Msg::Event(Event::Error {
                 error: error.to_owned(),
@@ -298,6 +306,13 @@ pub fn update_library<E: Env + 'static>(
         },
         _ => Effects::none().unchanged(),
     }
+}
+
+fn should_update_library_with_items(library: &LibraryBucket, items: &[LibraryItem]) -> bool {
+    items.iter().any(|item| match library.items.get(&item.id) {
+        Some(current_item) => item.mtime >= current_item.mtime && item != current_item,
+        None => true,
+    })
 }
 
 fn update_and_push_items_to_storage<E: Env + 'static>(
@@ -483,4 +498,106 @@ fn plan_sync_with_api<E: Env + 'static>(library: &LibraryBucket, auth_key: &Auth
             .boxed_env(),
     )
     .into()
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::{TimeZone, Utc};
+
+    use crate::models::ctx::CtxStatus;
+    use crate::runtime::msg::{Internal, Msg};
+    use crate::types::api::{DatastoreCommand, DatastoreRequest};
+    use crate::types::library::{LibraryBucket, LibraryItem};
+    use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
+
+    use super::{should_update_library_with_items, update_library};
+
+    fn library_item(id: &str) -> LibraryItem {
+        LibraryItem {
+            id: id.to_owned(),
+            r#type: "series".to_owned(),
+            name: "name".to_owned(),
+            poster: None,
+            poster_shape: Default::default(),
+            removed: false,
+            temp: false,
+            ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+            mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
+            state: Default::default(),
+            behavior_hints: Default::default(),
+        }
+    }
+
+    #[test]
+    fn should_update_library_with_items_only_when_merge_changes_library() {
+        let item = library_item("id");
+        let library = LibraryBucket::new(None, vec![item.to_owned()]);
+
+        assert!(!should_update_library_with_items(
+            &library,
+            &[item.to_owned()]
+        ));
+
+        let mut newer_item = item.to_owned();
+        newer_item.name = "updated".to_owned();
+        newer_item.mtime = Utc.with_ymd_and_hms(2020, 1, 2, 0, 0, 0).unwrap();
+        assert!(should_update_library_with_items(&library, &[newer_item]));
+
+        let mut older_item = item.to_owned();
+        older_item.name = "older".to_owned();
+        older_item.mtime = Utc.with_ymd_and_hms(2019, 12, 31, 0, 0, 0).unwrap();
+        assert!(!should_update_library_with_items(&library, &[older_item]));
+
+        assert!(should_update_library_with_items(
+            &library,
+            &[library_item("missing")]
+        ));
+    }
+
+    #[test]
+    fn library_pull_result_is_unchanged_when_items_match() {
+        let item = library_item("id");
+        let auth_key = AuthKey("auth_key".to_owned());
+        let profile = Profile {
+            auth: Some(Auth {
+                key: auth_key.to_owned(),
+                user: User {
+                    id: "user_id".into(),
+                    email: "user_email".to_owned(),
+                    last_modified: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
+                    date_registered: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
+                    gdpr_consent: GDPRConsent {
+                        tos: true,
+                        privacy: true,
+                        marketing: true,
+                        from: Some("tests".to_owned()),
+                    },
+                    ..Default::default()
+                },
+            }),
+            ..Default::default()
+        };
+        let request = DatastoreRequest {
+            auth_key,
+            collection: "libraryItem".to_owned(),
+            command: DatastoreCommand::Get {
+                ids: vec!["id".to_owned()],
+                all: false,
+            },
+        };
+        let msg = Msg::Internal(Internal::LibraryPullResult(
+            request,
+            Ok(vec![item.to_owned()]),
+        ));
+        let mut library = LibraryBucket::new(Some("user_id".into()), vec![item]);
+
+        let effects = update_library::<crate::unit_tests::TestEnv>(
+            &mut library,
+            &profile,
+            &CtxStatus::Ready,
+            &msg,
+        );
+
+        assert!(!effects.has_changed);
+    }
 }
