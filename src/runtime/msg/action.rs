@@ -149,6 +149,11 @@ pub enum ActionMetaDetails {
     MarkVideoAsWatched(Video, bool),
     /// Mark all videos from given season as watched
     MarkSeasonAsWatched(u32, bool),
+    /// Updates the selected video's progress from an external player callback.
+    ///
+    /// `time` is in milliseconds.
+    #[serde(rename_all = "camelCase")]
+    ExternalPlayerProgressChanged { time: u64 },
     /// Rate the current meta item
     Rate(Option<Rating>),
 }
