@@ -20,6 +20,8 @@ pub type UID = Option<UserId>;
 #[serde(rename_all = "camelCase")]
 pub struct Profile {
     pub auth: Option<Auth>,
+    #[serde(default)]
+    pub saved_auths: Vec<Auth>,
     #[serde_as(deserialize_as = "UniqueVec<Vec<_>, DescriptorUniqueVecAdapter>")]
     pub addons: Vec<Descriptor>,
     /// This locking flag is raised when the API addon fetch request has failed
@@ -34,6 +36,7 @@ impl Default for Profile {
     fn default() -> Self {
         Profile {
             auth: None,
+            saved_auths: vec![],
             addons: OFFICIAL_ADDONS.to_owned(),
             addons_locked: false,
             settings: Settings::default(),
@@ -47,6 +50,17 @@ impl Profile {
     }
     pub fn auth_key(&self) -> Option<&AuthKey> {
         self.auth.as_ref().map(|auth| &auth.key)
+    }
+
+    pub fn save_auth(&mut self, auth: Auth) {
+        self.saved_auths
+            .retain(|saved_auth| saved_auth.user.id != auth.user.id);
+        self.saved_auths.insert(0, auth);
+    }
+
+    pub fn remove_saved_auth(&mut self, user_id: &UserId) {
+        self.saved_auths
+            .retain(|saved_auth| &saved_auth.user.id != user_id);
     }
 
     /// check whether the user has Trakt authentication token

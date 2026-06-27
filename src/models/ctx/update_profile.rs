@@ -22,7 +22,13 @@ pub fn update_profile<E: Env + 'static>(
 ) -> Effects {
     match msg {
         Msg::Internal(Internal::Logout(_)) => {
-            let next_profile = Profile::default();
+            let mut next_profile = Profile {
+                saved_auths: profile.saved_auths.to_owned(),
+                ..Default::default()
+            };
+            if let Some(user_id) = profile.uid() {
+                next_profile.remove_saved_auth(&user_id);
+            }
             if *profile != next_profile {
                 *profile = next_profile;
                 Effects::msg(Msg::Internal(Internal::ProfileChanged))
@@ -302,12 +308,17 @@ pub fn update_profile<E: Env + 'static>(
                     ..
                 }),
             ) if loading_auth_request == auth_request => {
-                let next_profile = Profile {
+                let mut next_profile = Profile {
                     auth: Some(auth.to_owned()),
+                    saved_auths: profile.saved_auths.to_owned(),
                     addons: addons_result.to_owned().unwrap_or(OFFICIAL_ADDONS.clone()),
                     addons_locked: addons_result.is_err(),
                     settings: Settings::default(),
                 };
+                if let Some(current_auth) = profile.auth.as_ref() {
+                    next_profile.save_auth(current_auth.to_owned());
+                }
+                next_profile.save_auth(auth.to_owned());
                 if *profile != next_profile {
                     *profile = next_profile;
                     Effects::msg(Msg::Internal(Internal::ProfileChanged))
@@ -378,6 +389,8 @@ pub fn update_profile<E: Env + 'static>(
             Ok(user) => match &mut profile.auth {
                 Some(auth) if auth.user != *user => {
                     user.clone_into(&mut auth.user);
+                    let saved_auth = auth.to_owned();
+                    profile.save_auth(saved_auth);
                     Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }))
                         .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                 }
@@ -386,6 +399,10 @@ pub fn update_profile<E: Env + 'static>(
                         Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }));
                     if *overwritten {
                         profile.auth = Some(Auth {
+                            key: auth_key.clone(),
+                            user: user.clone(),
+                        });
+                        profile.save_auth(Auth {
                             key: auth_key.clone(),
                             user: user.clone(),
                         });

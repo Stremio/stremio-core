@@ -8,12 +8,14 @@ fn profile() {
         &vec![
             Profile {
                 auth: Some(Auth::default()),
+                saved_auths: vec![Auth::default()],
                 addons: vec![],
                 addons_locked: false,
                 settings: Settings::default(),
             },
             Profile {
                 auth: None,
+                saved_auths: vec![],
                 addons: vec![],
                 addons_locked: false,
                 settings: Settings::default(),
@@ -25,13 +27,16 @@ fn profile() {
                 Token::Seq { len: Some(2) },
                 Token::Struct {
                     name: "Profile",
-                    len: 4,
+                    len: 5,
                 },
                 Token::Str("auth"),
                 Token::Some,
             ],
             Auth::default_tokens(),
+            vec![Token::Str("savedAuths"), Token::Seq { len: Some(1) }],
+            Auth::default_tokens(),
             vec![
+                Token::SeqEnd,
                 Token::Str("addons"),
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
@@ -44,10 +49,13 @@ fn profile() {
                 Token::StructEnd,
                 Token::Struct {
                     name: "Profile",
-                    len: 4,
+                    len: 5,
                 },
                 Token::Str("auth"),
                 Token::None,
+                Token::Str("savedAuths"),
+                Token::Seq { len: Some(0) },
+                Token::SeqEnd,
                 Token::Str("addons"),
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
@@ -63,6 +71,7 @@ fn profile() {
     assert_de_tokens(
         &Profile {
             auth: None,
+            saved_auths: vec![],
             addons: vec![],
             addons_locked: false,
             settings: Settings::default(),

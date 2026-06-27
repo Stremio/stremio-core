@@ -22,10 +22,10 @@ use futures::future;
 use std::any::Any;
 use stremio_derive::Model;
 
-fn user_fixture() -> User {
+fn user_fixture_with_id(id: &str, email: &str) -> User {
     User {
-        id: "user_id".into(),
-        email: "user_email".to_owned(),
+        id: id.into(),
+        email: email.to_owned(),
         fb_id: None,
         apple_id: None,
         avatar: None,
@@ -43,6 +43,10 @@ fn user_fixture() -> User {
     }
 }
 
+fn user_fixture() -> User {
+    user_fixture_with_id("user_id", "user_email")
+}
+
 fn auth_response_fixture() -> AuthResponse {
     AuthResponse {
         key: AuthKey("auth_key".to_owned()),
@@ -51,11 +55,13 @@ fn auth_response_fixture() -> AuthResponse {
 }
 
 fn profile_fixture() -> Profile {
+    let auth = Auth {
+        key: AuthKey("auth_key".to_owned()),
+        user: user_fixture(),
+    };
     Profile {
-        auth: Some(Auth {
-            key: AuthKey("auth_key".to_owned()),
-            user: user_fixture(),
-        }),
+        auth: Some(auth.to_owned()),
+        saved_auths: vec![auth],
         addons: vec![],
         ..Default::default()
     }
@@ -343,6 +349,100 @@ fn actionctx_authenticate_login_with_token() {
             ..Default::default()
         },
         "DatastoreGet request has been sent"
+    );
+}
+
+#[test]
+fn actionctx_authenticate_preserves_previous_auth() {
+    #[derive(Model, Clone, Default)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+    }
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
+        match request {
+            Request {
+                url, method, body, ..
+            } if url == "https://api.strem.io/api/loginWithToken"
+                && method == "POST"
+                && body == "{\"type\":\"Auth\",\"type\":\"LoginWithToken\",\"token\":\"auth_key\"}" =>
+            {
+                future::ok(Box::new(APIResult::Ok(auth_response_fixture())) as Box<dyn Any + Send>).boxed_env()
+            }
+            Request {
+                url, method, body, ..
+            } if url == "https://api.strem.io/api/addonCollectionGet"
+                && method == "POST"
+                && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
+            {
+                future::ok(Box::new(APIResult::Ok(
+                    CollectionResponse {
+                        addons: vec![],
+                        last_modified: TestEnv::now(),
+                    },
+                )) as Box<dyn Any + Send>).boxed_env()
+            }
+            Request {
+                url, method, body, ..
+            } if url == "https://api.strem.io/api/datastoreGet"
+                && method == "POST"
+                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
+            {
+                future::ok(Box::new(APIResult::Ok(LibraryItemsResponse::new())) as Box<dyn Any + Send>).boxed_env()
+            }
+            _ => default_fetch_handler(request),
+        }
+    }
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
+    let previous_auth = Auth {
+        key: AuthKey("previous_auth_key".to_owned()),
+        user: user_fixture_with_id("previous_user_id", "previous_user_email"),
+    };
+    let profile = Profile {
+        auth: Some(previous_auth.to_owned()),
+        saved_auths: vec![],
+        ..Default::default()
+    };
+    let expected_auth = Auth {
+        key: AuthKey("auth_key".to_owned()),
+        user: user_fixture(),
+    };
+    let expected_profile = Profile {
+        auth: Some(expected_auth.to_owned()),
+        saved_auths: vec![expected_auth, previous_auth],
+        addons: vec![],
+        ..Default::default()
+    };
+    let ctx = Ctx::new(
+        profile,
+        LibraryBucket::default(),
+        StreamsBucket::default(),
+        ServerUrlsBucket::new::<TestEnv>(None),
+        NotificationsBucket::new::<TestEnv>(None, vec![]),
+        SearchHistoryBucket::default(),
+        DismissedEventsBucket::default(),
+    );
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::Authenticate(AuthRequest::LoginWithToken {
+                token: "auth_key".into(),
+            })),
+        })
+    });
+
+    assert_eq!(
+        runtime.model().unwrap().ctx.profile,
+        expected_profile,
+        "previous profile auth is preserved in saved auths"
+    );
+    assert_eq!(
+        serde_json::from_str::<Profile>(STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
+            .unwrap(),
+        expected_profile,
+        "previous profile auth is persisted in saved auths"
     );
 }
 

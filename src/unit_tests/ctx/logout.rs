@@ -42,28 +42,55 @@ fn actionctx_logout() {
             _ => default_fetch_handler(request),
         }
     }
-    let profile = Profile {
-        auth: Some(Auth {
-            key: AuthKey("auth_key".to_owned()),
-            user: User {
-                id: "user_id".into(),
-                email: "user_email".to_owned(),
-                fb_id: None,
-                apple_id: None,
-                avatar: None,
-                last_modified: TestEnv::now(),
-                date_registered: TestEnv::now(),
-                trakt: None,
-                premium_expire: None,
-                gdpr_consent: GDPRConsent {
-                    tos: true,
-                    privacy: true,
-                    marketing: true,
-                    from: Some("tests".to_owned()),
-                },
-                ..Default::default()
+    let current_auth = Auth {
+        key: AuthKey("auth_key".to_owned()),
+        user: User {
+            id: "user_id".into(),
+            email: "user_email".to_owned(),
+            fb_id: None,
+            apple_id: None,
+            avatar: None,
+            last_modified: TestEnv::now(),
+            date_registered: TestEnv::now(),
+            trakt: None,
+            premium_expire: None,
+            gdpr_consent: GDPRConsent {
+                tos: true,
+                privacy: true,
+                marketing: true,
+                from: Some("tests".to_owned()),
             },
-        }),
+            ..Default::default()
+        },
+    };
+    let saved_auth = Auth {
+        key: AuthKey("other_auth_key".to_owned()),
+        user: User {
+            id: "other_user_id".into(),
+            email: "other_user_email".to_owned(),
+            fb_id: None,
+            apple_id: None,
+            avatar: None,
+            last_modified: TestEnv::now(),
+            date_registered: TestEnv::now(),
+            trakt: None,
+            premium_expire: None,
+            gdpr_consent: GDPRConsent {
+                tos: true,
+                privacy: true,
+                marketing: true,
+                from: Some("tests".to_owned()),
+            },
+            ..Default::default()
+        },
+    };
+    let expected_profile = Profile {
+        saved_auths: vec![saved_auth.to_owned()],
+        ..Default::default()
+    };
+    let profile = Profile {
+        auth: Some(current_auth.to_owned()),
+        saved_auths: vec![current_auth, saved_auth],
         ..Default::default()
     };
     let library = LibraryBucket {
@@ -107,7 +134,7 @@ fn actionctx_logout() {
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile,
-        Default::default(),
+        expected_profile,
         "profile updated successfully in memory"
     );
     assert_eq!(
@@ -121,7 +148,7 @@ fn actionctx_logout() {
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
             .is_some_and(|data| {
-                serde_json::from_str::<Profile>(data).unwrap() == Default::default()
+                serde_json::from_str::<Profile>(data).unwrap() == expected_profile
             }),
         "profile updated successfully in storage"
     );
