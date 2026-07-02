@@ -13,10 +13,20 @@ plan & guidelines: [TODO.md](TODO.md); addon alignment: [PURE_TV_ADDON_ALIGNMENT
   (`src/unit_tests/serde/manifest_behavior_hints.rs`) and `DefaultTokens` impl extended
   (`src/unit_tests/serde/default_tokens_ext.rs`). `cargo test --lib manifest`: 7 passed.
 
-## Next
+- **Iteration 2 — `VideoEpgInfo` on `Video`.**
+  New `VideoEpgInfo` struct (`start_time`/`end_time` required, `runtime`, `release_info`,
+  `genres`, `cast`, `directors`, `links` optional) flattened as
+  `Video.epg_info: Option<VideoEpgInfo>` in `src/types/resource/meta_item.rs`, mirroring
+  the `series_info` pattern — its presence marks a video as a program show. Added
+  `VideoEpgInfo::is_live(now)` (`[start, end)` semantics) and a serde test
+  (`video_epg_info` in `src/unit_tests/serde/video.rs`) covering EPG payloads, absence
+  (regular videos keep `epg_info: None`) and camelCase round-trip. Also fixed the fallout
+  of iteration 1 that the targeted test run missed: exact-body fetch fixtures in
+  `src/unit_tests/ctx/{install_addon,push_addons_to_api}.rs` now include
+  `"epgProvider":false`. Full suite: `cargo test --lib` 218 passed (also with
+  `--test-threads=1`).
 
-- Iteration 2: `VideoEpgInfo` flattened optional group on `Video` (startTime/endTime,
-  runtime, releaseInfo, genres, cast, directors, links) + `is_live` helper + serde tests.
+## Next
 - Iteration 3: `EPG_DATE_EXTRA_PROP` constant + `LiveTvGuide` model +
   `ActionLoad::LiveTvGuide` (date defaults to today via `E::now()`; `date` extra appended
   unconditionally for epgProvider addons).

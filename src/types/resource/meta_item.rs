@@ -326,6 +326,36 @@ pub struct SeriesInfo {
 /// For example when using the id as key in a [`HashMap`].
 pub type VideoId = String;
 
+/// Program guide information of a [`Video`], provided for the shows of
+/// live TV channels by addons with the `epgProvider` manifest behavior hint.
+///
+/// Its presence on a [`Video`] marks it as a scheduled program show.
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct VideoEpgInfo {
+    pub start_time: DateTime<Utc>,
+    pub end_time: DateTime<Utc>,
+    #[serde(default)]
+    pub runtime: Option<String>,
+    #[serde(default)]
+    pub release_info: Option<String>,
+    #[serde(default)]
+    pub genres: Vec<String>,
+    #[serde(default)]
+    pub cast: Vec<String>,
+    #[serde(default)]
+    pub directors: Vec<String>,
+    #[serde(default)]
+    pub links: Vec<Link>,
+}
+
+impl VideoEpgInfo {
+    /// Whether the show is currently on air
+    pub fn is_live(&self, now: DateTime<Utc>) -> bool {
+        self.start_time <= now && now < self.end_time
+    }
+}
+
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]
@@ -345,6 +375,8 @@ pub struct Video {
     pub streams: Vec<Stream>,
     #[serde(default, flatten)]
     pub series_info: Option<SeriesInfo>,
+    #[serde(default, flatten)]
+    pub epg_info: Option<VideoEpgInfo>,
     #[serde(default)]
     pub trailer_streams: Vec<Stream>,
 }

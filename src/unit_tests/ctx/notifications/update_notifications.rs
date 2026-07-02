@@ -125,6 +125,7 @@ fn test_pull_notifications_and_play_in_player() {
                     season: 1,
                     episode: 4,
                 }),
+                epg_info: None,
                 trailer_streams: vec![],
             },
             Video {
@@ -138,6 +139,7 @@ fn test_pull_notifications_and_play_in_player() {
                     season: 1,
                     episode: 5,
                 }),
+                epg_info: None,
                 trailer_streams: vec![],
             },
             Video {
@@ -151,6 +153,7 @@ fn test_pull_notifications_and_play_in_player() {
                     season: 1,
                     episode: 6,
                 }),
+                epg_info: None,
                 trailer_streams: vec![],
             },
             Video {
@@ -164,6 +167,7 @@ fn test_pull_notifications_and_play_in_player() {
                     season: 1,
                     episode: 7,
                 }),
+                epg_info: None,
                 trailer_streams: vec![],
             },
         ],

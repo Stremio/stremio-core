@@ -20,6 +20,7 @@ fn video_deep_links() {
         thumbnail: None,
         streams: vec![],
         series_info: None,
+        epg_info: None,
         trailer_streams: vec![],
     };
     let request = ResourceRequest {
