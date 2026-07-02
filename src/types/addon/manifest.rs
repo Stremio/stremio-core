@@ -450,4 +450,6 @@ pub struct ManifestBehaviorHints {
     pub configurable: bool,
     #[serde(default)]
     pub configuration_required: bool,
+    #[serde(default)]
+    pub epg_provider: bool,
 }
