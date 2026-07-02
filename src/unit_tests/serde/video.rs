@@ -1,7 +1,6 @@
 use crate::types::resource::Stream;
 use crate::types::resource::{
-    MetaItem, MetaItemPreview, SeriesInfo, StreamBehaviorHints, StreamSource, Video,
-    VideoEpgInfo,
+    MetaItem, MetaItemPreview, SeriesInfo, StreamBehaviorHints, StreamSource, Video, VideoEpgInfo,
 };
 use crate::unit_tests::serde::default_tokens_ext::{DefaultFlattenTokens, DefaultTokens};
 use chrono::{TimeZone, Utc};

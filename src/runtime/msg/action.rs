@@ -12,6 +12,7 @@ use crate::{
         installed_addons_with_filters::Selected as InstalledAddonsWithFiltersSelected,
         library_by_type::Selected as LibraryByTypeSelected,
         library_with_filters::Selected as LibraryWithFiltersSelected,
+        live_tv_guide::Selected as LiveTvGuideSelected,
         meta_details::Selected as MetaDetailsSelected,
         player::{Selected as PlayerSelected, VideoParams},
     },
@@ -251,6 +252,8 @@ pub enum ActionLoad {
     LibraryByType(LibraryByTypeSelected),
     /// Loads the Calendar Model
     Calendar(Option<CalendarSelected>),
+    /// Loads the LiveTvGuide Model
+    LiveTvGuide(Option<LiveTvGuideSelected>),
     /// Loads the data required for Local search
     LocalSearch,
     MetaDetails(MetaDetailsSelected),

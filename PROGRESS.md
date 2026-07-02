@@ -26,10 +26,22 @@ plan & guidelines: [TODO.md](TODO.md); addon alignment: [PURE_TV_ADDON_ALIGNMENT
   `"epgProvider":false`. Full suite: `cargo test --lib` 218 passed (also with
   `--test-threads=1`).
 
+- **Iteration 3 — `LiveTvGuide` model.**
+  `EPG_DATE_EXTRA_PROP` (`date`) in `src/constants.rs`. New model
+  `src/models/live_tv_guide.rs`: `Selected { request, date }` (request defaults to the
+  first guide catalog, date to today via `E::now()`), `Selectable` (guide catalogs of
+  `epgProvider` addons with ready-to-dispatch requests + prev/next/today dates),
+  `catalog: Option<ResourceLoadable<Vec<MetaItem>>>` (parses `metasDetailed`), and derived
+  `channels: Vec<ChannelGuide { channel, shows }>` — shows filtered to the selected UTC
+  day (overlap semantics, midnight-spanning shows appear on both days), sorted by start
+  time; videos without `epg_info` excluded. The `date` extra is appended unconditionally
+  for epgProvider addons (the hint implies support; catalogs need not declare it).
+  `ActionLoad::LiveTvGuide(Option<Selected>)` added. End-to-end runtime test in
+  `src/unit_tests/live_tv_guide/load_action.rs` (request URL, date default, selectable,
+  filtering, ordering). Full suite: 219 passed; clippy clean.
+  NOT yet included: `skip` pagination (`LoadNextPage`) — follow-up after the web bridge.
+
 ## Next
-- Iteration 3: `EPG_DATE_EXTRA_PROP` constant + `LiveTvGuide` model +
-  `ActionLoad::LiveTvGuide` (date defaults to today via `E::now()`; `date` extra appended
-  unconditionally for epgProvider addons).
 - Iteration 4: `LiveTvDeepLinks` (`stremio:///livetv/{date}`).
 - Iteration 5: web bridge — `WebModel.live_tv_guide` + `serialize_live_tv_guide.rs`
   (per-show `deepLinks` + computed `isLive`).
