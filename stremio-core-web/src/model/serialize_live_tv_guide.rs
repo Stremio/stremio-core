@@ -1,5 +1,4 @@
-use chrono::NaiveDate;
-use gloo_utils::format::JsValueSerdeExt;
+use chrono::{DateTime, NaiveDate, Utc};
 use itertools::Itertools;
 use serde::Serialize;
 use stremio_core::{
@@ -9,17 +8,15 @@ use stremio_core::{
         common::{Loadable, ResourceError},
         live_tv_guide::{SelectablePage, Selected},
     },
-    runtime::Env,
     types::{
         addon::{ResourcePath, ResourceRequest},
         resource::{MetaItemPreview, Video},
     },
 };
-use wasm_bindgen::JsValue;
 
-use crate::{env::WebEnv, model::DeepLinksExt};
+use crate::model::DeepLinksExt;
 
-mod model {
+pub mod model {
     use super::*;
 
     #[derive(Serialize)]
@@ -80,8 +77,27 @@ pub fn serialize_live_tv_guide(
     live_tv_guide: &stremio_core::models::live_tv_guide::LiveTvGuide,
     streaming_server_url: Option<&url::Url>,
     settings: &stremio_core::types::profile::Settings,
-) -> JsValue {
-    let now = WebEnv::now();
+) -> wasm_bindgen::JsValue {
+    use gloo_utils::format::JsValueSerdeExt;
+    use stremio_core::runtime::Env;
+
+    <wasm_bindgen::JsValue as JsValueSerdeExt>::from_serde(&live_tv_guide_model(
+        live_tv_guide,
+        streaming_server_url,
+        settings,
+        crate::env::WebEnv::now(),
+    ))
+    .expect("JsValue from model::LiveTvGuide")
+}
+
+/// Builds the serializable web state of the [`LiveTvGuide`] model,
+/// platform-agnostic so that it is testable natively
+pub fn live_tv_guide_model<'a>(
+    live_tv_guide: &'a stremio_core::models::live_tv_guide::LiveTvGuide,
+    streaming_server_url: Option<&url::Url>,
+    settings: &stremio_core::types::profile::Settings,
+    now: DateTime<Utc>,
+) -> model::LiveTvGuide<'a> {
     let streaming_server_url = streaming_server_url.cloned();
     let selected_date = live_tv_guide
         .selected
@@ -96,7 +112,7 @@ pub fn serialize_live_tv_guide(
         None => LiveTvGuideDeepLinks::from(date).into_web_deep_links(),
     };
 
-    <JsValue as JsValueSerdeExt>::from_serde(&model::LiveTvGuide {
+    model::LiveTvGuide {
         selected: &live_tv_guide.selected,
         selectable: model::Selectable {
             catalogs: live_tv_guide
@@ -184,6 +200,166 @@ pub fn serialize_live_tv_guide(
                 })
             })
             .collect_vec(),
-    })
-    .expect("JsValue from model::LiveTvGuide")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::{NaiveDate, TimeZone, Utc};
+    use stremio_core::{
+        models::{
+            common::{Loadable, ResourceLoadable},
+            live_tv_guide::{
+                ChannelGuide, LiveTvGuide, Selectable, SelectableCatalog, SelectablePage, Selected,
+            },
+        },
+        types::{
+            addon::{ExtraValue, ResourcePath, ResourceRequest},
+            resource::MetaItem,
+        },
+    };
+    use url::Url;
+
+    use super::live_tv_guide_model;
+
+    #[test]
+    fn live_tv_guide_web_state() {
+        let channel: MetaItem = serde_json::from_value(serde_json::json!({
+            "id": "pure:axn",
+            "type": "tv",
+            "name": "AXN",
+            "logo": "https://addon.example.com/logos/axn.png",
+            "poster": "https://addon.example.com/logos/axn.png",
+            "posterShape": "landscape",
+            "behaviorHints": { "hasScheduledVideos": true },
+            "videos": [
+                {
+                    "id": "pure:axn:8f3k2j",
+                    "title": "S.W.A.T.",
+                    "overview": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+                    "thumbnail": "https://addon.example.com/thumbs/swat.jpg",
+                    "released": "2026-07-02T10:30:00Z",
+                    "startTime": "2026-07-02T10:30:00Z",
+                    "endTime": "2026-07-02T11:55:00Z",
+                    "runtime": "85 min",
+                    "releaseInfo": "2018",
+                    "genres": ["Ação", "Drama", "Policial"],
+                    "cast": ["Shemar Moore"],
+                    "directors": [],
+                    "links": [],
+                    "streams": [{
+                        "name": "PureTV",
+                        "description": "AXN",
+                        "url": "https://cdn.example.com/axn/master.m3u8",
+                        "behaviorHints": { "notWebReady": true }
+                    }]
+                },
+                {
+                    "id": "pure:axn:1m9x4p",
+                    "title": "Spy x Family",
+                    "overview": "Ut enim ad minim veniam, quis nostrud exercitation.",
+                    "thumbnail": "https://addon.example.com/thumbs/spy-x-family.jpg",
+                    "released": "2026-07-02T11:55:00Z",
+                    "startTime": "2026-07-02T11:55:00Z",
+                    "endTime": "2026-07-02T12:23:00Z",
+                    "runtime": "28 min",
+                    "releaseInfo": "2022",
+                    "genres": ["Anime", "Comédia"],
+                    "cast": ["Takuya Eguchi"],
+                    "directors": [],
+                    "links": [],
+                    "streams": [{
+                        "name": "PureTV",
+                        "description": "AXN",
+                        "url": "https://cdn.example.com/axn/master.m3u8",
+                        "behaviorHints": { "notWebReady": true }
+                    }]
+                }
+            ]
+        }))
+        .unwrap();
+
+        let base = Url::parse("https://addon.example.com/manifest.json").unwrap();
+        let date = NaiveDate::from_ymd_opt(2026, 7, 2).unwrap();
+        let date_extra = ExtraValue {
+            name: "date".to_owned(),
+            value: "2026-07-02".to_owned(),
+        };
+        let catalog_request = ResourceRequest {
+            base: base.clone(),
+            path: ResourcePath::without_extra("catalog", "tv", "puretv-guide"),
+        };
+        let page_request = ResourceRequest {
+            base: base.clone(),
+            path: ResourcePath::with_extra("catalog", "tv", "puretv-guide", &[date_extra.clone()]),
+        };
+        let next_page_request = ResourceRequest {
+            base: base.clone(),
+            path: ResourcePath::with_extra(
+                "catalog",
+                "tv",
+                "puretv-guide",
+                &[
+                    ExtraValue {
+                        name: "skip".to_owned(),
+                        value: "1".to_owned(),
+                    },
+                    date_extra,
+                ],
+            ),
+        };
+
+        // deserialization sorts videos by released DESC: [spy, swat];
+        // the model derives shows sorted by startTime ASC: [swat, spy]
+        let shows = vec![channel.videos[1].clone(), channel.videos[0].clone()];
+        let state = LiveTvGuide {
+            selected: Some(Selected {
+                request: Some(catalog_request.clone()),
+                date: Some(date),
+            }),
+            selectable: Selectable {
+                catalogs: vec![SelectableCatalog {
+                    catalog: "PureTV".to_owned(),
+                    addon_name: "PureTV".to_owned(),
+                    selected: true,
+                    request: catalog_request,
+                }],
+                prev_date: date.pred_opt(),
+                next_date: date.succ_opt(),
+                today: Some(date),
+                next_page: Some(SelectablePage {
+                    request: next_page_request,
+                }),
+            },
+            catalog: vec![ResourceLoadable {
+                request: page_request,
+                content: Some(Loadable::Ready(vec![channel.clone()])),
+            }],
+            channels: vec![ChannelGuide {
+                channel: channel.preview.clone(),
+                shows,
+            }],
+        };
+
+        // "now" is 12:00 - S.W.A.T. has ended, Spy x Family is on air
+        let now = Utc.with_ymd_and_hms(2026, 7, 2, 12, 0, 0).unwrap();
+        let value =
+            serde_json::to_value(live_tv_guide_model(&state, None, &Default::default(), now))
+                .unwrap();
+
+        println!("{}", serde_json::to_string_pretty(&value).unwrap());
+
+        assert_eq!(value["channels"][0]["shows"][0]["isLive"], false);
+        assert_eq!(value["channels"][0]["shows"][1]["isLive"], true);
+        assert!(value["channels"][0]["shows"][1]["deepLinks"]["player"].is_string());
+        assert!(value["channels"][0]["deepLinks"]["metaDetailsVideos"]
+            .as_str()
+            .unwrap()
+            .starts_with("#/detail/tv/pure%3Aaxn"));
+        assert_eq!(value["catalog"][0]["type"], "Ready");
+        assert_eq!(
+            value["selectable"]["nextPage"]["request"]["path"]["extra"][0][0],
+            "skip"
+        );
+    }
 }
