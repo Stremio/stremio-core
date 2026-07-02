@@ -196,6 +196,18 @@ variant, one deep-link struct, one serializer.
 
 ## 4. UI mapping
 
+**Discover integration (decided 2026-07-02):** the guide renders *inside the Discover
+page* of the web app (the screenshots show Discover's type/catalog dropdowns), not as a
+separate screen. Core keeps `LiveTvGuide` as its own model — routing is a frontend
+concern: when the catalog selected on the Discover route belongs to an addon with
+`epgProvider: true` (checkable via `ctx.profile.addons`), stremio-web dispatches
+`ActionLoad::LiveTvGuide` instead of (not in addition to) `ActionLoad::CatalogWithFilters`
+and renders the grid component from the `liveTvGuide` state field. epgProvider catalogs
+already appear in Discover's dropdowns (nothing excludes them from
+`CatalogWithFilters::selectable`), so no core change is needed for discovery of the
+catalogs themselves. The `stremio:///livetv/{...}` deep links can map onto the discover
+route in the frontend if a dedicated route is not wanted.
+
 - **Grid screen**: `LiveTvGuide` for today → rows = `channels`, blocks positioned by
   `startTime`/`endTime` (UTC from core; now-line and pixel math are frontend concerns).
   Channel/provider dropdowns and day arrows come from `Selectable`.
