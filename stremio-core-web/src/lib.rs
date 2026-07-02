@@ -10,7 +10,8 @@ pub mod model {
         serialize_ctx::serialize_ctx, serialize_data_export::serialize_data_export,
         serialize_discover::serialize_discover,
         serialize_installed_addons::serialize_installed_addons,
-        serialize_library::serialize_library, serialize_local_search::serialize_local_search,
+        serialize_library::serialize_library, serialize_live_tv_guide::serialize_live_tv_guide,
+        serialize_local_search::serialize_local_search,
         serialize_meta_details::serialize_meta_details, serialize_player::serialize_player,
         serialize_remote_addons::serialize_remote_addons,
         serialize_streaming_server::serialize_streaming_server,
@@ -38,6 +39,7 @@ pub mod model {
         mod discover_deep_links;
         mod library_deep_links;
         mod library_item_deep_links;
+        mod live_tv_guide_deep_links;
         mod local_search_deep_links;
         mod meta_item_deep_links;
         mod search_history_deep_links;
@@ -56,6 +58,7 @@ pub mod model {
     pub mod serialize_discover;
     pub mod serialize_installed_addons;
     pub mod serialize_library;
+    pub mod serialize_live_tv_guide;
     pub mod serialize_local_search;
     pub mod serialize_meta_details;
     pub mod serialize_player;

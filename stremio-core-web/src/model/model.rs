@@ -18,6 +18,7 @@ use stremio_core::{
         installed_addons_with_filters::InstalledAddonsWithFilters,
         library_with_filters::{ContinueWatchingFilter, LibraryWithFilters, NotRemovedFilter},
         link::Link,
+        live_tv_guide::LiveTvGuide,
         local_search::LocalSearch,
         meta_details::MetaDetails,
         player::Player,
@@ -48,6 +49,7 @@ pub struct WebModel {
     pub library: LibraryWithFilters<NotRemovedFilter>,
     pub continue_watching: LibraryWithFilters<ContinueWatchingFilter>,
     pub calendar: Calendar,
+    pub live_tv_guide: LiveTvGuide,
     pub search: CatalogsWithExtra,
     /// Pre-loaded results for local search
     pub local_search: LocalSearch,
@@ -101,6 +103,7 @@ impl WebModel {
             library: library_,
             continue_watching,
             calendar: Default::default(),
+            live_tv_guide: Default::default(),
             search: Default::default(),
             meta_details: Default::default(),
             remote_addons,
@@ -172,6 +175,11 @@ impl WebModel {
                 .expect("JsValue from model::CatalogsWithExtra")
             }
             WebModelField::Calendar => serialize_calendar(&self.calendar),
+            WebModelField::LiveTvGuide => serialize_live_tv_guide(
+                &self.live_tv_guide,
+                self.streaming_server.base_url.as_ref(),
+                &self.ctx.profile.settings,
+            ),
             WebModelField::LocalSearch => serialize_local_search(&self.local_search),
             WebModelField::MetaDetails => serialize_meta_details::<WebEnv>(
                 &self.meta_details,

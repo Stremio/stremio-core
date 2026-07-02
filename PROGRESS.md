@@ -49,9 +49,24 @@ plan & guidelines: [TODO.md](TODO.md); addon alignment: [PURE_TV_ADDON_ALIGNMENT
   `MetaItemDeepLinks`. Test: `src/unit_tests/deep_links/live_tv_guide_deep_links.rs`.
   Full suite: 220 passed.
 
+- **Iteration 5 — web bridge.**
+  `stremio-core-web`: `WebModel.live_tv_guide` field + `get_state` arm
+  (`src/model/model.rs`), `serialize_live_tv_guide.rs` (selectable catalogs/dates with
+  guide deep links, catalog load state as `Loadable<(), &ResourceError>` without
+  duplicating metas, channels with `MetaItemDeepLinks`, shows serialized as flattened
+  `Video` + computed `isLive` (via `WebEnv::now()`) + `VideoDeepLinks` built against a
+  synthesized `meta/{type}/{id}` request on the guide addon's base — this is the modal's
+  Play button), and a `DeepLinksExt` impl for `LiveTvGuideDeepLinks`.
+  GOTCHA: `stremio-core-web`'s `model` module is declared INLINE in `src/lib.rs` (lines
+  5-64) — the `src/model/mod.rs` / `deep_links_ext/mod.rs` files are DEAD leftovers; new
+  serializers must be registered in `lib.rs`, not mod.rs.
+  Verified: `cargo test` (root, CI-style) 220 + 18 passed; `cargo check` on
+  stremio-core-web clean. NOTE: `cargo test --workspace` fails ~72 TestEnv-based tests
+  even on clean `development` (pre-existing mutex poisoning under workspace feature
+  unification, machine-local) — not caused by this branch.
+
 ## Next
-- Iteration 4: `LiveTvDeepLinks` (`stremio:///livetv/{date}`).
-- Iteration 5: web bridge — `WebModel.live_tv_guide` + `serialize_live_tv_guide.rs`
-  (per-show `deepLinks` + computed `isLive`).
+
+- `skip` pagination for the guide catalog (`ActionLiveTvGuide::LoadNextPage`).
 - Later (see TODO.md): filter EPG channels out of Continue Watching; "Live channels"
-  Board row.
+  Board row; frontend (stremio-web) routes for `#/livetv/...`.
