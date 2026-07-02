@@ -1,3 +1,4 @@
+use chrono::NaiveDate;
 use percent_encoding::utf8_percent_encode;
 use regex::Regex;
 use serde::Serialize;
@@ -729,6 +730,34 @@ impl From<(&MetaItem, &Video)> for CalendarItemDeepLinks {
                 utf8_percent_encode(&meta_item.preview.r#type, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&meta_item.preview.id, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
+            ),
+        }
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LiveTvGuideDeepLinks {
+    pub live_tv_guide: String,
+}
+
+impl From<&NaiveDate> for LiveTvGuideDeepLinks {
+    fn from(date: &NaiveDate) -> Self {
+        Self {
+            live_tv_guide: format!("stremio:///livetv/{}", date.format("%Y-%m-%d")),
+        }
+    }
+}
+
+impl From<(&ResourceRequest, &NaiveDate)> for LiveTvGuideDeepLinks {
+    fn from((request, date): (&ResourceRequest, &NaiveDate)) -> Self {
+        Self {
+            live_tv_guide: format!(
+                "stremio:///livetv/{}/{}/{}/{}",
+                utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
+                date.format("%Y-%m-%d")
             ),
         }
     }

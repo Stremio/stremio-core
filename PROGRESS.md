@@ -41,6 +41,14 @@ plan & guidelines: [TODO.md](TODO.md); addon alignment: [PURE_TV_ADDON_ALIGNMENT
   filtering, ordering). Full suite: 219 passed; clippy clean.
   NOT yet included: `skip` pagination (`LoadNextPage`) — follow-up after the web bridge.
 
+- **Iteration 4 — `LiveTvGuideDeepLinks`.**
+  New deep link struct in `src/deep_links/mod.rs`: `From<&NaiveDate>` →
+  `stremio:///livetv/{YYYY-MM-DD}` and `From<(&ResourceRequest, &NaiveDate)>` →
+  `stremio:///livetv/{base}/{type}/{id}/{date}` (Discover-style encoded catalog request).
+  Show-level links intentionally reuse the existing `VideoDeepLinks` /
+  `MetaItemDeepLinks`. Test: `src/unit_tests/deep_links/live_tv_guide_deep_links.rs`.
+  Full suite: 220 passed.
+
 ## Next
 - Iteration 4: `LiveTvDeepLinks` (`stremio:///livetv/{date}`).
 - Iteration 5: web bridge — `WebModel.live_tv_guide` + `serialize_live_tv_guide.rs`
