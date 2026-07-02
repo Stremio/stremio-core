@@ -65,8 +65,24 @@ plan & guidelines: [TODO.md](TODO.md); addon alignment: [PURE_TV_ADDON_ALIGNMENT
   even on clean `development` (pre-existing mutex poisoning under workspace feature
   unification, machine-local) — not caused by this branch.
 
+- **Iteration 6 — `skip` pagination.**
+  `LiveTvGuide.catalog` is now `Vec<ResourceLoadable<Vec<MetaItem>>>` (pages, mirroring
+  `CatalogWithFilters`). `Selectable.next_page: Option<SelectablePage>` — present only
+  when the selected catalog declares the `skip` extra (pagination is opt-in via the
+  manifest, unlike the implied `date`) and all requested pages are loaded; `skip` = sum of
+  loaded page sizes; the page request carries `skip` + `date` extras (`extend_one`
+  PREPENDS, so the URL is `skip=N&date=...`). New `ActionLiveTvGuide::LoadNextPage` +
+  `Action::LiveTvGuide` variant. `channels` are derived across all ready pages, deduped
+  by channel id. Serializer: `catalog` = per-page `Loadable<(), &ResourceError>` states,
+  `selectable.nextPage` exposed, channel meta requests built from the selected request's
+  base. Runtime test extended with a second page (request URL, appended channels, skip
+  count). GOTCHA (caused a local test-suite freeze): `runtime.model()` returns a read
+  guard — binding `&runtime.model().unwrap().field` extends the guard's lifetime to the
+  end of the test, deadlocking the next `dispatch` (write lock) and stalling every other
+  TestEnv test on the env mutex; scope model reads in `{ }` blocks between dispatches.
+  Full suite: 220 passed; clippy clean.
+
 ## Next
 
-- `skip` pagination for the guide catalog (`ActionLiveTvGuide::LoadNextPage`).
 - Later (see TODO.md): filter EPG channels out of Continue Watching; "Live channels"
   Board row; frontend (stremio-web) routes for `#/livetv/...`.

@@ -7,7 +7,7 @@ use stremio_core::{
     deep_links::{LiveTvGuideDeepLinks, MetaItemDeepLinks, VideoDeepLinks},
     models::{
         common::{Loadable, ResourceError},
-        live_tv_guide::Selected,
+        live_tv_guide::{SelectablePage, Selected},
     },
     runtime::Env,
     types::{
@@ -62,6 +62,7 @@ mod model {
         pub prev_date: Option<SelectableDate<'a>>,
         pub next_date: Option<SelectableDate<'a>>,
         pub today: &'a Option<NaiveDate>,
+        pub next_page: &'a Option<SelectablePage>,
     }
 
     #[derive(Serialize)]
@@ -69,7 +70,7 @@ mod model {
     pub struct LiveTvGuide<'a> {
         pub selected: &'a Option<Selected>,
         pub selectable: Selectable<'a>,
-        pub catalog: Option<Loadable<(), &'a ResourceError>>,
+        pub catalog: Vec<Loadable<(), &'a ResourceError>>,
         pub channels: Vec<ChannelGuide<'a>>,
     }
 }
@@ -132,24 +133,26 @@ pub fn serialize_live_tv_guide(
                 }
             }),
             today: &live_tv_guide.selectable.today,
+            next_page: &live_tv_guide.selectable.next_page,
         },
-        catalog: live_tv_guide.catalog.as_ref().and_then(|catalog| {
-            catalog
-                .content
-                .as_ref()
-                .map(|content| content.as_ref().map(|_| ()))
-        }),
+        catalog: live_tv_guide
+            .catalog
+            .iter()
+            .filter_map(|page| {
+                page.content
+                    .as_ref()
+                    .map(|content| content.as_ref().map(|_| ()))
+            })
+            .collect_vec(),
         channels: live_tv_guide
             .channels
             .iter()
             .filter_map(|channel_guide| {
-                // channels are derived from the loaded catalog, so its
-                // request is always available here; deep links of channels
-                // and their shows are built against the channel's meta
-                // resource on the guide catalog's addon
-                let catalog_request = live_tv_guide.catalog.as_ref()?;
+                // channels exist only when a catalog is selected; deep links
+                // of channels and their shows are built against the
+                // channel's meta resource on the guide catalog's addon
                 let meta_request = ResourceRequest {
-                    base: catalog_request.request.base.to_owned(),
+                    base: selected_request?.base.to_owned(),
                     path: ResourcePath::without_extra(
                         META_RESOURCE_NAME,
                         &channel_guide.channel.r#type,

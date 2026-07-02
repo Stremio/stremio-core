@@ -129,6 +129,12 @@ pub enum ActionLibraryByType {
 
 #[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
+pub enum ActionLiveTvGuide {
+    LoadNextPage,
+}
+
+#[derive(Clone, Deserialize, Debug)]
+#[serde(tag = "action", content = "args")]
 pub enum ActionLibraryWithFilters {
     LoadNextPage,
 }
@@ -285,6 +291,7 @@ pub enum Action {
     CatalogsWithExtra(ActionCatalogsWithExtra),
     LibraryByType(ActionLibraryByType),
     LibraryWithFilters(ActionLibraryWithFilters),
+    LiveTvGuide(ActionLiveTvGuide),
     MetaDetails(ActionMetaDetails),
     StreamingServer(ActionStreamingServer),
     Player(ActionPlayer),
