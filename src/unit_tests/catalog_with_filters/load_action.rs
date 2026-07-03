@@ -3,7 +3,10 @@ use crate::models::common::{Loadable, ResourceLoadable};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad};
 use crate::runtime::{EnvFutureExt, Runtime, RuntimeAction, RuntimeEvent, TryEnvFuture};
-use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest, ResourceResponse};
+use crate::types::addon::{
+    Descriptor, ExtraValue, Manifest, ManifestBehaviorHints, ResourcePath, ResourceRequest,
+    ResourceResponse,
+};
 use crate::types::events::DismissedEventsBucket;
 use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
@@ -239,4 +242,85 @@ fn search_catalog() {
             body: "null".to_owned()
         }
     )
+}
+
+#[test]
+fn load_epg_guide_catalog_skips_content_request() {
+    #[derive(Model, Clone, Debug)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+        discover: CatalogWithFilters<MetaItemPreview>,
+    }
+
+    let addon = Descriptor {
+        transport_url: Url::parse("https://addon/manifest.json").unwrap(),
+        flags: Default::default(),
+        manifest: Manifest {
+            id: "addon".to_owned(),
+            types: vec!["tv".into()],
+            resources: vec!["catalog".into()],
+            catalogs: vec![serde_json::from_value(
+                serde_json::json!({ "id": "guide", "type": "tv", "name": "PureTV" }),
+            )
+            .unwrap()],
+            behavior_hints: ManifestBehaviorHints {
+                epg_provider: true,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+    };
+
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+
+    let (discover, discover_effects) =
+        CatalogWithFilters::<MetaItemPreview>::new(&Profile::default());
+    assert!(!discover_effects.has_changed);
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+        TestModel {
+            ctx: Ctx {
+                profile: Profile {
+                    addons: vec![addon],
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            discover,
+        },
+        vec![],
+        1000,
+    );
+
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Load(ActionLoad::CatalogWithFilters(Some(Selected {
+                request: ResourceRequest {
+                    base: Url::parse("https://addon/manifest.json").unwrap(),
+                    path: ResourcePath::without_extra("catalog", "tv", "guide"),
+                },
+            }))),
+        });
+    });
+
+    assert_eq!(
+        REQUESTS.read().unwrap().len(),
+        0,
+        "epgProvider guide catalogs are loaded by LiveTvGuide - Discover must not fetch them"
+    );
+
+    let discover = &runtime.model().unwrap().discover;
+    assert!(
+        discover.catalog.is_empty(),
+        "no catalog pages should be requested"
+    );
+    assert!(
+        !discover.selectable.catalogs.is_empty(),
+        "the guide catalog should still be selectable"
+    );
+    assert!(
+        discover.selectable.next_page.is_none(),
+        "an empty catalog must not offer a next page"
+    );
 }

@@ -1,4 +1,4 @@
-use crate::constants::{SKIP_EXTRA_PROP, TYPE_PRIORITIES};
+use crate::constants::{CATALOG_RESOURCE_NAME, SKIP_EXTRA_PROP, TYPE_PRIORITIES};
 use crate::models::common::{
     compare_with_priorities, eq_update, resource_update_with_vector_content, ResourceAction,
     ResourceLoadable,
@@ -158,6 +158,12 @@ where
                 let selected_effects =
                     selected_update::<T>(&mut self.selected, &self.selectable, selected);
                 let catalog_effects = match self.selected.as_ref() {
+                    // guide catalogs of epgProvider addons carry EPG data
+                    // loaded by the LiveTvGuide model instead - loading
+                    // their content here would only duplicate the request
+                    Some(selected) if is_epg_guide_request(&selected.request, &ctx.profile) => {
+                        eq_update(&mut self.catalog, vec![])
+                    }
                     Some(selected) => catalog_update::<E, _>(
                         &mut self.catalog,
                         CatalogPageRequest::First,
@@ -269,6 +275,15 @@ fn selected_update<T: CatalogResourceAdapter>(
             }
         });
     eq_update(selected, next_selected)
+}
+
+/// Whether the request targets a guide catalog of an `epgProvider` addon -
+/// their content is EPG data loaded by the `LiveTvGuide` model instead
+fn is_epg_guide_request(request: &ResourceRequest, profile: &Profile) -> bool {
+    request.path.resource == CATALOG_RESOURCE_NAME
+        && profile.addons.iter().any(|addon| {
+            addon.manifest.behavior_hints.epg_provider && addon.transport_url == request.base
+        })
 }
 
 fn catalog_update<E, T>(
@@ -478,6 +493,9 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 .extra
                 .iter()
                 .find(|extra_prop| extra_prop.name == SKIP_EXTRA_PROP.name)
+                // no pages have been requested (e.g. an epgProvider guide
+                // catalog) - there is nothing to page through
+                .filter(|_| !catalog.is_empty())
                 .and_then(|_| {
                     catalog
                         .iter()

@@ -82,6 +82,18 @@ plan & guidelines: [TODO.md](TODO.md); addon alignment: [PURE_TV_ADDON_ALIGNMENT
   TestEnv test on the env mutex; scope model reads in `{ }` blocks between dispatches.
   Full suite: 220 passed; clippy clean.
 
+- **Iteration 7 — Discover skips epgProvider catalog content.**
+  Found during live testing (2026-07-03): selecting a guide catalog fired the Discover
+  poster-catalog request alongside the guide request. Per the design ("dispatch
+  LiveTvGuide instead of CatalogWithFilters"), `CatalogWithFilters` now skips the content
+  fetch when the selected `catalog` request targets an `epgProvider` addon
+  (`is_epg_guide_request` in `src/models/catalog_with_filters.rs`) — `selectable`
+  (dropdowns) still computes from manifests. Also guarded `next_page` against an empty
+  catalog (would otherwise offer a bogus `skip=0` page). Regression test:
+  `load_epg_guide_catalog_skips_content_request`. Full suite: 222 passed.
+  NOTE: the remaining duplicate requests seen in dev come from React StrictMode
+  double-mounting (upstream stremio-web behavior, dev-only).
+
 ## Next
 
 - Later (see TODO.md): filter EPG channels out of Continue Watching; "Live channels"
