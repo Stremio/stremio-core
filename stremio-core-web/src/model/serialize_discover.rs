@@ -23,6 +23,7 @@ mod model {
     pub struct ManifestPreview<'a> {
         pub id: &'a str,
         pub name: &'a String,
+        pub behavior_hints: &'a stremio_core::types::addon::ManifestBehaviorHints,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -143,6 +144,7 @@ pub fn serialize_discover(
                         manifest: model::ManifestPreview {
                             id: &addon.manifest.id,
                             name: &addon.manifest.name,
+                            behavior_hints: &addon.manifest.behavior_hints,
                         },
                     },
                     selected: &selectable_catalog.selected,
