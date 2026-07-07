@@ -10,7 +10,7 @@ use stremio_core::{
     },
     types::{
         addon::{ResourcePath, ResourceRequest},
-        resource::{MetaItemPreview, Video},
+        resource::{MetaItemPreview, VideoEpgInfo},
     },
 };
 
@@ -19,12 +19,20 @@ use crate::model::DeepLinksExt;
 pub mod model {
     use super::*;
 
+    /// A slimmed down [`Video`] - no `streams`/`trailerStreams` (the guide
+    /// payload is large and playback goes through the deep links) and no
+    /// snapshot state like "is live" that goes stale without a re-render
+    /// (the frontend derives it from `startTime`/`endTime`)
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct Show<'a> {
+        pub id: &'a String,
+        pub title: &'a String,
+        pub released: &'a Option<DateTime<Utc>>,
+        pub overview: &'a Option<String>,
+        pub thumbnail: &'a Option<String>,
         #[serde(flatten)]
-        pub video: &'a Video,
-        pub is_live: bool,
+        pub epg_info: &'a Option<VideoEpgInfo>,
         pub deep_links: VideoDeepLinks,
     }
 
@@ -183,11 +191,12 @@ pub fn live_tv_guide_model<'a>(
                         .shows
                         .iter()
                         .map(|show| model::Show {
-                            video: show,
-                            is_live: show
-                                .epg_info
-                                .as_ref()
-                                .is_some_and(|epg_info| epg_info.is_live(now)),
+                            id: &show.id,
+                            title: &show.title,
+                            released: &show.released,
+                            overview: &show.overview,
+                            thumbnail: &show.thumbnail,
+                            epg_info: &show.epg_info,
                             deep_links: VideoDeepLinks::from((
                                 show,
                                 &meta_request,
@@ -348,8 +357,20 @@ mod tests {
             serde_json::to_value(live_tv_guide_model(&state, None, &Default::default(), now))
                 .unwrap();
 
-        assert_eq!(value["channels"][0]["shows"][0]["isLive"], false);
-        assert_eq!(value["channels"][0]["shows"][1]["isLive"], true);
+        assert_eq!(value["channels"][0]["shows"][0]["id"], "pure:axn:8f3k2j");
+        assert!(
+            value["channels"][0]["shows"][0]["startTime"].is_string()
+                && value["channels"][0]["shows"][0]["endTime"].is_string(),
+            "the frontend derives the live state from the show times"
+        );
+        assert!(
+            value["channels"][0]["shows"][0].get("streams").is_none()
+                && value["channels"][0]["shows"][0]
+                    .get("trailerStreams")
+                    .is_none()
+                && value["channels"][0]["shows"][0].get("isLive").is_none(),
+            "shows are slimmed down to keep the guide payload small"
+        );
         assert!(value["channels"][0]["shows"][1]["deepLinks"]["player"].is_string());
         assert!(value["channels"][0]["deepLinks"]["metaDetailsVideos"]
             .as_str()
