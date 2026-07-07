@@ -7,7 +7,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 use serde_with::{serde_as, DefaultOnError, DefaultOnNull, DeserializeAs, NoneAsEmptyString};
 use url::Url;
 
-use crate::constants::SKIP_EXTRA_PROP;
+use crate::constants::{EPG_DATE_EXTRA_PROP, SKIP_EXTRA_PROP};
 use crate::types::addon::{ExtraValue, ResourcePath};
 use crate::types::{UniqueVec, UniqueVecAdapter};
 
@@ -312,6 +312,15 @@ impl ManifestCatalog {
                     .any(|extra_name| extra_name == &extra_prop.name)
             });
         all_supported && required_satisfied
+    }
+
+    /// Whether this catalog is an EPG guide catalog - one that declares the
+    /// `date` extra; only meaningful on addons with the `epgProvider`
+    /// behavior hint
+    pub fn is_epg_guide(&self) -> bool {
+        self.extra
+            .iter()
+            .any(|extra_prop| extra_prop.name == EPG_DATE_EXTRA_PROP.name)
     }
 
     pub fn default_required_extra(&self) -> Option<Vec<ExtraValue>> {

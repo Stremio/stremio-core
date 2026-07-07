@@ -91,12 +91,11 @@ fn live_tv_guide() {
             types: vec!["tv".into()],
             resources: vec![CATALOG_RESOURCE_NAME.into()],
             catalogs: vec![serde_json::from_value(
-                // the catalog does NOT declare the `date` extra -
-                // epgProvider implies support for it;
+                // the `date` extra marks the catalog as a guide catalog;
                 // pagination is opt-in via the `skip` extra
                 serde_json::json!({
                     "id": "guide", "type": "tv", "name": "PureTV",
-                    "extra": [{ "name": "skip" }],
+                    "extra": [{ "name": "date" }, { "name": "skip" }],
                 }),
             )
             .unwrap()],

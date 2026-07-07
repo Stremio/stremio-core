@@ -372,7 +372,9 @@ fn channels_update(
 }
 
 /// Guide catalogs of the installed `epgProvider` addons as
-/// `(addon_name, catalog_name, request)`, requests without the `date` extra
+/// `(addon_name, catalog_name, request)`, requests without the `date` extra;
+/// only catalogs declaring the `date` extra are guide catalogs - epgProvider
+/// addons may expose regular catalogs alongside their guides
 fn guide_catalogs(
     profile: &Profile,
 ) -> impl Iterator<Item = (String, String, ResourceRequest)> + '_ {
@@ -385,6 +387,7 @@ fn guide_catalogs(
                 .manifest
                 .catalogs
                 .iter()
+                .filter(|manifest_catalog| manifest_catalog.is_epg_guide())
                 .filter_map(move |manifest_catalog| {
                     manifest_catalog.default_required_extra().map(|extra| {
                         (
@@ -409,9 +412,7 @@ fn guide_catalogs(
         })
 }
 
-/// The guide request for the given date: the `date` extra is appended
-/// unconditionally — `epgProvider` addons support it by contract,
-/// whether or not their catalogs declare it
+/// The guide request for the given date
 fn with_date_extra(request: &ResourceRequest, date: &NaiveDate) -> ResourceRequest {
     ResourceRequest {
         base: request.base.to_owned(),

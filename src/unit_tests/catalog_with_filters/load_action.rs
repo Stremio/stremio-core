@@ -261,7 +261,11 @@ fn load_epg_guide_catalog_skips_content_request() {
             types: vec!["tv".into()],
             resources: vec!["catalog".into()],
             catalogs: vec![serde_json::from_value(
-                serde_json::json!({ "id": "guide", "type": "tv", "name": "PureTV" }),
+                // the `date` extra marks the catalog as a guide catalog
+                serde_json::json!({
+                    "id": "guide", "type": "tv", "name": "PureTV",
+                    "extra": [{ "name": "date" }],
+                }),
             )
             .unwrap()],
             behavior_hints: ManifestBehaviorHints {

@@ -278,12 +278,22 @@ fn selected_update<T: CatalogResourceAdapter>(
 }
 
 /// Whether the request targets a guide catalog of an `epgProvider` addon -
-/// their content is EPG data loaded by the `LiveTvGuide` model instead
+/// a catalog declaring the `date` extra; their content is EPG data loaded
+/// by the `LiveTvGuide` model instead
 fn is_epg_guide_request(request: &ResourceRequest, profile: &Profile) -> bool {
     request.path.resource == CATALOG_RESOURCE_NAME
-        && profile.addons.iter().any(|addon| {
-            addon.manifest.behavior_hints.epg_provider && addon.transport_url == request.base
-        })
+        && profile
+            .addons
+            .iter()
+            .filter(|addon| {
+                addon.manifest.behavior_hints.epg_provider && addon.transport_url == request.base
+            })
+            .flat_map(|addon| addon.manifest.catalogs.iter())
+            .any(|manifest_catalog| {
+                manifest_catalog.id == request.path.id
+                    && manifest_catalog.r#type == request.path.r#type
+                    && manifest_catalog.is_epg_guide()
+            })
 }
 
 fn catalog_update<E, T>(
