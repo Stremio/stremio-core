@@ -347,8 +347,6 @@ mod tests {
             serde_json::to_value(live_tv_guide_model(&state, None, &Default::default(), now))
                 .unwrap();
 
-        println!("{}", serde_json::to_string_pretty(&value).unwrap());
-
         assert_eq!(value["channels"][0]["shows"][0]["isLive"], false);
         assert_eq!(value["channels"][0]["shows"][1]["isLive"], true);
         assert!(value["channels"][0]["shows"][1]["deepLinks"]["player"].is_string());
