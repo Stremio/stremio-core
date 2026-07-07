@@ -150,12 +150,20 @@ fn fetch_handler_s1e2_current(request: Request) -> TryEnvFuture<Box<dyn Any + Se
 }
 
 fn dispatch_time_changed(runtime: &Runtime<TestEnv, TestModel>, time: u64) {
+    dispatch_time_changed_with_duration(runtime, time, 3_600_000);
+}
+
+fn dispatch_time_changed_with_duration(
+    runtime: &Runtime<TestEnv, TestModel>,
+    time: u64,
+    duration: u64,
+) {
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
             action: Action::Player(ActionPlayer::TimeChanged {
                 time,
-                duration: 3_600_000,
+                duration,
                 device: "test_device".to_owned(),
             }),
         });
@@ -302,6 +310,55 @@ fn mark_last_episode_as_watched_does_not_advance() {
     assert_eq!(
         library_item.state.time_offset, 0,
         "time_offset should be reset when the last episode is marked as watched",
+    );
+}
+
+#[test]
+fn time_changed_without_duration_does_not_flag_watched() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler_s1e1_current);
+
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+        TestModel {
+            ctx: Ctx {
+                library: LibraryBucket {
+                    uid: None,
+                    items: vec![("tt123456".into(), make_library_item("tt123456:1:1"))]
+                        .into_iter()
+                        .collect(),
+                },
+                ..Default::default()
+            },
+            player: Player::default(),
+        },
+        vec![],
+        1000,
+    );
+
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Load(ActionLoad::Player(Box::new(Selected {
+                stream: create_stream(),
+                stream_request: Some(make_stream_request("tt123456:1:1")),
+                meta_request: Some(make_meta_request()),
+                subtitles_path: None,
+            }))),
+        });
+    });
+
+    // live streams report no duration
+    dispatch_time_changed_with_duration(&runtime, 600_000, 0);
+
+    let model = runtime.model().unwrap();
+    let library_item = model.player.library_item.as_ref().unwrap();
+    assert_eq!(
+        library_item.state.flagged_watched, 0,
+        "playback without a duration must not cross the watched threshold",
+    );
+    assert_eq!(
+        library_item.state.times_watched, 0,
+        "playback without a duration must not increase times_watched",
     );
 }
 
