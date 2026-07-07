@@ -436,3 +436,92 @@ fn live_tv_guide_with_utc_offset() {
         "should include only shows overlapping the local day window, deduplicated and ordered by start time"
     );
 }
+
+#[test]
+fn live_tv_guide_accepts_plain_metas() {
+    #[derive(Model, Clone, Debug)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+        live_tv_guide: LiveTvGuide,
+    }
+
+    let addon = Descriptor {
+        transport_url: Url::parse("https://addon/manifest.json").unwrap(),
+        flags: Default::default(),
+        manifest: Manifest {
+            id: "addon".to_owned(),
+            types: vec!["tv".into()],
+            resources: vec![CATALOG_RESOURCE_NAME.into()],
+            catalogs: vec![serde_json::from_value(serde_json::json!({
+                "id": "guide", "type": "tv", "name": "PureTV",
+                "extra": [{ "name": "date" }],
+            }))
+            .unwrap()],
+            behavior_hints: ManifestBehaviorHints {
+                epg_provider: true,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+    };
+
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
+        match request {
+            Request { url, method, .. }
+                if url == "https://addon/catalog/tv/guide/date=2026-07-02.json"
+                    && method == "GET" =>
+            {
+                future::ok(Box::new(ResourceResponse::Metas {
+                    metas: vec![MetaItemPreview {
+                        id: "pure:axn".to_owned(),
+                        r#type: "tv".to_owned(),
+                        name: "AXN".to_owned(),
+                        ..MetaItemPreview::default()
+                    }],
+                }) as Box<dyn Any + Send>)
+                .boxed_env()
+            }
+            _ => default_fetch_handler(request),
+        }
+    }
+
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
+    *NOW.write().unwrap() = Utc.with_ymd_and_hms(2026, 7, 2, 11, 30, 0).unwrap();
+
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+        TestModel {
+            ctx: Ctx {
+                profile: Profile {
+                    addons: vec![addon],
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            live_tv_guide: Default::default(),
+        },
+        vec![],
+        1000,
+    );
+
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Load(ActionLoad::LiveTvGuide(None)),
+        });
+    });
+
+    let live_tv_guide = &runtime.model().unwrap().live_tv_guide;
+    assert_eq!(
+        live_tv_guide.channels.len(),
+        1,
+        "a plain metas response should be lifted into channels"
+    );
+    assert_eq!(live_tv_guide.channels[0].channel.id, "pure:axn");
+    assert!(
+        live_tv_guide.channels[0].shows.is_empty(),
+        "lifted previews carry no program shows"
+    );
+}

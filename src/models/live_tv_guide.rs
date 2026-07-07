@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
 
 use chrono::{DateTime, Days, Duration, NaiveDate, Utc};
@@ -15,10 +16,10 @@ use crate::{
     },
     runtime::{
         msg::{Action, ActionLiveTvGuide, ActionLoad, Internal, Msg},
-        Effects, Env, UpdateWithCtx,
+        Effects, Env, EnvError, UpdateWithCtx,
     },
     types::{
-        addon::{ExtraExt, ResourcePath, ResourceRequest},
+        addon::{ExtraExt, ResourcePath, ResourceRequest, ResourceResponse},
         profile::Profile,
         resource::{MetaItem, MetaItemPreview, Video},
     },
@@ -180,9 +181,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LiveTvGuide {
                 .iter_mut()
                 .find(|page| page.request == *request)
                 .map(|page| {
+                    let result = lift_plain_metas(result);
                     resource_update_with_vector_content::<E, MetaItem>(
                         page,
-                        ResourceAction::ResourceRequestResult { request, result },
+                        ResourceAction::ResourceRequestResult {
+                            request,
+                            result: &result,
+                        },
                     )
                 })
                 .map(|catalog_effects| {
@@ -480,6 +485,26 @@ fn guide_catalogs(
                     })
                 })
         })
+}
+
+/// Guide catalogs should respond with `metasDetailed`, but plain `metas`
+/// responses are accepted too - the previews are lifted into `MetaItem`s
+/// without videos (channels without a program)
+fn lift_plain_metas(
+    result: &Result<ResourceResponse, EnvError>,
+) -> Cow<'_, Result<ResourceResponse, EnvError>> {
+    match result {
+        Ok(ResourceResponse::Metas { metas }) => Cow::Owned(Ok(ResourceResponse::MetasDetailed {
+            metas_detailed: metas
+                .iter()
+                .map(|preview| MetaItem {
+                    preview: preview.to_owned(),
+                    videos: vec![],
+                })
+                .collect(),
+        })),
+        _ => Cow::Borrowed(result),
+    }
 }
 
 /// Today's date in the user's local timezone
