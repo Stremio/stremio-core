@@ -268,13 +268,31 @@ impl MetaItem {
         }
     }
 
-    /// Returns the next video after the given one, without crossing into season 0 specials
+    /// Returns the next video after the given one, without crossing into season 0 specials;
+    /// for EPG program shows the next video is the show scheduled the
+    /// earliest at or after the current one's end
     pub fn next_video(&self, video_id: &str) -> Option<&Video> {
-        self.videos
+        let (position, current) = self
+            .videos
             .iter()
-            .find_position(|v| v.id == video_id)
-            .and_then(|(pos, current)| self.videos.get(pos + 1).map(|next| (current, next)))
-            .filter(|(current, next)| {
+            .find_position(|video| video.id == video_id)?;
+        match current.epg_info.as_ref() {
+            Some(epg_info) => {
+                self.videos
+                    .iter()
+                    .filter(|video| {
+                        video.epg_info.as_ref().is_some_and(|next_epg_info| {
+                            next_epg_info.start_time >= epg_info.end_time
+                        })
+                    })
+                    .min_by_key(|video| {
+                        video
+                            .epg_info
+                            .as_ref()
+                            .map(|next_epg_info| next_epg_info.start_time)
+                    })
+            }
+            None => self.videos.get(position + 1).filter(|next| {
                 let cur_season = current
                     .series_info
                     .as_ref()
@@ -286,8 +304,8 @@ impl MetaItem {
                     .map(|s| s.season)
                     .unwrap_or_default();
                 next_season != 0 || cur_season == next_season
-            })
-            .map(|(_, next)| next)
+            }),
+        }
     }
 
     /// Returns a vector of videos for a given season
@@ -513,6 +531,60 @@ mod tests {
                 .next_video("missing")
                 .map(|video| video.id.as_str()),
             None
+        );
+    }
+
+    #[test]
+    fn next_video_epg() {
+        use chrono::TimeZone;
+
+        fn create_show(id: &str, start: u32, end: u32) -> Video {
+            Video {
+                id: id.to_owned(),
+                epg_info: Some(VideoEpgInfo {
+                    start_time: Utc.with_ymd_and_hms(2026, 7, 2, start, 0, 0).unwrap(),
+                    end_time: Utc.with_ymd_and_hms(2026, 7, 2, end, 0, 0).unwrap(),
+                    runtime: None,
+                    release_info: None,
+                    genres: vec![],
+                    cast: vec![],
+                    directors: vec![],
+                    links: vec![],
+                }),
+                ..Default::default()
+            }
+        }
+
+        let meta_item = MetaItem {
+            preview: Default::default(),
+            // out of schedule order on purpose, with a gap after "morning"
+            videos: vec![
+                create_show("noon", 12, 13),
+                create_show("morning", 9, 10),
+                create_show("afternoon", 13, 14),
+                Video {
+                    id: "trailer".to_owned(),
+                    ..Default::default()
+                },
+            ],
+        };
+        assert_eq!(
+            meta_item
+                .next_video("morning")
+                .map(|video| video.id.as_str()),
+            Some("noon"),
+            "should pick the earliest show starting at or after the current one's end, skipping schedule gaps"
+        );
+        assert_eq!(
+            meta_item.next_video("noon").map(|video| video.id.as_str()),
+            Some("afternoon")
+        );
+        assert_eq!(
+            meta_item
+                .next_video("afternoon")
+                .map(|video| video.id.as_str()),
+            None,
+            "the last scheduled show should have no next video"
         );
     }
 }
