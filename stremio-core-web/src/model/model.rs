@@ -72,12 +72,12 @@ impl WebModel {
         dismissed_events: DismissedEventsBucket,
     ) -> (WebModel, Effects) {
         let (continue_watching_preview, continue_watching_preview_effects) =
-            ContinueWatchingPreview::new(&library, &notifications);
+            ContinueWatchingPreview::new(&library, &notifications, &profile);
         let (discover, discover_effects) = CatalogWithFilters::<MetaItemPreview>::new(&profile);
         let (library_, library_effects) =
-            LibraryWithFilters::<NotRemovedFilter>::new(&library, &notifications);
+            LibraryWithFilters::<NotRemovedFilter>::new(&library, &notifications, &profile);
         let (continue_watching, continue_watching_effects) =
-            LibraryWithFilters::<ContinueWatchingFilter>::new(&library, &notifications);
+            LibraryWithFilters::<ContinueWatchingFilter>::new(&library, &notifications, &profile);
         let (remote_addons, remote_addons_effects) =
             CatalogWithFilters::<Descriptor>::new(&profile);
         let (installed_addons, installed_addons_effects) =
