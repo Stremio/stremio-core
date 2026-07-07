@@ -1,4 +1,6 @@
-use chrono::{Days, NaiveDate};
+use std::collections::HashMap;
+
+use chrono::{DateTime, Days, Duration, NaiveDate, Utc};
 use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
@@ -29,8 +31,14 @@ pub struct Selected {
     /// when `None`, the first guide catalog of the installed
     /// `epgProvider` addons is used
     pub request: Option<ResourceRequest>,
-    /// Guide date; when `None`, defaults to today
+    /// Guide date in the user's local timezone;
+    /// when `None`, defaults to the local today
     pub date: Option<NaiveDate>,
+    /// The user's timezone offset in minutes east of UTC
+    /// (e.g. `120` for UTC+2); the local day is resolved to a UTC
+    /// window and shows are bucketed into it
+    #[serde(default)]
+    pub utc_offset: i32,
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Debug)]
@@ -55,8 +63,10 @@ pub struct Selectable {
     pub catalogs: Vec<SelectableCatalog>,
     pub prev_date: Option<NaiveDate>,
     pub next_date: Option<NaiveDate>,
+    /// Today in the user's local timezone
     pub today: Option<NaiveDate>,
-    /// The next channels page request (with the `date` and `skip` extras);
+    /// The next channels page request (with the `skip` extra; the `date`
+    /// extra is appended per overlapping UTC date when loaded);
     /// present only when the selected catalog declares the `skip` extra
     /// and all requested pages are loaded
     pub next_page: Option<SelectablePage>,
@@ -101,10 +111,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LiveTvGuide {
                     Some(Selected {
                         request: Some(request),
                         date: Some(date),
+                        utc_offset,
                     }) => catalog_update::<E>(
                         &mut self.catalog,
                         CatalogPageRequest::First,
-                        &with_date_extra(request, date),
+                        request,
+                        date,
+                        *utc_offset,
                     ),
                     _ => eq_update(&mut self.catalog, vec![]),
                 };
@@ -134,12 +147,21 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LiveTvGuide {
                     .join(channels_effects)
             }
             Msg::Action(Action::LiveTvGuide(ActionLiveTvGuide::LoadNextPage)) => {
-                match self.selectable.next_page.as_ref() {
-                    Some(next_page) => {
+                match (self.selected.as_ref(), self.selectable.next_page.as_ref()) {
+                    (
+                        Some(Selected {
+                            date: Some(date),
+                            utc_offset,
+                            ..
+                        }),
+                        Some(next_page),
+                    ) => {
                         let catalog_effects = catalog_update::<E>(
                             &mut self.catalog,
                             CatalogPageRequest::Next,
                             &next_page.request,
+                            date,
+                            *utc_offset,
                         );
                         let selectable_effects = selectable_update::<E>(
                             &mut self.selectable,
@@ -202,30 +224,52 @@ fn selected_update<E: Env + 'static>(
                 .next()
                 .map(|(_, _, request)| request)
         });
+    let utc_offset = next_selected
+        .as_ref()
+        .map(|selected| selected.utc_offset)
+        .unwrap_or_default();
     let date = next_selected
         .as_ref()
         .and_then(|selected| selected.date)
-        .or_else(|| Some(E::now().date_naive()));
+        .or_else(|| Some(local_date_now::<E>(utc_offset)));
 
-    eq_update(selected, Some(Selected { request, date }))
+    eq_update(
+        selected,
+        Some(Selected {
+            request,
+            date,
+            utc_offset,
+        }),
+    )
 }
 
 fn catalog_update<E: Env + 'static>(
     catalog: &mut Catalog,
     page_request: CatalogPageRequest,
     request: &ResourceRequest,
+    date: &NaiveDate,
+    utc_offset: i32,
 ) -> Effects {
-    let mut page = ResourceLoadable {
-        request: request.to_owned(),
-        content: None,
-    };
-    let effects = resource_update_with_vector_content::<E, MetaItem>(
-        &mut page,
-        ResourceAction::ResourceRequested { request },
-    );
+    let mut effects = Effects::none().unchanged();
+    let mut pages = vec![];
+    // the local day resolves to a UTC window which may span two UTC
+    // dates - a page is fetched per overlapping UTC date and the shows
+    // are bucketed back into the local day by `channels_update`
+    for utc_date in overlapping_utc_dates(date, utc_offset) {
+        let request = with_date_extra(request, &utc_date);
+        let mut page = ResourceLoadable {
+            request: request.to_owned(),
+            content: None,
+        };
+        effects = effects.join(resource_update_with_vector_content::<E, MetaItem>(
+            &mut page,
+            ResourceAction::ResourceRequested { request: &request },
+        ));
+        pages.push(page);
+    }
     match page_request {
-        CatalogPageRequest::First => *catalog = vec![page],
-        CatalogPageRequest::Next => catalog.extend(vec![page]),
+        CatalogPageRequest::First => *catalog = pages,
+        CatalogPageRequest::Next => catalog.extend(pages),
     };
 
     effects
@@ -250,12 +294,16 @@ fn selectable_update<E: Env + 'static>(
         })
         .collect::<Vec<_>>();
     let date = selected.as_ref().and_then(|selected| selected.date);
+    let utc_offset = selected
+        .as_ref()
+        .map(|selected| selected.utc_offset)
+        .unwrap_or_default();
     let next_page = next_page_update(selected, catalog, profile);
     let updated_selectable = Selectable {
         catalogs,
         prev_date: date.and_then(|date| date.checked_sub_days(Days::new(1))),
         next_date: date.and_then(|date| date.checked_add_days(Days::new(1))),
-        today: Some(E::now().date_naive()),
+        today: Some(local_date_now::<E>(utc_offset)),
         next_page,
     };
 
@@ -267,11 +315,12 @@ fn next_page_update(
     catalog: &Catalog,
     profile: &Profile,
 ) -> Option<SelectablePage> {
-    let (request, date) = match selected {
+    let request = match selected {
         Some(Selected {
             request: Some(request),
-            date: Some(date),
-        }) => (request, date),
+            date: Some(_),
+            ..
+        }) => request,
         _ => return None,
     };
 
@@ -302,26 +351,30 @@ fn next_page_update(
                         .as_ref()
                         .and_then(|content| content.ready())
                         .filter(|content| !content.is_empty())
-                        .map(|content| content.len())
                 })
                 .collect::<Option<Vec<_>>>()
-                .map(|page_sizes| page_sizes.into_iter().sum::<usize>())
         })
-        .map(|skip| {
-            let page_request = with_date_extra(request, date);
-            SelectablePage {
-                request: ResourceRequest {
-                    base: page_request.base.to_owned(),
-                    path: ResourcePath {
-                        extra: page_request
-                            .path
-                            .extra
-                            .to_owned()
-                            .extend_one(&SKIP_EXTRA_PROP, Some(skip.to_string())),
-                        ..page_request.path
-                    },
+        // pages of the overlapping UTC dates carry the same channels -
+        // the skip offset counts them once
+        .map(|pages| {
+            pages
+                .into_iter()
+                .flatten()
+                .unique_by(|meta_item| meta_item.preview.id.to_owned())
+                .count()
+        })
+        .map(|skip| SelectablePage {
+            request: ResourceRequest {
+                base: request.base.to_owned(),
+                path: ResourcePath {
+                    extra: request
+                        .path
+                        .extra
+                        .to_owned()
+                        .extend_one(&SKIP_EXTRA_PROP, Some(skip.to_string())),
+                    ..request.path.to_owned()
                 },
-            }
+            },
         })
 }
 
@@ -332,38 +385,55 @@ fn channels_update(
 ) -> Effects {
     let updated_channels = match selected {
         Some(Selected {
-            date: Some(date), ..
+            date: Some(date),
+            utc_offset,
+            ..
         }) => {
-            let day_start = date.and_hms_opt(0, 0, 0).unwrap_or_default().and_utc();
-            let day_end = date
-                .checked_add_days(Days::new(1))
-                .and_then(|next_date| next_date.and_hms_opt(0, 0, 0))
-                .unwrap_or_default()
-                .and_utc();
+            let (day_start, day_end) = local_day_window(date, *utc_offset);
 
-            catalog
+            // pages of the overlapping UTC dates carry the same channels
+            // with different programs - merge their shows per channel,
+            // keeping the channel order of first appearance
+            let mut updated_channels = Vec::<ChannelGuide>::new();
+            let mut channel_indexes = HashMap::<String, usize>::new();
+            let meta_items = catalog
                 .iter()
                 .filter_map(|page| page.content.as_ref().and_then(|content| content.ready()))
-                .flatten()
-                .unique_by(|meta_item| meta_item.preview.id.to_owned())
-                .map(|meta_item| ChannelGuide {
-                    channel: meta_item.preview.to_owned(),
-                    shows: meta_item
-                        .videos
-                        .iter()
-                        // include only program shows overlapping the selected date
-                        .filter(|video| {
-                            video.epg_info.as_ref().is_some_and(|epg_info| {
-                                epg_info.start_time < day_end && epg_info.end_time > day_start
-                            })
-                        })
-                        .sorted_by_key(|video| {
-                            video.epg_info.as_ref().map(|epg_info| epg_info.start_time)
-                        })
-                        .cloned()
-                        .collect(),
-                })
-                .collect()
+                .flatten();
+            for meta_item in meta_items {
+                // include only program shows overlapping the local day window
+                let shows = meta_item.videos.iter().filter(|video| {
+                    video.epg_info.as_ref().is_some_and(|epg_info| {
+                        epg_info.start_time < day_end && epg_info.end_time > day_start
+                    })
+                });
+                match channel_indexes.get(&meta_item.preview.id) {
+                    Some(channel_index) => updated_channels[*channel_index]
+                        .shows
+                        .extend(shows.cloned()),
+                    None => {
+                        channel_indexes
+                            .insert(meta_item.preview.id.to_owned(), updated_channels.len());
+                        updated_channels.push(ChannelGuide {
+                            channel: meta_item.preview.to_owned(),
+                            shows: shows.cloned().collect(),
+                        });
+                    }
+                };
+            }
+            for channel_guide in updated_channels.iter_mut() {
+                channel_guide.shows = channel_guide
+                    .shows
+                    .drain(..)
+                    // a show spanning UTC midnight is returned for both dates
+                    .unique_by(|video| video.id.to_owned())
+                    .sorted_by_key(|video| {
+                        video.epg_info.as_ref().map(|epg_info| epg_info.start_time)
+                    })
+                    .collect();
+            }
+
+            updated_channels
         }
         _ => vec![],
     };
@@ -410,6 +480,33 @@ fn guide_catalogs(
                     })
                 })
         })
+}
+
+/// Today's date in the user's local timezone
+fn local_date_now<E: Env>(utc_offset: i32) -> NaiveDate {
+    (E::now() + Duration::minutes(utc_offset as i64)).date_naive()
+}
+
+/// The UTC window `[start, end)` of the user's local `date`
+fn local_day_window(date: &NaiveDate, utc_offset: i32) -> (DateTime<Utc>, DateTime<Utc>) {
+    let day_start = date.and_hms_opt(0, 0, 0).unwrap_or_default().and_utc()
+        - Duration::minutes(utc_offset as i64);
+
+    (day_start, day_start + Duration::days(1))
+}
+
+/// The UTC dates the user's local `date` overlaps -
+/// two dates when local midnight is not aligned with UTC midnight
+fn overlapping_utc_dates(date: &NaiveDate, utc_offset: i32) -> Vec<NaiveDate> {
+    let (day_start, day_end) = local_day_window(date, utc_offset);
+
+    [
+        day_start.date_naive(),
+        (day_end - Duration::seconds(1)).date_naive(),
+    ]
+    .into_iter()
+    .unique()
+    .collect()
 }
 
 /// The guide request for the given date

@@ -119,7 +119,7 @@ fn live_tv_guide() {
                 .boxed_env()
             }
             Request { url, method, .. }
-                if url == "https://addon/catalog/tv/guide/skip=1&date=2026-07-02.json"
+                if url == "https://addon/catalog/tv/guide/date=2026-07-02&skip=1.json"
                     && method == "GET" =>
             {
                 future::ok(Box::new(ResourceResponse::MetasDetailed {
@@ -219,17 +219,11 @@ fn live_tv_guide() {
             .expect("should have a next page - the catalog declares the skip extra");
         assert_eq!(
             next_page.request.path.extra,
-            vec![
-                ExtraValue {
-                    name: "skip".to_owned(),
-                    value: "1".to_owned(),
-                },
-                ExtraValue {
-                    name: "date".to_owned(),
-                    value: "2026-07-02".to_owned(),
-                },
-            ],
-            "the next page request should carry the date and skip extras"
+            vec![ExtraValue {
+                name: "skip".to_owned(),
+                value: "1".to_owned(),
+            }],
+            "the next page request should carry the skip extra - the date extra is appended per fetched UTC date"
         );
     }
 
@@ -267,5 +261,178 @@ fn live_tv_guide() {
             .get_extra_first_value("skip"),
         Some(&"2".to_owned()),
         "the skip extra should count all loaded channels"
+    );
+}
+
+#[test]
+fn live_tv_guide_with_utc_offset() {
+    #[derive(Model, Clone, Debug)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+        live_tv_guide: LiveTvGuide,
+    }
+
+    let addon = Descriptor {
+        transport_url: Url::parse("https://addon/manifest.json").unwrap(),
+        flags: Default::default(),
+        manifest: Manifest {
+            id: "addon".to_owned(),
+            types: vec!["tv".into()],
+            resources: vec![CATALOG_RESOURCE_NAME.into()],
+            catalogs: vec![serde_json::from_value(serde_json::json!({
+                "id": "guide", "type": "tv", "name": "PureTV",
+                "extra": [{ "name": "date" }],
+            }))
+            .unwrap()],
+            behavior_hints: ManifestBehaviorHints {
+                epg_provider: true,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+    };
+
+    fn channel(shows: Vec<Video>) -> ResourceResponse {
+        ResourceResponse::MetasDetailed {
+            metas_detailed: vec![MetaItem {
+                preview: MetaItemPreview {
+                    id: "pure:axn".to_owned(),
+                    r#type: "tv".to_owned(),
+                    name: "AXN".to_owned(),
+                    ..MetaItemPreview::default()
+                },
+                videos: shows,
+            }],
+        }
+    }
+
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
+        match request {
+            Request { url, method, .. }
+                if url == "https://addon/catalog/tv/guide/date=2026-07-01.json"
+                    && method == "GET" =>
+            {
+                future::ok(Box::new(channel(vec![
+                    // before the local day window - must be filtered out
+                    Video {
+                        id: "pure:axn:0".to_owned(),
+                        epg_info: Some(VideoEpgInfo {
+                            start_time: Utc.with_ymd_and_hms(2026, 7, 1, 12, 0, 0).unwrap(),
+                            end_time: Utc.with_ymd_and_hms(2026, 7, 1, 13, 0, 0).unwrap(),
+                            ..epg_info((0, 0), (0, 0))
+                        }),
+                        ..Video::default()
+                    },
+                    // spans UTC midnight - returned for both UTC dates
+                    Video {
+                        id: "pure:axn:1".to_owned(),
+                        epg_info: Some(VideoEpgInfo {
+                            start_time: Utc.with_ymd_and_hms(2026, 7, 1, 23, 0, 0).unwrap(),
+                            end_time: Utc.with_ymd_and_hms(2026, 7, 2, 1, 0, 0).unwrap(),
+                            ..epg_info((0, 0), (0, 0))
+                        }),
+                        ..Video::default()
+                    },
+                ])) as Box<dyn Any + Send>)
+                .boxed_env()
+            }
+            Request { url, method, .. }
+                if url == "https://addon/catalog/tv/guide/date=2026-07-02.json"
+                    && method == "GET" =>
+            {
+                future::ok(Box::new(channel(vec![
+                    Video {
+                        id: "pure:axn:1".to_owned(),
+                        epg_info: Some(VideoEpgInfo {
+                            start_time: Utc.with_ymd_and_hms(2026, 7, 1, 23, 0, 0).unwrap(),
+                            end_time: Utc.with_ymd_and_hms(2026, 7, 2, 1, 0, 0).unwrap(),
+                            ..epg_info((0, 0), (0, 0))
+                        }),
+                        ..Video::default()
+                    },
+                    Video {
+                        id: "pure:axn:2".to_owned(),
+                        epg_info: Some(epg_info((12, 0), (13, 0))),
+                        ..Video::default()
+                    },
+                    // past the local day window end (21:00 UTC) - must be filtered out
+                    Video {
+                        id: "pure:axn:3".to_owned(),
+                        epg_info: Some(epg_info((22, 30), (23, 30))),
+                        ..Video::default()
+                    },
+                ])) as Box<dyn Any + Send>)
+                .boxed_env()
+            }
+            _ => default_fetch_handler(request),
+        }
+    }
+
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
+    // 23:30 UTC on 2026-07-01 is already 2026-07-02 in UTC+3
+    *NOW.write().unwrap() = Utc.with_ymd_and_hms(2026, 7, 1, 23, 30, 0).unwrap();
+
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+        TestModel {
+            ctx: Ctx {
+                profile: Profile {
+                    addons: vec![addon],
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            live_tv_guide: Default::default(),
+        },
+        vec![],
+        1000,
+    );
+
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Load(ActionLoad::LiveTvGuide(Some(
+                crate::models::live_tv_guide::Selected {
+                    request: None,
+                    date: None,
+                    utc_offset: 180,
+                },
+            ))),
+        });
+    });
+
+    assert_eq!(
+        REQUESTS.read().unwrap().len(),
+        2,
+        "should have fetched a page per overlapping UTC date"
+    );
+
+    let live_tv_guide = &runtime.model().unwrap().live_tv_guide;
+    let selected = live_tv_guide.selected.as_ref().expect("should be selected");
+    assert_eq!(
+        selected.date,
+        Some(chrono::NaiveDate::from_ymd_opt(2026, 7, 2).unwrap()),
+        "date should default to the local today"
+    );
+    assert_eq!(
+        live_tv_guide.selectable.today,
+        Some(chrono::NaiveDate::from_ymd_opt(2026, 7, 2).unwrap()),
+        "today should be derived from now + utc offset"
+    );
+    assert_eq!(
+        live_tv_guide.channels.len(),
+        1,
+        "channels of both UTC date pages should be merged"
+    );
+    assert_eq!(
+        live_tv_guide.channels[0]
+            .shows
+            .iter()
+            .map(|show| show.id.as_str())
+            .collect::<Vec<_>>(),
+        vec!["pure:axn:1", "pure:axn:2"],
+        "should include only shows overlapping the local day window, deduplicated and ordered by start time"
     );
 }

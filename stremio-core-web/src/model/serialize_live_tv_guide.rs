@@ -316,6 +316,7 @@ mod tests {
             selected: Some(Selected {
                 request: Some(catalog_request.clone()),
                 date: Some(date),
+                utc_offset: 0,
             }),
             selectable: Selectable {
                 catalogs: vec![SelectableCatalog {
