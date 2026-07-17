@@ -1,4 +1,4 @@
-use crate::constants::{SKIP_EXTRA_PROP, TYPE_PRIORITIES};
+use crate::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_PROP, TYPE_PRIORITIES};
 use crate::models::common::{
     compare_with_priorities, eq_update, resource_update_with_vector_content, ResourceAction,
     ResourceLoadable,
@@ -28,6 +28,9 @@ pub trait CatalogResourceAdapter {
     fn resource() -> &'static str;
     fn catalogs(manifest: &Manifest) -> &[ManifestCatalog];
     fn selectable_priority() -> SelectablePriority;
+    fn page_size() -> Option<usize> {
+        None
+    }
 }
 
 impl CatalogResourceAdapter for MetaItemPreview {
@@ -39,6 +42,9 @@ impl CatalogResourceAdapter for MetaItemPreview {
     }
     fn selectable_priority() -> SelectablePriority {
         SelectablePriority::Type
+    }
+    fn page_size() -> Option<usize> {
+        Some(CATALOG_PAGE_SIZE)
     }
 }
 
@@ -485,7 +491,11 @@ fn selectable_update<T: CatalogResourceAdapter>(
                             page.content
                                 .as_ref()
                                 .and_then(|content| content.ready())
-                                .filter(|content| !content.is_empty())
+                                .filter(|content| {
+                                    T::page_size()
+                                        .map(|page_size| content.len() == page_size)
+                                        .unwrap_or_else(|| !content.is_empty())
+                                })
                                 .map(|content| content.len())
                         })
                         .collect::<Option<Vec<_>>>()

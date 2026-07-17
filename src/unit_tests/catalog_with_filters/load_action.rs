@@ -1,3 +1,4 @@
+use crate::constants::CATALOG_PAGE_SIZE;
 use crate::models::catalog_with_filters::{CatalogWithFilters, Selected};
 use crate::models::common::{Loadable, ResourceLoadable};
 use crate::models::ctx::Ctx;
@@ -38,7 +39,7 @@ fn default_catalog() {
                     && method == "GET" =>
             {
                 future::ok(Box::new(ResourceResponse::Metas {
-                    metas: vec![MetaItemPreview::default()],
+                    metas: vec![MetaItemPreview::default(); CATALOG_PAGE_SIZE],
                 }) as Box<dyn Any + Send>)
                 .boxed_env()
             }
@@ -219,7 +220,7 @@ fn search_catalog() {
             ..
         })
     );
-    assert!(states[2].discover.selectable.next_page.is_some());
+    assert!(states[2].discover.selectable.next_page.is_none());
     assert_matches!(
         states[2].discover.catalog.first(),
         Some(ResourceLoadable {
