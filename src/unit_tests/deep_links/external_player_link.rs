@@ -359,3 +359,37 @@ fn external_player_link_and_callback_with_vidhub() {
         )
     );
 }
+
+#[test]
+fn external_player_link_and_callback_with_cineultra() {
+    let stream = Stream {
+        source: StreamSource::Url {
+            url: Url::from_str("http://example.com/stream").unwrap(),
+        },
+        name: None,
+        description: None,
+        thumbnail: None,
+        subtitles: vec![],
+        behavior_hints: Default::default(),
+    };
+
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
+
+    let settings = Settings {
+        player_type: Some("cineultra".to_string()),
+        streaming_server_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
+        ..Default::default()
+    };
+
+    let epl = ExternalPlayerLink::from((&stream, streaming_server_url.as_ref(), &settings));
+
+    let open_player = epl.open_player.as_ref().unwrap();
+
+    assert_eq!(
+        open_player.visionos,
+        Some(
+            "cineultra://playback?url=http%3A%2F%2Fexample.com%2Fstream&on-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0"
+                .to_string()
+        )
+    );
+}
