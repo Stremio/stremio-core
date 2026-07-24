@@ -1405,7 +1405,15 @@ fn push_seek_to_api<E: Env + 'static>(seek_log_req: SeekLogRequest) -> Effect {
     .into()
 }
 
-fn calculate_outro(library_item: &LibraryItem, closest_duration: u64, closest_outro: u64) -> u64 {
+fn calculate_outro(
+    library_item: &LibraryItem,
+    closest_duration: u64,
+    closest_outro: u64,
+) -> Option<u64> {
+    if closest_outro == 0 {
+        return None;
+    }
+
     // will floor the result before dividing by 10 again
     let duration_diff_in_secs =
         (library_item.state.duration.abs_diff(closest_duration)).div(1000 * 10) / 10;
@@ -1415,10 +1423,12 @@ fn calculate_outro(library_item: &LibraryItem, closest_duration: u64, closest_ou
         "Player: Outro match by duration with difference of {duration_diff_in_secs} seconds"
     );
 
-    library_item
+    let outro = library_item
         .state
         .duration
-        .abs_diff(closest_duration.abs_diff(closest_outro))
+        .abs_diff(closest_duration.abs_diff(closest_outro));
+
+    (outro > 0 && outro <= library_item.state.duration).then_some(outro)
 }
 
 fn intro_outro_update<E: Env + 'static>(
@@ -1459,7 +1469,7 @@ fn intro_outro_update<E: Env + 'static>(
                         }
                     },
                 );
-                closest_duration.map(|(closest_duration, closest_outro)| {
+                closest_duration.and_then(|(closest_duration, closest_outro)| {
                     calculate_outro(library_item, *closest_duration, closest_outro)
                 })
             };
@@ -1652,7 +1662,7 @@ mod tests {
     };
 
     #[test]
-    fn test_underflow_calculate_outro() {
+    fn test_calculate_outro() {
         let library_item = LibraryItem {
             id: "tt13622776".to_string(),
             name: "Ahsoka".to_string(),
@@ -1682,7 +1692,7 @@ mod tests {
             let closest_outro = 1;
             assert_eq!(
                 calculate_outro(&library_item, closest_duration, closest_outro),
-                999
+                Some(999)
             );
         }
         {
@@ -1690,8 +1700,11 @@ mod tests {
             let closest_outro = 12000;
             assert_eq!(
                 calculate_outro(&library_item, closest_duration, closest_outro),
-                9000
+                Some(9000)
             );
         }
+        assert_eq!(calculate_outro(&library_item, 11000, 0), None);
+        assert_eq!(calculate_outro(&library_item, 11000, 1000), None);
+        assert_eq!(calculate_outro(&library_item, 11000, 32000), None);
     }
 }
