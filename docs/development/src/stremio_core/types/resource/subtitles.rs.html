@@ -17,7 +17,9 @@
 <a href="#16" id="16">16</a>
 <a href="#17" id="17">17</a>
 <a href="#18" id="18">18</a>
-<a href="#19" id="19">19</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(test)]
+<a href="#19" id="19">19</a>
+<a href="#20" id="20">20</a>
+<a href="#21" id="21">21</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(test)]
 </span><span class="kw">use </span>derivative::Derivative;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>url::Url;
@@ -35,5 +37,7 @@
     </span><span class="kw">pub </span>url: Url,
     <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>label: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Vec::is_empty"</span>)]
+    </span><span class="kw">pub </span>fonts: Vec&lt;Url&gt;,
 }
 </code></pre></div></section></main></body></html>
