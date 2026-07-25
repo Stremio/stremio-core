@@ -100,4 +100,4 @@ For the WASM bridge, see [`stremio-core-web/README.md`](/stremio-core-web/README
 
 ## 📄 License
 
-Copyright © 2019 Smart Code OOD. Released under the MIT license — see [LICENSE](/LICENSE.md).
+Copyright © 2019-2026 Smart Code OOD. Released under the MIT license — see [LICENSE](/LICENSE.md).
