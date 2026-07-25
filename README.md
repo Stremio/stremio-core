@@ -94,7 +94,7 @@ For the WASM bridge, see [`stremio-core-web/README.md`](/stremio-core-web/README
 | Repository | What it is |
 |---|---|
 | [stremio-web](https://github.com/Stremio/stremio-web) | The web UI, driven by this crate through `stremio-core-web` |
-| [stremio-core-kotlin](https://github.com/Stremio/stremio-core-kotlin) | Kotlin/JNI bindings for Android |
+| [stremio-core-kotlin](https://github.com/Stremio/stremio-core-kotlin) | Kotlin/JNI bindings for Android (archived) |
 | [stremio-addon-sdk](https://github.com/Stremio/stremio-addon-sdk) | Build your own addon in Node.js |
 | [local-search](https://github.com/Stremio/local-search) | Search suggestions engine used by the `LocalSearch` model |
 
