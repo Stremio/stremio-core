@@ -8,7 +8,7 @@
 
 [![Build Workflow Status](https://img.shields.io/github/actions/workflow/status/Stremio/stremio-core/build.yml?label=Build)](https://github.com/Stremio/stremio-core/actions/workflows/build.yml)
 [![Latest MSRV workflow Status](https://img.shields.io/github/actions/workflow/status/Stremio/stremio-core/msrv.yml?label=MSRV)](https://github.com/Stremio/stremio-core/actions/workflows/msrv.yml)
-[![Latest deployed docs on GH pages](https://img.shields.io/github/actions/workflow/status/Stremio/stremio-core/docs.yml?event=workflow_dispatch&label=Latest%20deployed%20Docs)](https://stremio.github.io/stremio-core)
+[![Latest deployed docs on GH pages](https://img.shields.io/github/actions/workflow/status/Stremio/stremio-core/docs.yml?label=Latest%20deployed%20Docs)](https://stremio.github.io/stremio-core)
 [![License](https://img.shields.io/github/license/Stremio/stremio-core?color=7b5bf5)](/LICENSE.md)
 
 **[📚 API Docs](https://stremio.github.io/stremio-core)** · [Website](https://www.stremio.com) · [Report a bug](https://github.com/Stremio/stremio-core/issues)
