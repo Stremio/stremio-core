@@ -489,7 +489,7 @@
     selected: <span class="kw-2">&amp;mut </span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
     next_selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
 ) -&gt; Effects {
-    <span class="kw">let </span>current_date = E::now();
+    <span class="kw">let </span>current_date = E::local_now().date_naive();
 
     <span class="kw">let </span>updated_selected = next_selected
         .as_ref()
@@ -506,7 +506,7 @@
     <span class="kw">let </span>updated_month_info = selected
         .as_ref()
         .map(|Selected { month, year, .. }| {
-            <span class="kw">let </span>current_date = E::now();
+            <span class="kw">let </span>current_date = E::local_now().date_naive();
 
             <span class="kw">let </span>today = <span class="kw">if </span>current_date.year() == <span class="kw-2">*</span>year &amp;&amp; current_date.month() == <span class="kw-2">*</span>month {
                 <span class="prelude-val">Some</span>(current_date.day())
