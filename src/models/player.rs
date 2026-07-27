@@ -167,7 +167,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 } else {
                     Effects::none().unchanged()
                 };
-                let selected_effects = eq_update(&mut self.selected, Some(*selected.to_owned()));
+                // Each player load starts a new observable playback lifecycle, even when the
+                // selected source is structurally identical to the previous one.
+                let selected_effects =
+                    eq_update(&mut self.selected, Some(*selected.to_owned())).join(Effects::none());
                 let meta_item_effects = match &selected.meta_request {
                     Some(meta_request) => match &mut self.meta_item {
                         Some(meta_item) => resource_update::<E, _>(
