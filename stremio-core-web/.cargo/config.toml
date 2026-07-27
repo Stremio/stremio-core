@@ -1,6 +1,6 @@
 [build]
 
-rustdocflags = ["--cfg", "docsrs", "-Z", "unstable-options", "--enable-index-page"]
+rustdocflags = ["--cfg", "docsrs"]
 
 [alias]
 # Requires cargo-watch

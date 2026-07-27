@@ -19,7 +19,8 @@ use crate::types::empty_string_as_null;
 use crate::types::profile::{AuthKey, Profile};
 use crate::types::streaming_server::{
     CreateMagnetRequest, CreateTorrentBlobRequest, DeviceInfo, GetHTTPSResponse, NetworkInfo,
-    Settings, SettingsResponse, Statistics, StatisticsRequest, TorrentStatisticsRequest,
+    Settings, SettingsOption, SettingsResponse, Statistics, StatisticsRequest,
+    TorrentStatisticsRequest,
 };
 use crate::types::torrent::InfoHash;
 
@@ -44,9 +45,12 @@ pub struct Selected {
 pub struct StreamingServer {
     pub selected: Selected,
     pub settings: Loadable<Settings, EnvError>,
+    pub settings_options: Vec<SettingsOption>,
     pub base_url: Option<Url>,
     pub remote_url: Option<Url>,
     pub playback_devices: Loadable<Vec<PlaybackDevice>, EnvError>,
+    #[serde(skip)]
+    pub playback_devices_generation: u64,
     pub network_info: Loadable<NetworkInfo, EnvError>,
     pub device_info: Loadable<DeviceInfo, EnvError>,
     pub torrent: Option<(InfoHash, Loadable<ResourcePath, EnvError>)>,
@@ -58,7 +62,7 @@ impl StreamingServer {
     pub fn new<E: Env + 'static>(profile: &Profile) -> (Self, Effects) {
         let effects = Effects::many(vec![
             get_settings::<E>(&profile.settings.streaming_server_url),
-            get_playback_devices::<E>(&profile.settings.streaming_server_url),
+            get_playback_devices::<E>(&profile.settings.streaming_server_url, 0),
             get_network_info::<E>(&profile.settings.streaming_server_url),
             get_device_info::<E>(&profile.settings.streaming_server_url),
         ]);
@@ -69,9 +73,11 @@ impl StreamingServer {
                     statistics: None,
                 },
                 settings: Loadable::Loading,
+                settings_options: vec![],
                 base_url: None,
                 remote_url: None,
                 playback_devices: Loadable::Loading,
+                playback_devices_generation: 0,
                 network_info: Loadable::Loading,
                 device_info: Loadable::Loading,
                 torrent: None,
@@ -89,20 +95,34 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 let settings_effects = eq_update(&mut self.settings, Loadable::Loading);
                 let network_info_effects = eq_update(&mut self.network_info, Loadable::Loading);
                 let device_info_effects = eq_update(&mut self.device_info, Loadable::Loading);
+                let settings_options_effects = eq_update(&mut self.settings_options, vec![]);
                 let base_url_effects = eq_update(&mut self.base_url, None);
                 let remote_url_effects = eq_update(&mut self.remote_url, None);
+                self.playback_devices_generation += 1;
                 Effects::many(vec![
                     get_settings::<E>(&self.selected.transport_url),
-                    get_playback_devices::<E>(&self.selected.transport_url),
+                    get_playback_devices::<E>(
+                        &self.selected.transport_url,
+                        self.playback_devices_generation,
+                    ),
                     get_network_info::<E>(&self.selected.transport_url),
                     get_device_info::<E>(&self.selected.transport_url),
                 ])
                 .unchanged()
                 .join(settings_effects)
+                .join(settings_options_effects)
                 .join(network_info_effects)
                 .join(device_info_effects)
                 .join(base_url_effects)
                 .join(remote_url_effects)
+            }
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::RefreshPlaybackDevices)) => {
+                self.playback_devices_generation += 1;
+                Effects::one(get_playback_devices::<E>(
+                    &self.selected.transport_url,
+                    self.playback_devices_generation,
+                ))
+                .unchanged()
             }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::UpdateSettings(
                 settings,
@@ -228,15 +248,20 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     statistics: None,
                 };
                 self.settings = Loadable::Loading;
+                self.settings_options = vec![];
                 self.network_info = Loadable::Loading;
                 self.device_info = Loadable::Loading;
                 self.base_url = None;
                 self.remote_url = None;
                 self.torrent = None;
                 self.statistics = None;
+                self.playback_devices_generation += 1;
                 Effects::many(vec![
                     get_settings::<E>(&self.selected.transport_url),
-                    get_playback_devices::<E>(&self.selected.transport_url),
+                    get_playback_devices::<E>(
+                        &self.selected.transport_url,
+                        self.playback_devices_generation,
+                    ),
                     get_network_info::<E>(&self.selected.transport_url),
                     get_device_info::<E>(&self.selected.transport_url),
                 ])
@@ -250,6 +275,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                             &mut self.settings,
                             Loadable::Ready(settings.values.to_owned()),
                         );
+                        let settings_options_effects =
+                            eq_update(&mut self.settings_options, settings.options.to_owned());
                         let base_url_effects =
                             eq_update(&mut self.base_url, Some(settings.base_url.to_owned()));
                         let remote_url_effects = update_remote_url::<E>(
@@ -259,12 +286,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                             ctx,
                         );
                         settings_effects
+                            .join(settings_options_effects)
                             .join(base_url_effects)
                             .join(remote_url_effects)
                     }
                     Err(error) => {
                         let base_url_effects = eq_update(&mut self.base_url, None);
                         let remote_url_effects = eq_update(&mut self.remote_url, None);
+                        let settings_options_effects =
+                            eq_update(&mut self.settings_options, vec![]);
                         let playback_devices_effects =
                             eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()));
                         let network_info_effects =
@@ -276,6 +306,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         let torrent_effects = eq_update(&mut self.torrent, None);
                         base_url_effects
                             .join(remote_url_effects)
+                            .join(settings_options_effects)
                             .join(playback_devices_effects)
                             .join(network_info_effects)
                             .join(device_info_effects)
@@ -284,17 +315,22 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     }
                 }
             }
-            Msg::Internal(Internal::StreamingServerPlaybackDevicesResult(url, result))
-                if self.selected.transport_url == *url && self.playback_devices.is_loading() =>
+            Msg::Internal(Internal::StreamingServerPlaybackDevicesResult(
+                url,
+                generation,
+                result,
+            )) if self.selected.transport_url == *url
+                && self.playback_devices_generation == *generation =>
             {
                 match result {
                     Ok(playback_devices) => eq_update(
                         &mut self.playback_devices,
                         Loadable::Ready(playback_devices.to_owned()),
                     ),
-                    Err(error) => {
+                    Err(error) if self.playback_devices.is_loading() => {
                         eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()))
                     }
+                    Err(_) => Effects::none().unchanged(),
                 }
             }
             Msg::Internal(Internal::StreamingServerNetworkInfoResult(url, result))
@@ -329,6 +365,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     Err(error) => {
                         let base_url_effects = eq_update(&mut self.base_url, None);
                         let remote_url_effects = eq_update(&mut self.remote_url, None);
+                        let settings_options_effects =
+                            eq_update(&mut self.settings_options, vec![]);
                         let playback_devices_effects =
                             eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()));
                         let network_info_effects =
@@ -340,6 +378,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         let torrent_effects = eq_update(&mut self.torrent, None);
                         base_url_effects
                             .join(remote_url_effects)
+                            .join(settings_options_effects)
                             .join(playback_devices_effects)
                             .join(network_info_effects)
                             .join(device_info_effects)
@@ -424,7 +463,7 @@ fn get_settings<E: Env + 'static>(url: &Url) -> Effect {
     .into()
 }
 
-fn get_playback_devices<E: Env + 'static>(url: &Url) -> Effect {
+fn get_playback_devices<E: Env + 'static>(url: &Url, generation: u64) -> Effect {
     let endpoint = url.join("casting").expect("url builder failed");
     let request = Request::get(endpoint.as_str())
         .body(())
@@ -433,7 +472,7 @@ fn get_playback_devices<E: Env + 'static>(url: &Url) -> Effect {
         E::fetch::<_, Vec<PlaybackDevice>>(request)
             .map_ok(|resp| resp)
             .map(enclose!((url) move |result|
-                Msg::Internal(Internal::StreamingServerPlaybackDevicesResult(url, result))
+                Msg::Internal(Internal::StreamingServerPlaybackDevicesResult(url, generation, result))
             ))
             .boxed_env(),
     )
@@ -477,6 +516,7 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
     #[serde(rename_all = "camelCase")]
     struct Body {
         cache_size: Option<f64>,
+        cache_root: String,
         bt_max_connections: u64,
         bt_handshake_timeout: u64,
         bt_request_timeout: u64,
@@ -490,6 +530,7 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
     }
     let body = Body {
         cache_size: settings.cache_size.to_owned(),
+        cache_root: settings.cache_root.to_owned(),
         bt_max_connections: settings.bt_max_connections.to_owned(),
         bt_handshake_timeout: settings.bt_handshake_timeout.to_owned(),
         bt_request_timeout: settings.bt_request_timeout.to_owned(),
@@ -569,15 +610,52 @@ pub fn create_torrent_request<E: Env + 'static>(
     .into()
 }
 
-fn parse_magnet(magnet: &Url) -> Result<(InfoHash, Vec<String>), MagnetError> {
-    let magnet = Magnet::new(magnet.as_str())?;
-    let info_hash = magnet.xt.ok_or(MagnetError::NotAMagnetURL)?;
-    let info_hash = info_hash
-        .parse()
-        .map_err(|_err| MagnetError::NotAMagnetURL)?;
+/// Decode the BTIH hash from a magnet link into raw bytes.
+/// Supports Base32 (32 or 52 chars) and hex (40 or 64 chars).
+fn decode_btih(magnet_uri: &str) -> Result<(Magnet, Vec<u8>), Box<dyn std::error::Error>> {
+    let magnet = Magnet::new(magnet_uri).map_err(|err| err.to_string())?;
 
-    let announce = magnet.tr;
-    Ok((info_hash, announce))
+    /// Only BTIH is currently supported
+    const BTIH_TYPE: &str = "btih";
+    // (exact topic) parameters
+    let (_hash_type, hash_str) = match (magnet.hash_type(), magnet.hash()) {
+        (None, Some(_)) => return Err("No hash type in exact topic parameter found".into()),
+        (Some(_), None) => return Err("No hash in exact topic parameter found".into()),
+        (Some(btih_type), Some(hash_str)) if btih_type == BTIH_TYPE => (btih_type, hash_str),
+        (Some(_other_type), Some(_hash_str)) => {
+            return Err("No BTIH hash type in exact topic parameter found".into())
+        }
+        (None, None) => return Err("No hash and no hash type provided".into()),
+    };
+    let hash_str = hash_str.trim();
+
+    // Choose decoder based on length and character set
+    let decoded = match hash_str.len() {
+        // Base32 (SHA-1 or SHA-256)
+        32 | 52 => data_encoding::BASE32.decode(hash_str.as_bytes())?,
+        40 | 64 if hash_str.chars().all(|c| c.is_ascii_hexdigit()) => {
+            hex::decode(hash_str.as_bytes())?
+        }
+        _ => return Err(format!("Unrecognized hash format: {}", hash_str).into()),
+    };
+
+    Ok((magnet, decoded))
+}
+
+fn parse_magnet(magnet: &Url) -> Result<(InfoHash, Vec<String>), MagnetError> {
+    let (magnet, hash_vec) =
+        decode_btih(magnet.as_str()).map_err(|_err| MagnetError::NotAMagnetURL)?;
+    let mut hash: [u8; 20] = [0_u8; 20];
+
+    if hash_vec.len() != 20 {
+        return Err(MagnetError::NotAMagnetURL);
+    }
+    hash.copy_from_slice(&hash_vec[..20]);
+
+    let info_hash = InfoHash::new(hash);
+
+    let announce = magnet.trackers();
+    Ok((info_hash, announce.to_vec()))
 }
 
 fn parse_torrent(torrent: &[u8]) -> Result<(InfoHash, Vec<String>), serde_bencode::Error> {
@@ -709,11 +787,26 @@ fn update_remote_url<E: Env + 'static>(
 mod tests {
     use magnet_url::Magnet;
 
+    use crate::models::streaming_server::decode_btih;
+
     #[test]
     fn test_magnet_hash() {
         let magnet = Magnet::new("magnet:?xt=urn:btih:0d54e2339706f173ac20f4effb4ad42d9c7a84e9&dn=Halo.S02.1080p.WEBRip.x265.DDP5.1.Atmos-WAR").expect("Should be valid magnet Url");
 
         // assert_eq!(magnet.xt)
         dbg!(magnet);
+    }
+
+    #[test]
+    fn test_magnet() {
+        {
+            let magnet_1 = "magnet:?xt=urn:btih:8C3C23F2D1635FA63968C43D3366329E7A14EB39&dn=Pluribus%20S01E05%201080p%20WEB%20h264-ETHEL&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Fpublic.popcorn-tracker.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dler.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Fglotorrents.pw%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Ftorrent.gresille.org%3A80%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337&tr=udp%3A%2F%2Ftracker.internetwarriors.net%3A1337";
+
+            let (_magnet, _hash) = decode_btih(magnet_1).expect("Should parse BTIH hash");
+        }
+        {
+            let magnet_2 = "magnet:?xt=urn:btih:AA145F3937E74AA9235A4AB00D5B9BCFDBB08C78&dn=Pluribus.S01E01.1080p.x265-ELiTE&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=http%3A%2F%2Ftracker.bt4g.com%3A2095%2Fannounce&tr=http%3A%2F%2Ftracker.renfei.net%3A8080%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=http%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&tr=udp%3A%2F%2Fopentracker.i2p.rocks%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.internetwarriors.net%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcoppersurfer.tk%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.zer0day.to%3A1337%2Fannounce";
+            let (_magnet, _hash) = decode_btih(magnet_2).expect("Should parse BTIH hash");
+        }
     }
 }

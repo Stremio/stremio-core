@@ -15,10 +15,10 @@ pub struct BitField8 {
 
 impl BitField8 {
     pub fn new(length: usize) -> BitField8 {
-        let length = (length as f64 / 8.0).ceil() as usize;
+        let bytes = (length as f64 / 8.0).ceil() as usize;
         BitField8 {
             length,
-            values: vec![0; length],
+            values: vec![0; bytes],
         }
     }
 
@@ -192,5 +192,15 @@ mod tests {
         // If the value is not provided the length is rounded towards the next byte
         let bf = BitField8::try_from((watched, None)).unwrap();
         assert_eq!(bf.length, 16);
+    }
+
+    #[test]
+    fn new_uses_bit_length() {
+        let bf = BitField8::new(20);
+        assert_eq!(bf.length, 20);
+
+        let mut bf = BitField8::new(20);
+        bf.set(15, true);
+        assert_eq!(bf.last_index_of(true), Some(15));
     }
 }

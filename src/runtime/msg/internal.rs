@@ -120,7 +120,7 @@ pub enum Internal {
     /// Result for loading streaming server base url.
     StreamingServerBaseURLResult(Url, Result<Url, EnvError>),
     // Result for loading streaming server playback devices.
-    StreamingServerPlaybackDevicesResult(Url, Result<Vec<PlaybackDevice>, EnvError>),
+    StreamingServerPlaybackDevicesResult(Url, u64, Result<Vec<PlaybackDevice>, EnvError>),
     // Result for network info.
     StreamingServerNetworkInfoResult(Url, Result<NetworkInfo, EnvError>),
     // Result for device info.
@@ -168,4 +168,9 @@ pub enum Internal {
     DismissedEventsChanged,
     RatingGetStatusResult(MetaItemId, Result<RatingGetStatusResponse, EnvError>),
     RatingSendResult(MetaItemId, Result<RatingSendResponse, EnvError>),
+    /// Internal to core, sends the watched update when needed:
+    /// Mark video as watched
+    /// Mark Season as watched (meta item)
+    /// Mark move as watched (meta item)
+    WatchedSendResult(MetaItemId, Result<RatingSendResponse, EnvError>),
 }

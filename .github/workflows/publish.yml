@@ -5,9 +5,13 @@ on:
     types: [released]
 
 env:
-  NODE_VERSION: 12
-  WASM_PACK_VERSION: 0.13.1
-  RUST_VERSION: '1.77'
+  NODE_VERSION: 24
+  WASM_PACK_VERSION: 0.14.0
+  RUST_VERSION: '1.95'
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   publish-stremio-core-web:
@@ -15,10 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup NodeJS
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -46,5 +50,5 @@ jobs:
       - name: Publish to NPM
         working-directory: stremio-core-web
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
-        run: npm publish --access public
+          NPM_CONFIG_PROVENANCE: true
+        run: npm publish

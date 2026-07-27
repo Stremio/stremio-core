@@ -213,6 +213,22 @@ impl Stream {
         }
     }
 
+    fn archive_urls_with_ftp_proxy(
+        streaming_server_url: &Url,
+        urls: Vec<ArchiveUrl>,
+    ) -> Result<Vec<ArchiveUrl>, EnvError> {
+        urls.into_iter()
+            .map(|archive_url| {
+                Self::ftp_url_handler(Some(streaming_server_url), archive_url.url).map(|url| {
+                    ArchiveUrl {
+                        url,
+                        bytes: archive_url.bytes,
+                    }
+                })
+            })
+            .collect()
+    }
+
     /// Updates a `StreamSource` if it's Rar, Zip, 7zip, Tar, Tgz and Nzb
     /// and creates a [`ConvertedStreamSource::Url`]
     pub fn convert(
@@ -237,18 +253,7 @@ impl Stream {
                     .map_err(|err| EnvError::Other(err.to_string()))?;
 
                 let payload = ArchiveStreamBody {
-                    urls: urls
-                        .into_iter()
-                        .map(|archive_url| {
-                            Self::ftp_url_handler(Some(streaming_server_url), archive_url.url).map(
-                                |url| ArchiveUrl {
-                                    url,
-                                    bytes: archive_url.bytes,
-                                },
-                            )
-                        })
-                        .collect::<Result<Vec<_>, _>>()
-                        .expect("Streaming server availability is already checked"),
+                    urls: Self::archive_urls_with_ftp_proxy(streaming_server_url, urls)?,
                     options: ArchiveStreamOptions {
                         file_idx,
                         file_must_include,
@@ -277,23 +282,11 @@ impl Stream {
                 }
 
                 let mut stream_url = streaming_server_url
-                    .clone()
                     .join(&format!("zip/create"))
-                    .expect("Url should always be valid");
+                    .map_err(|err| EnvError::Other(err.to_string()))?;
 
                 let payload = ArchiveStreamBody {
-                    urls: urls
-                        .into_iter()
-                        .map(|archive_url| {
-                            Self::ftp_url_handler(Some(streaming_server_url), archive_url.url).map(
-                                |url| ArchiveUrl {
-                                    url,
-                                    bytes: archive_url.bytes,
-                                },
-                            )
-                        })
-                        .collect::<Result<Vec<_>, _>>()
-                        .expect("Streaming server availability is already checked"),
+                    urls: Self::archive_urls_with_ftp_proxy(streaming_server_url, urls)?,
                     options: ArchiveStreamOptions {
                         file_idx,
                         file_must_include,
@@ -323,22 +316,10 @@ impl Stream {
                 }
 
                 let mut stream_url = streaming_server_url
-                    .clone()
                     .join(&format!("7zip/create"))
-                    .expect("Url should always be valid");
+                    .map_err(|err| EnvError::Other(err.to_string()))?;
                 let payload = ArchiveStreamBody {
-                    urls: urls
-                        .into_iter()
-                        .map(|archive_url| {
-                            Self::ftp_url_handler(Some(streaming_server_url), archive_url.url).map(
-                                |url| ArchiveUrl {
-                                    url,
-                                    bytes: archive_url.bytes,
-                                },
-                            )
-                        })
-                        .collect::<Result<Vec<_>, _>>()
-                        .expect("Streaming server availability is already checked"),
+                    urls: Self::archive_urls_with_ftp_proxy(streaming_server_url, urls)?,
                     options: ArchiveStreamOptions {
                         file_idx,
                         file_must_include,
@@ -367,23 +348,11 @@ impl Stream {
                 }
 
                 let mut stream_url = streaming_server_url
-                    .clone()
                     .join(&format!("tgz/create"))
-                    .expect("Url should always be valid");
+                    .map_err(|err| EnvError::Other(err.to_string()))?;
 
                 let payload = ArchiveStreamBody {
-                    urls: urls
-                        .into_iter()
-                        .map(|archive_url| {
-                            Self::ftp_url_handler(Some(streaming_server_url), archive_url.url).map(
-                                |url| ArchiveUrl {
-                                    url,
-                                    bytes: archive_url.bytes,
-                                },
-                            )
-                        })
-                        .collect::<Result<Vec<_>, _>>()
-                        .expect("Streaming server availability is already checked"),
+                    urls: Self::archive_urls_with_ftp_proxy(streaming_server_url, urls)?,
                     options: ArchiveStreamOptions {
                         file_idx,
                         file_must_include,
@@ -412,18 +381,7 @@ impl Stream {
                 }
 
                 let payload = ArchiveStreamBody {
-                    urls: urls
-                        .into_iter()
-                        .map(|archive_url| {
-                            Self::ftp_url_handler(Some(streaming_server_url), archive_url.url).map(
-                                |url| ArchiveUrl {
-                                    url,
-                                    bytes: archive_url.bytes,
-                                },
-                            )
-                        })
-                        .collect::<Result<Vec<_>, _>>()
-                        .expect("Streaming server availability is already checked"),
+                    urls: Self::archive_urls_with_ftp_proxy(streaming_server_url, urls)?,
                     options: ArchiveStreamOptions {
                         file_idx,
                         file_must_include,
@@ -431,9 +389,8 @@ impl Stream {
                 };
 
                 let mut stream_url = streaming_server_url
-                    .clone()
                     .join(&format!("tar/create"))
-                    .expect("Url should always be valid");
+                    .map_err(|err| EnvError::Other(err.to_string()))?;
 
                 let stream_data = serde_json::to_string(&payload)?;
                 stream_url.query_pairs_mut().append_pair(
@@ -444,7 +401,7 @@ impl Stream {
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url: stream_url }))
             }
-            (Some(streaming_server_url), StreamSource::Nzb { nzb_url, servers }) => {
+            (Some(streaming_server_url), StreamSource::Nzb { url, urls, servers }) => {
                 if servers.is_empty() {
                     return Err(EnvError::Other("No nzb server URLs provided".into()));
                 }
@@ -452,17 +409,20 @@ impl Stream {
                 let servers = servers
                     .into_iter()
                     .map(|server_url| Self::ftp_url_handler(Some(streaming_server_url), server_url))
-                    .collect::<Result<Vec<_>, _>>()
-                    .expect("Streaming server availability is already checked");
+                    .collect::<Result<Vec<_>, _>>()?;
 
                 let mut stream_url = streaming_server_url
-                    .clone()
                     .join(&format!("nzb/create"))
-                    .expect("Url should always be valid");
+                    .map_err(|err| EnvError::Other(err.to_string()))?;
 
                 let payload = StreamSource::Nzb {
-                    nzb_url: Self::ftp_url_handler(Some(streaming_server_url), nzb_url)
-                        .expect("Streaming server availability is already checked"),
+                    url: url
+                        .map(|url| Self::ftp_url_handler(Some(streaming_server_url), url))
+                        .transpose()?,
+                    urls: urls
+                        .into_iter()
+                        .map(|url| Self::ftp_url_handler(Some(streaming_server_url), url))
+                        .collect::<Result<Vec<_>, _>>()?,
                     servers,
                 };
 
@@ -502,6 +462,11 @@ impl Stream {
                         Some(streaming_server_url),
                     ) => {
                         let mut streaming_url = streaming_server_url.to_owned();
+                        if streaming_url.path_segments_mut().is_err() {
+                            return Err(EnvError::Other(
+                                "Streaming server URL cannot be used as a base".into(),
+                            ));
+                        }
                         let mut proxy_query = form_urlencoded::Serializer::new(String::new());
                         let origin = format!("{}://{}", url.scheme(), url.authority());
                         proxy_query.append_pair("d", origin.as_str());
@@ -540,9 +505,11 @@ impl Stream {
                     url: {
                         let mut url = streaming_server_url.to_owned();
                         {
-                            let mut path = url
-                                .path_segments_mut()
-                                .expect("Streaming server should always be base");
+                            let mut path = url.path_segments_mut().map_err(|_| {
+                                EnvError::Other(
+                                    "Streaming server URL cannot be used as a base".into(),
+                                )
+                            })?;
                             path.push("yt");
                             path.push(
                                 &utf8_percent_encode(&yt_id, URI_COMPONENT_ENCODE_SET).to_string(),
@@ -571,7 +538,9 @@ impl Stream {
                     let mut url = streaming_server_url.to_owned();
 
                     {
-                        let mut path = url.path_segments_mut().expect("Should always be base url");
+                        let mut path = url.path_segments_mut().map_err(|_| {
+                            EnvError::Other("Streaming server URL cannot be used as a base".into())
+                        })?;
                         path.extend([
                             &hex::encode(info_hash),
                             // When fileIndex is not provided use -1, which will tell the
@@ -824,8 +793,13 @@ pub enum StreamSource {
     /// Nzb sourced
     #[serde(rename_all = "camelCase")]
     Nzb {
-        nzb_url: Url,
-        #[serde(default)]
+        #[serde(rename = "nzbUrl")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        url: Option<Url>,
+        #[serde(rename = "nzbUrls")]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde_as(deserialize_as = "DefaultOnNull")]
+        urls: Vec<Url>,
         servers: Vec<Url>,
     },
     #[serde(rename_all = "camelCase")]
@@ -1059,6 +1033,43 @@ impl StreamUrls {
     }
 }
 
+pub(crate) fn build_magnet_uri(
+    info_hash: &[u8],
+    announce: &[String],
+    name: Option<&String>,
+) -> String {
+    let trackers = announce
+        .iter()
+        .map(|tracker| {
+            tracker
+                .strip_prefix("tracker:")
+                .unwrap_or(tracker)
+                .strip_prefix("dht:")
+                .unwrap_or(tracker)
+        })
+        .map(|tracker| utf8_percent_encode(tracker, URI_COMPONENT_ENCODE_SET).to_string())
+        .collect::<Vec<String>>();
+    let trackers = if !trackers.is_empty() {
+        format!("&tr={}", trackers.join("&tr="))
+    } else {
+        String::new()
+    };
+
+    let dn = if let Some(name) = name {
+        format!(
+            "dn={}&",
+            utf8_percent_encode(name, URI_COMPONENT_ENCODE_SET)
+        )
+    } else {
+        String::new()
+    };
+
+    format!(
+        "magnet:?{dn}xt=urn:btih:{hash}{trackers}",
+        hash = hex::encode(info_hash),
+    )
+}
+
 fn get_magnet_url(converted: &Stream<ConvertedStreamSource>) -> Option<Url> {
     match &converted.source {
         ConvertedStreamSource::Url { url } if url.scheme() == "magnet" => Magnet::new(url.as_str())
@@ -1071,41 +1082,13 @@ fn get_magnet_url(converted: &Stream<ConvertedStreamSource>) -> Option<Url> {
             info_hash,
             announce,
             ..
-        } => {
-            let torrent_magnet = Magnet {
-                dn: converted.name.to_owned(),
-                hash_type: Some("btih".to_string()),
-                xt: Some(hex::encode(info_hash)),
-                xl: None,
-                tr: announce
-                    .iter()
-                    // `tracker` and `dht` prefixes are used internally by the server.js
-                    // we need to remove those prefixes when generating the magnet URL
-                    .map(|tracker| {
-                        tracker
-                            .strip_prefix("tracker:")
-                            .map(ToString::to_string)
-                            .unwrap_or_else(|| tracker.to_owned())
-                    })
-                    .map(|tracker| {
-                        tracker
-                            .strip_prefix("dht:")
-                            .map(ToString::to_string)
-                            .unwrap_or_else(|| tracker.to_owned())
-                    })
-                    .map(|tracker| {
-                        utf8_percent_encode(&tracker, URI_COMPONENT_ENCODE_SET).to_string()
-                    })
-                    .collect::<Vec<String>>(),
-                kt: None,
-                ws: None,
-                acceptable_source: None,
-                mt: None,
-                xs: None,
-            };
-
-            torrent_magnet.to_string().parse().ok()
-        }
+        } => Magnet::new(&build_magnet_uri(
+            info_hash.as_ref(),
+            announce,
+            converted.name.as_ref(),
+        ))
+        .ok()
+        .and_then(|magnet| magnet.to_string().parse::<Url>().ok()),
         _ => None,
     }
 }
@@ -1122,11 +1105,7 @@ fn get_download_url(
     streaming_server_url: Option<&Url>,
 ) -> Option<Url> {
     match &converted.source {
-        ConvertedStreamSource::Url { url } if url.scheme() == "magnet" => Magnet::new(url.as_str())
-            .as_ref()
-            .map(ToString::to_string)
-            .ok()
-            .and_then(|url_string| url_string.parse().ok()),
+        ConvertedStreamSource::Url { url } if url.scheme() == "magnet" => None,
         ConvertedStreamSource::Url { url } => Some(url.to_owned()),
         ConvertedStreamSource::Torrent { url, .. } => {
             // we just need to know that the server is running
@@ -1159,6 +1138,29 @@ fn get_download_url(
     }
 }
 
+/// generate url from source without conversion (no server running)
+pub fn get_download_url_from_source(stream: &Stream) -> Option<Url> {
+    match &stream.source {
+        StreamSource::Url { url } => Some(url.clone()),
+        StreamSource::Torrent {
+            info_hash,
+            announce,
+            ..
+        } => build_magnet_uri(info_hash, announce, stream.name.as_ref())
+            .parse()
+            .ok(),
+        StreamSource::YouTube { yt_id } => format!(
+            "https://youtube.com/watch?v={}",
+            utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET)
+        )
+        .parse()
+        .ok(),
+        StreamSource::External { external_url, .. } => external_url.clone(),
+        StreamSource::PlayerFrame { player_frame_url } => Some(player_frame_url.clone()),
+        _ => None,
+    }
+}
+
 fn get_streaming_url(converted: &Stream<ConvertedStreamSource>) -> Option<Url> {
     match &converted.source {
         ConvertedStreamSource::Url { url } if url.scheme() == "magnet" => None,
@@ -1175,6 +1177,133 @@ fn get_streaming_url(converted: &Stream<ConvertedStreamSource>) -> Option<Url> {
 
 #[cfg(test)]
 mod tests {
+    use super::{ArchiveUrl, Stream, StreamBehaviorHints, StreamProxyHeaders, StreamSource};
+    use crate::runtime::EnvError;
+    use std::collections::HashMap;
+    use url::Url;
+
+    fn stream(source: StreamSource) -> Stream {
+        Stream {
+            source,
+            name: None,
+            description: None,
+            thumbnail: None,
+            subtitles: vec![],
+            behavior_hints: StreamBehaviorHints::default(),
+        }
+    }
+
+    fn archive_url() -> ArchiveUrl {
+        ArchiveUrl {
+            url: Url::parse("https://example.com/archive.zip").unwrap(),
+            bytes: None,
+        }
+    }
+
+    fn assert_convert_error(source_name: &str, source: StreamSource) {
+        let streaming_server_url = Url::parse("data:text/plain,server").unwrap();
+        let result = stream(source).convert(Some(&streaming_server_url));
+
+        assert!(
+            matches!(result, Err(EnvError::Other(_))),
+            "{source_name} conversion should return EnvError::Other, got {result:?}"
+        );
+    }
+
+    #[test]
+    fn stream_convert_returns_error_for_invalid_archive_server_base() {
+        assert_convert_error(
+            "rar",
+            StreamSource::Rar {
+                urls: vec![archive_url()],
+                file_idx: None,
+                file_must_include: vec![],
+            },
+        );
+        assert_convert_error(
+            "zip",
+            StreamSource::Zip {
+                urls: vec![archive_url()],
+                file_idx: None,
+                file_must_include: vec![],
+            },
+        );
+        assert_convert_error(
+            "7zip",
+            StreamSource::Zip7 {
+                urls: vec![archive_url()],
+                file_idx: None,
+                file_must_include: vec![],
+            },
+        );
+        assert_convert_error(
+            "tgz",
+            StreamSource::Tgz {
+                urls: vec![archive_url()],
+                file_idx: None,
+                file_must_include: vec![],
+            },
+        );
+        assert_convert_error(
+            "tar",
+            StreamSource::Tar {
+                urls: vec![archive_url()],
+                file_idx: None,
+                file_must_include: vec![],
+            },
+        );
+    }
+
+    #[test]
+    fn stream_convert_returns_error_for_invalid_nzb_ftp_proxy_base() {
+        assert_convert_error(
+            "nzb",
+            StreamSource::Nzb {
+                url: Some(Url::parse("ftp://example.com/file.nzb").unwrap()),
+                urls: vec![Url::parse("ftp://example.com/backup.nzb").unwrap()],
+                servers: vec![Url::parse("nntps://news.example.com").unwrap()],
+            },
+        );
+    }
+
+    #[test]
+    fn stream_convert_returns_error_for_invalid_segment_server_base() {
+        assert_convert_error(
+            "youtube",
+            StreamSource::YouTube {
+                yt_id: "video_id".to_owned(),
+            },
+        );
+        assert_convert_error(
+            "torrent",
+            StreamSource::Torrent {
+                info_hash: [1; 20],
+                file_idx: None,
+                announce: vec![],
+                file_must_include: vec![],
+            },
+        );
+    }
+
+    #[test]
+    fn stream_convert_returns_error_for_invalid_proxy_server_base() {
+        let streaming_server_url = Url::parse("data:text/plain,server").unwrap();
+        let mut stream = stream(StreamSource::Url {
+            url: Url::parse("https://example.com/video.mp4").unwrap(),
+        });
+        stream.behavior_hints.proxy_headers = Some(StreamProxyHeaders {
+            request: HashMap::new(),
+            response: HashMap::new(),
+        });
+
+        let result = stream.convert(Some(&streaming_server_url));
+
+        assert!(
+            matches!(result, Err(EnvError::Other(_))),
+            "proxied URL conversion should return EnvError::Other, got {result:?}"
+        );
+    }
+
     #[test]
     fn test_lz_string_decompress() {
         let url = "http://127.0.0.1:11470/nzb/create?lz=N4IgdgXgRgqgTgGxALhACwC4YA4GdkD0BAJnAK5gDWApmLgmQOYB0AxgPYC2Bj1GkUAgEMAjAA4RAdlYBOSQFYx1GQBYAZqwDMa6cXmyha6spmbRalWM0A2KBOYCAZAEsAvFIAM16x8dxX8tZqHjLUrFBCUAZCmqyRYqxiPvIATB4qItRQ1EIgADQguNRwAG7FuCgA2uBgOPhEUACekpweYNjU1sgAQswpMABqAPpiAEoeUACk8gCiAI4AAmDUAO64zGRFyxhFpcVsXMgqKpoEKvk1dYQEAFZC5BHIMAAilCsDalBqC0WsZHDUByrdY5XCNZZrA6cI4nM4XMC1PDXCjYSQpTSSFQeESaE7IZ4qFZiGSTdEARRUAC1GAANMQAYVJ3Umkm6AA8ABSklTTGZiFIAWlJmmmzxuC2oZA2Wz42Dgzk4gI40OOp3OBQRVyIrDiKhS1E0gREevkeigyEmmgAggB5STEXnsSmW%2BnWGRWoRLYHMVbUShCBwIZCBNUgAC6AF8gA".parse::<url::Url>().unwrap();

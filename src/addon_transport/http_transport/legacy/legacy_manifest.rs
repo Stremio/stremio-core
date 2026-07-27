@@ -100,7 +100,7 @@ impl From<LegacyManifest> for Manifest {
                 .collect()
         });
 
-        // resources: only those two are supported by the legacy mapper
+        // resources supported by the legacy mapper
         let mut resources: Vec<ManifestResource> = vec![];
         if m.methods.iter().any(|x| x == "meta.get") {
             resources.push(ManifestResource::Short("meta".into()))
@@ -108,7 +108,7 @@ impl From<LegacyManifest> for Manifest {
         if m.methods.iter().any(|x| x == "stream.find") {
             resources.push(ManifestResource::Short("stream".into()))
         }
-        if m.methods.iter().any(|x| x == "subtitles.get") {
+        if m.methods.iter().any(|x| x == "subtitles.find") {
             resources.push(ManifestResource::Short("subtitles".into()))
         }
 
@@ -131,5 +131,43 @@ impl From<LegacyManifest> for Manifest {
             // https://github.com/Stremio/stremio-addon-client/blob/4f4dbbf55498d7fdc6bd41bf49cb2f05915b3f8e/lib/transports/legacy/mapper.js#L70
             behavior_hints: Default::default(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn maps_legacy_methods_to_resources() {
+        let json = serde_json::json!({
+            "id": "org.test.legacy",
+            "name": "Test Legacy Addon",
+            "version": "1.0.0",
+            "methods": ["meta.get", "stream.find", "subtitles.find"],
+            "types": ["series"]
+        });
+        let legacy: LegacyManifest =
+            serde_json::from_value(json).expect("legacy manifest should deserialize");
+        let manifest = Manifest::from(legacy);
+
+        assert!(
+            manifest
+                .resources
+                .contains(&ManifestResource::Short("meta".into())),
+            "`meta.get` should map to the `meta` resource"
+        );
+        assert!(
+            manifest
+                .resources
+                .contains(&ManifestResource::Short("stream".into())),
+            "`stream.find` should map to the `stream` resource"
+        );
+        assert!(
+            manifest
+                .resources
+                .contains(&ManifestResource::Short("subtitles".into())),
+            "`subtitles.find` should map to the `subtitles` resource"
+        );
     }
 }

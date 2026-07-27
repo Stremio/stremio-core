@@ -14,6 +14,32 @@ pub struct ArchiveCreateResponse {
 pub struct SettingsResponse {
     pub base_url: Url,
     pub values: Settings,
+    #[serde(default)]
+    pub options: Vec<SettingsOption>,
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SettingsOption {
+    pub id: String,
+    pub label: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub selections: Vec<SettingsOptionSelection>,
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SettingsOptionSelection {
+    pub name: String,
+    pub val: SettingsOptionValue,
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[serde(untagged)]
+pub enum SettingsOptionValue {
+    String(String),
+    Number(f64),
+    Null,
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]

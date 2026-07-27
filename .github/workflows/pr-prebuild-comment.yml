@@ -1,0 +1,68 @@
+name: PR prebuild comment
+
+# Fires once when a PR is opened against `development`. Posts a single
+# comment with paste-ready `package.json` overrides pointing at the
+# stremio-core-web prebuild that the `Build` workflow publishes to gh-pages
+# for the PR's source branch. Does NOT run again on subsequent pushes.
+#
+# Uses `pull_request_target` so the comment also works for PRs from forks
+# (the default `pull_request` event hands fork runs a read-only token, which
+# can't post comments). This is safe here because the workflow never executes
+# any code from the PR — `actions/checkout` checks out the BASE branch, and
+# the only PR-derived value used is `pull_request.head.ref`, a metadata
+# string that goes into a URL/comment body, never into a shell or eval.
+
+on:
+  pull_request_target:
+    types: [opened]
+    branches:
+      - development
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Read stremio-core-web version
+        id: pkg
+        run: |
+          VERSION=$(node -p "require('./stremio-core-web/package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Post prebuild link
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const branch = context.payload.pull_request.head.ref;
+            const version = '${{ steps.pkg.outputs.version }}';
+            const tarball = `stremio-stremio-core-web-${version}.tgz`;
+            const base = `https://stremio.github.io/stremio-core/stremio-core-web/${branch}`;
+            const body = [
+              '### stremio-core-web prebuild',
+              '',
+              `Prebuild artifact published by the \`Build\` workflow for branch \`${branch}\`.`,
+              '',
+              'Paste one of these into `stremio-web`\'s `package.json` and run `pnpm install` to wire this prebuild into a corresponding `stremio-web` PR:',
+              '',
+              '**Release**',
+              '```json',
+              `"@stremio/stremio-core-web": "${base}/${tarball}"`,
+              '```',
+              '',
+              '**Dev**',
+              '```json',
+              `"@stremio/stremio-core-web": "${base}/dev/${tarball}"`,
+              '```',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });

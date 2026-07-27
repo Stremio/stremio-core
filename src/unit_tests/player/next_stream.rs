@@ -173,6 +173,19 @@ fn next_stream() {
         "next stream has same binge group"
     );
 
+    assert_eq!(
+        runtime
+            .model()
+            .unwrap()
+            .player
+            .next_video
+            .as_ref()
+            .unwrap()
+            .streams,
+        vec![create_stream("binge_group")],
+        "next video has the matched next stream embedded"
+    );
+
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,

@@ -132,6 +132,18 @@ impl LibraryItem {
         }
     }
 
+    /// Advances the continue watching pointer to the given video and resets the playback state.
+    pub fn advance_to_video(&mut self, video_id: &str) {
+        self.state.video_id = Some(video_id.to_owned());
+        self.state.overall_time_watched = self
+            .state
+            .overall_time_watched
+            .saturating_add(self.state.time_watched);
+        self.state.time_watched = 0;
+        self.state.flagged_watched = 0;
+        self.state.time_offset = 1;
+    }
+
     pub fn mark_videos_as_watched<E: Env>(
         &mut self,
         watched: &WatchedBitField,
