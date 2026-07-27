@@ -1695,7 +1695,20 @@
 <a href="#1694" id="1694">1694</a>
 <a href="#1695" id="1695">1695</a>
 <a href="#1696" id="1696">1696</a>
-<a href="#1697" id="1697">1697</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#1697" id="1697">1697</a>
+<a href="#1698" id="1698">1698</a>
+<a href="#1699" id="1699">1699</a>
+<a href="#1700" id="1700">1700</a>
+<a href="#1701" id="1701">1701</a>
+<a href="#1702" id="1702">1702</a>
+<a href="#1703" id="1703">1703</a>
+<a href="#1704" id="1704">1704</a>
+<a href="#1705" id="1705">1705</a>
+<a href="#1706" id="1706">1706</a>
+<a href="#1707" id="1707">1707</a>
+<a href="#1708" id="1708">1708</a>
+<a href="#1709" id="1709">1709</a>
+<a href="#1710" id="1710">1710</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>std::ops::Div;
 
 <span class="kw">use </span>base64::Engine;
@@ -3102,7 +3115,15 @@
     .into()
 }
 
-<span class="kw">fn </span>calculate_outro(library_item: <span class="kw-2">&amp;</span>LibraryItem, closest_duration: u64, closest_outro: u64) -&gt; u64 {
+<span class="kw">fn </span>calculate_outro(
+    library_item: <span class="kw-2">&amp;</span>LibraryItem,
+    closest_duration: u64,
+    closest_outro: u64,
+) -&gt; <span class="prelude-ty">Option</span>&lt;u64&gt; {
+    <span class="kw">if </span>closest_outro == <span class="number">0 </span>{
+        <span class="kw">return </span><span class="prelude-val">None</span>;
+    }
+
     <span class="comment">// will floor the result before dividing by 10 again
     </span><span class="kw">let </span>duration_diff_in_secs =
         (library_item.state.duration.abs_diff(closest_duration)).div(<span class="number">1000 </span>* <span class="number">10</span>) / <span class="number">10</span>;
@@ -3112,10 +3133,12 @@
         <span class="string">"Player: Outro match by duration with difference of {duration_diff_in_secs} seconds"
     </span>);
 
-    library_item
+    <span class="kw">let </span>outro = library_item
         .state
         .duration
-        .abs_diff(closest_duration.abs_diff(closest_outro))
+        .abs_diff(closest_duration.abs_diff(closest_outro));
+
+    (outro &gt; <span class="number">0 </span>&amp;&amp; outro &lt;= library_item.state.duration).then_some(outro)
 }
 
 <span class="kw">fn </span>intro_outro_update&lt;E: Env + <span class="lifetime">'static</span>&gt;(
@@ -3156,7 +3179,7 @@
                         }
                     },
                 );
-                closest_duration.map(|(closest_duration, closest_outro)| {
+                closest_duration.and_then(|(closest_duration, closest_outro)| {
                     calculate_outro(library_item, <span class="kw-2">*</span>closest_duration, closest_outro)
                 })
             };
@@ -3349,7 +3372,7 @@
     };
 
     <span class="attr">#[test]
-    </span><span class="kw">fn </span>test_underflow_calculate_outro() {
+    </span><span class="kw">fn </span>test_calculate_outro() {
         <span class="kw">let </span>library_item = LibraryItem {
             id: <span class="string">"tt13622776"</span>.to_string(),
             name: <span class="string">"Ahsoka"</span>.to_string(),
@@ -3379,17 +3402,20 @@
             <span class="kw">let </span>closest_outro = <span class="number">1</span>;
             <span class="macro">assert_eq!</span>(
                 calculate_outro(<span class="kw-2">&amp;</span>library_item, closest_duration, closest_outro),
-                <span class="number">999
-            </span>);
+                <span class="prelude-val">Some</span>(<span class="number">999</span>)
+            );
         }
         {
             <span class="kw">let </span>closest_duration = <span class="number">11000</span>;
             <span class="kw">let </span>closest_outro = <span class="number">12000</span>;
             <span class="macro">assert_eq!</span>(
                 calculate_outro(<span class="kw-2">&amp;</span>library_item, closest_duration, closest_outro),
-                <span class="number">9000
-            </span>);
+                <span class="prelude-val">Some</span>(<span class="number">9000</span>)
+            );
         }
+        <span class="macro">assert_eq!</span>(calculate_outro(<span class="kw-2">&amp;</span>library_item, <span class="number">11000</span>, <span class="number">0</span>), <span class="prelude-val">None</span>);
+        <span class="macro">assert_eq!</span>(calculate_outro(<span class="kw-2">&amp;</span>library_item, <span class="number">11000</span>, <span class="number">1000</span>), <span class="prelude-val">None</span>);
+        <span class="macro">assert_eq!</span>(calculate_outro(<span class="kw-2">&amp;</span>library_item, <span class="number">11000</span>, <span class="number">32000</span>), <span class="prelude-val">None</span>);
     }
 }
 </code></pre></div></section></main></body></html>
