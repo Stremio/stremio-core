@@ -13,7 +13,6 @@ use crate::{
     types::resource::{Stream, StreamBehaviorHints, StreamSource},
     unit_tests::{TestEnv, EVENTS},
 };
-use assert_matches::assert_matches;
 use std::sync::{Arc, RwLock};
 use stremio_derive::Model;
 
@@ -56,14 +55,20 @@ fn identical_player_loads_are_observable() {
     });
 
     let events = EVENTS.read().unwrap();
-    assert_eq!(events.len(), 2);
-    for event in events.iter() {
-        assert_matches!(
-            event
+    let new_states = events
+        .iter()
+        .filter_map(|event| {
+            match event
                 .downcast_ref::<RuntimeEvent<TestEnv, TestModel>>()
-                .unwrap(),
-            RuntimeEvent::NewState(fields, _)
-                if fields.as_slice() == [TestModelField::Player]
-        );
+                .unwrap()
+            {
+                RuntimeEvent::NewState(fields, _) => Some(fields),
+                RuntimeEvent::CoreEvent(_) => None,
+            }
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(new_states.len(), 2);
+    for fields in new_states {
+        assert_eq!(fields.as_slice(), [TestModelField::Player]);
     }
 }
