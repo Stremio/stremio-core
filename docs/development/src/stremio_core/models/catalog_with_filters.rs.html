@@ -518,17 +518,7 @@
 <a href="#517" id="517">517</a>
 <a href="#518" id="518">518</a>
 <a href="#519" id="519">519</a>
-<a href="#520" id="520">520</a>
-<a href="#521" id="521">521</a>
-<a href="#522" id="522">522</a>
-<a href="#523" id="523">523</a>
-<a href="#524" id="524">524</a>
-<a href="#525" id="525">525</a>
-<a href="#526" id="526">526</a>
-<a href="#527" id="527">527</a>
-<a href="#528" id="528">528</a>
-<a href="#529" id="529">529</a>
-<a href="#530" id="530">530</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_PROP, TYPE_PRIORITIES};
+<a href="#520" id="520">520</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::{SKIP_EXTRA_PROP, TYPE_PRIORITIES};
 <span class="kw">use </span><span class="kw">crate</span>::models::common::{
     compare_with_priorities, eq_update, resource_update_with_vector_content, ResourceAction,
     ResourceLoadable,
@@ -558,9 +548,6 @@
     <span class="kw">fn </span>resource() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str;
     <span class="kw">fn </span>catalogs(manifest: <span class="kw-2">&amp;</span>Manifest) -&gt; <span class="kw-2">&amp;</span>[ManifestCatalog];
     <span class="kw">fn </span>selectable_priority() -&gt; SelectablePriority;
-    <span class="kw">fn </span>page_size() -&gt; <span class="prelude-ty">Option</span>&lt;usize&gt; {
-        <span class="prelude-val">None
-    </span>}
 }
 
 <span class="kw">impl </span>CatalogResourceAdapter <span class="kw">for </span>MetaItemPreview {
@@ -572,9 +559,6 @@
     }
     <span class="kw">fn </span>selectable_priority() -&gt; SelectablePriority {
         SelectablePriority::Type
-    }
-    <span class="kw">fn </span>page_size() -&gt; <span class="prelude-ty">Option</span>&lt;usize&gt; {
-        <span class="prelude-val">Some</span>(CATALOG_PAGE_SIZE)
     }
 }
 
@@ -1021,11 +1005,7 @@
                             page.content
                                 .as_ref()
                                 .and_then(|content| content.ready())
-                                .filter(|content| {
-                                    T::page_size()
-                                        .map(|page_size| content.len() == page_size)
-                                        .unwrap_or_else(|| !content.is_empty())
-                                })
+                                .filter(|content| !content.is_empty())
                                 .map(|content| content.len())
                         })
                         .collect::&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;&gt;()

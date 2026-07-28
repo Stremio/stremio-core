@@ -349,64 +349,8 @@
 <a href="#348" id="348">348</a>
 <a href="#349" id="349">349</a>
 <a href="#350" id="350">350</a>
-<a href="#351" id="351">351</a>
-<a href="#352" id="352">352</a>
-<a href="#353" id="353">353</a>
-<a href="#354" id="354">354</a>
-<a href="#355" id="355">355</a>
-<a href="#356" id="356">356</a>
-<a href="#357" id="357">357</a>
-<a href="#358" id="358">358</a>
-<a href="#359" id="359">359</a>
-<a href="#360" id="360">360</a>
-<a href="#361" id="361">361</a>
-<a href="#362" id="362">362</a>
-<a href="#363" id="363">363</a>
-<a href="#364" id="364">364</a>
-<a href="#365" id="365">365</a>
-<a href="#366" id="366">366</a>
-<a href="#367" id="367">367</a>
-<a href="#368" id="368">368</a>
-<a href="#369" id="369">369</a>
-<a href="#370" id="370">370</a>
-<a href="#371" id="371">371</a>
-<a href="#372" id="372">372</a>
-<a href="#373" id="373">373</a>
-<a href="#374" id="374">374</a>
-<a href="#375" id="375">375</a>
-<a href="#376" id="376">376</a>
-<a href="#377" id="377">377</a>
-<a href="#378" id="378">378</a>
-<a href="#379" id="379">379</a>
-<a href="#380" id="380">380</a>
-<a href="#381" id="381">381</a>
-<a href="#382" id="382">382</a>
-<a href="#383" id="383">383</a>
-<a href="#384" id="384">384</a>
-<a href="#385" id="385">385</a>
-<a href="#386" id="386">386</a>
-<a href="#387" id="387">387</a>
-<a href="#388" id="388">388</a>
-<a href="#389" id="389">389</a>
-<a href="#390" id="390">390</a>
-<a href="#391" id="391">391</a>
-<a href="#392" id="392">392</a>
-<a href="#393" id="393">393</a>
-<a href="#394" id="394">394</a>
-<a href="#395" id="395">395</a>
-<a href="#396" id="396">396</a>
-<a href="#397" id="397">397</a>
-<a href="#398" id="398">398</a>
-<a href="#399" id="399">399</a>
-<a href="#400" id="400">400</a>
-<a href="#401" id="401">401</a>
-<a href="#402" id="402">402</a>
-<a href="#403" id="403">403</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::iter;
+<a href="#351" id="351">351</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::model::deep_links_ext::DeepLinksExt;
 
-<span class="kw">use </span><span class="kw">crate</span>::model::deep_links_ext::DeepLinksExt;
-
-<span class="kw">use </span>either::Either;
-<span class="kw">use </span>itertools::Itertools;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>url::Url;
 <span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
@@ -414,7 +358,6 @@
 
 <span class="kw">use </span>stremio_core::runtime::EnvError;
 <span class="kw">use </span>stremio_core::{
-    constants::META_RESOURCE_NAME,
     deep_links::{MetaItemDeepLinks, StreamDeepLinks, VideoDeepLinks},
     models::{
         common::{Loadable, ResourceError, ResourceLoadable},
@@ -485,20 +428,11 @@
     }
     <span class="attr">#[derive(Serialize)]
     #[serde(rename_all = <span class="string">"camelCase"</span>)]
-    </span><span class="kw">pub struct </span>MetaExtension&lt;<span class="lifetime">'a</span>&gt; {
-        <span class="kw">pub </span>url: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Url,
-        <span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>String,
-        <span class="kw">pub </span>addon: DescriptorPreview&lt;<span class="lifetime">'a</span>&gt;,
-    }
-
-    <span class="attr">#[derive(Serialize)]
-    #[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span><span class="kw">pub struct </span>MetaDetails&lt;<span class="lifetime">'a</span>&gt; {
         <span class="kw">pub </span>selected: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;MetaDetailsSelected&gt;,
         <span class="kw">pub </span>meta_item: <span class="prelude-ty">Option</span>&lt;ResourceLoadable&lt;<span class="lifetime">'a</span>, MetaItem&lt;<span class="lifetime">'a</span>&gt;&gt;&gt;,
         <span class="kw">pub </span>library_item: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;LibraryItem&gt;,
         <span class="kw">pub </span>streams: Vec&lt;ResourceLoadable&lt;<span class="lifetime">'a</span>, Vec&lt;Stream&lt;<span class="lifetime">'a</span>&gt;&gt;&gt;&gt;,
-        <span class="kw">pub </span>meta_extensions: Vec&lt;MetaExtension&lt;<span class="lifetime">'a</span>&gt;&gt;,
         <span class="kw">pub </span>title: <span class="prelude-ty">Option</span>&lt;String&gt;,
         <span class="kw">pub </span>rating_info: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;Loadable&lt;RatingInfo, EnvError&gt;&gt;,
     }
@@ -710,44 +644,6 @@
                         ..
                     } =&gt; Loadable::Err(error),
                 },
-                addon: model::DescriptorPreview {
-                    transport_url: <span class="kw-2">&amp;</span>addon.transport_url,
-                    manifest: model::ManifestPreview {
-                        id: <span class="kw-2">&amp;</span>addon.manifest.id,
-                        name: <span class="kw-2">&amp;</span>addon.manifest.name,
-                        logo: <span class="kw-2">&amp;</span>addon.manifest.logo,
-                    },
-                },
-            })
-            .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;(),
-        meta_extensions: meta_details
-            .meta_items
-            .iter()
-            .filter_map(|meta_item| {
-                ctx.profile
-                    .addons
-                    .iter()
-                    .find(|addon| addon.transport_url == meta_item.request.base)
-                    .map(|addon| (meta_item, addon))
-            })
-            .flat_map(|(meta_item, addon)| <span class="kw">match </span>meta_item {
-                ResourceLoadable {
-                    content: <span class="prelude-val">Some</span>(Loadable::Ready(meta_item)),
-                    ..
-                } =&gt; Either::Left(
-                    meta_item
-                        .preview
-                        .links
-                        .iter()
-                        .filter(|link| link.category == META_RESOURCE_NAME)
-                        .map(<span class="kw">move </span>|link| (link, addon)),
-                ),
-                <span class="kw">_ </span>=&gt; Either::Right(iter::empty()),
-            })
-            .unique_by(|(link, <span class="kw">_</span>)| <span class="kw-2">&amp;</span>link.url)
-            .map(|(link, addon)| model::MetaExtension {
-                url: <span class="kw-2">&amp;</span>link.url,
-                name: <span class="kw-2">&amp;</span>link.name,
                 addon: model::DescriptorPreview {
                     transport_url: <span class="kw-2">&amp;</span>addon.transport_url,
                     manifest: model::ManifestPreview {
