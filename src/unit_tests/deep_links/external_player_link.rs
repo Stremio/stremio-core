@@ -1,9 +1,10 @@
 use crate::constants::{BASE64, URI_COMPONENT_ENCODE_SET};
-use crate::deep_links::ExternalPlayerLink;
+use crate::deep_links::{ExternalPlayerId, ExternalPlayerLink, ExternalPlayerRequest};
 use crate::types::profile::Settings;
 use crate::types::resource::{Stream, StreamSource};
 use base64::Engine;
 use percent_encoding::utf8_percent_encode;
+use serde_json::json;
 use std::str::FromStr;
 use url::Url;
 
@@ -13,6 +14,14 @@ const MAGNET_STR_URL: &str = "magnet:?xt=urn:btih:dd8255ecdc7ca55fb0bbf81323d870
 const HTTP_STR_URL: &str = "http://domain.root/path";
 const BASE64_HTTP_URL: &str = "data:application/octet-stream;charset=utf-8;base64,I0VYVE0zVQojRVhUSU5GOjAKaHR0cDovL2RvbWFpbi5yb290L3BhdGg=";
 const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11470";
+
+fn expected_request(player_id: ExternalPlayerId) -> ExternalPlayerRequest {
+    ExternalPlayerRequest {
+        player_id,
+        url: Url::parse("http://example.com/stream").unwrap(),
+        file_name: None,
+    }
+}
 
 #[test]
 fn external_player_link_magnet() {
@@ -197,15 +206,10 @@ fn external_player_link_with_vlc_player() {
 
     assert_eq!(
         open_player.android,
-        Some("intent://example.com/stream#Intent;package=org.videolan.vlc;type=video;scheme=https;end".to_string())
+        Some(expected_request(ExternalPlayerId::Vlc))
     );
-    assert_eq!(
-        open_player.ios,
-        Some(
-            "vlc-x-callback://x-callback-url/stream?url=http%3A%2F%2Fexample.com%2Fstream"
-                .to_string()
-        )
-    );
+    assert_eq!(open_player.ios, open_player.android);
+    assert_eq!(open_player.visionos, open_player.android);
 }
 
 #[test]
@@ -233,7 +237,7 @@ fn external_player_link_with_mxplayer() {
 
     assert_eq!(
         epl.open_player.unwrap().android,
-        Some("intent://example.com/stream#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end".to_string())
+        Some(expected_request(ExternalPlayerId::Mxplayer))
     );
 }
 
@@ -262,7 +266,7 @@ fn external_player_link_with_justplayer() {
 
     assert_eq!(
         epl.open_player.unwrap().android,
-        Some("intent://example.com/stream#Intent;package=com.brouken.player;type=video;scheme=https;end".to_string())
+        Some(expected_request(ExternalPlayerId::Justplayer))
     );
 }
 
@@ -291,7 +295,7 @@ fn external_player_link_with_outplayer() {
 
     assert_eq!(
         epl.open_player.unwrap().ios,
-        Some("outplayer://example.com/stream".to_string())
+        Some(expected_request(ExternalPlayerId::Outplayer))
     );
 }
 
@@ -322,8 +326,11 @@ fn external_player_link_with_infuse() {
 
     assert_eq!(
         open_player.ios,
-        Some("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url=http%3A%2F%2Fexample.com%2Fstream".to_string())
+        Some(expected_request(ExternalPlayerId::Infuse))
     );
+    assert_eq!(open_player.macos, open_player.ios);
+    assert_eq!(open_player.visionos, open_player.ios);
+    assert_eq!(open_player.tvos, open_player.ios);
 }
 
 #[test]
@@ -353,9 +360,125 @@ fn external_player_link_and_callback_with_vidhub() {
 
     assert_eq!(
         open_player.ios,
-        Some(
-            "open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url=http%3A%2F%2Fexample.com%2Fstream"
-                .to_string()
-        )
+        Some(expected_request(ExternalPlayerId::Vidhub))
     );
+    assert_eq!(open_player.macos, open_player.ios);
+}
+
+#[test]
+fn external_player_link_serializes_typed_macos_request() {
+    let stream = Stream {
+        source: StreamSource::Url {
+            url: Url::from_str("http://example.com/stream").unwrap(),
+        },
+        name: None,
+        description: None,
+        thumbnail: None,
+        subtitles: vec![],
+        behavior_hints: Default::default(),
+    };
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
+
+    for (player_type, player_id) in [
+        ("iina", ExternalPlayerId::Iina),
+        ("mpv", ExternalPlayerId::Mpv),
+        ("infuse", ExternalPlayerId::Infuse),
+    ] {
+        let settings = Settings {
+            player_type: Some(player_type.to_owned()),
+            streaming_server_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
+            ..Default::default()
+        };
+        let request = ExternalPlayerLink::from((&stream, streaming_server_url.as_ref(), &settings))
+            .open_player
+            .unwrap()
+            .macos
+            .unwrap();
+
+        assert_eq!(request, expected_request(player_id));
+        assert_eq!(
+            serde_json::to_value(request).unwrap(),
+            json!({
+                "playerId": player_type,
+                "url": "http://example.com/stream"
+            })
+        );
+    }
+}
+
+#[test]
+fn external_player_link_serializes_typed_platform_requests() {
+    let stream = Stream {
+        source: StreamSource::Url {
+            url: Url::from_str("http://example.com/stream").unwrap(),
+        },
+        name: None,
+        description: None,
+        thumbnail: None,
+        subtitles: vec![],
+        behavior_hints: Default::default(),
+    };
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
+
+    let choose = ExternalPlayerLink::from((
+        &stream,
+        streaming_server_url.as_ref(),
+        &Settings {
+            player_type: Some("choose".to_owned()),
+            streaming_server_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
+            ..Default::default()
+        },
+    ))
+    .open_player
+    .unwrap();
+    assert_eq!(
+        choose.android,
+        Some(expected_request(ExternalPlayerId::Choose))
+    );
+
+    let moonplayer = ExternalPlayerLink::from((
+        &stream,
+        streaming_server_url.as_ref(),
+        &Settings {
+            player_type: Some("moonplayer".to_owned()),
+            streaming_server_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
+            ..Default::default()
+        },
+    ))
+    .open_player
+    .unwrap();
+    assert_eq!(
+        moonplayer.visionos,
+        Some(expected_request(ExternalPlayerId::Moonplayer))
+    );
+}
+
+#[test]
+fn external_player_link_serializes_typed_m3u_request_for_desktop_platforms() {
+    let stream = Stream {
+        source: StreamSource::Url {
+            url: Url::from_str(HTTP_STR_URL).unwrap(),
+        },
+        name: None,
+        description: None,
+        thumbnail: None,
+        subtitles: vec![],
+        behavior_hints: Default::default(),
+    };
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
+    let settings = Settings {
+        player_type: Some("m3u".to_owned()),
+        streaming_server_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
+        ..Default::default()
+    };
+    let open_player = ExternalPlayerLink::from((&stream, streaming_server_url.as_ref(), &settings))
+        .open_player
+        .unwrap();
+    let request = open_player.macos.unwrap();
+
+    assert_eq!(request.player_id, ExternalPlayerId::M3u);
+    assert_eq!(request.url.as_str(), BASE64_HTTP_URL);
+    assert_eq!(request.file_name.as_deref(), Some("playlist.m3u"));
+    assert_eq!(open_player.windows, Some(request.clone()));
+    assert_eq!(open_player.linux, Some(request));
 }

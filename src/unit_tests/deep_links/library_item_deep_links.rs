@@ -3,8 +3,9 @@ use once_cell::sync::Lazy;
 use stremio_serde_hex::{SerHex, Strict};
 
 use crate::constants::STREAMING_SERVER_URL;
-use crate::deep_links::LibraryItemDeepLinks;
-use crate::deep_links::OpenPlayerLink;
+use crate::deep_links::{
+    ExternalPlayerId, ExternalPlayerRequest, LibraryItemDeepLinks, OpenPlayerLink,
+};
 use crate::types::library::LibraryItem;
 use crate::types::library::LibraryItemState;
 use crate::types::profile::Settings;
@@ -144,10 +145,13 @@ fn library_item_deep_links_state_video_id_no_time_offset_infuse_player() {
         lidl.external_player
             .expect("Should have external player")
             .open_player,
-            Some(OpenPlayerLink {
-                ios: Some(ios),
+        Some(OpenPlayerLink {
+            ios: Some(ExternalPlayerRequest {
+                player_id: ExternalPlayerId::Infuse,
                 ..
-            }) if ios.starts_with("infuse://")
+            }),
+            ..
+        })
     ));
     // with a Stream we should get a player link
     assert!(matches!(lidl.player, Some(player) if player.starts_with("stremio:///player")));
@@ -198,10 +202,13 @@ fn library_item_deep_links_state_video_id() {
         lidl.external_player
             .expect("Should have external player")
             .open_player,
-            Some(OpenPlayerLink {
-                ios: Some(ios),
+        Some(OpenPlayerLink {
+            ios: Some(ExternalPlayerRequest {
+                player_id: ExternalPlayerId::Infuse,
                 ..
-            }) if ios.starts_with("infuse://")
+            }),
+            ..
+        })
     ));
 }
 
@@ -254,10 +261,13 @@ fn library_item_deep_links_behavior_hints_default_video_id() {
         lidl.external_player
             .expect("Should have external player")
             .open_player,
-            Some(OpenPlayerLink {
-                ios: Some(ios),
+        Some(OpenPlayerLink {
+            ios: Some(ExternalPlayerRequest {
+                player_id: ExternalPlayerId::Infuse,
                 ..
-            }) if ios.starts_with("infuse://")
+            }),
+            ..
+        })
     ));
 }
 
@@ -310,10 +320,13 @@ fn library_item_deep_links_state_and_behavior_hints_default_video_id() {
         lidl.external_player
             .expect("Should have external player")
             .open_player,
-            Some(OpenPlayerLink {
-                ios: Some(ios),
+        Some(OpenPlayerLink {
+            ios: Some(ExternalPlayerRequest {
+                player_id: ExternalPlayerId::Infuse,
                 ..
-            }) if ios.starts_with("infuse://")
+            }),
+            ..
+        })
     ));
 }
 
@@ -366,9 +379,12 @@ fn library_item_deep_links_state_no_time_offset_and_behavior_hints_default_video
         lidl.external_player
             .expect("Should have external player")
             .open_player,
-            Some(OpenPlayerLink {
-                ios: Some(ios),
+        Some(OpenPlayerLink {
+            ios: Some(ExternalPlayerRequest {
+                player_id: ExternalPlayerId::Infuse,
                 ..
-            }) if ios.starts_with("infuse://")
+            }),
+            ..
+        })
     ));
 }

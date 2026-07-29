@@ -1,5 +1,4 @@
 use percent_encoding::utf8_percent_encode;
-use regex::Regex;
 use serde::Serialize;
 use url::Url;
 
@@ -25,22 +24,57 @@ pub use error_link::ErrorLink;
 
 mod error_link;
 
+#[derive(Clone, Copy, Serialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum ExternalPlayerId {
+    Choose,
+    Vlc,
+    Mxplayer,
+    Justplayer,
+    Outplayer,
+    Infuse,
+    Vidhub,
+    Iina,
+    Mpv,
+    Moonplayer,
+    M3u,
+}
+
+#[derive(Clone, Serialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ExternalPlayerRequest {
+    pub player_id: ExternalPlayerId,
+    pub url: Url,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file_name: Option<String>,
+}
+
+impl ExternalPlayerRequest {
+    fn new(player_id: ExternalPlayerId, url: Url) -> Self {
+        Self {
+            player_id,
+            url,
+            file_name: None,
+        }
+    }
+}
+
 #[derive(Default, Serialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct OpenPlayerLink {
-    pub ios: Option<String>,
-    pub android: Option<String>,
-    pub windows: Option<String>,
-    pub macos: Option<String>,
-    pub linux: Option<String>,
-    pub tizen: Option<String>,
-    pub webos: Option<String>,
-    pub chromeos: Option<String>,
-    pub roku: Option<String>,
+    pub ios: Option<ExternalPlayerRequest>,
+    pub android: Option<ExternalPlayerRequest>,
+    pub windows: Option<ExternalPlayerRequest>,
+    pub macos: Option<ExternalPlayerRequest>,
+    pub linux: Option<ExternalPlayerRequest>,
+    pub tizen: Option<ExternalPlayerRequest>,
+    pub webos: Option<ExternalPlayerRequest>,
+    pub chromeos: Option<ExternalPlayerRequest>,
+    pub roku: Option<ExternalPlayerRequest>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     /// VisionOS
-    pub visionos: Option<String>,
-    pub tvos: Option<String>,
+    pub visionos: Option<ExternalPlayerRequest>,
+    pub tvos: Option<ExternalPlayerRequest>,
 }
 
 #[derive(Default, Serialize, Debug, PartialEq, Eq)]
@@ -113,8 +147,6 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
             &Settings,
         ),
     ) -> Self {
-        let http_regex = Regex::new(r"https?://").unwrap();
-
         let stream_urls = StreamUrls::new(stream.clone(), streaming_server_url);
         let download = stream_urls.download_url.as_ref().map(ToString::to_string);
         let magnet = stream_urls.magnet_url.as_ref().map(ToString::to_string);
@@ -122,86 +154,86 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
         let playlist = stream_urls.m3u_data_uri.clone();
         let file_name = playlist.as_ref().map(|_| "playlist.m3u".to_owned());
 
-        let open_player = match &streaming {
-            Some(url) => {
-                let url_encoded = utf8_percent_encode(url.as_str(), URI_COMPONENT_ENCODE_SET);
-
-                match settings.player_type.as_ref() {
-                Some(player_type) => match player_type.as_str() {
-                    "choose" => Some(OpenPlayerLink {
-                        android: Some(format!(
-                            "{}#Intent;type=video/any;scheme=https;end",
-                            http_regex.replace(url.as_str(), "intent://"),
-                        )),
+        let open_player = streaming.as_ref().and_then(|url| {
+            let request = |player_id| ExternalPlayerRequest::new(player_id, url.to_owned());
+            match settings.player_type.as_deref() {
+                Some("choose") => Some(OpenPlayerLink {
+                    android: Some(request(ExternalPlayerId::Choose)),
+                    ..Default::default()
+                }),
+                Some("vlc") => {
+                    let request = request(ExternalPlayerId::Vlc);
+                    Some(OpenPlayerLink {
+                        ios: Some(request.clone()),
+                        visionos: Some(request.clone()),
+                        android: Some(request),
                         ..Default::default()
-                    }),
-                    "vlc" => Some(OpenPlayerLink {
-                        ios: Some(format!("vlc-x-callback://x-callback-url/stream?url={url_encoded}")),
-                        visionos: Some(format!("vlc-x-callback://x-callback-url/stream?url={url_encoded}")),
-                        android: Some(format!(
-                            "{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
-                            http_regex.replace(url.as_str(), "intent://"),
-                        )),
+                    })
+                }
+                Some("mxplayer") => Some(OpenPlayerLink {
+                    android: Some(request(ExternalPlayerId::Mxplayer)),
+                    ..Default::default()
+                }),
+                Some("justplayer") => Some(OpenPlayerLink {
+                    android: Some(request(ExternalPlayerId::Justplayer)),
+                    ..Default::default()
+                }),
+                Some("outplayer") => {
+                    let request = request(ExternalPlayerId::Outplayer);
+                    Some(OpenPlayerLink {
+                        ios: Some(request.clone()),
+                        visionos: Some(request),
                         ..Default::default()
-                    }),
-                    "mxplayer" => Some(OpenPlayerLink {
-                        android: Some(format!(
-                            "{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end",
-                            http_regex.replace(url.as_str(), "intent://"),
-                        )),
+                    })
+                }
+                Some("infuse") => {
+                    let request = request(ExternalPlayerId::Infuse);
+                    Some(OpenPlayerLink {
+                        ios: Some(request.clone()),
+                        macos: Some(request.clone()),
+                        visionos: Some(request.clone()),
+                        tvos: Some(request),
                         ..Default::default()
-                    }),
-                    "justplayer" => Some(OpenPlayerLink {
-                        android: Some(format!(
-                            "{}#Intent;package=com.brouken.player;type=video;scheme=https;end",
-                            http_regex.replace(url.as_str(), "intent://"),
-                        )),
+                    })
+                }
+                Some("vidhub") => {
+                    let request = request(ExternalPlayerId::Vidhub);
+                    Some(OpenPlayerLink {
+                        ios: Some(request.clone()),
+                        macos: Some(request),
                         ..Default::default()
-                    }),
-                    "outplayer" => Some(OpenPlayerLink {
-                        ios: Some(http_regex.replace(url.as_str(), "outplayer://").to_string()),
-                        visionos: Some(http_regex.replace(url.as_str(), "outplayer://").to_string()),
+                    })
+                }
+                Some("iina") => Some(OpenPlayerLink {
+                    macos: Some(request(ExternalPlayerId::Iina)),
+                    ..Default::default()
+                }),
+                Some("mpv") => Some(OpenPlayerLink {
+                    macos: Some(request(ExternalPlayerId::Mpv)),
+                    ..Default::default()
+                }),
+                Some("moonplayer") => Some(OpenPlayerLink {
+                    visionos: Some(request(ExternalPlayerId::Moonplayer)),
+                    ..Default::default()
+                }),
+                Some("m3u") => {
+                    let request = ExternalPlayerRequest {
+                        player_id: ExternalPlayerId::M3u,
+                        url: Url::parse(playlist.as_ref()?).ok()?,
+                        file_name: file_name.clone(),
+                    };
+                    Some(OpenPlayerLink {
+                        linux: Some(request.clone()),
+                        windows: Some(request.clone()),
+                        macos: Some(request.clone()),
+                        android: Some(request.clone()),
+                        ios: Some(request),
                         ..Default::default()
-                    }),
-                    "infuse" => Some(OpenPlayerLink {
-                        ios: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
-                        macos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
-                        visionos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
-                        tvos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
-                       ..Default::default()
-                    }),
-                    "vidhub" => Some(OpenPlayerLink {
-                        ios: Some(format!("open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
-                        macos: Some(format!("open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
-                        ..Default::default()
-                    }),
-                    "iina" => Some(OpenPlayerLink {
-                        macos: Some(format!("iina://weblink?url={url_encoded}")),
-                       ..Default::default()
-                    }),
-                    "mpv" => Some(OpenPlayerLink {
-                        macos: Some(format!("mpv://{url}")),
-                       ..Default::default()
-                    }),
-                    "moonplayer" => Some(OpenPlayerLink {
-                        visionos: Some(format!("moonplayer://open?url={url}")),
-                        ..Default::default()
-                    }),
-                    "m3u" => Some(OpenPlayerLink {
-                        linux: playlist.to_owned(),
-                        windows: playlist.to_owned(),
-                        macos: playlist.to_owned(),
-                        android: playlist.to_owned(),
-                        ios: playlist.to_owned(),
-                       ..Default::default()
-                    }),
-                    _ => None,
-                },
-                None => None,
+                    })
+                }
+                _ => None,
             }
-            }
-            None => None,
-        };
+        });
         let (web, android_tv, tizen, webos) = match &stream.source {
             ConvertedStreamSource::External {
                 external_url,
