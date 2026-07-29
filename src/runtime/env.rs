@@ -6,7 +6,7 @@ use crate::constants::{
 };
 use crate::models::ctx::Ctx;
 use crate::models::streaming_server::StreamingServer;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, FixedOffset, Local, Utc};
 use futures::{future, Future, TryFutureExt};
 use http::Request;
 use serde::ser::SerializeStruct;
@@ -151,6 +151,9 @@ pub trait Env {
     fn exec_concurrent<F: Future<Output = ()> + ConditionalSend + 'static>(future: F);
     fn exec_sequential<F: Future<Output = ()> + ConditionalSend + 'static>(future: F);
     fn now() -> DateTime<Utc>;
+    fn local_now() -> DateTime<FixedOffset> {
+        Self::now().with_timezone(&Local).fixed_offset()
+    }
     fn flush_analytics() -> EnvFuture<'static, ()>;
     fn analytics_context(
         ctx: &Ctx,

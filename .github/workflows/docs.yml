@@ -5,6 +5,12 @@ on:
     branches:
       - development
 
+# Stops the running workflow of previous pushes
+concurrency:
+  # cancel per workflow
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy-docs:
     name: Deploy docs on gh-pages
