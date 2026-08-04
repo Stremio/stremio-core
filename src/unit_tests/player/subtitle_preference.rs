@@ -40,9 +40,10 @@ fn preference_is_scoped_to_player_session() {
     let preference = SubtitlePreference {
         enabled: false,
         source: Some(SubtitleSource::External),
+        language: Some("bul".to_owned()),
     };
     let preference_msg = Msg::Action(Action::Player(ActionPlayer::SubtitlePreferenceChanged {
-        preference,
+        preference: preference.to_owned(),
     }));
 
     let effects = <Player as UpdateWithCtx<TestEnv>>::update(&mut player, &preference_msg, &ctx);
@@ -60,7 +61,7 @@ fn preference_is_scoped_to_player_session() {
     let effects = <Player as UpdateWithCtx<TestEnv>>::update(&mut player, &preference_msg, &ctx);
     assert!(effects.has_changed);
     assert!(effects.is_empty());
-    assert_eq!(player.subtitle_preference, Some(preference));
+    assert_eq!(player.subtitle_preference, Some(preference.to_owned()));
 
     <Player as UpdateWithCtx<TestEnv>>::update(
         &mut player,
@@ -84,7 +85,8 @@ fn action_deserializes() {
             "args": {
                 "preference": {
                     "enabled": true,
-                    "source": "embedded"
+                    "source": "embedded",
+                    "language": "bul"
                 }
             }
         }
@@ -97,6 +99,35 @@ fn action_deserializes() {
             preference: SubtitlePreference {
                 enabled: true,
                 source: Some(SubtitleSource::Embedded),
+                language: Some(language),
+            }
+        }) if language == "bul"
+    ));
+}
+
+#[test]
+fn action_without_language_deserializes() {
+    let action = serde_json::from_value::<Action>(serde_json::json!({
+        "action": "Player",
+        "args": {
+            "action": "SubtitlePreferenceChanged",
+            "args": {
+                "preference": {
+                    "enabled": false,
+                    "source": "external"
+                }
+            }
+        }
+    }))
+    .expect("Should deserialize subtitle preference action without language");
+
+    assert!(matches!(
+        action,
+        Action::Player(ActionPlayer::SubtitlePreferenceChanged {
+            preference: SubtitlePreference {
+                enabled: false,
+                source: Some(SubtitleSource::External),
+                language: None,
             }
         })
     ));

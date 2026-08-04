@@ -11,13 +11,16 @@ pub enum SubtitleSource {
 ///
 /// It is preserved across Player loads and is intentionally independent from
 /// episode-specific subtitle tracks.
-#[derive(Clone, Copy, Deserialize, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Deserialize, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SubtitlePreference {
     pub enabled: bool,
     /// Preferred source, or `None` to keep the client's normal source ordering.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<SubtitleSource>,
+    /// Preferred normalized language code, or `None` when it is unavailable.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub language: Option<String>,
 }
 
 #[derive(Clone, Serialize, Debug, PartialEq, Eq)]

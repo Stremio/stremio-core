@@ -447,7 +447,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             }
             Msg::Action(Action::Player(ActionPlayer::SubtitlePreferenceChanged { preference })) => {
                 if self.selected.is_some() {
-                    eq_update(&mut self.subtitle_preference, Some(*preference))
+                    eq_update(&mut self.subtitle_preference, Some(preference.to_owned()))
                 } else {
                     Effects::none().unchanged()
                 }
