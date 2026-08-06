@@ -1142,7 +1142,7 @@ dependencies = [
 
 [[package]]
 name = "stremio-core-web"
-version = "0.59.0"
+version = "0.60.2"
 dependencies = [
  "boolinator",
  "chrono",

@@ -70,7 +70,7 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - uses: taiki-e/install-action@v2
+      - uses: taiki-e/install-action@v2.85.5
         with:
           tool: wasm-pack@${{ env.WASM_PACK_VERSION }}
 
@@ -82,11 +82,10 @@ jobs:
         run: wasm-pack test --chromedriver "$(which chromedriver)" --chrome --headless
 
       - name: Setup NodeJS
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
-          registry-url: https://registry.npmjs.org/
           cache-dependency-path: stremio-core-web/package-lock.json
 
       - name: Install NPM dependencies

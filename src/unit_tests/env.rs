@@ -5,7 +5,7 @@ use std::{
     sync::{Arc, LockResult, Mutex, MutexGuard, RwLock},
 };
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, FixedOffset, Utc};
 use enclose::enclose;
 use futures::{channel::mpsc::Receiver, future, Future, StreamExt, TryFutureExt};
 use once_cell::sync::Lazy;
@@ -25,6 +25,8 @@ pub static EVENTS: Lazy<RwLock<Vec<Box<dyn Any + Send + Sync + 'static>>>> =
 pub static STATES: Lazy<RwLock<Vec<Box<dyn Any + Send + Sync + 'static>>>> =
     Lazy::new(Default::default);
 pub static NOW: Lazy<RwLock<DateTime<Utc>>> = Lazy::new(|| RwLock::new(Utc::now()));
+pub static LOCAL_TIMEZONE_OFFSET: Lazy<RwLock<FixedOffset>> =
+    Lazy::new(|| RwLock::new(FixedOffset::east_opt(0).unwrap()));
 pub static ENV_MUTEX: Mutex<()> = Mutex::new(());
 
 pub type FetchHandler =
@@ -66,6 +68,7 @@ impl TestEnv {
         *EVENTS.write().unwrap() = vec![];
         *STATES.write().unwrap() = vec![];
         *NOW.write().unwrap() = Utc::now();
+        *LOCAL_TIMEZONE_OFFSET.write().unwrap() = FixedOffset::east_opt(0).unwrap();
         env_mutex
     }
     pub fn run<F: FnOnce()>(runnable: F) {
@@ -145,6 +148,9 @@ impl Env for TestEnv {
     }
     fn now() -> DateTime<Utc> {
         *NOW.read().unwrap()
+    }
+    fn local_now() -> DateTime<FixedOffset> {
+        Self::now().with_timezone(&LOCAL_TIMEZONE_OFFSET.read().unwrap())
     }
     fn flush_analytics() -> EnvFuture<'static, ()> {
         future::ready(()).boxed_env()

@@ -1,13 +1,16 @@
 use std::any::Any;
 
-use chrono::{TimeZone, Utc};
+use chrono::{FixedOffset, TimeZone, Utc};
 use futures::future;
 use stremio_derive::Model;
 use url::Url;
 
 use crate::{
     constants::{CALENDAR_IDS_EXTRA_PROP, CATALOG_RESOURCE_NAME},
-    models::{calendar::Calendar, ctx::Ctx},
+    models::{
+        calendar::{Calendar, YearMonthDate},
+        ctx::Ctx,
+    },
     runtime::{
         msg::{Action, ActionLoad},
         Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture,
@@ -18,7 +21,10 @@ use crate::{
         profile::Profile,
         resource::{MetaItem, MetaItemPreview, SeriesInfo, Video},
     },
-    unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, NOW, REQUESTS},
+    unit_tests::{
+        default_fetch_handler, Request, TestEnv, FETCH_HANDLER, LOCAL_TIMEZONE_OFFSET, NOW,
+        REQUESTS,
+    },
 };
 
 fn library_item(id: &str, r#type: &str) -> LibraryItem {
@@ -103,7 +109,8 @@ fn calendar() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
 
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    *NOW.write().unwrap() = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap();
+    *NOW.write().unwrap() = Utc.with_ymd_and_hms(2024, 2, 1, 1, 0, 0).unwrap();
+    *LOCAL_TIMEZONE_OFFSET.write().unwrap() = FixedOffset::west_opt(5 * 60 * 60).unwrap();
 
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
@@ -132,6 +139,21 @@ fn calendar() {
         REQUESTS.read().unwrap().len(),
         1,
         "should have sent a request"
+    );
+
+    assert_eq!(
+        runtime.model().unwrap().calendar.selected,
+        Some(YearMonthDate {
+            month: 1,
+            year: 2024,
+        }),
+        "should select the local month"
+    );
+
+    assert_eq!(
+        runtime.model().unwrap().calendar.month_info.today,
+        Some(31),
+        "should use the local day"
     );
 
     assert_eq!(
