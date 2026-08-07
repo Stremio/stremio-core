@@ -207,6 +207,10 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
                         macos: Some(format!("open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
                         ..Default::default()
                     }),
+                    "cineultra" => Some(OpenPlayerLink {
+                        visionos: Some(format!("cineultra://playback?url={url_encoded}&on-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0")),
+                        ..Default::default()
+                    }),
                     "iina" => Some(OpenPlayerLink {
                         macos: Some(format!("iina://weblink?url={url_encoded}")),
                        ..Default::default()
