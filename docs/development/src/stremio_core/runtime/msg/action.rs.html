@@ -289,7 +289,17 @@
 <a href="#288" id="288">288</a>
 <a href="#289" id="289">289</a>
 <a href="#290" id="290">290</a>
-<a href="#291" id="291">291</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
 
 <span class="kw">use </span>serde::Deserialize;
 <span class="kw">use </span>url::Url;
@@ -310,6 +320,7 @@
         addon::Descriptor,
         api::AuthRequest,
         library::LibraryItemId,
+        player::SubtitlePreference,
         profile::{AuthKey, Password, Settings <span class="kw">as </span>ProfileSettings},
         rating::Rating,
         resource::{MetaItemId, MetaItemPreview, Video},
@@ -440,6 +451,11 @@
     </span>MarkVideoAsWatched(Video, bool),
     <span class="doccomment">/// Mark all videos from given season as watched
     </span>MarkSeasonAsWatched(u32, bool),
+    <span class="doccomment">/// Updates the selected video's progress from an external player callback.
+    ///
+    /// `time` is in milliseconds.
+    </span><span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
+    </span>ExternalPlayerProgressChanged { time: u64 },
     <span class="doccomment">/// Rate the current meta item
     </span>Rate(<span class="prelude-ty">Option</span>&lt;Rating&gt;),
 }
@@ -485,6 +501,10 @@
     },
     StreamStateChanged {
         state: StreamItemState,
+    },
+    <span class="doccomment">/// Updates the subtitle preference for the current Player session.
+    </span>SubtitlePreferenceChanged {
+        preference: SubtitlePreference,
     },
     <span class="doccomment">/// Seek performed by the user when using the seekbar or
     /// the shortcuts for seeking.

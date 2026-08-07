@@ -16,7 +16,53 @@
 <a href="#15" id="15">15</a>
 <a href="#16" id="16">16</a>
 <a href="#17" id="17">17</a>
-<a href="#18" id="18">18</a></pre></div><pre class="rust"><code><span class="kw">use </span>serde::Serialize;
+<a href="#18" id="18">18</a>
+<a href="#19" id="19">19</a>
+<a href="#20" id="20">20</a>
+<a href="#21" id="21">21</a>
+<a href="#22" id="22">22</a>
+<a href="#23" id="23">23</a>
+<a href="#24" id="24">24</a>
+<a href="#25" id="25">25</a>
+<a href="#26" id="26">26</a>
+<a href="#27" id="27">27</a>
+<a href="#28" id="28">28</a>
+<a href="#29" id="29">29</a>
+<a href="#30" id="30">30</a>
+<a href="#31" id="31">31</a>
+<a href="#32" id="32">32</a>
+<a href="#33" id="33">33</a>
+<a href="#34" id="34">34</a>
+<a href="#35" id="35">35</a>
+<a href="#36" id="36">36</a>
+<a href="#37" id="37">37</a>
+<a href="#38" id="38">38</a>
+<a href="#39" id="39">39</a>
+<a href="#40" id="40">40</a>
+<a href="#41" id="41">41</a></pre></div><pre class="rust"><code><span class="kw">use </span>serde::{Deserialize, Serialize};
+
+<span class="attr">#[derive(Clone, Copy, Deserialize, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
+</span><span class="kw">pub enum </span>SubtitleSource {
+    Embedded,
+    External,
+}
+
+<span class="doccomment">/// Subtitle preference for the current Player session.
+///
+/// It is preserved across Player loads and is intentionally independent from
+/// episode-specific subtitle tracks.
+</span><span class="attr">#[derive(Clone, Deserialize, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
+</span><span class="kw">pub struct </span>SubtitlePreference {
+    <span class="kw">pub </span>enabled: bool,
+    <span class="doccomment">/// Preferred source, or `None` to keep the client's normal source ordering.
+    </span><span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+    </span><span class="kw">pub </span>source: <span class="prelude-ty">Option</span>&lt;SubtitleSource&gt;,
+    <span class="doccomment">/// Preferred normalized language code, or `None` when it is unavailable.
+    </span><span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+    </span><span class="kw">pub </span>language: <span class="prelude-ty">Option</span>&lt;String&gt;,
+}
 
 <span class="attr">#[derive(Clone, Serialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]

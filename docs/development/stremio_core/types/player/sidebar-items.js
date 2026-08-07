@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["IntroData","IntroOutro"]};
+window.SIDEBAR_ITEMS = {"enum":["SubtitleSource"],"struct":["IntroData","IntroOutro","SubtitlePreference"]};
