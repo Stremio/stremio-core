@@ -19,6 +19,7 @@ use crate::{
         addon::Descriptor,
         api::AuthRequest,
         library::LibraryItemId,
+        player::SubtitlePreference,
         profile::{AuthKey, Password, Settings as ProfileSettings},
         rating::Rating,
         resource::{MetaItemId, MetaItemPreview, Video},
@@ -194,6 +195,10 @@ pub enum ActionPlayer {
     },
     StreamStateChanged {
         state: StreamItemState,
+    },
+    /// Updates the subtitle preference for the current Player session.
+    SubtitlePreferenceChanged {
+        preference: SubtitlePreference,
     },
     /// Seek performed by the user when using the seekbar or
     /// the shortcuts for seeking.
