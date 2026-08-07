@@ -13,8 +13,19 @@ use crate::types::resource::StreamBehaviorHints;
 use crate::types::resource::StreamSource;
 use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
 use crate::types::streams::StreamsItem;
+use url::Url;
 
 const META_DETAILS_VIDEOS: &str = "stremio:///detail/series/tt13622776";
+
+fn query_param(link: &str, name: &str) -> String {
+    Url::parse(link)
+        .unwrap()
+        .query_pairs()
+        .find(|(key, _)| key == name)
+        .unwrap()
+        .1
+        .into_owned()
+}
 
 static INFUSE_PLAYER_SETTINGS: Lazy<Settings> = Lazy::new(|| Settings {
     player_type: Some("infuse".to_owned()),
@@ -259,6 +270,50 @@ fn library_item_deep_links_behavior_hints_default_video_id() {
                 ..
             }) if ios.starts_with("infuse://")
     ));
+}
+
+#[test]
+fn library_item_deep_links_infuse_position() {
+    let lib_item = LibraryItem {
+        id: "tt13622776".to_string(),
+        name: "Ahsoka".to_string(),
+        r#type: "series".to_string(),
+        poster: None,
+        poster_shape: PosterShape::Poster,
+        removed: false,
+        temp: true,
+        ctime: None,
+        mtime: Utc::now(),
+        state: LibraryItemState {
+            last_watched: None,
+            time_watched: 999,
+            time_offset: 61_000,
+            overall_time_watched: 999,
+            times_watched: 999,
+            flagged_watched: 1,
+            duration: 3_600_000,
+            video_id: Some("tt13622776:1:5".to_string()),
+            watched: None,
+            no_notif: true,
+        },
+        behavior_hints: Default::default(),
+    };
+    let lidl = LibraryItemDeepLinks::from((
+        &lib_item,
+        Some(&*TORRENT_STREAMS_ITEM),
+        Some(&*STREAMING_SERVER_URL),
+        &*INFUSE_PLAYER_SETTINGS,
+    ));
+    let player = lidl.player.as_deref().unwrap();
+    let open_player = lidl.external_player.unwrap().open_player.unwrap();
+    let ios = open_player.ios.as_deref().unwrap();
+
+    assert_eq!(query_param(player, "position"), "61");
+    assert_eq!(query_param(ios, "position"), "61");
+    assert_eq!(
+        query_param(ios, "x-success"),
+        "stremio:///detail/series/tt13622776/tt13622776%3A1%3A5"
+    );
 }
 
 #[test]

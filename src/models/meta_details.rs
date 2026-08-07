@@ -9,7 +9,7 @@ use stremio_watched_bitfield::WatchedBitField;
 use crate::{
     constants::{
         LIBRARY_COLLECTION_NAME, META_RESOURCE_NAME, STREAM_RESOURCE_NAME,
-        USER_LIKES_SUPPORTED_ID_PREFIXES, USER_LIKES_SUPPORTED_TYPES,
+        USER_LIKES_SUPPORTED_ID_PREFIXES, USER_LIKES_SUPPORTED_TYPES, WATCHED_THRESHOLD_COEF,
     },
     models::{
         common::{
@@ -194,6 +194,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 }
                 _ => Effects::none().unchanged(),
             },
+            Msg::Action(Action::MetaDetails(
+                ActionMetaDetails::ExternalPlayerProgressChanged { time },
+            )) => external_player_progress_update::<E>(
+                &self.selected,
+                &self.meta_items,
+                &self.library_item,
+                &self.watched,
+                *time,
+            ),
             Msg::Action(Action::MetaDetails(ActionMetaDetails::Rate(rating)))
                 if self.rating_info.is_some() =>
             {
@@ -379,6 +388,91 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
             _ => Effects::none().unchanged(),
         }
     }
+}
+
+fn external_player_progress_update<E: Env + 'static>(
+    selected: &Option<Selected>,
+    meta_items: &[ResourceLoadable<MetaItem>],
+    library_item: &Option<LibraryItem>,
+    watched: &Option<WatchedBitField>,
+    time: u64,
+) -> Effects {
+    let video_id = match selected
+        .as_ref()
+        .and_then(|selected| selected.stream_path.as_ref())
+        .map(|stream_path| &stream_path.id)
+    {
+        Some(video_id) => video_id,
+        _ => return Effects::none().unchanged(),
+    };
+
+    let mut library_item = match library_item {
+        Some(library_item) => library_item.to_owned(),
+        _ => return Effects::none().unchanged(),
+    };
+
+    library_item.state.last_watched = Some(E::now());
+    let same_video = library_item.state.video_id.as_deref() == Some(video_id);
+    let has_duration = same_video && library_item.state.duration > 0;
+    let already_watched = watched
+        .as_ref()
+        .is_some_and(|watched| watched.get_video(video_id));
+    if !has_duration && already_watched {
+        return Effects::none().unchanged();
+    }
+    let time_watched_delta = if has_duration {
+        time.saturating_sub(library_item.state.time_offset)
+    } else {
+        0
+    };
+
+    if !same_video {
+        library_item.state.video_id = Some(video_id.to_owned());
+        library_item.state.time_watched = 0;
+        library_item.state.flagged_watched = 0;
+    };
+    library_item.state.time_offset = time;
+    library_item.state.time_watched = library_item
+        .state
+        .time_watched
+        .saturating_add(time_watched_delta);
+
+    let mut advanced_to_next_video = false;
+    if has_duration && time as f64 > library_item.state.duration as f64 * WATCHED_THRESHOLD_COEF {
+        let video = meta_items
+            .iter()
+            .find_map(|meta_item| match &meta_item.content {
+                Some(Loadable::Ready(meta_item)) => {
+                    meta_item.videos.iter().find(|video| video.id == *video_id)
+                }
+                _ => None,
+            });
+        if let (Some(watched), Some(video)) = (watched, video) {
+            library_item.mark_video_as_watched::<E>(watched, video, true);
+            let next_video_id = meta_items
+                .iter()
+                .find_map(|meta_item| match &meta_item.content {
+                    Some(Loadable::Ready(meta_item)) => meta_item.next_video(video_id),
+                    _ => None,
+                })
+                .map(|video| video.id.to_owned());
+            if let Some(next_video_id) = next_video_id {
+                library_item.advance_to_video(&next_video_id);
+                advanced_to_next_video = true;
+            } else {
+                library_item.state.time_offset = 0;
+            }
+        }
+    }
+
+    if !advanced_to_next_video {
+        library_item.state.overall_time_watched = library_item
+            .state
+            .overall_time_watched
+            .saturating_add(time_watched_delta);
+    }
+
+    Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item))).unchanged()
 }
 
 fn library_item_sync(library_item: &Option<LibraryItem>, profile: &Profile) -> Effects {
