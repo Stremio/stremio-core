@@ -77,6 +77,38 @@ fn magnet_url_from_raw(stream: &Stream) -> Option<String> {
     }
 }
 
+fn infuse_open_player_link(
+    streaming_url: &str,
+    callback_url: &str,
+    position: Option<u64>,
+) -> String {
+    let callback_url = utf8_percent_encode(callback_url, URI_COMPONENT_ENCODE_SET);
+    let url_encoded = utf8_percent_encode(streaming_url, URI_COMPONENT_ENCODE_SET);
+    let position = position
+        .map(|position| format!("&position={position}"))
+        .unwrap_or_default();
+
+    format!(
+        "infuse://x-callback-url/play?x-success={callback_url}&x-error={callback_url}&url={url_encoded}{position}"
+    )
+}
+
+fn infuse_open_player(
+    streaming_url: &str,
+    callback_url: &str,
+    position: Option<u64>,
+) -> OpenPlayerLink {
+    let link = infuse_open_player_link(streaming_url, callback_url, position);
+
+    OpenPlayerLink {
+        ios: Some(link.clone()),
+        macos: Some(link.clone()),
+        visionos: Some(link.clone()),
+        tvos: Some(link),
+        ..Default::default()
+    }
+}
+
 impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
     /// Create an [`ExternalPlayerLink`] using the [`Stream`],
     /// the server url (from [`StreamingServer::base_url`] which indicates a running or not server)
@@ -175,6 +207,10 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
                         macos: Some(format!("open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
                         ..Default::default()
                     }),
+                    "cineultra" => Some(OpenPlayerLink {
+                        visionos: Some(format!("cineultra://playback?url={url_encoded}&on-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0")),
+                        ..Default::default()
+                    }),
                     "iina" => Some(OpenPlayerLink {
                         macos: Some(format!("iina://weblink?url={url_encoded}")),
                        ..Default::default()
@@ -250,6 +286,11 @@ impl From<(&LibraryItem, Option<&StreamsItem>, Option<&Url>, &Settings)> for Lib
             &Settings,
         ),
     ) -> Self {
+        let position = item
+            .state
+            .time_offset
+            .checked_div(1000)
+            .filter(|position| *position > 0);
         LibraryItemDeepLinks {
             meta_details_videos: item
                 .behavior_hints
@@ -278,7 +319,7 @@ impl From<(&LibraryItem, Option<&StreamsItem>, Option<&Url>, &Settings)> for Lib
             // We have the stream so use the same logic as in StreamDeepLinks
             player: streams_item.map(|streams_item| match streams_item.stream.encode() {
                 Ok(encoded_stream) => format!(
-                    "stremio:///player/{}/{}/{}/{}/{}/{}",
+                    "stremio:///player/{}/{}/{}/{}/{}/{}{}",
                     utf8_percent_encode(&encoded_stream, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(
                         streams_item.stream_transport_url.as_str(),
@@ -290,13 +331,30 @@ impl From<(&LibraryItem, Option<&StreamsItem>, Option<&Url>, &Settings)> for Lib
                     ),
                     utf8_percent_encode(&streams_item.r#type, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&streams_item.meta_id, URI_COMPONENT_ENCODE_SET),
-                    utf8_percent_encode(&streams_item.video_id, URI_COMPONENT_ENCODE_SET)
+                    utf8_percent_encode(&streams_item.video_id, URI_COMPONENT_ENCODE_SET),
+                    position
+                        .map(|position| format!("?position={position}"))
+                        .unwrap_or_default()
                 ),
                 Err(error) => ErrorLink::from(error).into(),
             }),
             // We have the streams bucket item so use the same logic as in StreamDeepLinks
             external_player: streams_item.map(|item| {
-                ExternalPlayerLink::from((&item.stream, streaming_server_url, settings))
+                let mut external_player =
+                    ExternalPlayerLink::from((&item.stream, streaming_server_url, settings));
+                if settings.player_type.as_deref() == Some("infuse") {
+                    if let Some(streaming) = external_player.streaming.as_deref() {
+                        let callback_url = format!(
+                            "stremio:///detail/{}/{}/{}",
+                            utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
+                            utf8_percent_encode(&item.meta_id, URI_COMPONENT_ENCODE_SET),
+                            utf8_percent_encode(&item.video_id, URI_COMPONENT_ENCODE_SET)
+                        );
+                        external_player.open_player =
+                            Some(infuse_open_player(streaming, &callback_url, position));
+                    }
+                }
+                external_player
             }),
         }
     }
@@ -573,6 +631,21 @@ impl
             &Settings,
         ),
     ) -> Self {
+        let callback_url = format!(
+            "stremio:///detail/{}/{}/{}",
+            utf8_percent_encode(&meta_request.path.r#type, URI_COMPONENT_ENCODE_SET),
+            utf8_percent_encode(&meta_request.path.id, URI_COMPONENT_ENCODE_SET),
+            utf8_percent_encode(&stream_request.path.id, URI_COMPONENT_ENCODE_SET)
+        );
+        let mut external_player =
+            ExternalPlayerLink::from((stream, streaming_server_url, settings));
+        if settings.player_type.as_deref() == Some("infuse") {
+            if let Some(streaming) = external_player.streaming.as_deref() {
+                external_player.open_player =
+                    Some(infuse_open_player(streaming, &callback_url, None));
+            }
+        }
+
         StreamDeepLinks {
             player: stream
                 .encode()
@@ -588,7 +661,7 @@ impl
                     )
                 })
                 .unwrap_or_else(|error| ErrorLink::from(error).into()),
-            external_player: ExternalPlayerLink::from((stream, streaming_server_url, settings)),
+            external_player,
         }
     }
 }
