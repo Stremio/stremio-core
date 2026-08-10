@@ -35,7 +35,7 @@ jobs:
         with:
           toolchain: ${{ env.RUST_VERSION }}
           targets: wasm32-unknown-unknown
-      - uses: taiki-e/install-action@v2.85.5
+      - uses: taiki-e/install-action@v2.85.10
         with:
           tool: wasm-pack@${{ env.WASM_PACK_VERSION }}
 
