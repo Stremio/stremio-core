@@ -52,6 +52,7 @@ mod model {
         pub r#type: &'a str,
         pub addon: DescriptorPreview<'a>,
         pub selected: &'a bool,
+        pub is_epg_guide: &'a bool,
         pub deep_links: DiscoverDeepLinks,
     }
     #[derive(Serialize)]
@@ -148,6 +149,7 @@ pub fn serialize_discover(
                         },
                     },
                     selected: &selectable_catalog.selected,
+                    is_epg_guide: &selectable_catalog.is_epg_guide,
                     deep_links: DiscoverDeepLinks::from(&selectable_catalog.request)
                         .into_web_deep_links(),
                 })
