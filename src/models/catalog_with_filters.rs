@@ -353,23 +353,25 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 (manifest_catalog, request, is_epg_guide)
             })
         })
-        .map(|(manifest_catalog, request, is_epg_guide)| SelectableCatalog {
-            catalog: manifest_catalog
-                .name
-                .as_ref()
-                .unwrap_or(&manifest_catalog.id)
-                .to_owned(),
-            selected: selected
-                .as_ref()
-                .map(|selected| {
-                    selected.request.base == request.base
-                        && selected.request.path.id == request.path.id
-                        && selected.request.path.resource == request.path.resource
-                })
-                .unwrap_or_default(),
-            request,
-            is_epg_guide,
-        })
+        .map(
+            |(manifest_catalog, request, is_epg_guide)| SelectableCatalog {
+                catalog: manifest_catalog
+                    .name
+                    .as_ref()
+                    .unwrap_or(&manifest_catalog.id)
+                    .to_owned(),
+                selected: selected
+                    .as_ref()
+                    .map(|selected| {
+                        selected.request.base == request.base
+                            && selected.request.path.id == request.path.id
+                            && selected.request.path.resource == request.path.resource
+                    })
+                    .unwrap_or_default(),
+                request,
+                is_epg_guide,
+            },
+        )
         .collect::<Vec<_>>();
     let selectable_types = selectable_catalogs
         .iter()
