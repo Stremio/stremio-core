@@ -77,6 +77,7 @@ pub struct SelectableCatalog {
     pub catalog: String,
     pub selected: bool,
     pub request: ResourceRequest,
+    pub is_epg_guide: bool,
 }
 
 #[derive(PartialEq, Eq, Serialize, Clone, Debug)]
@@ -346,10 +347,13 @@ fn selectable_update<T: CatalogResourceAdapter>(
                         extra,
                     },
                 };
-                (manifest_catalog, request)
+                let is_epg_guide = T::resource() == CATALOG_RESOURCE_NAME
+                    && addon.manifest.behavior_hints.epg_provider
+                    && manifest_catalog.is_epg_guide();
+                (manifest_catalog, request, is_epg_guide)
             })
         })
-        .map(|(manifest_catalog, request)| SelectableCatalog {
+        .map(|(manifest_catalog, request, is_epg_guide)| SelectableCatalog {
             catalog: manifest_catalog
                 .name
                 .as_ref()
@@ -364,6 +368,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 })
                 .unwrap_or_default(),
             request,
+            is_epg_guide,
         })
         .collect::<Vec<_>>();
     let selectable_types = selectable_catalogs

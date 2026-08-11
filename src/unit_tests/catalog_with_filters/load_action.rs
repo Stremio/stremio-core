@@ -329,6 +329,16 @@ fn load_epg_guide_catalog_skips_content_request() {
         !discover.selectable.catalogs.is_empty(),
         "the guide catalog should still be selectable"
     );
+    let selected_catalog = discover
+        .selectable
+        .catalogs
+        .iter()
+        .find(|catalog| catalog.selected)
+        .expect("the guide catalog should be selected");
+    assert!(
+        selected_catalog.is_epg_guide,
+        "the selected guide catalog must be flagged is_epg_guide so the UI renders the EPG layout"
+    );
     assert!(
         discover.selectable.next_page.is_none(),
         "an empty catalog must not offer a next page"
