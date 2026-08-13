@@ -1,9 +1,5 @@
-use std::iter;
-
 use crate::model::deep_links_ext::DeepLinksExt;
 
-use either::Either;
-use itertools::Itertools;
 use serde::Serialize;
 use url::Url;
 #[cfg(feature = "wasm")]
@@ -11,7 +7,6 @@ use {gloo_utils::format::JsValueSerdeExt, stremio_core::runtime::Env, wasm_bindg
 
 use stremio_core::runtime::EnvError;
 use stremio_core::{
-    constants::META_RESOURCE_NAME,
     deep_links::{MetaItemDeepLinks, StreamDeepLinks, VideoDeepLinks},
     models::{
         common::{Loadable, ResourceError, ResourceLoadable},
@@ -82,20 +77,11 @@ mod model {
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
-    pub struct MetaExtension<'a> {
-        pub url: &'a Url,
-        pub name: &'a String,
-        pub addon: DescriptorPreview<'a>,
-    }
-
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
     pub struct MetaDetails<'a> {
         pub selected: &'a Option<MetaDetailsSelected>,
         pub meta_item: Option<ResourceLoadable<'a, MetaItem<'a>>>,
         pub library_item: &'a Option<LibraryItem>,
         pub streams: Vec<ResourceLoadable<'a, Vec<Stream<'a>>>>,
-        pub meta_extensions: Vec<MetaExtension<'a>>,
         pub title: Option<String>,
         pub rating_info: &'a Option<Loadable<RatingInfo, EnvError>>,
     }
@@ -307,44 +293,6 @@ pub fn serialize_meta_details<E: Env + 'static>(
                         ..
                     } => Loadable::Err(error),
                 },
-                addon: model::DescriptorPreview {
-                    transport_url: &addon.transport_url,
-                    manifest: model::ManifestPreview {
-                        id: &addon.manifest.id,
-                        name: &addon.manifest.name,
-                        logo: &addon.manifest.logo,
-                    },
-                },
-            })
-            .collect::<Vec<_>>(),
-        meta_extensions: meta_details
-            .meta_items
-            .iter()
-            .filter_map(|meta_item| {
-                ctx.profile
-                    .addons
-                    .iter()
-                    .find(|addon| addon.transport_url == meta_item.request.base)
-                    .map(|addon| (meta_item, addon))
-            })
-            .flat_map(|(meta_item, addon)| match meta_item {
-                ResourceLoadable {
-                    content: Some(Loadable::Ready(meta_item)),
-                    ..
-                } => Either::Left(
-                    meta_item
-                        .preview
-                        .links
-                        .iter()
-                        .filter(|link| link.category == META_RESOURCE_NAME)
-                        .map(move |link| (link, addon)),
-                ),
-                _ => Either::Right(iter::empty()),
-            })
-            .unique_by(|(link, _)| &link.url)
-            .map(|(link, addon)| model::MetaExtension {
-                url: &link.url,
-                name: &link.name,
                 addon: model::DescriptorPreview {
                     transport_url: &addon.transport_url,
                     manifest: model::ManifestPreview {

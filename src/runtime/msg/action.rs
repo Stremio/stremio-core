@@ -19,6 +19,7 @@ use crate::{
         addon::Descriptor,
         api::AuthRequest,
         library::LibraryItemId,
+        player::SubtitlePreference,
         profile::{AuthKey, Password, Settings as ProfileSettings},
         rating::Rating,
         resource::{MetaItemId, MetaItemPreview, Video},
@@ -47,6 +48,12 @@ pub enum ActionCtx {
     RewindLibraryItem(String),
     LibraryItemMarkAsWatched {
         id: LibraryItemId,
+        is_watched: bool,
+    },
+    /// Marks a meta item as watched, creating a temporary LibraryItem if one doesn't exist.
+    /// Used for discover so we dont need to load metadetails model on each item preview focus
+    MetaItemMarkAsWatched {
+        meta_item: MetaItemPreview,
         is_watched: bool,
     },
     /// If boolean is set to `true` it will disable notifications for the LibraryItem.
@@ -143,6 +150,11 @@ pub enum ActionMetaDetails {
     MarkVideoAsWatched(Video, bool),
     /// Mark all videos from given season as watched
     MarkSeasonAsWatched(u32, bool),
+    /// Updates the selected video's progress from an external player callback.
+    ///
+    /// `time` is in milliseconds.
+    #[serde(rename_all = "camelCase")]
+    ExternalPlayerProgressChanged { time: u64 },
     /// Rate the current meta item
     Rate(Option<Rating>),
 }
@@ -172,6 +184,7 @@ pub enum ActionStreamingServer {
     Refresh,
     /// reloads the full server model
     Reload,
+    RefreshPlaybackDevices,
     UpdateSettings(StreamingServerSettings),
     CreateTorrent(CreateTorrentArgs),
     GetStatistics(StreamingServerStatisticsRequest),
@@ -193,6 +206,10 @@ pub enum ActionPlayer {
     },
     StreamStateChanged {
         state: StreamItemState,
+    },
+    /// Updates the subtitle preference for the current Player session.
+    SubtitlePreferenceChanged {
+        preference: SubtitlePreference,
     },
     /// Seek performed by the user when using the seekbar or
     /// the shortcuts for seeking.

@@ -6,7 +6,9 @@ use stremio_core::models::common::Loadable;
 use stremio_core::models::streaming_server::{PlaybackDevice, Selected};
 use stremio_core::runtime::EnvError;
 use stremio_core::types::addon::ResourcePath;
-use stremio_core::types::streaming_server::{DeviceInfo, NetworkInfo, Settings, Statistics};
+use stremio_core::types::streaming_server::{
+    DeviceInfo, NetworkInfo, Settings, SettingsOption, Statistics,
+};
 use url::Url;
 #[cfg(feature = "wasm")]
 use wasm_bindgen::JsValue;
@@ -21,6 +23,7 @@ mod model {
     pub struct StreamingServer<'a> {
         pub selected: &'a Selected,
         pub settings: &'a Loadable<Settings, EnvError>,
+        pub settings_options: &'a Vec<SettingsOption>,
         pub base_url: &'a Option<Url>,
         pub remote_url: &'a Option<Url>,
         pub playback_devices: &'a Loadable<Vec<PlaybackDevice>, EnvError>,
@@ -40,6 +43,7 @@ pub fn serialize_streaming_server(
     <JsValue as JsValueSerdeExt>::from_serde(&model::StreamingServer {
         selected: &streaming_server.selected,
         settings: &streaming_server.settings,
+        settings_options: &streaming_server.settings_options,
         base_url: &streaming_server.base_url,
         remote_url: &streaming_server.remote_url,
         playback_devices: &streaming_server.playback_devices,

@@ -173,7 +173,7 @@ fn selected_update<E: Env + 'static>(
     selected: &mut Option<Selected>,
     next_selected: &Option<Selected>,
 ) -> Effects {
-    let current_date = E::now();
+    let current_date = E::local_now().date_naive();
 
     let updated_selected = next_selected
         .as_ref()
@@ -190,7 +190,7 @@ fn month_info_update<E: Env + 'static>(
     let updated_month_info = selected
         .as_ref()
         .map(|Selected { month, year, .. }| {
-            let current_date = E::now();
+            let current_date = E::local_now().date_naive();
 
             let today = if current_date.year() == *year && current_date.month() == *month {
                 Some(current_date.day())

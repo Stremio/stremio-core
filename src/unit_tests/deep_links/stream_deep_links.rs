@@ -16,6 +16,16 @@ const BASE64_HTTP_URL: &str = "data:application/octet-stream;charset=utf-8;base6
 const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11470";
 const YT_ID: &str = "aqz-KE-bpKQ";
 
+fn query_param(link: &str, name: &str) -> String {
+    Url::parse(link)
+        .unwrap()
+        .query_pairs()
+        .find(|(key, _)| key == name)
+        .unwrap()
+        .1
+        .into_owned()
+}
+
 #[test]
 fn stream_deep_links_magnet() {
     let stream = Stream {
@@ -32,11 +42,58 @@ fn stream_deep_links_magnet() {
     let settings = Settings::default();
     let sdl = StreamDeepLinks::from((&stream, streaming_server_url.as_ref(), &settings));
     assert_eq!(sdl.player, "stremio:///player/eAEBRgC5%2F3sidXJsIjoibWFnbmV0Oj94dD11cm46YnRpaDpkZDgyNTVlY2RjN2NhNTVmYjBiYmY4MTMyM2Q4NzA2MmRiMWY2ZDFjIn0%2BMhZF".to_string());
-    assert_eq!(
-        sdl.external_player.download,
-        Some(MAGNET_STR_URL.to_owned()),
-    );
+    assert_eq!(sdl.external_player.download, None);
+    assert_eq!(sdl.external_player.magnet, Some(MAGNET_STR_URL.to_owned()),);
     assert_eq!(sdl.external_player.file_name, None);
+}
+
+#[test]
+fn stream_deep_links_torrent_magnet() {
+    let info_hash = [
+        0xdd, 0x82, 0x55, 0xec, 0xdc, 0x7c, 0xa5, 0x5f, 0xb0, 0xbb, 0xf8, 0x13, 0x23, 0xd8, 0x70,
+        0x62, 0xdb, 0x1f, 0x6d, 0x1c,
+    ];
+    let announce = vec!["http://bt1.archive.org:6969/announce".to_string()];
+    let stream = Stream {
+        source: StreamSource::Torrent {
+            info_hash,
+            file_idx: Some(0),
+            announce,
+            file_must_include: vec![],
+        },
+        name: Some("Test Torrent".to_string()),
+        description: None,
+        thumbnail: None,
+        subtitles: vec![],
+        behavior_hints: Default::default(),
+    };
+    let settings = Settings::default();
+
+    let sdl_with_server = StreamDeepLinks::from((
+        &stream,
+        Some(Url::parse(STREAMING_SERVER_URL).unwrap()).as_ref(),
+        &settings,
+    ));
+    let magnet = sdl_with_server.external_player.magnet.as_deref().unwrap();
+    assert!(magnet.starts_with("magnet:"), "magnet missing with server");
+    assert!(magnet.contains("xt=urn:btih:"), "magnet missing xt param");
+    assert!(magnet.contains("tr="), "magnet missing tracker");
+    assert!(
+        sdl_with_server.external_player.download.is_some(),
+        "download URL should be present when server is running"
+    );
+
+    let sdl_no_server = StreamDeepLinks::from((&stream, None::<&Url>, &settings));
+    let magnet = sdl_no_server.external_player.magnet.as_deref().unwrap();
+    assert!(
+        magnet.starts_with("magnet:"),
+        "magnet missing without server"
+    );
+    assert!(magnet.contains("xt=urn:btih:"), "magnet missing xt param");
+    assert_eq!(
+        sdl_no_server.external_player.download, None,
+        "download URL must be None when server is not running"
+    );
 }
 
 #[test]
@@ -66,6 +123,59 @@ fn stream_deep_links_http() {
     assert_eq!(
         sdl.external_player.file_name,
         Some("playlist.m3u".to_string())
+    );
+}
+
+#[test]
+fn stream_deep_links_infuse_callback_returns_to_selected_item() {
+    let stream = Stream {
+        source: StreamSource::Url {
+            url: Url::from_str(HTTP_STR_URL).unwrap(),
+        },
+        name: None,
+        description: None,
+        thumbnail: None,
+        subtitles: vec![],
+        behavior_hints: Default::default(),
+    };
+    let stream_request = ResourceRequest {
+        base: Url::from_str("http://stream.addon").unwrap(),
+        path: ResourcePath::without_extra("stream", "series", "tt123:1:2"),
+    };
+    let meta_request = ResourceRequest {
+        base: Url::from_str("http://meta.addon").unwrap(),
+        path: ResourcePath::without_extra("meta", "series", "tt123"),
+    };
+
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
+    let settings = Settings {
+        player_type: Some("infuse".to_string()),
+        streaming_server_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
+        ..Default::default()
+    };
+    let sdl = StreamDeepLinks::from((
+        &stream,
+        &stream_request,
+        &meta_request,
+        streaming_server_url.as_ref(),
+        &settings,
+    ));
+    let ios = sdl
+        .external_player
+        .open_player
+        .as_ref()
+        .unwrap()
+        .ios
+        .as_deref()
+        .unwrap();
+
+    assert_eq!(
+        query_param(ios, "x-success"),
+        "stremio:///detail/series/tt123/tt123%3A1%3A2"
+    );
+    assert_eq!(
+        query_param(ios, "x-error"),
+        "stremio:///detail/series/tt123/tt123%3A1%3A2"
     );
 }
 

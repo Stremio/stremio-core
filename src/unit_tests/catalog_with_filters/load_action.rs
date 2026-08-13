@@ -38,7 +38,7 @@ fn default_catalog() {
                     && method == "GET" =>
             {
                 future::ok(Box::new(ResourceResponse::Metas {
-                    metas: vec![MetaItemPreview::default()],
+                    metas: vec![MetaItemPreview::default(); 50],
                 }) as Box<dyn Any + Send>)
                 .boxed_env()
             }
@@ -103,7 +103,13 @@ fn default_catalog() {
             ..
         })
     );
-    assert!(states[2].discover.selectable.next_page.is_some());
+    assert_matches!(
+        states[2].discover.selectable.next_page.as_ref(),
+        Some(next_page) if next_page.request.path.extra == vec![ExtraValue {
+            name: "skip".to_owned(),
+            value: "50".to_owned(),
+        }]
+    );
     assert_matches!(
         states[2].discover.catalog.first(),
         Some(ResourceLoadable {

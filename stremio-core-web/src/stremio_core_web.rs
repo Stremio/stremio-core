@@ -4,6 +4,7 @@ use enclose::enclose;
 use futures::{future, try_join, FutureExt, StreamExt};
 use gloo_utils::format::JsValueSerdeExt;
 use once_cell::sync::Lazy;
+use serde::Serialize;
 use tracing::{error, info, Level};
 use tracing_wasm::WASMLayerConfigBuilder;
 use wasm_bindgen::{prelude::wasm_bindgen, JsCast as _, JsValue, UnwrapThrowExt};
@@ -38,6 +39,47 @@ use crate::{
 #[allow(clippy::type_complexity)]
 static RUNTIME: Lazy<RwLock<Option<Loadable<Runtime<WebEnv, WebModel>, EnvError>>>> =
     Lazy::new(Default::default);
+
+#[derive(Debug, Clone, Serialize)]
+pub enum DispatchError {
+    #[serde(rename_all = "camelCase")]
+    Action { error: String, json: String },
+    #[serde(rename_all = "camelCase")]
+    Field { error: String, json: Option<String> },
+    #[serde(rename_all = "camelCase")]
+    State(State),
+}
+
+impl From<DispatchError> for JsValue {
+    fn from(value: DispatchError) -> Self {
+        <JsValue as JsValueSerdeExt>::from_serde(&value).expect("JsValue from DispatchError")
+    }
+}
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum GetStateError {
+    #[serde(rename_all = "camelCase")]
+    Field { error: String, json: Option<String> },
+    #[serde(rename_all = "camelCase")]
+    State(State),
+}
+
+impl From<GetStateError> for JsValue {
+    fn from(value: GetStateError) -> Self {
+        <JsValue as JsValueSerdeExt>::from_serde(&value).expect("JsValue from GetStateError")
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum State {
+    /// No runtime has been set yet.
+    /// Please, initialize core first!
+    RuntimeNotSet,
+    /// Runtime is Loading or Error
+    RuntimeNotReady,
+    ModelReadFailed,
+}
 
 #[wasm_bindgen(start)]
 pub fn start() {
@@ -227,46 +269,53 @@ pub fn get_debug_state() -> JsValue {
 }
 
 #[wasm_bindgen]
-pub fn get_state(field: JsValue) -> JsValue {
-    let field = JsValueSerdeExt::into_serde(&field).expect("get state failed");
+pub fn get_state(field: JsValue) -> Result<JsValue, JsValue> {
+    let field_json = stringify(&field);
+
+    let field: WebModelField =
+        JsValueSerdeExt::into_serde(&field).map_err(|err| GetStateError::Field {
+            error: err.to_string(),
+            json: field_json,
+        })?;
     let runtime = RUNTIME.read().expect("runtime read failed");
     let runtime = runtime
         .as_ref()
-        .expect("runtime is not ready")
-        .as_ref()
-        .expect("runtime is not ready");
-    let model = runtime.model().expect("model read failed");
-    model.get_state(&field)
+        .ok_or(GetStateError::State(State::RuntimeNotSet))?
+        .ready()
+        .ok_or(GetStateError::State(State::RuntimeNotReady))?;
+
+    let model = runtime
+        .model()
+        .map_err(|_| GetStateError::State(State::ModelReadFailed))?;
+    Ok(model.get_state(&field))
 }
 
 #[wasm_bindgen]
-pub fn dispatch(action: JsValue, field: JsValue, location_hash: JsValue) {
-    let action_json = js_sys::JSON::stringify(&action)
-        .map(String::from)
-        .unwrap_throw();
-    let action: Action = JsValueSerdeExt::into_serde(&action)
-        .inspect_err(|err| {
-            error!(action_json, "dispatch failed because of Action: {err}");
-        })
-        .expect("dispatch failed because of Action");
+pub fn dispatch(action: JsValue, field: JsValue, location_hash: JsValue) -> Result<(), JsValue> {
+    let action_json = stringify(&action).unwrap_or_default();
+
+    let field_json = stringify(&field);
+
+    let action: Action =
+        JsValueSerdeExt::into_serde(&action).map_err(|err| DispatchError::Action {
+            error: err.to_string(),
+            json: action_json,
+        })?;
     let field: Option<WebModelField> =
-        JsValueSerdeExt::into_serde(&field).expect("dispatch failed because of Field");
+        JsValueSerdeExt::into_serde(&field).map_err(|err| DispatchError::Field {
+            error: err.to_string(),
+            json: field_json,
+        })?;
 
     let runtime_action: RuntimeAction<WebEnv, WebModel> = RuntimeAction { action, field };
     let location_hash = location_hash.as_string();
-    if let Err(state) = dispatch_internal(runtime_action, location_hash) {
-        error!(?state, "Failed to dispatch action due to")
-    }
-}
+    Ok(
+        dispatch_internal(runtime_action, location_hash).map_err(|state_err| {
+            error!(?state_err, "Failed to dispatch action due to");
 
-#[derive(Debug, Clone)]
-pub enum State {
-    /// No runtime has been set yet.
-    /// Please, initialize core first!
-    RuntimeNotSet,
-    /// Runtime is Loading or Error
-    RuntimeNotReady,
-    ModelReadFailed,
+            DispatchError::State(state_err)
+        })?,
+    )
 }
 
 fn dispatch_internal(
@@ -290,6 +339,7 @@ fn dispatch_internal(
         );
     }
 
+    // if you need to add the tracing (as it's a bit verbose)
     // let runtime_action_clone: RuntimeAction<WebEnv, WebModel> = RuntimeAction {
     //     action: runtime_action.action.clone(),
     //     field: runtime_action.field.clone(),
@@ -328,5 +378,29 @@ pub fn decode_stream(stream: JsValue) -> JsValue {
             <JsValue as JsValueSerdeExt>::from_serde(&stream).expect("JsValue from Stream")
         }
         _ => JsValue::NULL,
+    }
+}
+
+#[wasm_bindgen]
+pub fn encode_stream(stream: JsValue) -> JsValue {
+    let stream: Result<Stream<StreamSource>, _> = JsValueSerdeExt::into_serde(&stream);
+    match stream {
+        Ok(stream) => match stream.encode() {
+            Ok(encoded) => JsValue::from_str(&encoded),
+            Err(_) => JsValue::NULL,
+        },
+        Err(_) => JsValue::NULL,
+    }
+}
+
+pub fn stringify(js_value: &JsValue) -> Option<String> {
+    if js_value.is_undefined() {
+        None
+    } else {
+        Some(
+            js_sys::JSON::stringify(js_value)
+                .map(String::from)
+                .unwrap_throw(),
+        )
     }
 }

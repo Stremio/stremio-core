@@ -39,7 +39,7 @@ deflate = ["stremio-official-addons/deflate"]
 [dependencies]
 stremio-derive = { path = "stremio-derive" }
 stremio-watched-bitfield = { path = "stremio-watched-bitfield" }
-stremio-official-addons = "=2.1.1"
+stremio-official-addons = "=2.1.2"
 
 # (De)Serialization
 serde = { version = "1", features = ["derive"] }
@@ -80,7 +80,8 @@ lazysort = "0.2"
 once_cell = "1"
 itertools = "0.14"
 
-magnet-url = "2.0"
+magnet-url = "3.0"
+data-encoding = "2.9"
 hex = "0.4"
 
 # error handling
