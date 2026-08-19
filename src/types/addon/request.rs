@@ -169,6 +169,7 @@ impl AggrRequest<'_> {
         match &self {
             AggrRequest::AllCatalogs { extra, r#type } => addons
                 .iter()
+                .filter(|addon| !addon.flags.disabled)
                 .flat_map(|addon| {
                     addon
                         .manifest
@@ -215,6 +216,7 @@ impl AggrRequest<'_> {
                         } => {
                             addons
                                 .iter()
+                                .filter(|addon| !addon.flags.disabled)
                                 .flat_map(|addon| {
                                     addon
                                         .manifest
@@ -358,6 +360,7 @@ impl AggrRequest<'_> {
             }
             AggrRequest::AllOfResource(path) => addons
                 .iter()
+                .filter(|addon| !addon.flags.disabled)
                 .filter(|addon| addon.manifest.is_resource_supported(path))
                 .map(|addon| {
                     (

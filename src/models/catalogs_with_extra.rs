@@ -77,6 +77,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                         .profile
                         .addons
                         .iter()
+                        .filter(|addon| !addon.flags.disabled)
                         .find(|addon| addon.transport_url == request.base)
                         .and_then(|addon| {
                             addon.manifest.catalogs.iter().find(|manifest_catalog| {

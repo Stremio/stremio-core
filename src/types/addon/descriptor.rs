@@ -35,4 +35,6 @@ pub struct DescriptorFlags {
     pub official: bool,
     #[serde(default)]
     pub protected: bool,
+    #[serde(default)]
+    pub disabled: bool,
 }

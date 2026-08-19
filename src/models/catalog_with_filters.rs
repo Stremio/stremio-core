@@ -305,6 +305,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
     let selectable_catalogs = profile
         .addons
         .iter()
+        .filter(|addon| !addon.flags.disabled)
         .flat_map(|addon| {
             T::catalogs(&addon.manifest)
                 .iter()
