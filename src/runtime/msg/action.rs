@@ -175,6 +175,19 @@ pub struct PlayOnDeviceArgs {
 }
 
 #[derive(Clone, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StopOnDeviceArgs {
+    pub device: String,
+}
+
+#[derive(Clone, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SetDeviceSubtitlesArgs {
+    pub device: String,
+    pub subtitles_src: Option<String>,
+}
+
+#[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionStreamingServer {
     Reload,
@@ -183,6 +196,8 @@ pub enum ActionStreamingServer {
     CreateTorrent(CreateTorrentArgs),
     GetStatistics(StreamingServerStatisticsRequest),
     PlayOnDevice(PlayOnDeviceArgs),
+    StopOnDevice(StopOnDeviceArgs),
+    SetDeviceSubtitles(SetDeviceSubtitlesArgs),
 }
 
 #[derive(Clone, Deserialize, Debug)]

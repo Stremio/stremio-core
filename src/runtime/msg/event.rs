@@ -149,6 +149,9 @@ pub enum Event {
     PlayingOnDevice {
         device: String,
     },
+    StoppedOnDevice {
+        device: String,
+    },
     StreamingServerUrlsBucketChanged {
         uid: UID,
     },

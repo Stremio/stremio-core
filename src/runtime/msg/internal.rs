@@ -131,6 +131,10 @@ pub enum Internal {
     StreamingServerCreateTorrentResult(InfoHash, Result<(), EnvError>),
     /// Result for playing on device.
     StreamingServerPlayOnDeviceResult(String, Result<(), EnvError>),
+    /// Result for stopping the playback on device.
+    StreamingServerStopOnDeviceResult(String, Result<(), EnvError>),
+    /// Result for setting the subtitles of the player on device.
+    StreamingServerSetDeviceSubtitlesResult(String, Result<(), EnvError>),
     // Result for get https endpoint request
     StreamingServerGetHTTPSResult(Url, Result<GetHTTPSResponse, EnvError>),
     /// Result for streaming server statistics.

@@ -11,6 +11,7 @@ use crate::models::common::{eq_update, Loadable};
 use crate::models::ctx::{Ctx, CtxError};
 use crate::runtime::msg::{
     Action, ActionStreamingServer, CreateTorrentArgs, Event, Internal, Msg, PlayOnDeviceArgs,
+    SetDeviceSubtitlesArgs, StopOnDeviceArgs,
 };
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx};
 use crate::types::addon::ResourcePath;
@@ -240,6 +241,31 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     _ => Effects::none().unchanged(),
                 }
             }
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::StopOnDevice(args))) => {
+                // Not gated on the device still being in `playback_devices`: stopping must work
+                // even when the list has not been refreshed since the playback was started.
+                Effects::one(stop_on_device::<E>(&self.selected.transport_url, args)).unchanged()
+            }
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::SetDeviceSubtitles(
+                args,
+            ))) => match &mut self.playback_devices {
+                Loadable::Ready(playback_devices) => {
+                    let device_exists = playback_devices
+                        .iter()
+                        .any(|device| device.id == args.device);
+                    match device_exists {
+                        true => {
+                            Effects::one(set_device_subtitles::<E>(
+                                &self.selected.transport_url,
+                                args,
+                            ))
+                            .unchanged()
+                        }
+                        _ => Effects::none().unchanged(),
+                    }
+                }
+                _ => Effects::none().unchanged(),
+            },
             Msg::Internal(Internal::ProfileChanged)
                 if self.selected.transport_url != ctx.profile.settings.streaming_server_url =>
             {
@@ -409,6 +435,20 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     }
                     Err(_) => Effects::none().unchanged(),
                 }
+            }
+            Msg::Internal(Internal::StreamingServerStopOnDeviceResult(device, result)) => {
+                match result {
+                    Ok(_) => {
+                        Effects::one(Effect::Msg(Box::new(Msg::Event(Event::StoppedOnDevice {
+                            device: device.to_owned(),
+                        }))))
+                        .unchanged()
+                    }
+                    Err(_) => Effects::none().unchanged(),
+                }
+            }
+            Msg::Internal(Internal::StreamingServerSetDeviceSubtitlesResult(_, _)) => {
+                Effects::none().unchanged()
             }
             Msg::Internal(Internal::StreamingServerGetHTTPSResult(url, result))
                 if self.selected.transport_url == *url =>
@@ -707,6 +747,60 @@ fn get_torrent_statistics<E: Env + 'static>(url: &Url, request: &StatisticsReque
         fetch_fut
             .map(enclose!((url, request) move |result|
                 Msg::Internal(Internal::StreamingServerStatisticsResult((url, request), result))
+            ))
+            .boxed_env(),
+    )
+    .into()
+}
+
+fn stop_on_device<E: Env + 'static>(url: &Url, args: &StopOnDeviceArgs) -> Effect {
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Body {
+        // The stremio-cast protocol stops the playback when `source` is set to null.
+        source: Option<String>,
+    }
+    let device = args.device.clone();
+    let endpoint = url
+        .join(&format!("casting/{device}/player"))
+        .expect("url builder failed");
+    let request = Request::post(endpoint.as_str())
+        .header(http::header::CONTENT_TYPE, "application/json")
+        .body(Body { source: None })
+        .expect("request builder failed");
+    EffectFuture::Concurrent(
+        E::fetch::<_, serde_json::Value>(request)
+            .map_ok(|_| ())
+            .map(enclose!(() move |result|
+                Msg::Internal(Internal::StreamingServerStopOnDeviceResult(device, result))
+            ))
+            .boxed_env(),
+    )
+    .into()
+}
+
+fn set_device_subtitles<E: Env + 'static>(url: &Url, args: &SetDeviceSubtitlesArgs) -> Effect {
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Body {
+        subtitles_src: Option<String>,
+    }
+    let device = args.device.clone();
+    let endpoint = url
+        .join(&format!("casting/{device}/player"))
+        .expect("url builder failed");
+    let body = Body {
+        subtitles_src: args.subtitles_src.to_owned(),
+    };
+    let request = Request::post(endpoint.as_str())
+        .header(http::header::CONTENT_TYPE, "application/json")
+        .body(body)
+        .expect("request builder failed");
+    EffectFuture::Concurrent(
+        E::fetch::<_, serde_json::Value>(request)
+            .map_ok(|_| ())
+            .map(enclose!(() move |result|
+                Msg::Internal(Internal::StreamingServerSetDeviceSubtitlesResult(device, result))
             ))
             .boxed_env(),
     )
