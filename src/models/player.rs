@@ -1,9 +1,7 @@
 use std::marker::PhantomData;
-use std::ops::Div;
 
 use base64::Engine;
 use futures::{future, FutureExt, TryFutureExt};
-use num::rational::Ratio;
 use url::Url;
 
 use crate::constants::{
@@ -1418,32 +1416,6 @@ fn push_seek_to_api<E: Env + 'static>(seek_log_req: SeekLogRequest) -> Effect {
     .into()
 }
 
-fn calculate_outro(
-    library_item: &LibraryItem,
-    closest_duration: u64,
-    closest_outro: u64,
-) -> Option<u64> {
-    if closest_outro == 0 {
-        return None;
-    }
-
-    // will floor the result before dividing by 10 again
-    let duration_diff_in_secs =
-        (library_item.state.duration.abs_diff(closest_duration)).div(1000 * 10) / 10;
-    tracing::debug!(
-        closest_duration,
-        closest_outro,
-        "Player: Outro match by duration with difference of {duration_diff_in_secs} seconds"
-    );
-
-    let outro = library_item
-        .state
-        .duration
-        .abs_diff(closest_duration.abs_diff(closest_outro));
-
-    (outro > 0 && outro <= library_item.state.duration).then_some(outro)
-}
-
 fn intro_outro_update<E: Env + 'static>(
     intro_outro: &mut Option<IntroOutro>,
     profile: &Profile,
@@ -1463,66 +1435,18 @@ fn intro_outro_update<E: Env + 'static>(
     );
 
     let intro_outro_effects = match (skip_gaps, library_item) {
-        (Some((_, Loadable::Ready(response))), Some(library_item))
-            if library_item.state.duration > 0 =>
-        {
-            let outro_time = {
-                let outro_durations = response.gaps.iter().filter_map(|(duration, skip_gaps)| {
-                    skip_gaps.outro.map(|outro| (duration, outro))
+        (Some((request, Loadable::Ready(response))), Some(_)) if request.duration > 0 => {
+            let gaps = response.gaps.get(&request.duration);
+            let outro_time = gaps
+                .and_then(|gaps| gaps.outro)
+                .filter(|outro| *outro > 0 && *outro <= request.duration);
+            let intro_time = gaps
+                .and_then(|gaps| gaps.seek_history.first())
+                .map(|seek_event| IntroData {
+                    from: seek_event.from,
+                    to: seek_event.to,
+                    duration: None,
                 });
-
-                let closest_duration = outro_durations.reduce(
-                    |(previous_duration, previous_outro), (current_duration, current_outro)| {
-                        if current_duration.abs_diff(library_item.state.duration)
-                            < previous_duration.abs_diff(library_item.state.duration)
-                        {
-                            (current_duration, current_outro)
-                        } else {
-                            (previous_duration, previous_outro)
-                        }
-                    },
-                );
-                closest_duration.and_then(|(closest_duration, closest_outro)| {
-                    calculate_outro(library_item, *closest_duration, closest_outro)
-                })
-            };
-
-            let intro_time = {
-                let intro_durations = response
-                    .gaps
-                    .iter()
-                    .filter(|(_duration, skip_gaps)| !skip_gaps.seek_history.is_empty());
-                let closest_duration = intro_durations.reduce(
-                    |(previous_duration, previous_skip_gaps),
-                     (current_duration, current_skip_gaps)| {
-                        if current_duration.abs_diff(library_item.state.duration)
-                            < previous_duration.abs_diff(library_item.state.duration)
-                        {
-                            (current_duration, current_skip_gaps)
-                        } else {
-                            (previous_duration, previous_skip_gaps)
-                        }
-                    },
-                );
-
-                closest_duration.and_then(|(closest_duration, skip_gaps)| {
-                let duration_diff_in_secs = (library_item.state.duration.abs_diff(*closest_duration)).div(1000 * 10) / 10;
-                let duration_ration = Ratio::new(library_item.state.duration, *closest_duration);
-                // even though we checked for len() > 0 make sure we don't panic if somebody decides to remove that check!
-                let matched_intro = skip_gaps.seek_history.first().map(|seek_event| {
-                    let intro_data = IntroData {
-                        from: (duration_ration * seek_event.from).to_integer(),
-                        to: (duration_ration * seek_event.to).to_integer(),
-                        duration: if duration_diff_in_secs > 0 { Some(seek_event.to.abs_diff(seek_event.from)) } else { None }
-                    };
-                    tracing::debug!(?seek_event, ?intro_data, "Player: Intro match for event by duration with difference of {duration_diff_in_secs} seconds",);
-                    intro_data
-                })?;
-
-
-                Some(matched_intro)
-              })
-            };
 
             eq_update(
                 intro_outro,
@@ -1577,7 +1501,7 @@ fn skip_gaps_update<E: Env + 'static>(
                 selected.stream.name.as_ref(),
                 video_params.hash.clone(),
             ) {
-                (true, Some(stream_name), Some(os_hash)) => {
+                (true, Some(stream_name), Some(os_hash)) if library_item.state.duration > 0 => {
                     let stream_name_hash = {
                         use sha2::Digest;
                         let mut sha256 = sha2::Sha256::new();
@@ -1593,6 +1517,7 @@ fn skip_gaps_update<E: Env + 'static>(
                         item_id: library_item.id.to_owned(),
                         series_info: series_info.to_owned(),
                         stream_name_hash,
+                        duration: library_item.state.duration,
                     };
 
                     // no previous request, error, or different request
@@ -1660,64 +1585,4 @@ fn send_watched<E: Env + 'static>(auth_key: AuthKey, meta_path: &ResourcePath) -
             .boxed_env(),
     )
     .into()
-}
-
-#[cfg(test)]
-mod tests {
-    use chrono::Utc;
-
-    use crate::{
-        models::player::calculate_outro,
-        types::{
-            library::{LibraryItem, LibraryItemState},
-            resource::PosterShape,
-        },
-    };
-
-    #[test]
-    fn test_calculate_outro() {
-        let library_item = LibraryItem {
-            id: "tt13622776".to_string(),
-            name: "Ahsoka".to_string(),
-            r#type: "series".to_string(),
-            poster: None,
-            poster_shape: PosterShape::Poster,
-            removed: false,
-            temp: true,
-            ctime: None,
-            mtime: Utc::now(),
-            state: LibraryItemState {
-                last_watched: None,
-                time_watched: 999,
-                time_offset: 0,
-                overall_time_watched: 999,
-                times_watched: 999,
-                flagged_watched: 1,
-                duration: 10_000,
-                video_id: None,
-                watched: None,
-                no_notif: true,
-            },
-            behavior_hints: Default::default(),
-        };
-        {
-            let closest_duration = 11000;
-            let closest_outro = 1;
-            assert_eq!(
-                calculate_outro(&library_item, closest_duration, closest_outro),
-                Some(999)
-            );
-        }
-        {
-            let closest_duration = 11000;
-            let closest_outro = 12000;
-            assert_eq!(
-                calculate_outro(&library_item, closest_duration, closest_outro),
-                Some(9000)
-            );
-        }
-        assert_eq!(calculate_outro(&library_item, 11000, 0), None);
-        assert_eq!(calculate_outro(&library_item, 11000, 1000), None);
-        assert_eq!(calculate_outro(&library_item, 11000, 32000), None);
-    }
 }
