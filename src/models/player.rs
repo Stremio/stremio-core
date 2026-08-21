@@ -1437,9 +1437,7 @@ fn intro_outro_update<E: Env + 'static>(
     let intro_outro_effects = match (skip_gaps, library_item) {
         (Some((request, Loadable::Ready(response))), Some(_)) if request.duration > 0 => {
             let gaps = response.gaps.get(&request.duration);
-            let outro_time = gaps
-                .and_then(|gaps| gaps.outro)
-                .filter(|outro| *outro > 0 && *outro <= request.duration);
+            let outro_time = gaps.and_then(|gaps| gaps.outro);
             let intro_time = gaps
                 .and_then(|gaps| gaps.seek_history.first())
                 .map(|seek_event| IntroData {
