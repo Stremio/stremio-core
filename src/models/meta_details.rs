@@ -154,7 +154,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                             .meta_items
                             .iter()
                             .find_map(|item| item.content.as_ref().and_then(|c| c.ready()))
-                            .and_then(|meta_item| meta_item.next_video(&video.id))
+                            .and_then(|meta_item| meta_item.next_video(&video.id, &E::now()))
                             .map(|video| video.id.to_owned());
                         if let Some(next_video_id) = next_video_id {
                             library_item.advance_to_video(&next_video_id);
@@ -452,7 +452,7 @@ fn external_player_progress_update<E: Env + 'static>(
             let next_video_id = meta_items
                 .iter()
                 .find_map(|meta_item| match &meta_item.content {
-                    Some(Loadable::Ready(meta_item)) => meta_item.next_video(video_id),
+                    Some(Loadable::Ready(meta_item)) => meta_item.next_video(video_id, &E::now()),
                     _ => None,
                 })
                 .map(|video| video.id.to_owned());
