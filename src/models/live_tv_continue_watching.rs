@@ -83,8 +83,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LiveTvContinueWatching {
                     )
                 })
                 .map(|catalog_effects| {
-                    let items_effects =
-                        items_update(&mut self.items, &self.catalog, &ctx.library);
+                    let items_effects = items_update(&mut self.items, &self.catalog, &ctx.library);
                     catalog_effects.join(items_effects)
                 })
                 .unwrap_or_else(|| Effects::none().unchanged()),

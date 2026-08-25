@@ -70,8 +70,7 @@ fn library_item(id: &str, r#type: &str, hour: u32, watched: bool) -> LibraryItem
             // time_offset on Unload. Included channels must survive that.
             time_offset: 0,
             duration: 0,
-            last_watched: watched
-                .then(|| Utc.with_ymd_and_hms(2026, 7, 2, hour, 0, 0).unwrap()),
+            last_watched: watched.then(|| Utc.with_ymd_and_hms(2026, 7, 2, hour, 0, 0).unwrap()),
             ..Default::default()
         },
         behavior_hints: Default::default(),
@@ -159,7 +158,10 @@ fn live_tv_continue_watching() {
         uid: None,
         items: vec![
             // regular item (not an epgProvider channel) - excluded
-            ("tt123456".into(), library_item("tt123456", "movie", 13, true)),
+            (
+                "tt123456".into(),
+                library_item("tt123456", "movie", 13, true),
+            ),
             // watched channels; amc is more recent than axn. Both sit at
             // time_offset 0 (post-Unload) yet must still appear - this is the
             // regression the fix guards against.
