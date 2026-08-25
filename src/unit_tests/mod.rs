@@ -8,6 +8,7 @@ mod ctx;
 mod data_export;
 mod deep_links;
 mod link;
+mod live_tv_continue_watching;
 mod live_tv_guide;
 mod meta_details;
 mod player;

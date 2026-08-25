@@ -11,6 +11,7 @@ pub mod installed_addons_with_filters;
 pub mod library_by_type;
 pub mod library_with_filters;
 pub mod link;
+pub mod live_tv_continue_watching;
 pub mod live_tv_guide;
 pub mod local_search;
 pub mod meta_details;

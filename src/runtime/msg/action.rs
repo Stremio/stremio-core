@@ -270,6 +270,8 @@ pub enum ActionLoad {
     Calendar(Option<CalendarSelected>),
     /// Loads the LiveTvGuide Model
     LiveTvGuide(Option<LiveTvGuideSelected>),
+    /// Loads the LiveTvContinueWatching Model
+    LiveTvContinueWatching,
     /// Loads the data required for Local search
     LocalSearch,
     MetaDetails(MetaDetailsSelected),
