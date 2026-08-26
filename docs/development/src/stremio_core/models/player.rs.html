@@ -1936,7 +1936,7 @@
                     <span class="self">self</span>.stream.as_ref(),
                     <span class="kw-2">&amp;</span>ctx.profile.addons,
                 );
-                <span class="kw">let </span>next_video_effects = next_video_update(
+                <span class="kw">let </span>next_video_effects = next_video_update::&lt;E&gt;(
                     <span class="kw-2">&amp;mut </span><span class="self">self</span>.next_video,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.next_stream,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
@@ -2590,7 +2590,7 @@
                 <span class="kw">let </span>next_stream_effects =
                     next_stream_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.next_stream, <span class="kw-2">&amp;</span><span class="self">self</span>.next_streams, <span class="kw-2">&amp;</span><span class="self">self</span>.selected);
 
-                <span class="kw">let </span>next_video_effects = next_video_update(
+                <span class="kw">let </span>next_video_effects = next_video_update::&lt;E&gt;(
                     <span class="kw-2">&amp;mut </span><span class="self">self</span>.next_video,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.next_stream,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
@@ -2762,7 +2762,7 @@
     eq_update(state, next_state)
 }
 
-<span class="kw">fn </span>next_video_update(
+<span class="kw">fn </span>next_video_update&lt;E: Env&gt;(
     video: <span class="kw-2">&amp;mut </span><span class="prelude-ty">Option</span>&lt;Video&gt;,
     stream: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Stream&gt;,
     selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
@@ -2782,7 +2782,7 @@
                 content: <span class="prelude-val">Some</span>(Loadable::Ready(meta_item)),
                 ..
             }),
-        ) =&gt; meta_item.next_video(video_id).map(|next_video| {
+        ) =&gt; meta_item.next_video(video_id, <span class="kw-2">&amp;</span>E::now()).map(|next_video| {
             <span class="kw">let </span><span class="kw-2">mut </span>next_video = next_video.clone();
             <span class="kw">if let </span><span class="prelude-val">Some</span>(stream) = stream {
                 next_video.streams = <span class="macro">vec!</span>[stream.clone()];

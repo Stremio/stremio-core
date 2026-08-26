@@ -1030,7 +1030,7 @@
                             </span>.meta_items
                             .iter()
                             .find_map(|item| item.content.as_ref().and_then(|c| c.ready()))
-                            .and_then(|meta_item| meta_item.next_video(<span class="kw-2">&amp;</span>video.id))
+                            .and_then(|meta_item| meta_item.next_video(<span class="kw-2">&amp;</span>video.id, <span class="kw-2">&amp;</span>E::now()))
                             .map(|video| video.id.to_owned());
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(next_video_id) = next_video_id {
                             library_item.advance_to_video(<span class="kw-2">&amp;</span>next_video_id);
@@ -1328,7 +1328,7 @@
             <span class="kw">let </span>next_video_id = meta_items
                 .iter()
                 .find_map(|meta_item| <span class="kw">match </span><span class="kw-2">&amp;</span>meta_item.content {
-                    <span class="prelude-val">Some</span>(Loadable::Ready(meta_item)) =&gt; meta_item.next_video(video_id),
+                    <span class="prelude-val">Some</span>(Loadable::Ready(meta_item)) =&gt; meta_item.next_video(video_id, <span class="kw-2">&amp;</span>E::now()),
                     <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
                 })
                 .map(|video| video.id.to_owned());
