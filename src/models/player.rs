@@ -213,7 +213,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     self.stream.as_ref(),
                     &ctx.profile.addons,
                 );
-                let next_video_effects = next_video_update(
+                let next_video_effects = next_video_update::<E>(
                     &mut self.next_video,
                     &self.next_stream,
                     &self.selected,
@@ -867,7 +867,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let next_stream_effects =
                     next_stream_update(&mut self.next_stream, &self.next_streams, &self.selected);
 
-                let next_video_effects = next_video_update(
+                let next_video_effects = next_video_update::<E>(
                     &mut self.next_video,
                     &self.next_stream,
                     &self.selected,
@@ -1039,7 +1039,7 @@ fn stream_state_update(
     eq_update(state, next_state)
 }
 
-fn next_video_update(
+fn next_video_update<E: Env>(
     video: &mut Option<Video>,
     stream: &Option<Stream>,
     selected: &Option<Selected>,
@@ -1059,7 +1059,7 @@ fn next_video_update(
                 content: Some(Loadable::Ready(meta_item)),
                 ..
             }),
-        ) => meta_item.next_video(video_id).map(|next_video| {
+        ) => meta_item.next_video(video_id, &E::now()).map(|next_video| {
             let mut next_video = next_video.clone();
             if let Some(stream) = stream {
                 next_video.streams = vec![stream.clone()];
