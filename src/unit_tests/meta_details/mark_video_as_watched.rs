@@ -16,7 +16,7 @@ use crate::{
     },
     unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER},
 };
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use futures::future;
 use std::any::Any;
 use stremio_derive::Model;
@@ -51,6 +51,27 @@ fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
                         ..Default::default()
                     },
                     videos: vec![create_video(1, 1), create_video(1, 2)],
+                },
+            }) as Box<dyn Any + Send>)
+            .boxed_env()
+        }
+        _ => default_fetch_handler(request),
+    }
+}
+
+fn fetch_handler_unreleased_next(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
+    match request {
+        Request { url, .. } if url == "https://v3-cinemeta.strem.io/meta/series/tt123456.json" => {
+            let mut next_video = create_video(1, 2);
+            next_video.released = Some(Utc::now() + Duration::days(1));
+            future::ok(Box::new(ResourceResponse::Meta {
+                meta: MetaItem {
+                    preview: MetaItemPreview {
+                        id: "tt123456".to_owned(),
+                        r#type: "series".to_owned(),
+                        ..Default::default()
+                    },
+                    videos: vec![create_video(1, 1), next_video],
                 },
             }) as Box<dyn Any + Send>)
             .boxed_env()
@@ -218,6 +239,38 @@ fn mark_video_as_watched_advances_video_id() {
         PREVIOUS_OVERALL_TIME_WATCHED + PREVIOUS_TIME_WATCHED,
         "previous episode time_watched should be folded into overall_time_watched",
     );
+}
+
+#[test]
+fn mark_video_as_watched_does_not_advance_to_unreleased_video() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler_unreleased_next);
+
+    run_with_library_item(create_library_item("tt123456:1:1"), |runtime| {
+        load_selected_video(&runtime, "tt123456:1:1");
+
+        TestEnv::run(|| {
+            runtime.dispatch(RuntimeAction {
+                field: None,
+                action: Action::MetaDetails(ActionMetaDetails::MarkVideoAsWatched(
+                    create_video(1, 1),
+                    true,
+                )),
+            });
+        });
+
+        let model = runtime.model().unwrap();
+        let library_item = model.ctx.library.items.get("tt123456").unwrap();
+        assert_eq!(
+            library_item.state.video_id,
+            Some("tt123456:1:1".to_owned()),
+            "video_id should remain on the current episode when the next one is unreleased",
+        );
+        assert_eq!(
+            library_item.state.time_offset, 0,
+            "unreleased episodes should not keep the item in Continue Watching",
+        );
+    });
 }
 
 #[test]

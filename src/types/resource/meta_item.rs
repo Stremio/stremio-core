@@ -268,10 +268,11 @@ impl MetaItem {
         }
     }
 
-    /// Returns the next video after the given one, without crossing into season 0 specials;
+    /// Returns the next released video after the given one, without crossing into season 0 specials;
     /// for EPG program shows the next video is the show scheduled the
-    /// earliest at or after the current one's end
-    pub fn next_video(&self, video_id: &str) -> Option<&Video> {
+    /// earliest at or after the current one's end.
+    /// Videos without a release date are treated as released.
+    pub fn next_video(&self, video_id: &str, now: &DateTime<Utc>) -> Option<&Video> {
         let (position, current) = self
             .videos
             .iter()
@@ -303,7 +304,11 @@ impl MetaItem {
                     .as_ref()
                     .map(|s| s.season)
                     .unwrap_or_default();
-                next_season != 0 || cur_season == next_season
+                let released = match next.released.as_ref() {
+                    Some(released) => released <= now,
+                    None => true,
+                };
+                (next_season != 0 || cur_season == next_season) && released
             }),
         }
     }
@@ -483,6 +488,8 @@ pub struct MetaItemBehaviorHints {
 
 #[cfg(test)]
 mod tests {
+    use chrono::Duration;
+
     use super::*;
 
     fn create_video(id: &str, season: u32, episode: u32) -> Video {
@@ -495,6 +502,7 @@ mod tests {
 
     #[test]
     fn next_video() {
+        let now = Utc::now();
         let meta_item = MetaItem {
             preview: Default::default(),
             videos: vec![
@@ -502,33 +510,50 @@ mod tests {
                 create_video("s0e2", 0, 2),
                 create_video("s1e1", 1, 1),
                 create_video("s1e2", 1, 2),
+                create_video("s2e1", 2, 1),
                 create_video("s0e3", 0, 3),
             ],
         };
         assert_eq!(
-            meta_item.next_video("s0e1").map(|video| video.id.as_str()),
+            meta_item
+                .next_video("s0e1", &now)
+                .map(|video| video.id.as_str()),
             Some("s0e2")
         );
         assert_eq!(
-            meta_item.next_video("s0e2").map(|video| video.id.as_str()),
+            meta_item
+                .next_video("s0e2", &now)
+                .map(|video| video.id.as_str()),
             Some("s1e1")
         );
         assert_eq!(
-            meta_item.next_video("s1e1").map(|video| video.id.as_str()),
+            meta_item
+                .next_video("s1e1", &now)
+                .map(|video| video.id.as_str()),
             Some("s1e2")
         );
         assert_eq!(
-            meta_item.next_video("s1e2").map(|video| video.id.as_str()),
+            meta_item
+                .next_video("s1e2", &now)
+                .map(|video| video.id.as_str()),
+            Some("s2e1")
+        );
+        assert_eq!(
+            meta_item
+                .next_video("s2e1", &now)
+                .map(|video| video.id.as_str()),
             None,
             "should not cross into season 0 specials"
         );
         assert_eq!(
-            meta_item.next_video("s0e3").map(|video| video.id.as_str()),
+            meta_item
+                .next_video("s0e3", &now)
+                .map(|video| video.id.as_str()),
             None
         );
         assert_eq!(
             meta_item
-                .next_video("missing")
+                .next_video("missing", &now)
                 .map(|video| video.id.as_str()),
             None
         );
@@ -537,6 +562,8 @@ mod tests {
     #[test]
     fn next_video_epg() {
         use chrono::TimeZone;
+
+        let now = Utc::now();
 
         fn create_show(id: &str, start: u32, end: u32) -> Video {
             Video {
@@ -570,21 +597,44 @@ mod tests {
         };
         assert_eq!(
             meta_item
-                .next_video("morning")
+                .next_video("morning", &now)
                 .map(|video| video.id.as_str()),
             Some("noon"),
             "should pick the earliest show starting at or after the current one's end, skipping schedule gaps"
         );
         assert_eq!(
-            meta_item.next_video("noon").map(|video| video.id.as_str()),
+            meta_item
+                .next_video("noon", &now)
+                .map(|video| video.id.as_str()),
             Some("afternoon")
         );
         assert_eq!(
             meta_item
-                .next_video("afternoon")
+                .next_video("afternoon", &now)
                 .map(|video| video.id.as_str()),
             None,
             "the last scheduled show should have no next video"
+        );
+    }
+
+    #[test]
+    fn next_video_excludes_unreleased_video() {
+        let now = Utc::now();
+        let mut next_video = create_video("s1e2", 1, 2);
+        next_video.released = Some(now + Duration::days(1));
+        let mut meta_item = MetaItem {
+            preview: Default::default(),
+            videos: vec![create_video("s1e1", 1, 1), next_video],
+        };
+
+        assert_eq!(meta_item.next_video("s1e1", &now), None);
+
+        meta_item.videos[1].released = Some(now);
+        assert_eq!(
+            meta_item
+                .next_video("s1e1", &now)
+                .map(|video| video.id.as_str()),
+            Some("s1e2")
         );
     }
 }
