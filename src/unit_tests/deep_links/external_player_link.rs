@@ -23,6 +23,7 @@ fn external_player_link_magnet() {
         name: None,
         description: None,
         thumbnail: None,
+        tags: vec![],
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
@@ -43,6 +44,7 @@ fn external_player_link_http() {
         name: None,
         description: None,
         thumbnail: None,
+        tags: vec![],
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
@@ -71,6 +73,7 @@ fn external_player_link_torrent() {
         name: None,
         description: None,
         thumbnail: None,
+        tags: vec![],
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
@@ -112,6 +115,7 @@ fn external_player_link_external() {
         name: None,
         description: None,
         thumbnail: None,
+        tags: vec![],
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
@@ -132,6 +136,7 @@ fn external_player_link_youtube() {
         name: None,
         description: None,
         thumbnail: None,
+        tags: vec![],
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
@@ -160,6 +165,7 @@ fn external_player_link_player_frame() {
         name: None,
         description: None,
         thumbnail: None,
+        tags: vec![],
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
