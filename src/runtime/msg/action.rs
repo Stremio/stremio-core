@@ -41,6 +41,7 @@ pub enum ActionCtx {
     InstallTraktAddon,
     LogoutTrakt,
     UpgradeAddon(Descriptor),
+    UpgradeUserAddons,
     UninstallAddon(Descriptor),
     UpdateSettings(ProfileSettings),
     AddToLibrary(MetaItemPreview),
