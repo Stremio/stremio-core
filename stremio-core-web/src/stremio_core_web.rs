@@ -1,4 +1,4 @@
-use std::sync::RwLock;
+use std::{sync::RwLock, time::Duration};
 
 use enclose::enclose;
 use futures::{future, try_join, FutureExt, StreamExt};
@@ -7,7 +7,7 @@ use once_cell::sync::Lazy;
 use serde::Serialize;
 use tracing::{error, info, Level};
 use tracing_wasm::WASMLayerConfigBuilder;
-use wasm_bindgen::{prelude::wasm_bindgen, JsValue, UnwrapThrowExt};
+use wasm_bindgen::{prelude::wasm_bindgen, JsCast as _, JsValue, UnwrapThrowExt};
 
 use stremio_core::{
     constants::{
@@ -30,9 +30,10 @@ use stremio_core::{
 };
 
 use crate::{
-    env::WebEnv,
+    env::{WebEnv, UNKNOWN_ERROR},
     event::WebEvent,
     model::{WebModel, WebModelField},
+    timers::create_interval,
 };
 
 #[allow(clippy::type_complexity)]
@@ -164,7 +165,8 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                         effects.into_iter().collect::<Vec<_>>(),
                         1000,
                     );
-                    WebEnv::exec_concurrent(rx.for_each(move |event| {
+
+                    let rx_fut = rx.for_each(move |event| {
                         if let RuntimeEvent::CoreEvent(event) = &event {
                             WebEnv::exec_concurrent(WebEnv::get_location_hash().then(
                                 enclose!((event) move |location_hash| async move {
@@ -188,7 +190,52 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                             .call1(&JsValue::NULL, &<JsValue as JsValueSerdeExt>::from_serde(&event).expect("Event handler: JsValue from Event"))
                             .expect("emit event failed");
                         future::ready(())
-                    }));
+                    });
+
+                    let timer = async {
+                        loop {
+                            let dispatch_f = || {
+                                let runtime_action = RuntimeAction {
+                                    action: Action::StreamingServer(
+                                        stremio_core::runtime::msg::ActionStreamingServer::Refresh,
+                                    ),
+                                    field: None,
+                                };
+
+                                let result = dispatch_internal(runtime_action, None);
+                                if let Err(state) = result {
+                                    error!(
+                                        ?state,
+                                        "Dispatch failed for Server::Refresh recurring action"
+                                    )
+                                }
+                            };
+
+                            let server_refresh_interval = create_interval(
+                                Duration::from_secs(30).as_millis().try_into().unwrap(),
+                                dispatch_f,
+                            );
+
+                            match server_refresh_interval {
+                                Ok(id) => {
+                                    info!(%id, "Refresh interval for streaming server set with");
+                                }
+                                Err(err) => {
+                                    let js_error = err
+                                        .dyn_into::<js_sys::Error>()
+                                        .map(|error| String::from(error.message()))
+                                        .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned());
+                                    error!(%js_error, "Refresh interval failed to be set for streaming server. Trying again...");
+
+                                    continue;
+                                }
+                            }
+                            break;
+                        }
+                    };
+                    let join = futures::future::join(rx_fut, timer).map(drop);
+                    // let join = rx_fut;
+                    WebEnv::exec_concurrent(join);
                     *RUNTIME.write().expect("runtime write failed") =
                         Some(Loadable::Ready(runtime));
                     Ok(())

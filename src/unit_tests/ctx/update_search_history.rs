@@ -59,16 +59,18 @@ fn test_search_history_update() {
     let date = TestEnv::now();
 
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Load(ActionLoad::CatalogsWithExtra(Selected {
-                r#type: None,
-                extra: vec![ExtraValue {
-                    name: "search".to_owned(),
-                    value: query.to_owned(),
-                }],
-            })),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Load(ActionLoad::CatalogsWithExtra(Selected {
+                    r#type: None,
+                    extra: vec![ExtraValue {
+                        name: "search".to_owned(),
+                        value: query.to_owned(),
+                    }],
+                })),
+            })
+            .expect("Should dispatch")
     });
 
     assert_eq!(
@@ -130,16 +132,18 @@ fn test_search_history_clear_items() {
     );
 
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Load(ActionLoad::CatalogsWithExtra(Selected {
-                r#type: None,
-                extra: vec![ExtraValue {
-                    name: "search".to_owned(),
-                    value: "superman".to_owned(),
-                }],
-            })),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Load(ActionLoad::CatalogsWithExtra(Selected {
+                    r#type: None,
+                    extra: vec![ExtraValue {
+                        name: "search".to_owned(),
+                        value: "superman".to_owned(),
+                    }],
+                })),
+            })
+            .expect("Should dispatch");
     });
 
     assert!(
@@ -148,10 +152,12 @@ fn test_search_history_clear_items() {
     );
 
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::ClearSearchHistory),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::ClearSearchHistory),
+            })
+            .expect("Should dispatch action");
     });
 
     assert!(

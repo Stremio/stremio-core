@@ -163,8 +163,14 @@ impl Stream {
     /// ```
     /// use stremio_core::types::resource::{Stream, StreamSource};
     ///
-    /// assert_eq!("file.rar".to_string(), Stream::ftp_filename(&"ftp://example.com/file.rar".parse().unwrap()).unwrap());
-    /// assert_eq!("0x00000000000000000000".to_string(), Stream::ftp_filename(&"ftp://example.com/0x00000000000000000000".parse().unwrap()).unwrap());
+    /// assert_eq!(
+    ///     "file.rar".to_string(),
+    ///     Stream::ftp_filename(&"ftp://example.com/file.rar".parse().unwrap()).unwrap()
+    /// );
+    /// assert_eq!(
+    ///     "0x00000000000000000000".to_string(),
+    ///     Stream::ftp_filename(&"ftp://example.com/0x00000000000000000000".parse().unwrap()).unwrap()
+    /// );
     /// ```
     pub fn ftp_filename(url: &Url) -> Result<String, EnvError> {
         url.path_segments()
@@ -842,12 +848,22 @@ pub enum StreamSource {
 ///     ["http://example.com/file0.rar"],
 ///     ["http://example.com/file1.rar", 123]
 /// ]);
-/// let archive_urls = vec![ArchiveUrl { url: "http://example.com/file0.rar".parse().unwrap(), bytes: None }, ArchiveUrl { url: "http://example.com/file1.rar".parse().unwrap(), bytes: Some(123) }];
+/// let archive_urls = vec![
+///     ArchiveUrl {
+///         url: "http://example.com/file0.rar".parse().unwrap(),
+///         bytes: None,
+///     },
+///     ArchiveUrl {
+///         url: "http://example.com/file1.rar".parse().unwrap(),
+///         bytes: Some(123),
+///     },
+/// ];
 ///
 /// let ser_stream_source = serde_json::to_value(&archive_urls).expect("Should serialize");
 /// assert_eq!(ser_stream_source, expected);
 /// println!("{:?}", ser_stream_source);
-/// let stream_source = serde_json::from_value::<Vec<ArchiveUrl>>(expected).expect("Should deserialize");
+/// let stream_source =
+///     serde_json::from_value::<Vec<ArchiveUrl>>(expected).expect("Should deserialize");
 /// assert_eq!(archive_urls, stream_source);
 /// ```
 #[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]

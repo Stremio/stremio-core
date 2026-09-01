@@ -79,10 +79,12 @@ fn test_events() {
     );
 
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::GetEvents),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::GetEvents),
+            })
+            .expect("Should dispatch action");
     });
 
     assert!(
@@ -133,10 +135,12 @@ fn test_dismissed_events() {
     );
 
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::GetEvents),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::GetEvents),
+            })
+            .expect("Should dispatch action");
     });
 
     assert!(
@@ -150,17 +154,21 @@ fn test_dismissed_events() {
     );
 
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::DismissEvent("modal_id".to_owned())),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::DismissEvent("modal_id".to_owned())),
+            })
+            .expect("Should dispatch action");
     });
 
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::DismissEvent("notification_id".to_owned())),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::DismissEvent("notification_id".to_owned())),
+            })
+            .expect("Should dispatch action");
     });
 
     assert_eq!(
@@ -224,10 +232,12 @@ fn test_stored_dismissed_events() {
     );
 
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::GetEvents),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::GetEvents),
+            })
+            .expect("Should dispatch action");
     });
 
     assert_eq!(

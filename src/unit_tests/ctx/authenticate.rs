@@ -117,14 +117,16 @@ fn actionctx_authenticate_login() {
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
-                email: "user_email".into(),
-                password: "user_password".into(),
-                facebook: false,
-            })),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
+                    email: "user_email".into(),
+                    password: "user_password".into(),
+                    facebook: false,
+                })),
+            })
+            .expect("Should dispatch action");
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile,
@@ -259,12 +261,14 @@ fn actionctx_authenticate_login_with_token() {
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::Authenticate(AuthRequest::LoginWithToken {
-                token: "auth_key".into(),
-            })),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::Authenticate(AuthRequest::LoginWithToken {
+                    token: "auth_key".into(),
+                })),
+            })
+            .expect("Should dispatch action");
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile,
@@ -400,12 +404,14 @@ fn actionctx_authenticate_facebook() {
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::Authenticate(AuthRequest::Facebook {
-                token: "access_token".into(),
-            })),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::Authenticate(AuthRequest::Facebook {
+                    token: "access_token".into(),
+                })),
+            })
+            .expect("Should dispatch action");
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile,
@@ -540,15 +546,17 @@ fn actionctx_authenticate_apple() {
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::Authenticate(AuthRequest::Apple {
-                token: "access_token".into(),
-                sub: "sub_id".into(),
-                email: "user_email".into(),
-                name: "user_name".into(),
-            })),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::Authenticate(AuthRequest::Apple {
+                    token: "access_token".into(),
+                    sub: "sub_id".into(),
+                    email: "user_email".into(),
+                    name: "user_name".into(),
+                })),
+            })
+            .expect("Should dispatch action");
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile,
@@ -684,19 +692,21 @@ fn actionctx_authenticate_register() {
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::Authenticate(AuthRequest::Register {
-                email: "user_email".into(),
-                password: "user_password".into(),
-                gdpr_consent: GDPRConsent {
-                    tos: true,
-                    privacy: true,
-                    marketing: false,
-                    from: Some("tests".to_owned()),
-                },
-            })),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::Authenticate(AuthRequest::Register {
+                    email: "user_email".into(),
+                    password: "user_password".into(),
+                    gdpr_consent: GDPRConsent {
+                        tos: true,
+                        privacy: true,
+                        marketing: false,
+                        from: Some("tests".to_owned()),
+                    },
+                })),
+            })
+            .expect("Should dispatch action");
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile,

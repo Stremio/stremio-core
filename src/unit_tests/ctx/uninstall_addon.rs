@@ -119,10 +119,12 @@ fn actionctx_uninstalladdon() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::UninstallAddon(addon)),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::UninstallAddon(addon)),
+            })
+            .expect("Should dispatch action");
     });
     assert!(
         runtime.model().unwrap().ctx.profile.addons.is_empty(),
@@ -235,10 +237,12 @@ fn actionctx_uninstalladdon_with_user() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::UninstallAddon(addon)),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::UninstallAddon(addon)),
+            })
+            .expect("Should dispatch action");
     });
     assert!(
         runtime.model().unwrap().ctx.profile.addons.is_empty(),
@@ -329,10 +333,12 @@ fn actionctx_uninstalladdon_protected() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::UninstallAddon(addon.to_owned())),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::UninstallAddon(addon.to_owned())),
+            })
+            .expect("Should dispatch action");
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
@@ -406,13 +412,15 @@ fn actionctx_uninstalladdon_not_installed() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::UninstallAddon(Descriptor {
-                transport_url: Url::parse("https://transport_url2").unwrap(),
-                ..addon.to_owned()
-            })),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::UninstallAddon(Descriptor {
+                    transport_url: Url::parse("https://transport_url2").unwrap(),
+                    ..addon.to_owned()
+                })),
+            })
+            .expect("Should dispatch");
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
@@ -491,10 +499,12 @@ fn actionctx_uninstalladdon_streams_bucket() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::UninstallAddon(addon)),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::UninstallAddon(addon)),
+            })
+            .expect("Should dispatch action");
     });
     assert!(
         runtime.model().unwrap().ctx.profile.addons.is_empty(),

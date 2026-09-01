@@ -71,7 +71,7 @@ fn default_catalog() {
             runtime.dispatch(RuntimeAction {
                 field: None,
                 action: Action::Load(ActionLoad::CatalogWithFilters(None)),
-            });
+            }).expect("Should dispatch");
         }),
     );
     let events = EVENTS.read().unwrap();
@@ -193,7 +193,7 @@ fn search_catalog() {
             runtime.dispatch(RuntimeAction {
                 field: None,
                 action: Action::Load(ActionLoad::CatalogWithFilters(Some(selected))),
-            });
+            }).expect("Should dispatch");
         }),
     );
     let events = EVENTS.read().unwrap();

@@ -43,10 +43,12 @@ fn actionctx_synclibrarywithapi() {
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::SyncLibraryWithAPI),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::SyncLibraryWithAPI),
+            })
+            .expect("Should dispatch action");
     });
     assert!(
         REQUESTS.read().unwrap().is_empty(),
@@ -305,10 +307,12 @@ fn actionctx_synclibrarywithapi_with_user() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::SyncLibraryWithAPI),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::SyncLibraryWithAPI),
+            })
+            .expect("Should dispatch action");
     });
     assert_eq!(
         runtime.model().unwrap().ctx.library,
@@ -445,10 +449,12 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::SyncLibraryWithAPI),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::SyncLibraryWithAPI),
+            })
+            .expect("Should dispatch action");
     });
     assert_eq!(
         REQUESTS.read().unwrap().len(),
