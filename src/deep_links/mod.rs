@@ -174,6 +174,7 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
                             "{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
                             http_regex.replace(url.as_str(), "intent://"),
                         )),
+                        windows: Some(format!("vlc://{url}")),
                         ..Default::default()
                     }),
                     "mxplayer" => Some(OpenPlayerLink {
