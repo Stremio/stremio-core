@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use url::Url;
 
-use crate::types::resource::Stream;
+use crate::types::{player::VideoScale, resource::Stream};
 
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -47,6 +47,8 @@ pub struct StreamItemState {
     pub playback_speed: Option<f32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub player_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub video_scale: Option<VideoScale>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
