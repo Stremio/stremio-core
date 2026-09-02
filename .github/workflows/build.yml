@@ -8,7 +8,7 @@ on:
   # this will still create a package for testing!
   push:
     branches:
-      - development
+      - '**'
     tags-ignore:
       - '**'
   pull_request:
@@ -23,6 +23,9 @@ concurrency:
 
 jobs:
   build-core:
+    # Same-repository branches are checked on push so they can publish a testing package.
+    # Pull request runs are only needed for forks, whose pushes do not run here.
+    if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) }}
     name: "stremio-core-*: Lint, test and build"
     runs-on: ubuntu-latest
 
