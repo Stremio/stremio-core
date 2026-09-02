@@ -1721,7 +1721,29 @@
 <a href="#1720" id="1720">1720</a>
 <a href="#1721" id="1721">1721</a>
 <a href="#1722" id="1722">1722</a>
-<a href="#1723" id="1723">1723</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#1723" id="1723">1723</a>
+<a href="#1724" id="1724">1724</a>
+<a href="#1725" id="1725">1725</a>
+<a href="#1726" id="1726">1726</a>
+<a href="#1727" id="1727">1727</a>
+<a href="#1728" id="1728">1728</a>
+<a href="#1729" id="1729">1729</a>
+<a href="#1730" id="1730">1730</a>
+<a href="#1731" id="1731">1731</a>
+<a href="#1732" id="1732">1732</a>
+<a href="#1733" id="1733">1733</a>
+<a href="#1734" id="1734">1734</a>
+<a href="#1735" id="1735">1735</a>
+<a href="#1736" id="1736">1736</a>
+<a href="#1737" id="1737">1737</a>
+<a href="#1738" id="1738">1738</a>
+<a href="#1739" id="1739">1739</a>
+<a href="#1740" id="1740">1740</a>
+<a href="#1741" id="1741">1741</a>
+<a href="#1742" id="1742">1742</a>
+<a href="#1743" id="1743">1743</a>
+<a href="#1744" id="1744">1744</a>
+<a href="#1745" id="1745">1745</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>std::ops::Div;
 
 <span class="kw">use </span>base64::Engine;
@@ -1748,7 +1770,7 @@
     SuccessResponse,
 };
 <span class="kw">use </span><span class="kw">crate</span>::types::library::{LibraryBucket, LibraryItem};
-<span class="kw">use </span><span class="kw">crate</span>::types::player::{IntroData, IntroOutro, SubtitlePreference};
+<span class="kw">use </span><span class="kw">crate</span>::types::player::{IntroData, IntroOutro, SubtitlePreference, VideoScale};
 <span class="kw">use </span><span class="kw">crate</span>::types::profile::{AuthKey, Profile};
 <span class="kw">use </span><span class="kw">crate</span>::types::rating::{Rating, RatingSendRequest, RatingSendResponse};
 <span class="kw">use </span><span class="kw">crate</span>::types::resource::{
@@ -1829,6 +1851,7 @@
     <span class="kw">pub </span>library_item: <span class="prelude-ty">Option</span>&lt;LibraryItem&gt;,
     <span class="kw">pub </span>stream_state: <span class="prelude-ty">Option</span>&lt;StreamItemState&gt;,
     <span class="kw">pub </span>subtitle_preference: <span class="prelude-ty">Option</span>&lt;SubtitlePreference&gt;,
+    <span class="kw">pub </span>video_scale: <span class="prelude-ty">Option</span>&lt;VideoScale&gt;,
     <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>intro_outro: <span class="prelude-ty">Option</span>&lt;IntroOutro&gt;,
     <span class="attr">#[serde(skip_serializing)]
@@ -2094,6 +2117,7 @@
                 <span class="kw">let </span>meta_item_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.meta_item, <span class="prelude-val">None</span>);
                 <span class="kw">let </span>stream_state_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.stream_state, <span class="prelude-val">None</span>);
                 <span class="kw">let </span>subtitle_preference_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.subtitle_preference, <span class="prelude-val">None</span>);
+                <span class="kw">let </span>video_scale_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.video_scale, <span class="prelude-val">None</span>);
                 <span class="kw">let </span>stream_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.stream, <span class="prelude-val">None</span>);
                 <span class="kw">let </span>subtitles_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.subtitles, <span class="macro">vec!</span>[]);
                 <span class="kw">let </span>next_video_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.next_video, <span class="prelude-val">None</span>);
@@ -2120,6 +2144,7 @@
                     .join(meta_item_effects)
                     .join(stream_state_effects)
                     .join(subtitle_preference_effects)
+                    .join(video_scale_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(next_streams_effects)
@@ -2171,6 +2196,13 @@
             Msg::Action(Action::Player(ActionPlayer::SubtitlePreferenceChanged { preference })) =&gt; {
                 <span class="kw">if </span><span class="self">self</span>.selected.is_some() {
                     eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.subtitle_preference, <span class="prelude-val">Some</span>(preference.to_owned()))
+                } <span class="kw">else </span>{
+                    Effects::none().unchanged()
+                }
+            }
+            Msg::Action(Action::Player(ActionPlayer::VideoScaleChanged { video_scale })) =&gt; {
+                <span class="kw">if </span><span class="self">self</span>.selected.is_some() {
+                    eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.video_scale, <span class="prelude-val">Some</span>(<span class="kw-2">*</span>video_scale))
                 } <span class="kw">else </span>{
                     Effects::none().unchanged()
                 }
@@ -2539,7 +2571,19 @@
                     .join(watched_effects)
             }
             Msg::Internal(Internal::StreamsChanged(<span class="kw">_</span>)) =&gt; {
-                stream_state_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.stream_state, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span>ctx.streams)
+                <span class="kw">let </span>stream_state_effects =
+                    stream_state_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.stream_state, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span>ctx.streams);
+                <span class="kw">let </span>video_scale_effects = <span class="kw">if </span><span class="self">self</span>.video_scale.is_none() {
+                    eq_update(
+                        <span class="kw-2">&amp;mut </span><span class="self">self</span>.video_scale,
+                        <span class="self">self</span>.stream_state
+                            .as_ref()
+                            .and_then(|state| state.video_scale),
+                    )
+                } <span class="kw">else </span>{
+                    Effects::none().unchanged()
+                };
+                stream_state_effects.join(video_scale_effects)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result))
                 <span class="kw">if </span><span class="self">self</span>.selected.is_some() =&gt;

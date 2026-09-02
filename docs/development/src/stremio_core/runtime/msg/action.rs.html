@@ -299,7 +299,12 @@
 <a href="#298" id="298">298</a>
 <a href="#299" id="299">299</a>
 <a href="#300" id="300">300</a>
-<a href="#301" id="301">301</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
 
 <span class="kw">use </span>serde::Deserialize;
 <span class="kw">use </span>url::Url;
@@ -320,7 +325,7 @@
         addon::Descriptor,
         api::AuthRequest,
         library::LibraryItemId,
-        player::SubtitlePreference,
+        player::{SubtitlePreference, VideoScale},
         profile::{AuthKey, Password, Settings <span class="kw">as </span>ProfileSettings},
         rating::Rating,
         resource::{MetaItemId, MetaItemPreview, Video},
@@ -505,6 +510,11 @@
     <span class="doccomment">/// Updates the subtitle preference for the current Player session.
     </span>SubtitlePreferenceChanged {
         preference: SubtitlePreference,
+    },
+    <span class="doccomment">/// Updates the video scale for the current Player session.
+    </span><span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
+    </span>VideoScaleChanged {
+        video_scale: VideoScale,
     },
     <span class="doccomment">/// Seek performed by the user when using the seekbar or
     /// the shortcuts for seeking.

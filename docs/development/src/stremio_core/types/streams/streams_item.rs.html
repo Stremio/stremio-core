@@ -117,12 +117,14 @@
 <a href="#116" id="116">116</a>
 <a href="#117" id="117">117</a>
 <a href="#118" id="118">118</a>
-<a href="#119" id="119">119</a></pre></div><pre class="rust"><code><span class="kw">use </span>chrono::{DateTime, Utc};
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a></pre></div><pre class="rust"><code><span class="kw">use </span>chrono::{DateTime, Utc};
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>serde_with::serde_as;
 <span class="kw">use </span>url::Url;
 
-<span class="kw">use </span><span class="kw">crate</span>::types::resource::Stream;
+<span class="kw">use </span><span class="kw">crate</span>::types::{player::VideoScale, resource::Stream};
 
 <span class="attr">#[serde_as]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -166,6 +168,8 @@
     </span><span class="kw">pub </span>playback_speed: <span class="prelude-ty">Option</span>&lt;f32&gt;,
     <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>player_type: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+    </span><span class="kw">pub </span>video_scale: <span class="prelude-ty">Option</span>&lt;VideoScale&gt;,
 }
 
 <span class="attr">#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
