@@ -334,12 +334,6 @@ pub trait Env {
                         .await?;
                     schema_version = 25;
                 }
-                if schema_version == 25 {
-                    migrate_storage_schema_to_v26::<Self>()
-                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
-                        .await?;
-                    schema_version = 26;
-                }
                 if schema_version != SCHEMA_VERSION {
                     panic!(
                         "Storage schema version must be upgraded from {} to {}",
@@ -894,10 +888,6 @@ fn migrate_storage_schema_to_v25<E: Env>() -> TryEnvFuture<()> {
         .boxed_env()
 }
 
-fn migrate_storage_schema_to_v26<E: Env>() -> TryEnvFuture<()> {
-    E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&26)).boxed_env()
-}
-
 #[cfg(test)]
 mod test {
     use serde_json::{json, Value};
@@ -916,9 +906,8 @@ mod test {
                 migrate_storage_schema_to_v20, migrate_storage_schema_to_v21,
                 migrate_storage_schema_to_v22, migrate_storage_schema_to_v23,
                 migrate_storage_schema_to_v24, migrate_storage_schema_to_v25,
-                migrate_storage_schema_to_v26, migrate_storage_schema_to_v6,
-                migrate_storage_schema_to_v7, migrate_storage_schema_to_v8,
-                migrate_storage_schema_to_v9,
+                migrate_storage_schema_to_v6, migrate_storage_schema_to_v7,
+                migrate_storage_schema_to_v8, migrate_storage_schema_to_v9,
             },
             Env,
         },
@@ -1855,37 +1844,5 @@ mod test {
                 "Profile should match"
             );
         }
-    }
-
-    #[tokio::test]
-    async fn test_migration_from_25_to_26() {
-        let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
-        let streams = json!({
-            "uid": null,
-            "items": []
-        });
-
-        set_streams_and_schema_version(&streams, 25);
-
-        migrate_storage_schema_to_v26::<TestEnv>()
-            .await
-            .expect("Should migrate");
-
-        let storage = STORAGE.read().expect("Should lock");
-
-        assert_eq!(
-            &26.to_string(),
-            storage
-                .get(SCHEMA_VERSION_STORAGE_KEY)
-                .expect("Should have the schema set"),
-            "Scheme version should now be updated"
-        );
-        assert_eq!(
-            &streams.to_string(),
-            storage
-                .get(STREAMS_STORAGE_KEY)
-                .expect("Should have streams"),
-            "Streams should remain unchanged"
-        );
     }
 }
