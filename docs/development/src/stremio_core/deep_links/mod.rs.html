@@ -840,7 +840,8 @@
 <a href="#839" id="839">839</a>
 <a href="#840" id="840">840</a>
 <a href="#841" id="841">841</a>
-<a href="#842" id="842">842</a></pre></div><pre class="rust"><code><span class="kw">use </span>percent_encoding::utf8_percent_encode;
+<a href="#842" id="842">842</a>
+<a href="#843" id="843">843</a></pre></div><pre class="rust"><code><span class="kw">use </span>percent_encoding::utf8_percent_encode;
 <span class="kw">use </span>regex::Regex;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>url::Url;
@@ -1016,6 +1017,7 @@
                             <span class="string">"{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end"</span>,
                             http_regex.replace(url.as_str(), <span class="string">"intent://"</span>),
                         )),
+                        windows: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"vlc://{url}"</span>)),
                         ..Default::default()
                     }),
                     <span class="string">"mxplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
