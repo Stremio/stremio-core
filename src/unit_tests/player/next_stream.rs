@@ -263,7 +263,25 @@ fn next_stream_without_binge_group() {
                 if url == "https://transport_url/stream/series/tt123456%3A1%3A2.json" =>
             {
                 future::ok(Box::new(ResourceResponse::Streams {
-                    streams: vec![create_stream_without_binge_group("https://next_source_url")],
+                    // A URL stream alongside a torrent stream for the same video
+                    // (e.g. Local Files reporting a plain file and a downloaded torrent):
+                    // the stream matching the playing stream's source kind is picked.
+                    streams: vec![
+                        create_stream_without_binge_group("https://next_source_url"),
+                        Stream {
+                            source: StreamSource::Torrent {
+                                info_hash: [1; 20],
+                                file_idx: None,
+                                announce: vec![],
+                                file_must_include: vec![],
+                            },
+                            name: None,
+                            description: None,
+                            thumbnail: None,
+                            subtitles: vec![],
+                            behavior_hints: StreamBehaviorHints::default(),
+                        },
+                    ],
                 }) as Box<dyn Any + Send>)
                 .boxed_env()
             }

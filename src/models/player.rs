@@ -1156,12 +1156,23 @@ fn next_stream_update(
         ) => streams
             .iter()
             .find(|next_stream| next_stream.is_binge_match(stream))
-            .or_else(|| match streams.as_slice() {
+            .or_else(|| {
                 // Some addons (e.g. Local Files) do not set behaviorHints.bingeGroup;
-                // when the addon returned exactly one stream for the next video,
-                // use it so binge watching still works.
-                [next_stream] => Some(next_stream),
-                _ => None,
+                // fall back to the single returned stream, preferring streams whose
+                // source is the same kind as the one playing, so binge watching
+                // still works.
+                let same_source_kind = streams
+                    .iter()
+                    .filter(|next_stream| {
+                        std::mem::discriminant(&next_stream.source)
+                            == std::mem::discriminant(&stream.source)
+                    })
+                    .collect::<Vec<_>>();
+                match (same_source_kind.as_slice(), streams.as_slice()) {
+                    ([next_stream], _) => Some(*next_stream),
+                    (_, [next_stream]) => Some(next_stream),
+                    _ => None,
+                }
             })
             .cloned(),
         _ => None,
