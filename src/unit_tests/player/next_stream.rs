@@ -221,3 +221,126 @@ fn next_stream() {
         "library item time_offset was reset to 1 to keep it in CW as there's a next video"
     );
 }
+
+#[test]
+fn next_stream_without_binge_group() {
+    #[derive(Model, Default, Clone, Debug)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+        player: Player,
+    }
+
+    fn create_stream_without_binge_group(url: &str) -> Stream {
+        Stream {
+            source: StreamSource::Url {
+                url: url.parse().unwrap(),
+            },
+            name: None,
+            description: None,
+            thumbnail: None,
+            subtitles: vec![],
+            behavior_hints: StreamBehaviorHints::default(),
+        }
+    }
+
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
+        match request {
+            Request { url, .. } if url == "https://transport_url/meta/series/tt123456.json" => {
+                future::ok(Box::new(ResourceResponse::Meta {
+                    meta: MetaItem {
+                        preview: MetaItemPreview {
+                            id: "tt123456".to_owned(),
+                            r#type: "series".to_owned(),
+                            ..Default::default()
+                        },
+                        videos: vec![create_video(1, 1), create_video(1, 2)],
+                    },
+                }) as Box<dyn Any + Send>)
+                .boxed_env()
+            }
+            Request { url, .. }
+                if url == "https://transport_url/stream/series/tt123456%3A1%3A2.json" =>
+            {
+                future::ok(Box::new(ResourceResponse::Streams {
+                    streams: vec![create_stream_without_binge_group("https://next_source_url")],
+                }) as Box<dyn Any + Send>)
+                .boxed_env()
+            }
+            _ => default_fetch_handler(request),
+        }
+    }
+
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
+
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+        TestModel {
+            ctx: Ctx {
+                profile: Profile {
+                    settings: Settings {
+                        binge_watching: true,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            player: Player::default(),
+        },
+        vec![],
+        1000,
+    );
+
+    let stream = create_stream_without_binge_group("https://source_url");
+    let meta_request = ResourceRequest {
+        base: "https://transport_url/manifest.json".parse().unwrap(),
+        path: ResourcePath {
+            resource: META_RESOURCE_NAME.to_owned(),
+            r#type: "series".to_owned(),
+            id: "tt123456".to_owned(),
+            extra: vec![],
+        },
+    };
+    let stream_request = ResourceRequest {
+        base: "https://transport_url/manifest.json".parse().unwrap(),
+        path: ResourcePath {
+            resource: STREAM_RESOURCE_NAME.to_owned(),
+            r#type: "series".to_owned(),
+            id: "tt123456:1:1".to_owned(),
+            extra: vec![],
+        },
+    };
+
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Load(ActionLoad::Player(Box::new(Selected {
+                stream: stream.clone(),
+                stream_request: Some(stream_request),
+                meta_request: Some(meta_request),
+                subtitles_path: None,
+            }))),
+        });
+    });
+
+    assert_eq!(
+        runtime.model().unwrap().player.next_stream,
+        Some(create_stream_without_binge_group("https://next_source_url")),
+        "the single stream returned for the next video is used even without a binge group"
+    );
+
+    assert_eq!(
+        runtime
+            .model()
+            .unwrap()
+            .player
+            .next_video
+            .as_ref()
+            .unwrap()
+            .streams,
+        vec![create_stream_without_binge_group("https://next_source_url")],
+        "next video has the fallback next stream embedded"
+    );
+}

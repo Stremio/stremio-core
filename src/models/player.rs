@@ -1156,6 +1156,13 @@ fn next_stream_update(
         ) => streams
             .iter()
             .find(|next_stream| next_stream.is_binge_match(stream))
+            .or_else(|| match streams.as_slice() {
+                // Some addons (e.g. Local Files) do not set behaviorHints.bingeGroup;
+                // when the addon returned exactly one stream for the next video,
+                // use it so binge watching still works.
+                [next_stream] => Some(next_stream),
+                _ => None,
+            })
             .cloned(),
         _ => None,
     };
