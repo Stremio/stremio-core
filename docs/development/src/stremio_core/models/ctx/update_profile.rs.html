@@ -592,7 +592,15 @@
 <a href="#591" id="591">591</a>
 <a href="#592" id="592">592</a>
 <a href="#593" id="593">593</a>
-<a href="#594" id="594">594</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashSet;
+<a href="#594" id="594">594</a>
+<a href="#595" id="595">595</a>
+<a href="#596" id="596">596</a>
+<a href="#597" id="597">597</a>
+<a href="#598" id="598">598</a>
+<a href="#599" id="599">599</a>
+<a href="#600" id="600">600</a>
+<a href="#601" id="601">601</a>
+<a href="#602" id="602">602</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashSet;
 
 <span class="kw">use </span>enclose::enclose;
 <span class="kw">use </span>futures::{future, FutureExt, TryFutureExt};
@@ -833,7 +841,15 @@
             .unchanged(),
         },
         Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(settings))) =&gt; {
-            <span class="kw">if </span>profile.settings != <span class="kw-2">*</span>settings {
+            <span class="kw">if </span>!<span class="macro">matches!</span>(settings.streaming_server_url.scheme(), <span class="string">"http" </span>| <span class="string">"https"</span>) {
+                Effects::msg(Msg::Event(Event::Error {
+                    error: CtxError::from(OtherError::InvalidStreamingServerUrl),
+                    source: Box::new(Event::SettingsUpdated {
+                        settings: settings.to_owned(),
+                    }),
+                }))
+                .unchanged()
+            } <span class="kw">else if </span>profile.settings != <span class="kw-2">*</span>settings {
                 settings.clone_into(<span class="kw-2">&amp;mut </span>profile.settings);
                 Effects::msg(Msg::Event(Event::SettingsUpdated {
                     settings: settings.to_owned(),

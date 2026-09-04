@@ -80,7 +80,10 @@
 <a href="#79" id="79">79</a>
 <a href="#80" id="80">80</a>
 <a href="#81" id="81">81</a>
-<a href="#82" id="82">82</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::runtime::EnvError;
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::runtime::EnvError;
 <span class="kw">use </span><span class="kw">crate</span>::types::api::APIError;
 <span class="kw">use </span>serde::ser::{SerializeStruct, Serializer};
 <span class="kw">use </span>serde::Serialize;
@@ -122,6 +125,7 @@
     AddonConfigurationRequired,
     UserAddonsAreLocked,
     UserLibraryIsMissing,
+    InvalidStreamingServerUrl,
 }
 
 <span class="kw">impl </span>OtherError {
@@ -135,6 +139,7 @@
             OtherError::AddonConfigurationRequired =&gt; <span class="string">"Addon requires configuration"</span>.to_owned(),
             OtherError::UserAddonsAreLocked =&gt; <span class="string">"Fetching Addons from the API failed and we have defaulted the addons to the officials ones until the request succeeds"</span>.to_owned(),
             OtherError::UserLibraryIsMissing =&gt; <span class="string">"Fetching Library from the API failed and we have defaulted to empty library until the request succeeds"</span>.to_owned(),
+            OtherError::InvalidStreamingServerUrl =&gt; <span class="string">"Streaming server URL must be http or https"</span>.to_owned(),
         }
     }
     <span class="kw">pub fn </span>code(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u64 {
@@ -147,6 +152,7 @@
             OtherError::AddonConfigurationRequired =&gt; <span class="number">6</span>,
             OtherError::UserAddonsAreLocked =&gt; <span class="number">7</span>,
             OtherError::UserLibraryIsMissing =&gt; <span class="number">8</span>,
+            OtherError::InvalidStreamingServerUrl =&gt; <span class="number">9</span>,
         }
     }
 }
