@@ -117,7 +117,15 @@
 <a href="#116" id="116">116</a>
 <a href="#117" id="117">117</a>
 <a href="#118" id="118">118</a>
-<a href="#119" id="119">119</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::common::{descriptor_update, eq_update, DescriptorAction, DescriptorLoadable};
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::common::{descriptor_update, eq_update, DescriptorAction, DescriptorLoadable};
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::Ctx;
 <span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionLoad, Internal, Msg};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::{Effects, Env, UpdateWithCtx};
@@ -142,7 +150,7 @@
     <span class="kw">if </span>url.scheme() == <span class="string">"stremio" </span>{
         <span class="kw">let </span>replaced_url = url.as_str().replacen(<span class="string">"stremio://"</span>, <span class="string">"https://"</span>, <span class="number">1</span>);
 
-        <span class="prelude-val">Ok</span>(replaced_url.parse().expect(<span class="string">"Should be able to parse URL"</span>))
+        replaced_url.parse().map_err(serde::de::Error::custom)
     } <span class="kw">else </span>{
         <span class="prelude-val">Ok</span>(url)
     }
@@ -234,6 +242,14 @@
 
             <span class="macro">assert_eq!</span>(expected, selected.transport_url.as_str());
         }
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_deserialization_of_select_with_hostless_stremio_url() {
+        <span class="kw">let </span>selected_json = <span class="macro">json!</span>({ <span class="string">"transportUrl"</span>: <span class="string">"stremio://" </span>});
+
+        from_value::&lt;Selected&gt;(selected_json)
+            .expect_err(<span class="string">"Should not deserialize a stremio URL without a host"</span>);
     }
 }
 </code></pre></div></section></main></body></html>
