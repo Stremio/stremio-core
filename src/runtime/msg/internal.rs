@@ -173,4 +173,6 @@ pub enum Internal {
     /// Mark Season as watched (meta item)
     /// Mark move as watched (meta item)
     WatchedSendResult(MetaItemId, Result<RatingSendResponse, EnvError>),
+    /// Result of sending a playback webhook
+    WebhookSent(Result<serde_json::Value, EnvError>),
 }

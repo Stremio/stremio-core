@@ -200,6 +200,7 @@ fn stream_deep_links_http_with_request_headers() {
                 request: HashMap::from([("Authorization".to_string(), "my+token".to_string())]),
                 response: Default::default(),
             }),
+            playback_webhook: None,
             other: Default::default(),
         },
     };
@@ -241,6 +242,7 @@ fn stream_deep_links_http_with_request_response_headers_and_query_params() {
                     "application/xml".to_string(),
                 )]),
             }),
+            playback_webhook: None,
             other: Default::default(),
         },
     };
