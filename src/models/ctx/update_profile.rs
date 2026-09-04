@@ -239,7 +239,15 @@ pub fn update_profile<E: Env + 'static>(
             .unchanged(),
         },
         Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(settings))) => {
-            if profile.settings != *settings {
+            if !matches!(settings.streaming_server_url.scheme(), "http" | "https") {
+                Effects::msg(Msg::Event(Event::Error {
+                    error: CtxError::from(OtherError::InvalidStreamingServerUrl),
+                    source: Box::new(Event::SettingsUpdated {
+                        settings: settings.to_owned(),
+                    }),
+                }))
+                .unchanged()
+            } else if profile.settings != *settings {
                 settings.clone_into(&mut profile.settings);
                 Effects::msg(Msg::Event(Event::SettingsUpdated {
                     settings: settings.to_owned(),

@@ -11,6 +11,7 @@ use crate::types::server_urls::ServerUrlsBucket;
 use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{TestEnv, REQUESTS, STORAGE};
 use stremio_derive::Model;
+use url::Url;
 
 #[test]
 fn actionctx_updatesettings() {
@@ -117,6 +118,49 @@ fn actionctx_updatesettings_not_changed() {
             .is_some_and(|data| {
                 serde_json::from_str::<Profile>(data).unwrap().settings == settings
             }),
+        "Settings not updated in storage"
+    );
+    assert!(
+        REQUESTS.read().unwrap().is_empty(),
+        "No requests have been sent"
+    );
+}
+
+#[test]
+fn actionctx_updatesettings_invalid_streaming_server_url() {
+    #[derive(Model, Clone, Default)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+    }
+    let settings = Settings {
+        streaming_server_url: Url::parse("javascript:x").unwrap(),
+        ..Settings::default()
+    };
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    let ctx = Ctx::new(
+        Profile::default(),
+        LibraryBucket::default(),
+        StreamsBucket::default(),
+        ServerUrlsBucket::new::<TestEnv>(None),
+        NotificationsBucket::new::<TestEnv>(None, vec![]),
+        SearchHistoryBucket::default(),
+        DismissedEventsBucket::default(),
+    );
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::UpdateSettings(settings)),
+        })
+    });
+    assert_eq!(
+        runtime.model().unwrap().ctx.profile.settings,
+        Settings::default(),
+        "Settings not updated in memory"
+    );
+    assert!(
+        STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).is_none(),
         "Settings not updated in storage"
     );
     assert!(
