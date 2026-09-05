@@ -135,6 +135,12 @@ pub static CALENDAR_IDS_EXTRA_PROP: Lazy<ExtraProp> = Lazy::new(|| ExtraProp {
     options: vec![],
     options_limit: OptionsLimit(1),
 });
+pub static EPG_DATE_EXTRA_PROP: Lazy<ExtraProp> = Lazy::new(|| ExtraProp {
+    name: "date".to_owned(),
+    is_required: false,
+    options: vec![],
+    options_limit: OptionsLimit(1),
+});
 pub static TYPE_PRIORITIES: Lazy<HashMap<&'static str, i32>> = Lazy::new(|| {
     vec![
         ("all", 5),

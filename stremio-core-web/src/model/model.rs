@@ -18,6 +18,8 @@ use stremio_core::{
         installed_addons_with_filters::InstalledAddonsWithFilters,
         library_with_filters::{ContinueWatchingFilter, LibraryWithFilters, NotRemovedFilter},
         link::Link,
+        live_tv_continue_watching::LiveTvContinueWatching,
+        live_tv_guide::LiveTvGuide,
         local_search::LocalSearch,
         meta_details::MetaDetails,
         player::Player,
@@ -48,6 +50,8 @@ pub struct WebModel {
     pub library: LibraryWithFilters<NotRemovedFilter>,
     pub continue_watching: LibraryWithFilters<ContinueWatchingFilter>,
     pub calendar: Calendar,
+    pub live_tv_guide: LiveTvGuide,
+    pub live_tv_continue_watching: LiveTvContinueWatching,
     pub search: CatalogsWithExtra,
     /// Pre-loaded results for local search
     pub local_search: LocalSearch,
@@ -70,12 +74,12 @@ impl WebModel {
         dismissed_events: DismissedEventsBucket,
     ) -> (WebModel, Effects) {
         let (continue_watching_preview, continue_watching_preview_effects) =
-            ContinueWatchingPreview::new(&library, &notifications);
+            ContinueWatchingPreview::new(&library, &notifications, &profile);
         let (discover, discover_effects) = CatalogWithFilters::<MetaItemPreview>::new(&profile);
         let (library_, library_effects) =
-            LibraryWithFilters::<NotRemovedFilter>::new(&library, &notifications);
+            LibraryWithFilters::<NotRemovedFilter>::new(&library, &notifications, &profile);
         let (continue_watching, continue_watching_effects) =
-            LibraryWithFilters::<ContinueWatchingFilter>::new(&library, &notifications);
+            LibraryWithFilters::<ContinueWatchingFilter>::new(&library, &notifications, &profile);
         let (remote_addons, remote_addons_effects) =
             CatalogWithFilters::<Descriptor>::new(&profile);
         let (installed_addons, installed_addons_effects) =
@@ -101,6 +105,8 @@ impl WebModel {
             library: library_,
             continue_watching,
             calendar: Default::default(),
+            live_tv_guide: Default::default(),
+            live_tv_continue_watching: Default::default(),
             search: Default::default(),
             meta_details: Default::default(),
             remote_addons,
@@ -172,6 +178,16 @@ impl WebModel {
                 .expect("JsValue from model::CatalogsWithExtra")
             }
             WebModelField::Calendar => serialize_calendar(&self.calendar),
+            WebModelField::LiveTvGuide => serialize_live_tv_guide(
+                &self.live_tv_guide,
+                self.streaming_server.base_url.as_ref(),
+                &self.ctx.profile.settings,
+            ),
+            WebModelField::LiveTvContinueWatching => serialize_live_tv_continue_watching(
+                &self.live_tv_continue_watching,
+                self.streaming_server.base_url.as_ref(),
+                &self.ctx.profile.settings,
+            ),
             WebModelField::LocalSearch => serialize_local_search(&self.local_search),
             WebModelField::MetaDetails => serialize_meta_details::<WebEnv>(
                 &self.meta_details,

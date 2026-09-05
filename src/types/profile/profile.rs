@@ -58,6 +58,16 @@ impl Profile {
             .map(|trakt| E::now() < trakt.created_at + trakt.expires_in)
             .unwrap_or_default()
     }
+
+    /// Whether the id belongs to a live TV channel of an installed
+    /// `epgProvider` addon - matched against the addons' `idPrefixes`
+    pub fn is_epg_channel_id(&self, id: &str) -> bool {
+        self.addons
+            .iter()
+            .filter(|addon| addon.manifest.behavior_hints.epg_provider)
+            .flat_map(|addon| addon.manifest.id_prefixes.iter().flatten())
+            .any(|id_prefix| id.starts_with(id_prefix))
+    }
 }
 
 struct DescriptorUniqueVecAdapter;

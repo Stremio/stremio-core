@@ -1,6 +1,6 @@
 use crate::types::resource::Stream;
 use crate::types::resource::{
-    MetaItem, MetaItemPreview, SeriesInfo, StreamBehaviorHints, StreamSource, Video,
+    MetaItem, MetaItemPreview, SeriesInfo, StreamBehaviorHints, StreamSource, Video, VideoEpgInfo,
 };
 use crate::unit_tests::serde::default_tokens_ext::{DefaultFlattenTokens, DefaultTokens};
 use chrono::{TimeZone, Utc};
@@ -18,6 +18,7 @@ fn video() {
                 thumbnail: Some("thumbnail".to_owned()),
                 streams: vec![],
                 series_info: Some(SeriesInfo::default()),
+                epg_info: None,
                 trailer_streams: vec![],
             },
             Video {
@@ -28,6 +29,7 @@ fn video() {
                 thumbnail: None,
                 streams: vec![],
                 series_info: None,
+                epg_info: None,
                 trailer_streams: vec![],
             },
         ]
@@ -92,6 +94,7 @@ fn video() {
                 thumbnail: None,
                 streams: vec![],
                 series_info: None,
+                epg_info: None,
                 trailer_streams: vec![],
             },
             Video {
@@ -109,6 +112,7 @@ fn video() {
                     behavior_hints: StreamBehaviorHints::default(),
                 }],
                 series_info: None,
+                epg_info: None,
                 trailer_streams: vec![],
             },
             Video {
@@ -126,6 +130,7 @@ fn video() {
                     behavior_hints: StreamBehaviorHints::default(),
                 }],
                 series_info: None,
+                epg_info: None,
                 trailer_streams: vec![],
             },
         ]
@@ -234,6 +239,7 @@ fn videos_minimal() {
                     thumbnail: None,
                     streams: vec![],
                     series_info: None,
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
                 Video {
@@ -244,6 +250,7 @@ fn videos_minimal() {
                     thumbnail: None,
                     streams: vec![],
                     series_info: None,
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
                 Video {
@@ -254,6 +261,7 @@ fn videos_minimal() {
                     thumbnail: None,
                     streams: vec![],
                     series_info: None,
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
             ],
@@ -309,6 +317,7 @@ fn videos_released_equal() {
                     thumbnail: None,
                     streams: vec![],
                     series_info: None,
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
                 Video {
@@ -319,6 +328,7 @@ fn videos_released_equal() {
                     thumbnail: None,
                     streams: vec![],
                     series_info: None,
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
                 Video {
@@ -329,6 +339,7 @@ fn videos_released_equal() {
                     thumbnail: None,
                     streams: vec![],
                     series_info: None,
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
             ],
@@ -394,6 +405,7 @@ fn videos_released_sequal() {
                     thumbnail: None,
                     streams: vec![],
                     series_info: None,
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
                 Video {
@@ -404,6 +416,7 @@ fn videos_released_sequal() {
                     thumbnail: None,
                     streams: vec![],
                     series_info: None,
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
                 Video {
@@ -414,6 +427,7 @@ fn videos_released_sequal() {
                     thumbnail: None,
                     streams: vec![],
                     series_info: None,
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
                 Video {
@@ -424,6 +438,7 @@ fn videos_released_sequal() {
                     thumbnail: None,
                     streams: vec![],
                     series_info: None,
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
                 Video {
@@ -434,6 +449,7 @@ fn videos_released_sequal() {
                     thumbnail: None,
                     streams: vec![],
                     series_info: None,
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
             ],
@@ -511,6 +527,7 @@ fn various_videos_deserialization() {
                         season: 1,
                         episode: 1,
                     }),
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
                 Video {
@@ -524,6 +541,7 @@ fn various_videos_deserialization() {
                         season: 1,
                         episode: 2,
                     }),
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
                 Video {
@@ -537,6 +555,7 @@ fn various_videos_deserialization() {
                         season: 2,
                         episode: 1,
                     }),
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
                 Video {
@@ -550,6 +569,7 @@ fn various_videos_deserialization() {
                         season: 0,
                         episode: 1,
                     }),
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
                 Video {
@@ -563,6 +583,7 @@ fn various_videos_deserialization() {
                         season: 0,
                         episode: 2,
                     }),
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
                 Video {
@@ -573,6 +594,7 @@ fn various_videos_deserialization() {
                     thumbnail: None,
                     streams: vec![],
                     series_info: None,
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
                 Video {
@@ -583,6 +605,7 @@ fn various_videos_deserialization() {
                     thumbnail: None,
                     streams: vec![],
                     series_info: None,
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
                 Video {
@@ -593,6 +616,7 @@ fn various_videos_deserialization() {
                     thumbnail: None,
                     streams: vec![],
                     series_info: None,
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
                 Video {
@@ -603,6 +627,7 @@ fn various_videos_deserialization() {
                     thumbnail: None,
                     streams: vec![],
                     series_info: None,
+                    epg_info: None,
                     trailer_streams: vec![],
                 },
             ],
@@ -701,4 +726,82 @@ fn various_videos_deserialization() {
             Token::StructEnd,
         ],
     );
+}
+
+#[test]
+fn video_epg_info() {
+    let video = serde_json::from_value::<Video>(serde_json::json!({
+        "id": "pure:axn:2026-07-02T11:55",
+        "title": "Spy x Family",
+        "overview": "overview",
+        "thumbnail": "thumbnail",
+        "released": "2026-07-02T11:55:00Z",
+        "startTime": "2026-07-02T11:55:00Z",
+        "endTime": "2026-07-02T12:23:00Z",
+        "runtime": "28 min",
+        "releaseInfo": "2022",
+        "genres": ["Action", "Anime"],
+        "cast": ["Takuya Eguchi"],
+        "directors": ["Kazuhiro Furuhashi"],
+        "links": [],
+    }))
+    .expect("Failed to deserialize Video with EPG info");
+    let epg_info = video.epg_info.as_ref().expect("epg_info should be present");
+    assert_eq!(
+        epg_info.start_time,
+        Utc.with_ymd_and_hms(2026, 7, 2, 11, 55, 0).unwrap()
+    );
+    assert_eq!(epg_info.runtime.as_deref(), Some("28 min"));
+    assert_eq!(epg_info.release_info.as_deref(), Some("2022"));
+    assert_eq!(epg_info.genres, vec!["Action", "Anime"]);
+    // on air only within [startTime, endTime)
+    assert!(!epg_info.is_live(Utc.with_ymd_and_hms(2026, 7, 2, 11, 54, 59).unwrap()));
+    assert!(epg_info.is_live(Utc.with_ymd_and_hms(2026, 7, 2, 11, 55, 0).unwrap()));
+    assert!(epg_info.is_live(Utc.with_ymd_and_hms(2026, 7, 2, 12, 22, 59).unwrap()));
+    assert!(!epg_info.is_live(Utc.with_ymd_and_hms(2026, 7, 2, 12, 23, 0).unwrap()));
+
+    // videos without EPG fields must keep deserializing with no epg_info
+    let video = serde_json::from_value::<Video>(serde_json::json!({
+        "id": "tt123:1:1",
+        "title": "regular video",
+        "season": 1,
+        "episode": 1,
+    }))
+    .expect("Failed to deserialize Video without EPG info");
+    assert!(video.epg_info.is_none());
+    assert_eq!(
+        video.series_info,
+        Some(SeriesInfo {
+            season: 1,
+            episode: 1
+        })
+    );
+
+    // round-trip: epg fields serialize flattened in camelCase
+    let epg_info = VideoEpgInfo {
+        start_time: Utc.with_ymd_and_hms(2026, 7, 2, 11, 55, 0).unwrap(),
+        end_time: Utc.with_ymd_and_hms(2026, 7, 2, 12, 23, 0).unwrap(),
+        runtime: None,
+        release_info: None,
+        genres: vec![],
+        cast: vec![],
+        directors: vec![],
+        links: vec![],
+    };
+    let json = serde_json::to_value(Video {
+        id: "id".to_owned(),
+        title: "title".to_owned(),
+        released: None,
+        overview: None,
+        thumbnail: None,
+        streams: vec![],
+        series_info: None,
+        epg_info: Some(epg_info.clone()),
+        trailer_streams: vec![],
+    })
+    .unwrap();
+    assert_eq!(json["startTime"], "2026-07-02T11:55:00Z");
+    assert_eq!(json["endTime"], "2026-07-02T12:23:00Z");
+    let roundtrip = serde_json::from_value::<Video>(json).unwrap();
+    assert_eq!(roundtrip.epg_info, Some(epg_info));
 }
