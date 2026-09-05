@@ -149,3 +149,29 @@ fn stale_cache_root_results_are_ignored_after_reload_or_server_change() {
     server.selected.transport_url = "http://other-server:11470".parse().unwrap();
     assert!(!update(&mut server, &result, &ctx).has_changed);
 }
+
+#[test]
+fn general_settings_updates_only_send_cache_root_when_it_changes() {
+    let _env_mutex = TestEnv::reset().unwrap();
+    let ctx = Ctx::default();
+    for change_root in [false, true] {
+        let mut server = ready_server(&ctx);
+        let mut settings = server.settings.ready().unwrap().clone();
+        settings.cache_size = Some(2048.0);
+        if change_root {
+            settings.cache_root = "/new".to_owned();
+        }
+        update(
+            &mut server,
+            &Msg::Action(Action::StreamingServer(
+                ActionStreamingServer::UpdateSettings(settings),
+            )),
+            &ctx,
+        );
+        let requests = REQUESTS.read().unwrap();
+        assert_eq!(requests.len(), 1);
+        let body: serde_json::Value = serde_json::from_str(&requests[0].body).unwrap();
+        assert_eq!(body["cacheSize"], 2048.0);
+        assert_eq!(body.get("cacheRoot"), change_root.then_some(&json!("/new")));
+    }
+}

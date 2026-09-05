@@ -136,14 +136,20 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
             ))) if self.settings.is_ready()
                 && !matches!(self.cache_root_update, Some(Loadable::Loading)) =>
             {
+                let cache_root_changed =
+                    self.settings.ready().unwrap().cache_root != settings.cache_root;
                 let settings_effects =
                     eq_update(&mut self.settings, Loadable::Ready(settings.to_owned()));
                 let remote_url_effects =
                     update_remote_url::<E>(&mut self.remote_url, &self.selected, settings, ctx);
-                Effects::one(set_settings::<E>(&self.selected.transport_url, settings))
-                    .unchanged()
-                    .join(settings_effects)
-                    .join(remote_url_effects)
+                Effects::one(set_settings::<E>(
+                    &self.selected.transport_url,
+                    settings,
+                    cache_root_changed,
+                ))
+                .unchanged()
+                .join(settings_effects)
+                .join(remote_url_effects)
             }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::UpdateCacheRoot {
                 transport_url,
@@ -589,12 +595,17 @@ fn set_cache_root<E: Env + 'static>(url: &Url, root: &str, generation: u64) -> E
     .into()
 }
 
-fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
+fn set_settings<E: Env + 'static>(
+    url: &Url,
+    settings: &Settings,
+    cache_root_changed: bool,
+) -> Effect {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     struct Body {
         cache_size: Option<f64>,
-        cache_root: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        cache_root: Option<String>,
         bt_max_connections: u64,
         bt_handshake_timeout: u64,
         bt_request_timeout: u64,
@@ -608,7 +619,7 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
     }
     let body = Body {
         cache_size: settings.cache_size.to_owned(),
-        cache_root: settings.cache_root.to_owned(),
+        cache_root: cache_root_changed.then(|| settings.cache_root.to_owned()),
         bt_max_connections: settings.bt_max_connections.to_owned(),
         bt_handshake_timeout: settings.bt_handshake_timeout.to_owned(),
         bt_request_timeout: settings.bt_request_timeout.to_owned(),
