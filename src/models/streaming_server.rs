@@ -46,6 +46,9 @@ pub struct StreamingServer {
     pub selected: Selected,
     pub settings: Loadable<Settings, EnvError>,
     pub settings_options: Vec<SettingsOption>,
+    pub cache_root_update: Option<Loadable<String, EnvError>>,
+    #[serde(skip)]
+    pub cache_root_update_generation: u64,
     pub base_url: Option<Url>,
     pub remote_url: Option<Url>,
     pub playback_devices: Loadable<Vec<PlaybackDevice>, EnvError>,
@@ -74,6 +77,8 @@ impl StreamingServer {
                 },
                 settings: Loadable::Loading,
                 settings_options: vec![],
+                cache_root_update: None,
+                cache_root_update_generation: 0,
                 base_url: None,
                 remote_url: None,
                 playback_devices: Loadable::Loading,
@@ -92,6 +97,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::StreamingServer(ActionStreamingServer::Reload)) => {
+                self.cache_root_update_generation += 1;
+                self.cache_root_update = None;
                 let settings_effects = eq_update(&mut self.settings, Loadable::Loading);
                 let network_info_effects = eq_update(&mut self.network_info, Loadable::Loading);
                 let device_info_effects = eq_update(&mut self.device_info, Loadable::Loading);
@@ -126,7 +133,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
             }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::UpdateSettings(
                 settings,
-            ))) if self.settings.is_ready() => {
+            ))) if self.settings.is_ready()
+                && !matches!(self.cache_root_update, Some(Loadable::Loading)) =>
+            {
                 let settings_effects =
                     eq_update(&mut self.settings, Loadable::Ready(settings.to_owned()));
                 let remote_url_effects =
@@ -135,6 +144,21 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     .unchanged()
                     .join(settings_effects)
                     .join(remote_url_effects)
+            }
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::UpdateCacheRoot {
+                transport_url,
+                cache_root,
+            })) if self.selected.transport_url == *transport_url
+                && self.settings.is_ready()
+                && !matches!(self.cache_root_update, Some(Loadable::Loading)) =>
+            {
+                self.cache_root_update_generation += 1;
+                self.cache_root_update = Some(Loadable::Loading);
+                Effects::one(set_cache_root::<E>(
+                    &self.selected.transport_url,
+                    cache_root,
+                    self.cache_root_update_generation,
+                ))
             }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::CreateTorrent(
                 CreateTorrentArgs::Magnet(magnet),
@@ -249,6 +273,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 };
                 self.settings = Loadable::Loading;
                 self.settings_options = vec![];
+                self.cache_root_update_generation += 1;
+                self.cache_root_update = None;
                 self.network_info = Loadable::Loading;
                 self.device_info = Loadable::Loading;
                 self.base_url = None;
@@ -355,6 +381,29 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         Loadable::Ready(device_info.to_owned()),
                     ),
                     Err(error) => eq_update(&mut self.device_info, Loadable::Err(error.to_owned())),
+                }
+            }
+            Msg::Internal(Internal::StreamingServerUpdateCacheRootResult(
+                url,
+                generation,
+                result,
+            )) if self.selected.transport_url == *url
+                && self.cache_root_update_generation == *generation =>
+            {
+                match result {
+                    Ok(root) => {
+                        if let Loadable::Ready(settings) = &mut self.settings {
+                            settings.cache_root.clone_from(root);
+                        }
+                        eq_update(
+                            &mut self.cache_root_update,
+                            Some(Loadable::Ready(root.clone())),
+                        )
+                    }
+                    Err(error) => eq_update(
+                        &mut self.cache_root_update,
+                        Some(Loadable::Err(error.clone())),
+                    ),
                 }
             }
             Msg::Internal(Internal::StreamingServerUpdateSettingsResult(url, result))
@@ -507,6 +556,35 @@ fn get_device_info<E: Env + 'static>(url: &Url) -> Effect {
                 Msg::Internal(Internal::StreamingServerDeviceInfoResult(url, result))
             ))
             .boxed_env(),
+    )
+    .into()
+}
+
+fn set_cache_root<E: Env + 'static>(url: &Url, root: &str, generation: u64) -> Effect {
+    let url = url.clone();
+    let endpoint = url.join("settings").expect("url builder failed");
+    let request = Request::post(endpoint.as_str())
+        .header(http::header::CONTENT_TYPE, "application/json")
+        .body(serde_json::json!({ "cacheRoot": root }))
+        .expect("request builder failed");
+    EffectFuture::Concurrent(
+        async move {
+            let result = async {
+                E::fetch::<_, SuccessResponse>(request).await?;
+                E::fetch::<_, SettingsResponse>(
+                    Request::get(endpoint.as_str())
+                        .body(())
+                        .expect("request builder failed"),
+                )
+                .await
+                .map(|response| response.values.cache_root)
+            }
+            .await;
+            Msg::Internal(Internal::StreamingServerUpdateCacheRootResult(
+                url, generation, result,
+            ))
+        }
+        .boxed_env(),
     )
     .into()
 }
