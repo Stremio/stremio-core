@@ -180,6 +180,11 @@ pub enum ActionStreamingServer {
     Reload,
     RefreshPlaybackDevices,
     UpdateSettings(StreamingServerSettings),
+    #[serde(rename_all = "camelCase")]
+    UpdateCacheRoot {
+        transport_url: Url,
+        cache_root: String,
+    },
     CreateTorrent(CreateTorrentArgs),
     GetStatistics(StreamingServerStatisticsRequest),
     PlayOnDevice(PlayOnDeviceArgs),
