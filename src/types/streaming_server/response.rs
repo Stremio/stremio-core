@@ -23,6 +23,8 @@ pub struct SettingsResponse {
 pub struct SettingsOption {
     pub id: String,
     pub label: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supports_directory: Option<bool>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub selections: Vec<SettingsOptionSelection>,
 }
@@ -114,6 +116,13 @@ mod test {
                             "val": null
                         }
                     ]
+                },
+                {
+                    "id": "cacheRoot",
+                    "label": "SETTINGS_CACHING_DRIVE",
+                    "type": "select",
+                    "supportsDirectory": true,
+                    "selections": [{ "name": "Default", "val": "C:\\Stremio" }]
                 }
             ],
             "values": {
@@ -141,7 +150,13 @@ mod test {
             "baseUrl": "http://172.18.0.7:11470"
         });
 
-        let _response = serde_json::from_value::<SettingsResponse>(json)
+        let response = serde_json::from_value::<SettingsResponse>(json)
             .expect("Should be able to deserialize settings response");
+        assert_eq!(response.options[0].supports_directory, None);
+        assert_eq!(response.options[3].supports_directory, Some(true));
+        assert_eq!(
+            serde_json::to_value(response).unwrap()["options"][3]["supportsDirectory"],
+            true
+        );
     }
 }
