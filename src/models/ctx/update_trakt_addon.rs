@@ -63,11 +63,16 @@ pub fn update_trakt_addon<E: Env + 'static>(
 
             trakt_uninstall_effects.join(eq_update(trakt_addon, None))
         }
-        Msg::Internal(Internal::ManifestRequestResult(transport_url, result)) => {
+        Msg::Internal(Internal::ManifestRequestResult {
+            transport_url,
+            resolved_transport_url,
+            result,
+        }) => {
             let trakt_addon_effects = descriptor_update::<E>(
                 trakt_addon,
                 DescriptorAction::ManifestRequestResult {
                     transport_url,
+                    resolved_transport_url,
                     result,
                 },
             );

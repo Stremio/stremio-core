@@ -16,6 +16,8 @@ use crate::{
     runtime::{Env, EnvFuture, EnvFutureExt, Model, Runtime, RuntimeEvent, TryEnvFuture},
 };
 
+use url::Url;
+
 pub static FETCH_HANDLER: Lazy<RwLock<FetchHandler>> =
     Lazy::new(|| RwLock::new(Box::new(default_fetch_handler)));
 pub static REQUESTS: Lazy<RwLock<Vec<Request>>> = Lazy::new(Default::default);
@@ -27,6 +29,7 @@ pub static STATES: Lazy<RwLock<Vec<Box<dyn Any + Send + Sync + 'static>>>> =
 pub static NOW: Lazy<RwLock<DateTime<Utc>>> = Lazy::new(|| RwLock::new(Utc::now()));
 pub static LOCAL_TIMEZONE_OFFSET: Lazy<RwLock<FixedOffset>> =
     Lazy::new(|| RwLock::new(FixedOffset::east_opt(0).unwrap()));
+pub static RESOLVED_URLS: Lazy<RwLock<HashMap<String, String>>> = Lazy::new(Default::default);
 pub static ENV_MUTEX: Mutex<()> = Mutex::new(());
 
 pub type FetchHandler =
@@ -69,6 +72,7 @@ impl TestEnv {
         *STATES.write().unwrap() = vec![];
         *NOW.write().unwrap() = Utc::now();
         *LOCAL_TIMEZONE_OFFSET.write().unwrap() = FixedOffset::east_opt(0).unwrap();
+        *RESOLVED_URLS.write().unwrap() = HashMap::new();
         env_mutex
     }
     pub fn run<F: FnOnce()>(runnable: F) {
@@ -119,6 +123,23 @@ impl Env for TestEnv {
                 *resp
                     .downcast::<OUT>()
                     .unwrap_or_else(|_| panic!("Failed to downcast to {}", type_name::<OUT>()))
+            })
+            .boxed_env()
+    }
+    fn fetch_with_url<IN: Serialize + 'static, OUT: for<'de> Deserialize<'de> + 'static>(
+        request: http::Request<IN>,
+    ) -> TryEnvFuture<(OUT, Option<Url>)> {
+        let request = Request::from(request);
+        REQUESTS.write().unwrap().push(request.to_owned());
+        let resolved_url = RESOLVED_URLS.read().unwrap().get(&request.url).cloned();
+        FETCH_HANDLER.read().unwrap()(request)
+            .map_ok(move |resp| {
+                let output = *resp
+                    .downcast::<OUT>()
+                    .unwrap_or_else(|_| panic!("Failed to downcast to {}", type_name::<OUT>()));
+                let resolved_url =
+                    resolved_url.map(|url| Url::parse(&url).expect("resolved url parse failed"));
+                (output, resolved_url)
             })
             .boxed_env()
     }
