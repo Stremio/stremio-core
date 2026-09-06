@@ -145,6 +145,8 @@ pub enum ActionLibraryWithFilters {
 #[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionMetaDetails {
+    /// Reports activity on a live channel page so Core can refresh expired schedules.
+    RefreshLive,
     /// Marks the [`LibraryItem`] as watched.
     ///
     /// Applicable when you have single-video (e.g. a movie) and multi-video (e.g. a movie series) item.
