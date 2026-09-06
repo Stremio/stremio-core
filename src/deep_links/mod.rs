@@ -391,29 +391,25 @@ impl From<(MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
 
 impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
     fn from((item, request): (&MetaItemPreview, &ResourceRequest)) -> Self {
+        let default_video_id = if item.behavior_hints.is_live(&item.r#type) {
+            Some(&item.id)
+        } else {
+            item.behavior_hints.default_video_id.as_ref()
+        };
         MetaItemDeepLinks {
-            meta_details_videos: item
-                .behavior_hints
-                .default_video_id
-                .as_ref()
-                .cloned()
-                .xor(Some(format!(
-                    "stremio:///detail/{}/{}",
+            meta_details_videos: default_video_id.cloned().xor(Some(format!(
+                "stremio:///detail/{}/{}",
+                utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
+            ))),
+            meta_details_streams: default_video_id.map(|video_id| {
+                format!(
+                    "stremio:///detail/{}/{}/{}",
                     utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
-                    utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
-                ))),
-            meta_details_streams: item
-                .behavior_hints
-                .default_video_id
-                .as_ref()
-                .map(|video_id| {
-                    format!(
-                        "stremio:///detail/{}/{}/{}",
-                        utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(video_id, URI_COMPONENT_ENCODE_SET)
-                    )
-                }),
+                    utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(video_id, URI_COMPONENT_ENCODE_SET)
+                )
+            }),
             player: item
                 .behavior_hints
                 .default_video_id
@@ -817,21 +813,24 @@ pub struct LiveTvGuideDeepLinks {
 impl From<&NaiveDate> for LiveTvGuideDeepLinks {
     fn from(date: &NaiveDate) -> Self {
         Self {
-            live_tv_guide: format!("stremio:///livetv/{}", date.format("%Y-%m-%d")),
+            live_tv_guide: format!("stremio:///discover?epg_date={}", date.format("%Y-%m-%d")),
         }
     }
 }
 
 impl From<(&ResourceRequest, &NaiveDate)> for LiveTvGuideDeepLinks {
     fn from((request, date): (&ResourceRequest, &NaiveDate)) -> Self {
+        let mut request = request.clone();
+        request
+            .path
+            .extra
+            .retain(|extra| !matches!(extra.name.as_str(), "date" | "skip" | "epg_date"));
+        request.path.extra.push(ExtraValue {
+            name: "epg_date".to_owned(),
+            value: date.format("%Y-%m-%d").to_string(),
+        });
         Self {
-            live_tv_guide: format!(
-                "stremio:///livetv/{}/{}/{}/{}",
-                utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
-                date.format("%Y-%m-%d")
-            ),
+            live_tv_guide: DiscoverDeepLinks::from(&request).discover,
         }
     }
 }

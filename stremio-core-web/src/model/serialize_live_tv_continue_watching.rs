@@ -154,7 +154,7 @@ mod tests {
 
         assert_eq!(value["items"][0]["channel"]["id"], "pure:axn");
         assert!(
-            value["items"][0]["deepLinks"]["metaDetailsVideos"]
+            value["items"][0]["deepLinks"]["metaDetailsStreams"]
                 .as_str()
                 .unwrap()
                 .starts_with("#/detail/tv/pure%3Aaxn"),

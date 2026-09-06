@@ -1,12 +1,14 @@
 use std::cmp::Reverse;
 
+use chrono::{DateTime, Duration, Utc};
+
 use itertools::Itertools;
 use serde::Serialize;
 
 use crate::{
     constants::{CATALOG_PREVIEW_SIZE, META_RESOURCE_NAME},
     models::{
-        common::{eq_update, resource_update, ResourceAction, ResourceLoadable},
+        common::{eq_update, resource_update, Loadable, ResourceAction, ResourceLoadable},
         ctx::Ctx,
     },
     runtime::{
@@ -18,6 +20,7 @@ use crate::{
         library::{LibraryBucket, LibraryItem},
         profile::Profile,
         resource::{MetaItem, MetaItemPreview, Video},
+        streams::StreamsBucket,
     },
 };
 
@@ -40,6 +43,8 @@ pub struct LiveTvContinueWatching {
     /// changes so nothing is fetched before the home board is shown.
     #[serde(skip)]
     pub active: bool,
+    #[serde(skip)]
+    pub requested_at: Vec<(ResourceRequest, DateTime<Utc>)>,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for LiveTvContinueWatching {
@@ -50,12 +55,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LiveTvContinueWatching {
                 catalog_and_items_update::<E>(
                     &mut self.catalog,
                     &mut self.items,
-                    &ctx.library,
-                    &ctx.profile,
+                    &mut self.requested_at,
+                    ctx,
                 )
             }
             Msg::Action(Action::Unload) => {
                 self.active = false;
+                self.requested_at.clear();
                 let catalog_effects = eq_update(&mut self.catalog, vec![]);
                 let items_effects = eq_update(&mut self.items, vec![]);
 
@@ -68,8 +74,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LiveTvContinueWatching {
                 catalog_and_items_update::<E>(
                     &mut self.catalog,
                     &mut self.items,
-                    &ctx.library,
-                    &ctx.profile,
+                    &mut self.requested_at,
+                    ctx,
                 )
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => self
@@ -95,10 +101,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LiveTvContinueWatching {
 fn catalog_and_items_update<E: Env + 'static>(
     catalog: &mut Vec<ResourceLoadable<MetaItem>>,
     items: &mut Vec<Item>,
-    library: &LibraryBucket,
-    profile: &Profile,
+    requested_at: &mut Vec<(ResourceRequest, DateTime<Utc>)>,
+    ctx: &Ctx,
 ) -> Effects {
-    let requests = channel_requests(library, profile);
+    let requests = channel_requests(&ctx.library, &ctx.profile, &ctx.streams);
+    requested_at.retain(|(request, _)| requests.contains(request));
 
     let mut effects = Effects::none().unchanged();
     let mut previous = std::mem::take(catalog);
@@ -108,8 +115,44 @@ fn catalog_and_items_update<E: Env + 'static>(
             .iter()
             .position(|resource| resource.request == *request)
         {
-            Some(index) => next_catalog.push(previous.swap_remove(index)),
+            Some(index) => {
+                let mut resource = previous.swap_remove(index);
+                let elapsed = requested_at
+                    .iter()
+                    .find(|(key, _)| key == request)
+                    .map(|(_, time)| E::now() - *time);
+                let stale = match resource.content.as_ref() {
+                    Some(Loadable::Loading) => false,
+                    Some(Loadable::Ready(meta)) => {
+                        let coverage_end = meta
+                            .videos
+                            .iter()
+                            .filter_map(|video| video.epg_info.as_ref())
+                            .filter(|info| info.start_time < info.end_time)
+                            .map(|info| info.end_time)
+                            .max();
+                        elapsed.map_or(true, |elapsed| {
+                            elapsed >= Duration::minutes(15)
+                                || (elapsed >= Duration::minutes(1)
+                                    && coverage_end.is_some_and(|end| end <= E::now()))
+                        })
+                    }
+                    _ => elapsed.map_or(true, |elapsed| elapsed >= Duration::minutes(1)),
+                };
+                if stale {
+                    resource.content = None;
+                    requested_at.retain(|(key, _)| key != request);
+                    requested_at.push((request.clone(), E::now()));
+                    effects = effects.join(resource_update::<E, MetaItem>(
+                        &mut resource,
+                        ResourceAction::ResourceRequested { request },
+                    ));
+                }
+                next_catalog.push(resource);
+            }
             None => {
+                requested_at.retain(|(key, _)| key != request);
+                requested_at.push((request.clone(), E::now()));
                 let mut resource = ResourceLoadable {
                     request: request.to_owned(),
                     content: None,
@@ -124,7 +167,7 @@ fn catalog_and_items_update<E: Env + 'static>(
     }
     *catalog = next_catalog;
 
-    let items_effects = items_update(items, catalog, library);
+    let items_effects = items_update(items, catalog, &ctx.library);
     effects.join(items_effects)
 }
 
@@ -152,7 +195,13 @@ fn items_update(
                         .cloned()
                         .collect()
                 })
-                .unwrap_or_default();
+                .unwrap_or_else(|| {
+                    items
+                        .iter()
+                        .find(|item| item.request == resource.request)
+                        .map(|item| item.shows.clone())
+                        .unwrap_or_default()
+                });
 
             Item {
                 channel,
@@ -165,7 +214,11 @@ fn items_update(
     eq_update(items, next_items)
 }
 
-fn channel_requests(library: &LibraryBucket, profile: &Profile) -> Vec<ResourceRequest> {
+fn channel_requests(
+    library: &LibraryBucket,
+    profile: &Profile,
+    streams: &StreamsBucket,
+) -> Vec<ResourceRequest> {
     library
         .items
         .values()
@@ -174,30 +227,42 @@ fn channel_requests(library: &LibraryBucket, profile: &Profile) -> Vec<ResourceR
                 && (!item.removed || item.temp)
                 && item.state.last_watched.is_some()
         })
-        .filter(|item| profile.is_epg_channel_id(&item.id))
+        .filter(|item| item.is_live())
         .sorted_by_key(|item| Reverse(item.state.last_watched.unwrap_or(item.mtime)))
         .take(CATALOG_PREVIEW_SIZE)
-        .filter_map(|item| meta_request(profile, item))
+        .filter_map(|item| meta_request(profile, streams, item))
         .collect()
 }
 
-fn meta_request(profile: &Profile, item: &LibraryItem) -> Option<ResourceRequest> {
-    profile
+fn meta_request(
+    profile: &Profile,
+    streams: &StreamsBucket,
+    item: &LibraryItem,
+) -> Option<ResourceRequest> {
+    let path = ResourcePath::without_extra(META_RESOURCE_NAME, &item.r#type, &item.id);
+    let source = streams
+        .items
+        .values()
+        .filter(|stream| stream.meta_id == item.id && stream.r#type == item.r#type)
+        .max_by_key(|stream| stream.mtime)
+        .map(|stream| &stream.meta_transport_url);
+    let addon = profile
         .addons
         .iter()
-        .filter(|addon| addon.manifest.behavior_hints.epg_provider)
-        .find(|addon| {
-            addon
-                .manifest
-                .id_prefixes
-                .iter()
-                .flatten()
-                .any(|prefix| item.id.starts_with(prefix))
-        })
-        .map(|addon| ResourceRequest {
-            base: addon.transport_url.to_owned(),
-            path: ResourcePath::without_extra(META_RESOURCE_NAME, &item.r#type, &item.id),
-        })
+        .filter(|addon| addon.manifest.is_resource_supported(&path))
+        .min_by_key(|addon| {
+            if source == Some(&addon.transport_url) {
+                0
+            } else if addon.manifest.behavior_hints.epg_provider {
+                1
+            } else {
+                2
+            }
+        })?;
+    Some(ResourceRequest {
+        base: addon.transport_url.clone(),
+        path,
+    })
 }
 
 fn fallback_preview(library: &LibraryBucket, request: &ResourceRequest) -> MetaItemPreview {

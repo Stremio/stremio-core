@@ -18,7 +18,7 @@ use crate::{
         profile::Profile,
         resource::{MetaItem, MetaItemPreview, Video, VideoEpgInfo},
     },
-    unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, NOW},
+    unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, NOW, REQUESTS},
 };
 
 fn epg_info(start: (u32, u32), end: (u32, u32)) -> VideoEpgInfo {
@@ -85,7 +85,7 @@ fn epg_addon() -> Descriptor {
             id: "addon".to_owned(),
             types: vec!["tv".into()],
             resources: vec![META_RESOURCE_NAME.into()],
-            id_prefixes: Some(vec!["pure:".to_owned()]),
+            id_prefixes: None,
             behavior_hints: ManifestBehaviorHints {
                 epg_provider: true,
                 ..Default::default()
@@ -230,6 +230,31 @@ fn live_tv_continue_watching() {
             "the item carries the channel's meta request for deep links"
         );
     }
+
+    let request_count = REQUESTS.read().unwrap().len();
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Load(ActionLoad::LiveTvContinueWatching),
+        })
+    });
+    assert_eq!(
+        REQUESTS.read().unwrap().len(),
+        request_count,
+        "fresh schedules are reused"
+    );
+    *NOW.write().unwrap() = Utc.with_ymd_and_hms(2026, 7, 3, 0, 1, 0).unwrap();
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Load(ActionLoad::LiveTvContinueWatching),
+        })
+    });
+    assert_eq!(
+        REQUESTS.read().unwrap().len(),
+        request_count + 2,
+        "expired schedules must be requested again"
+    );
 
     // uninstalling the epgProvider addon empties the row (recompute on
     // ProfileChanged)

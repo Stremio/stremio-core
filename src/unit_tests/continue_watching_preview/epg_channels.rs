@@ -73,7 +73,7 @@ fn continue_watching_excludes_epg_channels() {
     let library = LibraryBucket {
         uid: None,
         items: vec![
-            ("tt123456".into(), library_item("tt123456", "movie")),
+            ("pure:movie".into(), library_item("pure:movie", "movie")),
             ("pure:axn".into(), library_item("pure:axn", "tv")),
         ]
         .into_iter()
@@ -81,19 +81,18 @@ fn continue_watching_excludes_epg_channels() {
     };
 
     let (continue_watching_preview, _) =
-        ContinueWatchingPreview::new(&library, &Default::default(), &profile);
+        ContinueWatchingPreview::new(&library, &Default::default());
     assert_eq!(
         continue_watching_preview
             .items
             .iter()
             .map(|item| item.library_item.id.as_str())
             .collect::<Vec<_>>(),
-        vec!["tt123456"],
-        "channels of epgProvider addons (matched by idPrefixes) should be excluded"
+        vec!["pure:movie"],
+        "live channels should be excluded independently of installed addons"
     );
 
-    // uninstalling the addon stops the exclusion - the model
-    // must recompute on ProfileChanged
+    // Provider installation must not redefine a stored item.
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
@@ -117,7 +116,7 @@ fn continue_watching_excludes_epg_channels() {
     let continue_watching_preview = &runtime.model().unwrap().continue_watching_preview;
     assert_eq!(
         continue_watching_preview.items.len(),
-        2,
-        "the channel should reappear after the epgProvider addon is uninstalled"
+        1,
+        "the channel must remain live after uninstalling its provider"
     );
 }

@@ -50,7 +50,7 @@ fn epg_addon() -> Descriptor {
 }
 
 fn channel_meta() -> MetaItem {
-    MetaItem {
+    let mut meta = MetaItem {
         preview: MetaItemPreview {
             id: CHANNEL_ID.to_owned(),
             r#type: "tv".to_owned(),
@@ -71,7 +71,14 @@ fn channel_meta() -> MetaItem {
             }),
             ..Video::default()
         }],
-    }
+    };
+    let mut next = meta.videos[0].clone();
+    next.id = format!("{CHANNEL_ID}:2");
+    let info = next.epg_info.as_mut().unwrap();
+    info.start_time += chrono::Duration::hours(1);
+    info.end_time += chrono::Duration::hours(1);
+    meta.videos.push(next);
+    meta
 }
 
 fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
@@ -177,6 +184,72 @@ fn play_live_channel_then_board_shows_it() {
         });
     });
 
+    {
+        let model = runtime.model().unwrap();
+        assert_eq!(
+            model
+                .player
+                .live
+                .as_ref()
+                .unwrap()
+                .current_program
+                .as_ref()
+                .unwrap()
+                .id,
+            "pure:axn:1"
+        );
+        assert!(model.player.next_video.is_none());
+        assert!(
+            model.player.next_streams.is_none(),
+            "broadcasts must not prefetch episode streams"
+        );
+    }
+    *NOW.write().unwrap() = Utc.with_ymd_and_hms(2026, 7, 2, 13, 0, 0).unwrap();
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Player(ActionPlayer::TimeChanged {
+                time: 2_400_000,
+                duration: 2_500_000,
+                device: "test_device".into(),
+            }),
+        })
+    });
+    {
+        let model = runtime.model().unwrap();
+        assert_eq!(
+            model
+                .player
+                .live
+                .as_ref()
+                .unwrap()
+                .current_program
+                .as_ref()
+                .unwrap()
+                .id,
+            "pure:axn:2",
+            "the boundary updates broadcast metadata"
+        );
+        assert!(model.player.next_video.is_none());
+        assert!(model.player.next_streams.is_none());
+        assert_eq!(
+            model.player.selected.as_ref().unwrap().stream,
+            live_stream(),
+            "the channel keeps playing across programme boundaries"
+        );
+        assert_eq!(
+            model
+                .player
+                .library_item
+                .as_ref()
+                .unwrap()
+                .state
+                .times_watched,
+            0,
+            "finite adapter durations must not mark live channels watched"
+        );
+    }
+
     // 3. back to the board - the player unloads
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
@@ -233,7 +306,7 @@ fn play_live_channel_then_board_shows_it() {
             .iter()
             .map(|show| show.id.as_str())
             .collect::<Vec<_>>(),
-        vec!["pure:axn:1"],
+        vec!["pure:axn:1", "pure:axn:2"],
         "the channel's program shows are fetched from the epgProvider addon",
     );
     drop(model);

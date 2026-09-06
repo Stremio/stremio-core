@@ -111,6 +111,7 @@ mod model {
         pub meta_item: Option<Loadable<model::MetaItem<'a>, &'a ResourceError>>,
         pub subtitles: Vec<model::Subtitles<'a>>,
         pub next_video: Option<Video<'a>>,
+        pub live: &'a Option<stremio_core::models::player::LiveChannel>,
         pub series_info: Option<&'a stremio_core::types::resource::SeriesInfo>,
         pub library_item: Option<LibraryItem<'a>>,
         pub stream_state: Option<&'a StreamItemState>,
@@ -129,6 +130,7 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
     streaming_server: &StreamingServer,
 ) -> JsValue {
     <JsValue as JsValueSerdeExt>::from_serde(&model::Player {
+        live: &player.live,
         selected: player.selected.as_ref().map(|selected| model::Selected {
             stream: model::Stream {
                 stream: selected.stream.clone(),
@@ -345,6 +347,15 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
                 })
                 .zip(selected.stream_request.as_ref())
                 .map(|(meta_item, stream_request)| {
+                    if let Some(live) = &player.live {
+                        return live
+                            .current_program
+                            .as_ref()
+                            .map(|program| {
+                                format!("{} - {}", meta_item.preview.name, program.title)
+                            })
+                            .unwrap_or_else(|| meta_item.preview.name.clone());
+                    }
                     match meta_item
                         .videos
                         .iter()

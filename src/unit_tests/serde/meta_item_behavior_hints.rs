@@ -6,12 +6,14 @@ fn meta_item_behavior_hints() {
     assert_tokens(
         &vec![
             MetaItemBehaviorHints {
+                is_live: true,
                 default_video_id: Some("default_video_id".to_owned()),
                 featured_video_id: Some("featured_video_id".to_owned()),
                 has_scheduled_videos: true,
                 other: Default::default(),
             },
             MetaItemBehaviorHints {
+                is_live: false,
                 default_video_id: None,
                 featured_video_id: None,
                 has_scheduled_videos: false,
@@ -21,6 +23,8 @@ fn meta_item_behavior_hints() {
         &[
             Token::Seq { len: Some(2) },
             Token::Map { len: None },
+            Token::Str("isLive"),
+            Token::Bool(true),
             Token::Str("defaultVideoId"),
             Token::Some,
             Token::Str("default_video_id"),
@@ -43,6 +47,7 @@ fn meta_item_behavior_hints() {
     );
     assert_de_tokens(
         &MetaItemBehaviorHints {
+            is_live: false,
             default_video_id: None,
             featured_video_id: None,
             has_scheduled_videos: false,

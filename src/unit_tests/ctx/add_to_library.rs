@@ -189,6 +189,7 @@ fn actionctx_addtolibrary_already_added() {
         links: vec![],
         trailer_streams: vec![],
         behavior_hints: MetaItemBehaviorHints {
+            is_live: false,
             default_video_id: Some("video_id2".to_owned()),
             featured_video_id: None,
             has_scheduled_videos: false,
@@ -210,6 +211,7 @@ fn actionctx_addtolibrary_already_added() {
             ..LibraryItemState::default()
         },
         behavior_hints: MetaItemBehaviorHints {
+            is_live: false,
             default_video_id: Some("video_id2".to_owned()),
             featured_video_id: None,
             has_scheduled_videos: false,

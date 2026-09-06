@@ -13,7 +13,7 @@ use crate::{
         EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture,
     },
     types::{
-        addon::{Descriptor, ExtraValue, Manifest, ManifestBehaviorHints, ResourceResponse},
+        addon::{Descriptor, Manifest, ManifestBehaviorHints, ResourceResponse},
         profile::Profile,
         resource::{MetaItem, MetaItemPreview, Video, VideoEpgInfo},
     },
@@ -218,12 +218,12 @@ fn live_tv_guide() {
             .as_ref()
             .expect("should have a next page - the catalog declares the skip extra");
         assert_eq!(
-            next_page.request.path.extra,
-            vec![ExtraValue {
-                name: "skip".to_owned(),
-                value: "1".to_owned(),
-            }],
-            "the next page request should carry the skip extra - the date extra is appended per fetched UTC date"
+            next_page.requests[0].path.get_extra_first_value("skip"),
+            Some(&"1".to_owned())
+        );
+        assert_eq!(
+            next_page.requests[0].path.get_extra_first_value("date"),
+            Some(&"2026-07-02".to_owned())
         );
     }
 
@@ -256,7 +256,7 @@ fn live_tv_guide() {
             .next_page
             .as_ref()
             .expect("should still have a next page")
-            .request
+            .requests[0]
             .path
             .get_extra_first_value("skip"),
         Some(&"2".to_owned()),
@@ -398,6 +398,7 @@ fn live_tv_guide_with_utc_offset() {
                     request: None,
                     date: None,
                     utc_offset: 180,
+                    day: None,
                 },
             ))),
         });
@@ -523,5 +524,172 @@ fn live_tv_guide_accepts_plain_metas() {
     assert!(
         live_tv_guide.channels[0].shows.is_empty(),
         "lifted previews carry no program shows"
+    );
+}
+
+#[test]
+fn live_tv_guide_uses_exact_day_and_independent_pages() {
+    use crate::models::live_tv_guide::{DayWindow, Selected};
+    use crate::types::addon::{ResourcePath, ResourceRequest};
+
+    #[derive(Model, Clone, Debug)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+        live_tv_guide: LiveTvGuide,
+    }
+
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *NOW.write().unwrap() = Utc.with_ymd_and_hms(2026, 10, 25, 12, 0, 0).unwrap();
+    *FETCH_HANDLER.write().unwrap() = Box::new(|request| {
+        let ids = match request.url.as_str() {
+            "https://addon/catalog/tv/guide/date=2026-10-24.json" => vec!["a"],
+            "https://addon/catalog/tv/guide/date=2026-10-25.json" => vec!["b", "c"],
+            "https://addon/catalog/tv/guide/date=2026-10-24&skip=1.json" => vec![],
+            "https://addon/catalog/tv/guide/date=2026-10-25&skip=2.json" => vec!["d"],
+            "https://addon/catalog/tv/guide/date=2026-10-25&skip=3.json" => vec![],
+            _ => return default_fetch_handler(request),
+        };
+        future::ok(Box::new(ResourceResponse::MetasDetailed {
+            metas_detailed: ids
+                .into_iter()
+                .map(|id| {
+                    serde_json::from_value(serde_json::json!({
+                        "id": id, "type": "tv", "name": id,
+                        "videos": [{
+                            "id": format!("{id}:late"), "title": "Late programme",
+                            "startTime": "2026-10-25T21:30:00Z", "endTime": "2026-10-25T22:00:00Z"
+                        }, {
+                            "id": format!("{id}:tomorrow"), "title": "Next day",
+                            "startTime": "2026-10-25T22:00:00Z", "endTime": "2026-10-25T23:00:00Z"
+                        }]
+                    }))
+                    .unwrap()
+                })
+                .collect(),
+        }) as Box<dyn Any + Send>)
+        .boxed_env()
+    });
+    let addon: Descriptor = serde_json::from_value(serde_json::json!({
+        "transportUrl": "https://addon/manifest.json", "flags": {},
+        "manifest": {
+            "id": "guide", "name": "Guide", "version": "1.0.0", "description": "Guide",
+            "types": ["tv"], "resources": ["catalog"], "behaviorHints": { "epgProvider": true },
+            "catalogs": [{ "id": "guide", "type": "tv", "extra": [{ "name": "date" }, { "name": "skip" }] }]
+        }
+    })).unwrap();
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+        TestModel {
+            ctx: Ctx {
+                profile: Profile {
+                    addons: vec![addon],
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            live_tv_guide: Default::default(),
+        },
+        vec![],
+        1000,
+    );
+    let selected = Selected {
+        request: Some(ResourceRequest {
+            base: Url::parse("https://addon/manifest.json").unwrap(),
+            path: ResourcePath::without_extra("catalog", "tv", "guide"),
+        }),
+        date: Some(chrono::NaiveDate::from_ymd_opt(2026, 10, 25).unwrap()),
+        utc_offset: 180,
+        // Sofia's fall-back day is 25 hours, overriding the legacy fixed offset.
+        day: Some(DayWindow {
+            start: Utc.with_ymd_and_hms(2026, 10, 24, 21, 0, 0).unwrap(),
+            end: Utc.with_ymd_and_hms(2026, 10, 25, 22, 0, 0).unwrap(),
+        }),
+    };
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Load(ActionLoad::LiveTvGuide(Some(selected.clone()))),
+        })
+    });
+    {
+        let model = runtime.model().unwrap();
+        assert_eq!(model.live_tv_guide.channels.len(), 3);
+        assert!(model
+            .live_tv_guide
+            .channels
+            .iter()
+            .all(|channel| channel.shows.len() == 1));
+        let requests = &model
+            .live_tv_guide
+            .selectable
+            .next_page
+            .as_ref()
+            .unwrap()
+            .requests;
+        assert_eq!(
+            requests[0].path.get_extra_first_value("skip"),
+            Some(&"1".to_owned())
+        );
+        assert_eq!(
+            requests[1].path.get_extra_first_value("skip"),
+            Some(&"2".to_owned())
+        );
+    }
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::LiveTvGuide(ActionLiveTvGuide::LoadNextPage),
+        })
+    });
+    {
+        let model = runtime.model().unwrap();
+        assert_eq!(
+            model.live_tv_guide.channels.len(),
+            4,
+            "an exhausted UTC date must not stop the other date"
+        );
+        let requests = &model
+            .live_tv_guide
+            .selectable
+            .next_page
+            .as_ref()
+            .unwrap()
+            .requests;
+        assert_eq!(requests.len(), 1);
+        assert_eq!(
+            requests[0].path.get_extra_first_value("skip"),
+            Some(&"3".to_owned())
+        );
+    }
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::LiveTvGuide(ActionLiveTvGuide::LoadNextPage),
+        })
+    });
+    {
+        let model = runtime.model().unwrap();
+        assert!(model.live_tv_guide.selectable.next_page.is_none());
+        assert!(
+            model.live_tv_guide.catalog.iter().all(|page| page
+                .content
+                .as_ref()
+                .unwrap()
+                .ready()
+                .is_some()),
+            "empty pages are successful exhaustion"
+        );
+    }
+    let count = REQUESTS.read().unwrap().len();
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Load(ActionLoad::LiveTvGuide(Some(selected))),
+        })
+    });
+    assert_eq!(
+        REQUESTS.read().unwrap().len(),
+        count,
+        "activation keeps fresh loaded pages"
     );
 }

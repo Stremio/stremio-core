@@ -9,9 +9,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     constants::{CATALOG_RESOURCE_NAME, EPG_DATE_EXTRA_PROP, SKIP_EXTRA_PROP},
     models::{
-        common::{
-            eq_update, resource_update_with_vector_content, ResourceAction, ResourceLoadable,
-        },
+        common::{eq_update, resource_update, Loadable, ResourceAction, ResourceLoadable},
         ctx::Ctx,
     },
     runtime::{
@@ -40,6 +38,32 @@ pub struct Selected {
     /// window and shows are bucketed into it
     #[serde(default)]
     pub utc_offset: i32,
+    /// Exact UTC bounds of the selected local day, resolved by the client.
+    /// Older clients may omit this and use the fixed-offset fallback.
+    #[serde(default)]
+    pub day: Option<DayWindow>,
+}
+
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct DayWindow {
+    pub start: DateTime<Utc>,
+    pub end: DateTime<Utc>,
+}
+
+impl Selected {
+    fn day_window(&self) -> Option<DayWindow> {
+        self.day
+            .as_ref()
+            .filter(|day| day.start < day.end && day.end - day.start <= Duration::days(2))
+            .cloned()
+            .or_else(|| {
+                self.date.map(|date| {
+                    let (start, end) = local_day_window(&date, self.utc_offset);
+                    DayWindow { start, end }
+                })
+            })
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Debug)]
@@ -55,7 +79,8 @@ pub struct SelectableCatalog {
 
 #[derive(Clone, PartialEq, Eq, Serialize, Debug)]
 pub struct SelectablePage {
-    pub request: ResourceRequest,
+    /// Each UTC date advances using its own response count and exhaustion state.
+    pub requests: Vec<ResourceRequest>,
 }
 
 #[derive(Default, Clone, PartialEq, Eq, Serialize, Debug)]
@@ -66,10 +91,7 @@ pub struct Selectable {
     pub next_date: Option<NaiveDate>,
     /// Today in the user's local timezone
     pub today: Option<NaiveDate>,
-    /// The next channels page request (with the `skip` extra; the `date`
-    /// extra is appended per overlapping UTC date when loaded);
-    /// present only when the selected catalog declares the `skip` extra
-    /// and all requested pages are loaded
+    /// Available next pages, only for catalogs declaring the `skip` extra.
     pub next_page: Option<SelectablePage>,
 }
 
@@ -100,27 +122,45 @@ pub struct LiveTvGuide {
     pub selectable: Selectable,
     pub catalog: Catalog,
     pub channels: Vec<ChannelGuide>,
+    #[serde(skip)]
+    pub last_loaded: Option<DateTime<Utc>>,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for LiveTvGuide {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::LiveTvGuide(selected))) => {
+                let previous_selected = self.selected.clone();
                 let selected_effects =
                     selected_update::<E>(&mut self.selected, selected, &ctx.profile);
-                let catalog_effects = match self.selected.as_ref() {
-                    Some(Selected {
-                        request: Some(request),
-                        date: Some(date),
-                        utc_offset,
-                    }) => catalog_update::<E>(
-                        &mut self.catalog,
-                        CatalogPageRequest::First,
-                        request,
-                        date,
-                        *utc_offset,
-                    ),
-                    _ => eq_update(&mut self.catalog, vec![]),
+                let selection_changed = previous_selected != self.selected;
+                let stale = self
+                    .last_loaded
+                    .map_or(true, |loaded| E::now() - loaded >= Duration::minutes(15));
+                let catalog_effects = if selection_changed || stale {
+                    self.last_loaded = Some(E::now());
+                    let requests = if selection_changed || self.catalog.is_empty() {
+                        self.selected
+                            .as_ref()
+                            .and_then(|selected| {
+                                let request = selected.request.as_ref()?;
+                                Some(
+                                    overlapping_utc_dates(&selected.day_window()?)
+                                        .iter()
+                                        .map(|date| with_date_extra(request, date))
+                                        .collect::<Vec<_>>(),
+                                )
+                            })
+                            .unwrap_or_default()
+                    } else {
+                        self.catalog
+                            .iter()
+                            .map(|page| page.request.clone())
+                            .collect()
+                    };
+                    catalog_update::<E>(&mut self.catalog, CatalogPageRequest::First, &requests)
+                } else {
+                    Effects::none().unchanged()
                 };
                 let selectable_effects = selectable_update::<E>(
                     &mut self.selectable,
@@ -128,8 +168,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LiveTvGuide {
                     &self.catalog,
                     &ctx.profile,
                 );
-                let channels_effects =
-                    channels_update(&mut self.channels, &self.selected, &self.catalog);
+                let channels_effects = if selection_changed {
+                    eq_update(&mut self.channels, vec![])
+                } else {
+                    channels_update(&mut self.channels, &self.selected, &self.catalog)
+                };
 
                 selected_effects
                     .join(catalog_effects)
@@ -137,6 +180,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LiveTvGuide {
                     .join(channels_effects)
             }
             Msg::Action(Action::Unload) => {
+                self.last_loaded = None;
                 let selected_effects = eq_update(&mut self.selected, None);
                 let selectable_effects = eq_update(&mut self.selectable, Selectable::default());
                 let catalog_effects = eq_update(&mut self.catalog, vec![]);
@@ -148,33 +192,41 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LiveTvGuide {
                     .join(channels_effects)
             }
             Msg::Action(Action::LiveTvGuide(ActionLiveTvGuide::LoadNextPage)) => {
-                match (self.selected.as_ref(), self.selectable.next_page.as_ref()) {
-                    (
-                        Some(Selected {
-                            date: Some(date),
-                            utc_offset,
-                            ..
-                        }),
-                        Some(next_page),
-                    ) => {
+                match self.selectable.next_page.as_ref() {
+                    Some(next_page) => {
                         let catalog_effects = catalog_update::<E>(
                             &mut self.catalog,
                             CatalogPageRequest::Next,
-                            &next_page.request,
-                            date,
-                            *utc_offset,
+                            &next_page.requests,
                         );
-                        let selectable_effects = selectable_update::<E>(
+                        catalog_effects.join(selectable_update::<E>(
                             &mut self.selectable,
                             &self.selected,
                             &self.catalog,
                             &ctx.profile,
-                        );
-
-                        catalog_effects.join(selectable_effects)
+                        ))
                     }
-                    _ => Effects::none().unchanged(),
+                    None => Effects::none().unchanged(),
                 }
+            }
+            Msg::Action(Action::LiveTvGuide(ActionLiveTvGuide::Retry)) => {
+                let mut effects = Effects::none().unchanged();
+                for page in &mut self.catalog {
+                    if matches!(page.content, Some(Loadable::Err(_))) {
+                        page.content = None;
+                        let request = page.request.clone();
+                        effects = effects.join(resource_update::<E, Vec<MetaItem>>(
+                            page,
+                            ResourceAction::ResourceRequested { request: &request },
+                        ));
+                    }
+                }
+                effects.join(selectable_update::<E>(
+                    &mut self.selectable,
+                    &self.selected,
+                    &self.catalog,
+                    &ctx.profile,
+                ))
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => self
                 .catalog
@@ -182,13 +234,29 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LiveTvGuide {
                 .find(|page| page.request == *request)
                 .map(|page| {
                     let result = lift_plain_metas(result);
-                    resource_update_with_vector_content::<E, MetaItem>(
+                    let effects = resource_update::<E, Vec<MetaItem>>(
                         page,
                         ResourceAction::ResourceRequestResult {
                             request,
                             result: &result,
                         },
-                    )
+                    );
+                    if let (Some(Loadable::Ready(items)), Some(day)) = (
+                        page.content.as_mut(),
+                        self.selected.as_ref().and_then(Selected::day_window),
+                    ) {
+                        // Retain only the active day, even if a provider returns a wider schedule.
+                        for item in items {
+                            item.videos.retain(|video| {
+                                video.epg_info.as_ref().is_some_and(|info| {
+                                    info.start_time < info.end_time
+                                        && info.start_time < day.end
+                                        && info.end_time > day.start
+                                })
+                            });
+                        }
+                    }
+                    effects
                 })
                 .map(|catalog_effects| {
                     let selectable_effects = selectable_update::<E>(
@@ -244,6 +312,9 @@ fn selected_update<E: Env + 'static>(
             request,
             date,
             utc_offset,
+            day: next_selected
+                .as_ref()
+                .and_then(|selected| selected.day.clone()),
         }),
     )
 }
@@ -251,24 +322,18 @@ fn selected_update<E: Env + 'static>(
 fn catalog_update<E: Env + 'static>(
     catalog: &mut Catalog,
     page_request: CatalogPageRequest,
-    request: &ResourceRequest,
-    date: &NaiveDate,
-    utc_offset: i32,
+    requests: &[ResourceRequest],
 ) -> Effects {
     let mut effects = Effects::none().unchanged();
     let mut pages = vec![];
-    // the local day resolves to a UTC window which may span two UTC
-    // dates - a page is fetched per overlapping UTC date and the shows
-    // are bucketed back into the local day by `channels_update`
-    for utc_date in overlapping_utc_dates(date, utc_offset) {
-        let request = with_date_extra(request, &utc_date);
+    for request in requests {
         let mut page = ResourceLoadable {
-            request: request.to_owned(),
+            request: request.clone(),
             content: None,
         };
-        effects = effects.join(resource_update_with_vector_content::<E, MetaItem>(
+        effects = effects.join(resource_update::<E, Vec<MetaItem>>(
             &mut page,
-            ResourceAction::ResourceRequested { request: &request },
+            ResourceAction::ResourceRequested { request },
         ));
         pages.push(page);
     }
@@ -276,7 +341,6 @@ fn catalog_update<E: Env + 'static>(
         CatalogPageRequest::First => *catalog = pages,
         CatalogPageRequest::Next => catalog.extend(pages),
     };
-
     effects
 }
 
@@ -329,58 +393,73 @@ fn next_page_update(
         _ => return None,
     };
 
-    profile
+    let supports_skip = profile
         .addons
         .iter()
-        .filter(|addon| addon.manifest.behavior_hints.epg_provider)
         .find(|addon| addon.transport_url == request.base)
         .and_then(|addon| {
-            addon.manifest.catalogs.iter().find(|manifest_catalog| {
-                manifest_catalog.id == request.path.id
-                    && manifest_catalog.r#type == request.path.r#type
+            addon.manifest.catalogs.iter().find(|catalog| {
+                catalog.id == request.path.id && catalog.r#type == request.path.r#type
             })
         })
-        // unlike the `date` extra, pagination is opt-in:
-        // the catalog has to declare the `skip` extra
-        .filter(|manifest_catalog| {
-            manifest_catalog
+        .is_some_and(|catalog| {
+            catalog
                 .extra
                 .iter()
-                .any(|extra_prop| extra_prop.name == SKIP_EXTRA_PROP.name)
-        })
-        .and_then(|_| {
-            catalog
+                .any(|extra| extra.name == SKIP_EXTRA_PROP.name)
+        });
+    if !supports_skip
+        || catalog
+            .iter()
+            .any(|page| matches!(page.content, None | Some(Loadable::Loading)))
+    {
+        return None;
+    }
+    let mut by_date = Vec::<(&str, Vec<&CatalogPage>)>::new();
+    for page in catalog {
+        let date = page
+            .request
+            .path
+            .extra
+            .iter()
+            .find(|extra| extra.name == EPG_DATE_EXTRA_PROP.name)?
+            .value
+            .as_str();
+        if let Some((_, pages)) = by_date.iter_mut().find(|(key, _)| *key == date) {
+            pages.push(page);
+        } else {
+            by_date.push((date, vec![page]));
+        }
+    }
+    let requests = by_date
+        .into_iter()
+        .filter_map(|(date, pages)| {
+            let last = pages.last()?;
+            let content = last.content.as_ref()?.ready()?;
+            if content.is_empty() {
+                return None;
+            }
+            let skip = pages
                 .iter()
-                .map(|page| {
-                    page.content
-                        .as_ref()
-                        .and_then(|content| content.ready())
-                        .filter(|content| !content.is_empty())
-                })
-                .collect::<Option<Vec<_>>>()
-        })
-        // pages of the overlapping UTC dates carry the same channels -
-        // the skip offset counts them once
-        .map(|pages| {
-            pages
-                .into_iter()
-                .flatten()
-                .unique_by(|meta_item| meta_item.preview.id.to_owned())
-                .count()
-        })
-        .map(|skip| SelectablePage {
-            request: ResourceRequest {
-                base: request.base.to_owned(),
+                .filter_map(|page| page.content.as_ref()?.ready())
+                .map(Vec::len)
+                .sum::<usize>();
+            Some(ResourceRequest {
                 path: ResourcePath {
-                    extra: request
+                    extra: last
+                        .request
                         .path
                         .extra
-                        .to_owned()
-                        .extend_one(&SKIP_EXTRA_PROP, Some(skip.to_string())),
-                    ..request.path.to_owned()
+                        .clone()
+                        .extend_one(&SKIP_EXTRA_PROP, Some(skip.to_string()))
+                        .extend_one(&EPG_DATE_EXTRA_PROP, Some(date.to_owned())),
+                    ..last.request.path.clone()
                 },
-            },
+                base: last.request.base.clone(),
+            })
         })
+        .collect::<Vec<_>>();
+    (!requests.is_empty()).then_some(SelectablePage { requests })
 }
 
 fn channels_update(
@@ -388,17 +467,20 @@ fn channels_update(
     selected: &Option<Selected>,
     catalog: &Catalog,
 ) -> Effects {
-    let updated_channels = match selected {
-        Some(Selected {
-            date: Some(date),
-            utc_offset,
-            ..
+    // Keep visible channels during pagination and background refresh.
+    if catalog
+        .iter()
+        .any(|page| matches!(page.content, Some(Loadable::Loading)))
+    {
+        return Effects::none().unchanged();
+    }
+    let updated_channels = match selected.as_ref().and_then(Selected::day_window) {
+        Some(DayWindow {
+            start: day_start,
+            end: day_end,
         }) => {
-            let (day_start, day_end) = local_day_window(date, *utc_offset);
-
-            // pages of the overlapping UTC dates carry the same channels
-            // with different programs - merge their shows per channel,
-            // keeping the channel order of first appearance
+            // UTC date pages can overlap in channels. Merge their shows,
+            // keeping the channel order of first appearance.
             let mut updated_channels = Vec::<ChannelGuide>::new();
             let mut channel_indexes = HashMap::<String, usize>::new();
             let meta_items = catalog
@@ -409,7 +491,9 @@ fn channels_update(
                 // include only program shows overlapping the local day window
                 let shows = meta_item.videos.iter().filter(|video| {
                     video.epg_info.as_ref().is_some_and(|epg_info| {
-                        epg_info.start_time < day_end && epg_info.end_time > day_start
+                        epg_info.start_time < epg_info.end_time
+                            && epg_info.start_time < day_end
+                            && epg_info.end_time > day_start
                     })
                 });
                 match channel_indexes.get(&meta_item.preview.id) {
@@ -522,16 +606,18 @@ fn local_day_window(date: &NaiveDate, utc_offset: i32) -> (DateTime<Utc>, DateTi
 
 /// The UTC dates the user's local `date` overlaps -
 /// two dates when local midnight is not aligned with UTC midnight
-fn overlapping_utc_dates(date: &NaiveDate, utc_offset: i32) -> Vec<NaiveDate> {
-    let (day_start, day_end) = local_day_window(date, utc_offset);
-
-    [
-        day_start.date_naive(),
-        (day_end - Duration::seconds(1)).date_naive(),
-    ]
-    .into_iter()
-    .unique()
-    .collect()
+fn overlapping_utc_dates(day: &DayWindow) -> Vec<NaiveDate> {
+    let mut dates = vec![];
+    let mut date = day.start.date_naive();
+    let last = (day.end - Duration::seconds(1)).date_naive();
+    while date <= last {
+        dates.push(date);
+        let Some(next) = date.succ_opt() else {
+            break;
+        };
+        date = next;
+    }
+    dates
 }
 
 /// The guide request for the given date

@@ -6,7 +6,6 @@ use crate::runtime::msg::{Action, ActionLibraryByType, ActionLoad, Internal, Msg
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::notifications::NotificationsBucket;
-use crate::types::profile::Profile;
 use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
@@ -72,7 +71,6 @@ impl<E: Env + 'static, F: LibraryFilter> UpdateWithCtx<E> for LibraryByType<F> {
                     &self.selected,
                     &ctx.library,
                     &ctx.notifications,
-                    &ctx.profile,
                 );
                 selected_effects
                     .join(selectable_effects)
@@ -103,7 +101,6 @@ impl<E: Env + 'static, F: LibraryFilter> UpdateWithCtx<E> for LibraryByType<F> {
                                 &self.selected,
                                 &ctx.library,
                                 &ctx.notifications,
-                                &ctx.profile,
                             );
                             catalog.push(page);
                             Effects::none()
@@ -113,15 +110,11 @@ impl<E: Env + 'static, F: LibraryFilter> UpdateWithCtx<E> for LibraryByType<F> {
                     _ => Effects::none().unchanged(),
                 }
             }
-            // ProfileChanged: installing/uninstalling an epgProvider addon
-            // changes which library items the continue watching filter excludes
-            Msg::Internal(Internal::LibraryChanged(_))
-            | Msg::Internal(Internal::ProfileChanged) => catalogs_update::<F>(
+            Msg::Internal(Internal::LibraryChanged(_)) => catalogs_update::<F>(
                 &mut self.catalogs,
                 &self.selected,
                 &ctx.library,
                 &ctx.notifications,
-                &ctx.profile,
             ),
             _ => Effects::none().unchanged(),
         }
@@ -149,7 +142,6 @@ fn catalogs_update<F: LibraryFilter>(
     selected: &Option<Selected>,
     library: &LibraryBucket,
     notifications: &NotificationsBucket,
-    profile: &Profile,
 ) -> Effects {
     let catalogs_size = catalogs.iter().fold(HashMap::new(), |mut result, catalog| {
         let r#type = catalog
@@ -165,7 +157,7 @@ fn catalogs_update<F: LibraryFilter>(
         Some(selected) => library
             .items
             .values()
-            .filter(|library_item| F::predicate(library_item, notifications, profile))
+            .filter(|library_item| F::predicate(library_item, notifications))
             .fold(
                 HashMap::<&str, Vec<LibraryItem>>::new(),
                 |mut result, library_item| {
@@ -210,13 +202,12 @@ fn next_page<F: LibraryFilter>(
     selected: &Option<Selected>,
     library: &LibraryBucket,
     notifications: &NotificationsBucket,
-    profile: &Profile,
 ) -> CatalogPage {
     match selected {
         Some(selected) => library
             .items
             .values()
-            .filter(|library_item| F::predicate(library_item, notifications, profile))
+            .filter(|library_item| F::predicate(library_item, notifications))
             .filter(|library_item: &&LibraryItem| library_item.r#type == *r#type)
             .sorted_by(|a, b| selected.sort.sort_items(a, b))
             .skip(skip)
