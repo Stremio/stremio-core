@@ -3,7 +3,7 @@ use gloo_utils::format::JsValueSerdeExt;
 use serde::Serialize;
 use stremio_core::deep_links::MetaItemDeepLinks;
 use stremio_core::models::common::Loadable;
-use stremio_core::models::streaming_server::{PlaybackDevice, Selected};
+use stremio_core::models::streaming_server::{CastingSession, PlaybackDevice, Selected};
 use stremio_core::runtime::EnvError;
 use stremio_core::types::addon::ResourcePath;
 use stremio_core::types::streaming_server::{
@@ -27,6 +27,7 @@ mod model {
         pub base_url: &'a Option<Url>,
         pub remote_url: &'a Option<Url>,
         pub playback_devices: &'a Loadable<Vec<PlaybackDevice>, EnvError>,
+        pub casting: &'a Option<CastingSession>,
         pub network_info: &'a Loadable<NetworkInfo, EnvError>,
         pub device_info: &'a Loadable<DeviceInfo, EnvError>,
         pub torrent: Option<(&'a InfoHash, TorrentLoadable<'a>)>,
@@ -46,6 +47,7 @@ pub fn serialize_streaming_server(
         base_url: &streaming_server.base_url,
         remote_url: &streaming_server.remote_url,
         playback_devices: &streaming_server.playback_devices,
+        casting: &streaming_server.casting,
         network_info: &streaming_server.network_info,
         device_info: &streaming_server.device_info,
         torrent: streaming_server

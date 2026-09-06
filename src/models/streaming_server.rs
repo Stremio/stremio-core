@@ -24,6 +24,9 @@ use crate::types::streaming_server::{
 };
 use crate::types::torrent::InfoHash;
 
+mod casting;
+pub use casting::{CastingSession, CastingStatus};
+
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct PlaybackDevice {
@@ -51,6 +54,11 @@ pub struct StreamingServer {
     pub playback_devices: Loadable<Vec<PlaybackDevice>, EnvError>,
     #[serde(skip)]
     pub playback_devices_generation: u64,
+    pub casting: Option<CastingSession>,
+    #[serde(skip)]
+    casting_requests: std::collections::VecDeque<casting::CastingRequest>,
+    #[serde(skip)]
+    casting_generation: u64,
     pub network_info: Loadable<NetworkInfo, EnvError>,
     pub device_info: Loadable<DeviceInfo, EnvError>,
     pub torrent: Option<(InfoHash, Loadable<ResourcePath, EnvError>)>,
@@ -78,6 +86,9 @@ impl StreamingServer {
                 remote_url: None,
                 playback_devices: Loadable::Loading,
                 playback_devices_generation: 0,
+                casting: None,
+                casting_requests: Default::default(),
+                casting_generation: 0,
                 network_info: Loadable::Loading,
                 device_info: Loadable::Loading,
                 torrent: None,
@@ -239,6 +250,19 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     },
                     _ => Effects::none().unchanged(),
                 }
+            }
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::CastToDevice(args))) => {
+                self.start_casting::<E>(args)
+            }
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::SetCastingSubtitles {
+                id,
+                subtitles,
+            })) => self.set_casting_subtitles::<E>(*id, subtitles),
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::StopCasting)) => {
+                self.stop_casting::<E>()
+            }
+            Msg::Internal(Internal::StreamingServerCastingResult(id, result)) => {
+                self.casting_result::<E>(*id, result)
             }
             Msg::Internal(Internal::ProfileChanged)
                 if self.selected.transport_url != ctx.profile.settings.streaming_server_url =>
