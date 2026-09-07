@@ -36,7 +36,7 @@ jobs:
 
     # we use older stable version because our old version of `wasm-bindgen` is not compatible with >= 1.86
     - name: Rust setup (stable, 1.85)
-      uses: dtolnay/rust-toolchain@1.85
+      uses: dtolnay/rust-toolchain@1.120
       with:
         components: rustfmt, clippy
 
