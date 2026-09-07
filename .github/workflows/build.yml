@@ -77,7 +77,7 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - uses: taiki-e/install-action@v2.87.0
+      - uses: taiki-e/install-action@v2.87.5
         with:
           tool: wasm-pack@${{ env.WASM_PACK_VERSION }}
 
