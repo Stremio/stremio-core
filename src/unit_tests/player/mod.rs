@@ -38,6 +38,7 @@ fn identical_player_loads_are_observable() {
             name: None,
             description: None,
             thumbnail: None,
+            thumbnails: None,
             subtitles: vec![],
             behavior_hints: StreamBehaviorHints::default(),
         },

@@ -29,6 +29,7 @@ fn create_stream(binge_group: &str) -> Stream {
         name: None,
         description: None,
         thumbnail: None,
+        thumbnails: None,
         subtitles: vec![],
         behavior_hints: StreamBehaviorHints {
             binge_group: Some(binge_group.to_owned()),

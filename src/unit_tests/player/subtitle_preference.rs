@@ -23,6 +23,7 @@ fn selected(source_url: &str) -> Selected {
             name: None,
             description: None,
             thumbnail: None,
+            thumbnails: None,
             subtitles: vec![],
             behavior_hints: StreamBehaviorHints::default(),
         },

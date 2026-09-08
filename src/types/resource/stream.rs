@@ -38,6 +38,7 @@ use crate::{runtime::EnvError, types::streams::ConvertedStreamSource};
 ///     name: None,
 ///     description: None,
 ///     thumbnail: None,
+///     thumbnails: None,
 ///     subtitles: vec![],
 ///     behavior_hints: StreamBehaviorHints::default(),
 /// };
@@ -1192,6 +1193,7 @@ mod tests {
             name: None,
             description: None,
             thumbnail: None,
+            thumbnails: None,
             subtitles: vec![],
             behavior_hints: StreamBehaviorHints::default(),
         }

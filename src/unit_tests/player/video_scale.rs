@@ -27,6 +27,7 @@ fn stream(source_url: &str, binge_group: Option<&str>) -> Stream {
         name: None,
         description: None,
         thumbnail: None,
+        thumbnails: None,
         subtitles: vec![],
         behavior_hints: StreamBehaviorHints {
             binge_group: binge_group.map(str::to_owned),
