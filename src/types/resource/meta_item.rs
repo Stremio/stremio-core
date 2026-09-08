@@ -217,6 +217,7 @@ impl From<MetaItemPreviewLegacy> for MetaItemPreview {
                     name: None,
                     description: None,
                     thumbnail: None,
+                    thumbnails: None,
                     subtitles: vec![],
                     behavior_hints: Default::default(),
                 })
