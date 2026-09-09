@@ -278,6 +278,16 @@ impl WebEnv {
 impl Env for WebEnv {
     fn fetch<IN, OUT>(request: Request<IN>) -> TryEnvFuture<OUT>
     where
+        IN: Serialize + 'static,
+        for<'de> OUT: Deserialize<'de> + 'static,
+    {
+        Self::fetch_with_url::<IN, OUT>(request)
+            .map_ok(|(output, _)| output)
+            .boxed_local()
+    }
+
+    fn fetch_with_url<IN, OUT>(request: Request<IN>) -> TryEnvFuture<(OUT, Option<Url>)>
+    where
         IN: Serialize,
         for<'de> OUT: Deserialize<'de> + 'static,
     {
@@ -352,6 +362,7 @@ impl Env for WebEnv {
             let resp = resp
                 .dyn_into::<web_sys::Response>()
                 .expect("WebEnv::fetch: Response into web_sys::Response failed to be built");
+            let response_url = resp.url().parse::<Url>().ok();
             // status check and JSON extraction from response.
             let resp = if ![200, 201].contains(&resp.status()) {
                 return Err(EnvError::Fetch(format!(
@@ -386,7 +397,7 @@ impl Env for WebEnv {
                 })?
             };
 
-            response_deserialize(resp)
+            Ok((response_deserialize(resp)?, response_url))
         }
         .boxed_local()
     }

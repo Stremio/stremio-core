@@ -25,7 +25,7 @@ impl AddonTransport for UnsupportedTransport {
     fn resource(&self, _path: &ResourcePath) -> TryEnvFuture<ResourceResponse> {
         self.result::<ResourceResponse>()
     }
-    fn manifest(&self) -> TryEnvFuture<Manifest> {
-        self.result::<Manifest>()
+    fn manifest(&self) -> TryEnvFuture<(Manifest, Option<Url>)> {
+        self.result::<(Manifest, Option<Url>)>()
     }
 }

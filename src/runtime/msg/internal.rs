@@ -144,7 +144,15 @@ pub enum Internal {
     /// Result for fetching resource from addons.
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for fetching manifest from addon.
-    ManifestRequestResult(Url, Result<Manifest, EnvError>),
+    ///
+    /// Carries the requested `transport_url`, the resolved post-redirect URL (if any,
+    /// and only adopted when it looks like a real addon endpoint) and the manifest
+    /// fetch result.
+    ManifestRequestResult {
+        transport_url: Url,
+        resolved_transport_url: Option<Url>,
+        result: Result<Manifest, EnvError>,
+    },
     /// TODO: write some obvious comment about what it is
     NotificationsRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for requesting a `dataExport` of user data.

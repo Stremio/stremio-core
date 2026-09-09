@@ -8,6 +8,7 @@ mod data_export;
 mod deep_links;
 mod link;
 mod meta_details;
+mod models;
 mod player;
 mod serde;
 mod streaming_server;
