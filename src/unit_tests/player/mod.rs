@@ -1,5 +1,6 @@
 mod mark_video_as_watched;
 mod next_stream;
+mod webhook;
 mod subtitle_preference;
 mod video_scale;
 
