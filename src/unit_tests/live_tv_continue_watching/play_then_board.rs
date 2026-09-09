@@ -68,6 +68,7 @@ fn channel_meta() -> MetaItem {
                 cast: vec![],
                 directors: vec![],
                 links: vec![],
+                ratings: vec![],
             }),
             ..Video::default()
         }],

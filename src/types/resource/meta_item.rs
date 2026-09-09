@@ -9,8 +9,8 @@ use itertools::Itertools;
 use percent_encoding::utf8_percent_encode;
 use serde::{Deserialize, Serialize};
 use serde_with::{
-    formats::PreferMany, serde_as, DefaultOnNull, DeserializeAs, NoneAsEmptyString, OneOrMany,
-    PickFirst, TimestampMilliSeconds,
+    formats::PreferMany, serde_as, DefaultOnError, DefaultOnNull, DeserializeAs, NoneAsEmptyString,
+    OneOrMany, PickFirst, TimestampMilliSeconds, VecSkipError,
 };
 use url::Url;
 
@@ -365,10 +365,20 @@ pub struct SeriesInfo {
 /// For example when using the id as key in a [`HashMap`].
 pub type VideoId = String;
 
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+pub struct ContentRating {
+    pub value: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub system: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub icon: Option<String>,
+}
+
 /// Program guide information of a [`Video`], provided for the shows of
 /// live TV channels by addons with the `epgProvider` manifest behavior hint.
 ///
 /// Its presence on a [`Video`] marks it as a scheduled program show.
+#[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct VideoEpgInfo {
@@ -386,6 +396,9 @@ pub struct VideoEpgInfo {
     pub directors: Vec<String>,
     #[serde(default)]
     pub links: Vec<Link>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde_as(deserialize_as = "DefaultOnError<VecSkipError<_>>")]
+    pub ratings: Vec<ContentRating>,
 }
 
 impl VideoEpgInfo {
@@ -601,6 +614,7 @@ mod tests {
                     cast: vec![],
                     directors: vec![],
                     links: vec![],
+                    ratings: vec![],
                 }),
                 ..Default::default()
             }

@@ -1,6 +1,7 @@
 use crate::types::resource::Stream;
 use crate::types::resource::{
-    MetaItem, MetaItemPreview, SeriesInfo, StreamBehaviorHints, StreamSource, Video, VideoEpgInfo,
+    ContentRating, MetaItem, MetaItemPreview, SeriesInfo, StreamBehaviorHints, StreamSource, Video,
+    VideoEpgInfo,
 };
 use crate::unit_tests::serde::default_tokens_ext::{DefaultFlattenTokens, DefaultTokens};
 use chrono::{TimeZone, Utc};
@@ -787,6 +788,7 @@ fn video_epg_info() {
         cast: vec![],
         directors: vec![],
         links: vec![],
+        ratings: vec![],
     };
     let json = serde_json::to_value(Video {
         id: "id".to_owned(),
@@ -802,6 +804,62 @@ fn video_epg_info() {
     .unwrap();
     assert_eq!(json["startTime"], "2026-07-02T11:55:00Z");
     assert_eq!(json["endTime"], "2026-07-02T12:23:00Z");
+    assert!(json.get("ratings").is_none());
     let roundtrip = serde_json::from_value::<Video>(json).unwrap();
     assert_eq!(roundtrip.epg_info, Some(epg_info));
+}
+
+#[test]
+fn video_epg_content_ratings() {
+    let ratings = serde_json::json!([
+        {
+            "system": "VCHIP",
+            "value": "TV-14",
+            "icon": "https://example.com/ratings/us/tv-14.png"
+        },
+        { "value": "14+" }
+    ]);
+    let video_json = serde_json::json!({
+        "id": "channel:programme",
+        "startTime": "2026-07-02T11:55:00Z",
+        "endTime": "2026-07-02T12:23:00Z",
+        "ratings": ratings
+    });
+    let video = serde_json::from_value::<Video>(video_json.clone()).unwrap();
+    let expected = vec![
+        ContentRating {
+            value: "TV-14".to_owned(),
+            system: Some("VCHIP".to_owned()),
+            icon: Some("https://example.com/ratings/us/tv-14.png".to_owned()),
+        },
+        ContentRating {
+            value: "14+".to_owned(),
+            system: None,
+            icon: None,
+        },
+    ];
+    assert_eq!(video.epg_info.as_ref().unwrap().ratings, expected);
+    assert_eq!(serde_json::to_value(&video).unwrap()["ratings"], ratings);
+
+    // Invalid optional ratings must not discard valid programme times.
+    for invalid in [
+        serde_json::Value::Null,
+        serde_json::json!({}),
+        serde_json::json!(12),
+    ] {
+        let mut json = video_json.clone();
+        json["ratings"] = invalid;
+        let parsed = serde_json::from_value::<Video>(json).unwrap();
+        let info = parsed.epg_info.unwrap();
+        assert_eq!(info.start_time, video.epg_info.as_ref().unwrap().start_time);
+        assert!(info.ratings.is_empty());
+    }
+    let mut json = video_json;
+    json["ratings"].as_array_mut().unwrap().extend([
+        serde_json::json!({ "system": "VCHIP" }),
+        serde_json::json!({ "value": 14 }),
+        serde_json::Value::Null,
+    ]);
+    let parsed = serde_json::from_value::<Video>(json).unwrap();
+    assert_eq!(parsed.epg_info.unwrap().ratings, expected);
 }
