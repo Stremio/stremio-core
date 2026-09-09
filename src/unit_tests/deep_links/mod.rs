@@ -3,6 +3,7 @@ mod discover_deep_links;
 mod external_player_link;
 mod library_deep_links;
 mod library_item_deep_links;
+mod live_tv_guide_deep_links;
 mod meta_item_deep_links;
 mod search_history_item_deep_links;
 mod stream_deep_links;

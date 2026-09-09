@@ -11,6 +11,7 @@ use crate::{
     types::{
         library::{LibraryBucket, LibraryItem},
         notifications::NotificationsBucket,
+        profile::Profile,
     },
 };
 
@@ -31,9 +32,13 @@ pub struct ContinueWatchingPreview {
 }
 
 impl ContinueWatchingPreview {
-    pub fn new(library: &LibraryBucket, notifications: &NotificationsBucket) -> (Self, Effects) {
+    pub fn new(
+        library: &LibraryBucket,
+        notifications: &NotificationsBucket,
+        profile: &Profile,
+    ) -> (Self, Effects) {
         let mut items = vec![];
-        let effects = library_items_update(&mut items, library, notifications);
+        let effects = library_items_update(&mut items, library, notifications, profile);
         (Self { items }, effects.unchanged())
     }
 }
@@ -45,8 +50,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for ContinueWatchingPreview {
             // library has changed
             Msg::Internal(Internal::LibraryChanged(true))
             // notifications have been updated
-            | Msg::Internal(Internal::NotificationsChanged) => {
-                library_items_update(&mut self.items, &ctx.library, &ctx.notifications)
+            | Msg::Internal(Internal::NotificationsChanged)
+            // installing/uninstalling an epgProvider addon changes
+            // which library items are excluded as EPG channels
+            | Msg::Internal(Internal::ProfileChanged) => {
+                library_items_update(&mut self.items, &ctx.library, &ctx.notifications, &ctx.profile)
             }
             _ => Effects::none().unchanged(),
         }
@@ -57,10 +65,14 @@ fn library_items_update(
     cw_items: &mut Vec<Item>,
     library: &LibraryBucket,
     notifications: &NotificationsBucket,
+    profile: &Profile,
 ) -> Effects {
     let next_cw_items = library
         .items
         .values()
+        // playing an EPG channel creates a library item, but progress is
+        // meaningless for live content - keep those out of continue watching
+        .filter(|library_item| !profile.is_epg_channel_id(&library_item.id))
         .filter_map(|library_item| {
             let library_notification = notifications
                 .items

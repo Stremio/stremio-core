@@ -587,8 +587,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         duration.clone_into(&mut library_item.state.duration);
                     }
 
-                    // Watched threshold for marking an episode/movie as watched
+                    // Watched threshold for marking an episode/movie as watched;
+                    // live streams report no duration - without the guard any
+                    // time watched would instantly cross the threshold
                     let should_send_watched = if library_item.state.flagged_watched == 0
+                        && library_item.state.duration > 0
                         && library_item.state.time_watched as f64
                             > library_item.state.duration as f64 * WATCHED_THRESHOLD_COEF
                     {

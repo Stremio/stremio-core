@@ -12,6 +12,7 @@ use crate::{
         installed_addons_with_filters::Selected as InstalledAddonsWithFiltersSelected,
         library_by_type::Selected as LibraryByTypeSelected,
         library_with_filters::Selected as LibraryWithFiltersSelected,
+        live_tv_guide::Selected as LiveTvGuideSelected,
         meta_details::Selected as MetaDetailsSelected,
         player::{Selected as PlayerSelected, VideoParams},
     },
@@ -125,6 +126,12 @@ pub enum ActionCatalogsWithExtra {
 #[serde(tag = "action", content = "args")]
 pub enum ActionLibraryByType {
     LoadNextPage(usize),
+}
+
+#[derive(Clone, Deserialize, Debug)]
+#[serde(tag = "action", content = "args")]
+pub enum ActionLiveTvGuide {
+    LoadNextPage,
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -266,6 +273,10 @@ pub enum ActionLoad {
     LibraryByType(LibraryByTypeSelected),
     /// Loads the Calendar Model
     Calendar(Option<CalendarSelected>),
+    /// Loads the LiveTvGuide Model
+    LiveTvGuide(Option<LiveTvGuideSelected>),
+    /// Loads the LiveTvContinueWatching Model
+    LiveTvContinueWatching,
     /// Loads the data required for Local search
     LocalSearch,
     MetaDetails(MetaDetailsSelected),
@@ -297,6 +308,7 @@ pub enum Action {
     CatalogsWithExtra(ActionCatalogsWithExtra),
     LibraryByType(ActionLibraryByType),
     LibraryWithFilters(ActionLibraryWithFilters),
+    LiveTvGuide(ActionLiveTvGuide),
     MetaDetails(ActionMetaDetails),
     StreamingServer(ActionStreamingServer),
     Player(ActionPlayer),

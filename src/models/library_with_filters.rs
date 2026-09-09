@@ -19,18 +19,33 @@ use crate::{
     types::{
         library::{LibraryBucket, LibraryItem},
         notifications::NotificationsBucket,
+        profile::Profile,
     },
 };
 
 pub trait LibraryFilter {
-    fn predicate(library_item: &LibraryItem, notifications: &NotificationsBucket) -> bool;
+    fn predicate(
+        library_item: &LibraryItem,
+        notifications: &NotificationsBucket,
+        profile: &Profile,
+    ) -> bool;
 }
 
 #[derive(Clone, Debug)]
 pub enum ContinueWatchingFilter {}
 
 impl LibraryFilter for ContinueWatchingFilter {
-    fn predicate(library_item: &LibraryItem, notifications: &NotificationsBucket) -> bool {
+    fn predicate(
+        library_item: &LibraryItem,
+        notifications: &NotificationsBucket,
+        profile: &Profile,
+    ) -> bool {
+        // playing an EPG channel creates a library item, but progress is
+        // meaningless for live content - keep those out of continue watching
+        if profile.is_epg_channel_id(&library_item.id) {
+            return false;
+        }
+
         let library_notification = notifications
             .items
             .get(&library_item.id)
@@ -44,7 +59,11 @@ impl LibraryFilter for ContinueWatchingFilter {
 pub enum NotRemovedFilter {}
 
 impl LibraryFilter for NotRemovedFilter {
-    fn predicate(library_item: &LibraryItem, _notifications: &NotificationsBucket) -> bool {
+    fn predicate(
+        library_item: &LibraryItem,
+        _notifications: &NotificationsBucket,
+        _profile: &Profile,
+    ) -> bool {
         !library_item.removed
     }
 }
@@ -152,10 +171,15 @@ pub struct LibraryWithFilters<F> {
 }
 
 impl<F: LibraryFilter> LibraryWithFilters<F> {
-    pub fn new(library: &LibraryBucket, notifications: &NotificationsBucket) -> (Self, Effects) {
+    pub fn new(
+        library: &LibraryBucket,
+        notifications: &NotificationsBucket,
+        profile: &Profile,
+    ) -> (Self, Effects) {
         let selected = None;
         let mut selectable = Selectable::default();
-        let effects = selectable_update::<F>(&mut selectable, &selected, library, notifications);
+        let effects =
+            selectable_update::<F>(&mut selectable, &selected, library, notifications, profile);
         (
             Self {
                 selectable,
@@ -177,12 +201,14 @@ impl<E: Env + 'static, F: LibraryFilter> UpdateWithCtx<E> for LibraryWithFilters
                     &self.selected,
                     &ctx.library,
                     &ctx.notifications,
+                    &ctx.profile,
                 );
                 let catalog_effects = catalog_update::<F>(
                     &mut self.catalog,
                     &self.selected,
                     &ctx.library,
                     &ctx.notifications,
+                    &ctx.profile,
                 );
                 selected_effects
                     .join(selectable_effects)
@@ -195,12 +221,14 @@ impl<E: Env + 'static, F: LibraryFilter> UpdateWithCtx<E> for LibraryWithFilters
                     &self.selected,
                     &ctx.library,
                     &ctx.notifications,
+                    &ctx.profile,
                 );
                 let catalog_effects = catalog_update::<F>(
                     &mut self.catalog,
                     &self.selected,
                     &ctx.library,
                     &ctx.notifications,
+                    &ctx.profile,
                 );
                 selected_effects
                     .join(selectable_effects)
@@ -218,12 +246,14 @@ impl<E: Env + 'static, F: LibraryFilter> UpdateWithCtx<E> for LibraryWithFilters
                             &self.selected,
                             &ctx.library,
                             &ctx.notifications,
+                            &ctx.profile,
                         );
                         let catalog_effects = catalog_update::<F>(
                             &mut self.catalog,
                             &self.selected,
                             &ctx.library,
                             &ctx.notifications,
+                            &ctx.profile,
                         );
                         selected_effects
                             .join(selectable_effects)
@@ -232,18 +262,23 @@ impl<E: Env + 'static, F: LibraryFilter> UpdateWithCtx<E> for LibraryWithFilters
                     _ => Effects::none().unchanged(),
                 }
             }
-            Msg::Internal(Internal::LibraryChanged(_)) => {
+            // ProfileChanged: installing/uninstalling an epgProvider addon
+            // changes which library items the continue watching filter excludes
+            Msg::Internal(Internal::LibraryChanged(_))
+            | Msg::Internal(Internal::ProfileChanged) => {
                 let selectable_effects = selectable_update::<F>(
                     &mut self.selectable,
                     &self.selected,
                     &ctx.library,
                     &ctx.notifications,
+                    &ctx.profile,
                 );
                 let catalog_effects = catalog_update::<F>(
                     &mut self.catalog,
                     &self.selected,
                     &ctx.library,
                     &ctx.notifications,
+                    &ctx.profile,
                 );
                 selectable_effects.join(catalog_effects)
             }
@@ -257,11 +292,12 @@ fn selectable_update<F: LibraryFilter>(
     selected: &Option<Selected>,
     library: &LibraryBucket,
     notifications: &NotificationsBucket,
+    profile: &Profile,
 ) -> Effects {
     let selectable_types = library
         .items
         .values()
-        .filter(|library_item| F::predicate(library_item, notifications))
+        .filter(|library_item| F::predicate(library_item, notifications, profile))
         .map(|library_item| &library_item.r#type)
         .unique()
         .sorted_by(|a, b| compare_with_priorities(a.as_str(), b.as_str(), &*TYPE_PRIORITIES))
@@ -320,7 +356,7 @@ fn selectable_update<F: LibraryFilter>(
         Some(selected) => library
             .items
             .values()
-            .filter(|library_item| F::predicate(library_item, notifications))
+            .filter(|library_item| F::predicate(library_item, notifications, profile))
             .filter(|library_item| match &selected.request.r#type {
                 Some(r#type) => library_item.r#type == *r#type,
                 None => true,
@@ -349,12 +385,13 @@ fn catalog_update<F: LibraryFilter>(
     selected: &Option<Selected>,
     library: &LibraryBucket,
     notifications: &NotificationsBucket,
+    profile: &Profile,
 ) -> Effects {
     let next_catalog = match selected {
         Some(selected) => library
             .items
             .values()
-            .filter(|library_item| F::predicate(library_item, notifications))
+            .filter(|library_item| F::predicate(library_item, notifications, profile))
             .filter(|library_item| match &selected.request.r#type {
                 Some(r#type) => library_item.r#type == *r#type,
                 None => true,
