@@ -58,6 +58,7 @@ use crate::types::{
 ///                 description: Some("South Park - Seasons 1 to 25 (S01-S25) Collectors Edition The Movie and Extras [NVEnc 10Bit 1080p to 2160p HEVC][DD DDP & TrueHD 5.1Ch]\nSeason 02/South Park - S02E05 - Conjoined Fetus Lady.mp4".into()),
 ///                 thumbnail: None,
 ///                 subtitles: vec![],
+///                 tags: vec![],
 ///                 behavior_hints: StreamBehaviorHints::default(),
 ///             }
 ///         ]

@@ -35,6 +35,7 @@ fn stream_deep_links_magnet() {
         name: None,
         description: None,
         thumbnail: None,
+        tags: vec![],
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
@@ -105,6 +106,7 @@ fn stream_deep_links_http() {
         name: None,
         description: None,
         thumbnail: None,
+        tags: vec![],
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
@@ -188,6 +190,7 @@ fn stream_deep_links_http_with_request_headers() {
         name: None,
         description: None,
         thumbnail: None,
+        tags: vec![],
         subtitles: vec![],
         behavior_hints: StreamBehaviorHints {
             not_web_ready: false,
@@ -226,6 +229,7 @@ fn stream_deep_links_http_with_request_response_headers_and_query_params() {
         name: None,
         description: None,
         thumbnail: None,
+        tags: vec![],
         subtitles: vec![],
         behavior_hints: StreamBehaviorHints {
             not_web_ready: false,
@@ -276,6 +280,7 @@ fn stream_deep_links_torrent() {
         name: None,
         description: None,
         thumbnail: None,
+        tags: vec![],
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
@@ -338,6 +343,7 @@ fn stream_deep_links_torrent_without_file_index() {
         name: None,
         description: None,
         thumbnail: None,
+        tags: vec![],
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
@@ -395,6 +401,7 @@ fn stream_deep_links_external() {
         name: None,
         description: None,
         thumbnail: None,
+        tags: vec![],
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
@@ -419,6 +426,7 @@ fn stream_deep_links_youtube() {
         name: None,
         description: None,
         thumbnail: None,
+        tags: vec![],
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
@@ -454,6 +462,7 @@ fn stream_deep_links_player_frame() {
         name: None,
         description: None,
         thumbnail: None,
+        tags: vec![],
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
@@ -474,6 +483,7 @@ fn stream_deep_links_requests() {
         name: None,
         description: None,
         thumbnail: None,
+        tags: vec![],
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
