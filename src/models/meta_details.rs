@@ -1,5 +1,6 @@
 use std::{borrow::Cow, marker::PhantomData};
 
+use chrono::{DateTime, Duration, Utc};
 use enclose::enclose;
 use futures::FutureExt;
 use serde::{Deserialize, Serialize};
@@ -13,8 +14,8 @@ use crate::{
     },
     models::{
         common::{
-            eq_update, resources_update, resources_update_with_vector_content, Loadable,
-            ResourceLoadable, ResourcesAction,
+            eq_update, resource_update, resources_update, resources_update_with_vector_content,
+            Loadable, ResourceAction, ResourceLoadable, ResourcesAction,
         },
         ctx::{Ctx, CtxError},
     },
@@ -63,12 +64,20 @@ pub struct MetaDetails {
     pub rating_info: Option<Loadable<RatingInfo, EnvError>>,
     #[serde(skip_serializing)]
     pub watched: Option<WatchedBitField>,
+    /// A background refresh keeps the displayed channel and its streams available.
+    #[serde(skip)]
+    pub live_schedule_refresh: Option<(ResourceLoadable<MetaItem>, DateTime<Utc>)>,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::MetaDetails(selected))) => {
+                if self.selected.as_ref().map(|selected| &selected.meta_path)
+                    != Some(&selected.meta_path)
+                {
+                    self.live_schedule_refresh = None;
+                }
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let meta_items_effects =
                     meta_items_update::<E>(&mut self.meta_items, &self.selected, &ctx.profile);
@@ -111,6 +120,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     .join(watched_effects)
             }
             Msg::Action(Action::Unload) => {
+                self.live_schedule_refresh = None;
                 let selected_effects = eq_update(&mut self.selected, None);
                 let meta_items_effects = eq_update(&mut self.meta_items, vec![]);
                 let meta_streams_effects = eq_update(&mut self.meta_streams, vec![]);
@@ -128,6 +138,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     .join(library_item_effects)
                     .join(watched_effects)
                     .join(rating_info_effects)
+            }
+            Msg::Action(Action::MetaDetails(ActionMetaDetails::RefreshLive)) => {
+                live_schedule_refresh_update::<E>(self)
             }
             Msg::Action(Action::MetaDetails(ActionMetaDetails::MarkAsWatched(is_watched))) => {
                 match &self.library_item {
@@ -225,6 +238,29 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
             Msg::Internal(Internal::ResourceRequestResult(request, result))
                 if request.path.resource == META_RESOURCE_NAME =>
             {
+                let live_schedule_effects = self
+                    .live_schedule_refresh
+                    .as_mut()
+                    .map(|(refresh, _)| {
+                        let effects = resource_update::<E, MetaItem>(
+                            refresh,
+                            ResourceAction::ResourceRequestResult { request, result },
+                        );
+                        if effects.has_changed
+                            && matches!(refresh.content, Some(Loadable::Ready(_)))
+                        {
+                            self.meta_items
+                                .iter_mut()
+                                .find(|resource| resource.request == *request)
+                                .map(|resource| {
+                                    eq_update(&mut resource.content, refresh.content.clone())
+                                })
+                                .unwrap_or_else(|| Effects::none().unchanged())
+                        } else {
+                            effects.unchanged()
+                        }
+                    })
+                    .unwrap_or_else(|| Effects::none().unchanged());
                 let meta_items_effects = resources_update::<E, _>(
                     &mut self.meta_items,
                     ResourcesAction::ResourceRequestResult { request, result },
@@ -255,6 +291,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_items, &self.library_item);
                 selected_override_effects
+                    .join(live_schedule_effects)
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
                     .join(streams_effects)
@@ -543,6 +580,14 @@ fn selected_guess_stream_update(
     ) {
         (_, Some(default_video_id)) => default_video_id.to_owned(),
         (0, None) => meta_item.preview.id.to_owned(),
+        (_, None)
+            if meta_item
+                .preview
+                .behavior_hints
+                .is_live(&meta_item.preview.r#type) =>
+        {
+            meta_item.preview.id.to_owned()
+        }
         _ => return Effects::default(),
     };
 
@@ -561,6 +606,57 @@ fn selected_guess_stream_update(
             guess_stream: false,
         }),
     )
+}
+
+fn live_schedule_refresh_update<E: Env + 'static>(details: &mut MetaDetails) -> Effects {
+    let Some((resource, meta)) = details.meta_items.iter().find_map(|resource| {
+        resource
+            .content
+            .as_ref()
+            .and_then(Loadable::ready)
+            .map(|meta| (resource, meta))
+    }) else {
+        return Effects::none().unchanged();
+    };
+    if !meta.preview.behavior_hints.is_live(&meta.preview.r#type) {
+        details.live_schedule_refresh = None;
+        return Effects::none().unchanged();
+    }
+    let now = E::now();
+    let (refresh, requested_at) = details
+        .live_schedule_refresh
+        .get_or_insert_with(|| (resource.clone(), now));
+    if refresh.request != resource.request {
+        *refresh = resource.clone();
+        *requested_at = now;
+    }
+    if matches!(refresh.content, Some(Loadable::Loading)) {
+        return Effects::none().unchanged();
+    }
+    let coverage_expired = meta
+        .videos
+        .iter()
+        .filter_map(|video| video.epg_info.as_ref())
+        .filter(|info| info.start_time < info.end_time)
+        .map(|info| info.end_time)
+        .max()
+        .is_some_and(|end| end <= now);
+    let refresh_after = if coverage_expired || matches!(refresh.content, Some(Loadable::Err(_))) {
+        Duration::minutes(1)
+    } else {
+        Duration::minutes(15)
+    };
+    if now - *requested_at < refresh_after {
+        return Effects::none().unchanged();
+    }
+    *requested_at = now;
+    refresh.content = None;
+    let request = refresh.request.clone();
+    resource_update::<E, MetaItem>(
+        refresh,
+        ResourceAction::ResourceRequested { request: &request },
+    )
+    .unchanged()
 }
 
 fn meta_items_update<E: Env + 'static>(

@@ -155,14 +155,17 @@ where
 {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
-            Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(selected))) => {
+            Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(selected)))
+            | Msg::Action(Action::Load(ActionLoad::CatalogWithFiltersSelection(selected))) => {
                 let selected_effects =
                     selected_update::<T>(&mut self.selected, &self.selectable, selected);
                 let catalog_effects = match self.selected.as_ref() {
-                    // guide catalogs of epgProvider addons carry EPG data
-                    // loaded by the LiveTvGuide model instead - loading
-                    // their content here would only duplicate the request
-                    Some(selected) if is_epg_guide_request(&selected.request, &ctx.profile) => {
+                    Some(selected)
+                        if matches!(
+                            msg,
+                            Msg::Action(Action::Load(ActionLoad::CatalogWithFiltersSelection(_)))
+                        ) && is_epg_guide_request(&selected.request, &ctx.profile) =>
+                    {
                         eq_update(&mut self.catalog, vec![])
                     }
                     Some(selected) => catalog_update::<E, _>(

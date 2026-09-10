@@ -322,10 +322,12 @@ mod tests {
         // the model derives shows sorted by startTime ASC: [swat, spy]
         let shows = vec![channel.videos[1].clone(), channel.videos[0].clone()];
         let state = LiveTvGuide {
+            last_loaded: None,
             selected: Some(Selected {
                 request: Some(catalog_request.clone()),
                 date: Some(date),
                 utc_offset: 0,
+                day: None,
             }),
             selectable: Selectable {
                 catalogs: vec![SelectableCatalog {
@@ -338,7 +340,7 @@ mod tests {
                 next_date: date.succ_opt(),
                 today: Some(date),
                 next_page: Some(SelectablePage {
-                    request: next_page_request,
+                    requests: vec![next_page_request],
                 }),
             },
             catalog: vec![ResourceLoadable {
@@ -372,13 +374,13 @@ mod tests {
             "shows are slimmed down to keep the guide payload small"
         );
         assert!(value["channels"][0]["shows"][1]["deepLinks"]["player"].is_string());
-        assert!(value["channels"][0]["deepLinks"]["metaDetailsVideos"]
+        assert!(value["channels"][0]["deepLinks"]["metaDetailsStreams"]
             .as_str()
             .unwrap()
             .starts_with("#/detail/tv/pure%3Aaxn"));
         assert_eq!(value["catalog"][0]["type"], "Ready");
         assert_eq!(
-            value["selectable"]["nextPage"]["request"]["path"]["extra"][0][0],
+            value["selectable"]["nextPage"]["requests"][0]["path"]["extra"][0][0],
             "skip"
         );
     }

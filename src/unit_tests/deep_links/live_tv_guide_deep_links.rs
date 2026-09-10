@@ -10,7 +10,7 @@ fn live_tv_guide_deep_links() {
     let ldl = LiveTvGuideDeepLinks::from(&date);
     assert_eq!(
         ldl.live_tv_guide,
-        "stremio:///livetv/2026-07-02".to_string()
+        "stremio:///discover?epg_date=2026-07-02".to_string()
     );
 
     let request = ResourceRequest {
@@ -20,6 +20,7 @@ fn live_tv_guide_deep_links() {
     let ldl = LiveTvGuideDeepLinks::from((&request, &date));
     assert_eq!(
         ldl.live_tv_guide,
-        "stremio:///livetv/https%3A%2F%2Faddon%2Fmanifest.json/tv/guide/2026-07-02".to_string()
+        "stremio:///discover/https%3A%2F%2Faddon%2Fmanifest.json/tv/guide?epg_date=2026-07-02"
+            .to_string()
     );
 }

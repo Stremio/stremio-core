@@ -241,6 +241,7 @@ fn library_item_deep_links_behavior_hints_default_video_id() {
             no_notif: true,
         },
         behavior_hints: MetaItemBehaviorHints {
+            is_live: false,
             default_video_id: Some("tt13622776:1:5".to_string()),
             featured_video_id: None,
             has_scheduled_videos: false,
@@ -341,6 +342,7 @@ fn library_item_deep_links_state_and_behavior_hints_default_video_id() {
             no_notif: true,
         },
         behavior_hints: MetaItemBehaviorHints {
+            is_live: false,
             default_video_id: Some("bh_video_id".to_string()),
             featured_video_id: None,
             has_scheduled_videos: false,
@@ -397,6 +399,7 @@ fn library_item_deep_links_state_no_time_offset_and_behavior_hints_default_video
             no_notif: true,
         },
         behavior_hints: MetaItemBehaviorHints {
+            is_live: false,
             default_video_id: Some("bh_video_id".to_string()),
             featured_video_id: None,
             has_scheduled_videos: false,
