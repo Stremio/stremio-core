@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::{
@@ -172,6 +172,15 @@ pub struct PlayOnDeviceArgs {
     pub device: String,
     pub source: String,
     pub time: Option<u64>,
+    pub subtitles: Option<CastingSubtitles>,
+}
+
+#[derive(Clone, Deserialize, Serialize, PartialEq, Debug, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct CastingSubtitles {
+    pub subtitles_src: Option<Url>,
+    #[serde(default)]
+    pub subtitles_delay: i64,
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -183,6 +192,12 @@ pub enum ActionStreamingServer {
     CreateTorrent(CreateTorrentArgs),
     GetStatistics(StreamingServerStatisticsRequest),
     PlayOnDevice(PlayOnDeviceArgs),
+    CastToDevice(PlayOnDeviceArgs),
+    SetCastingSubtitles {
+        id: u64,
+        subtitles: CastingSubtitles,
+    },
+    StopCasting,
 }
 
 #[derive(Clone, Deserialize, Debug)]
