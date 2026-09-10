@@ -272,3 +272,88 @@ fn live_tv_continue_watching() {
         "the row empties once the epgProvider addon is uninstalled"
     );
 }
+
+#[test]
+fn live_channel_remains_removable_after_addon_uninstall() {
+    #[derive(Model, Clone, Debug)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+        live_tv_continue_watching: LiveTvContinueWatching,
+    }
+
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(|request: Request| match &request {
+        Request { url, .. } if url == "https://fallback/meta/tv/pure%3Aamc.json" => {
+            future::ok(Box::new(ResourceResponse::Meta {
+                meta: channel_meta("unavailable", "Unavailable channel", vec![]),
+            }) as Box<dyn Any + Send>)
+            .boxed_env()
+        }
+        _ => fetch_handler(request),
+    });
+
+    let mut fallback_addon = epg_addon();
+    fallback_addon.transport_url = Url::parse("https://fallback/manifest.json").unwrap();
+    fallback_addon.manifest.id = "fallback".to_owned();
+    fallback_addon.manifest.behavior_hints.epg_provider = false;
+
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+        TestModel {
+            ctx: Ctx {
+                profile: Profile {
+                    addons: vec![epg_addon(), fallback_addon],
+                    ..Default::default()
+                },
+                library: LibraryBucket {
+                    uid: None,
+                    items: [("pure:amc".into(), library_item("pure:amc", "tv", 12, true))]
+                        .into_iter()
+                        .collect(),
+                },
+                ..Default::default()
+            },
+            live_tv_continue_watching: Default::default(),
+        },
+        vec![],
+        1000,
+    );
+
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Load(ActionLoad::LiveTvContinueWatching),
+        });
+    });
+    assert_eq!(
+        runtime.model().unwrap().live_tv_continue_watching.items[0]
+            .channel
+            .id,
+        "pure:amc"
+    );
+
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::UninstallAddon(epg_addon())),
+        });
+    });
+
+    let channel_id = runtime.model().unwrap().live_tv_continue_watching.items[0]
+        .channel
+        .id
+        .clone();
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::RemoveFromLibrary(channel_id)),
+        });
+    });
+
+    let model = runtime.model().unwrap();
+    assert!(
+        model.live_tv_continue_watching.items.is_empty(),
+        "the card remains dismissible when a fallback addon returns a different metadata ID"
+    );
+    assert!(!model.ctx.library.items["pure:amc"].temp);
+}

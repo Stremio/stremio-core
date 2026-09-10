@@ -184,7 +184,10 @@ fn items_update(
                 .as_ref()
                 .and_then(|content| content.ready());
             let channel = meta
-                .map(|meta_item| meta_item.preview.to_owned())
+                .map(|meta_item| MetaItemPreview {
+                    id: resource.request.path.id.to_owned(),
+                    ..meta_item.preview.to_owned()
+                })
                 .unwrap_or_else(|| fallback_preview(library, &resource.request));
             let shows = meta
                 .map(|meta_item| {
