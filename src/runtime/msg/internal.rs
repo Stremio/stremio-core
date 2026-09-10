@@ -133,6 +133,7 @@ pub enum Internal {
     StreamingServerPlayOnDeviceResult(String, Result<(), EnvError>),
     // Result for get https endpoint request
     StreamingServerGetHTTPSResult(Url, Result<GetHTTPSResponse, EnvError>),
+    StreamingServerHeartbeatResult(Url, Result<(), EnvError>),
     /// Result for streaming server statistics.
     ///
     /// Server will return None (or `null`) in response for [`Statistics`]`,

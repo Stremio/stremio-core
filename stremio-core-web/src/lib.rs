@@ -69,6 +69,10 @@ pub mod env;
 pub mod event;
 #[cfg(all(feature = "wasm", feature = "env"))]
 mod stremio_core_web;
+
+#[cfg(all(feature = "wasm", feature = "env"))]
+pub mod timers;
+
 #[cfg(all(feature = "wasm", feature = "env"))]
 // re-export all wasm-specific
 pub use stremio_core_web::*;

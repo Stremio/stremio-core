@@ -75,7 +75,7 @@ fn data_export_with_user() {
             runtime.dispatch(RuntimeAction {
                 field: None,
                 action: Action::Load(ActionLoad::DataExport),
-            });
+            }).expect("Should dispatch");
         }),
     );
     let events = EVENTS.read().unwrap();
@@ -159,7 +159,7 @@ fn data_export_without_a_user() {
             runtime.dispatch(RuntimeAction {
                 field: None,
                 action: Action::Load(ActionLoad::DataExport),
-            });
+            }).expect("Should dispatch");
         }),
     );
     let events = EVENTS.read().unwrap();

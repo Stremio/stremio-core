@@ -63,10 +63,12 @@ fn actionctx_pushaddonstoapi() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::PushAddonsToAPI),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::PushAddonsToAPI),
+            })
+            .expect("Should dispatch action");
     });
     assert!(
         REQUESTS.read().unwrap().is_empty(),
@@ -156,10 +158,12 @@ fn actionctx_pushaddonstoapi_with_user() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::PushAddonsToAPI),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::PushAddonsToAPI),
+            })
+            .expect("Should dispatch action");
     });
     assert_eq!(
         REQUESTS.read().unwrap().len(),

@@ -98,10 +98,12 @@ fn actionctx_delete_account() {
     );
 
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::DeleteAccount(Password("password".to_owned()))),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::DeleteAccount(Password("password".to_owned()))),
+            })
+            .expect("Should dispatch action");
     });
 
     assert_eq!(

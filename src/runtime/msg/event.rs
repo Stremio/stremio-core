@@ -1,5 +1,6 @@
 use crate::models::ctx::CtxError;
 use crate::models::player::AnalyticsContext as PlayerAnalyticsContext;
+use crate::models::streaming_server::State;
 use crate::types::api::AuthRequest;
 use crate::types::library::LibraryItemId;
 use crate::types::profile::{AuthKey, Settings, UID};
@@ -154,6 +155,13 @@ pub enum Event {
     },
     StreamingServerUrlsPushedToStorage {
         uid: UID,
+    },
+    StreamingServerSettingsChanged {
+        url: Url,
+    },
+    StreamingServerState {
+        url: Url,
+        state: State,
     },
     Error {
         error: CtxError,

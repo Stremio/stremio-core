@@ -99,10 +99,12 @@ fn actionctx_addon_upgrade() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::UpgradeAddon(addon1_update.to_owned())),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::UpgradeAddon(addon1_update.to_owned())),
+            })
+            .expect("Should dispatch action");
     });
     let expected = vec![addon1_update, addon2];
 
@@ -192,10 +194,12 @@ fn actionctx_addon_upgrade_fail_due_to_different_url() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::UpgradeAddon(addon2.to_owned())),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::UpgradeAddon(addon2.to_owned())),
+            })
+            .expect("Should dispatch action");
     });
 
     assert_eq!(

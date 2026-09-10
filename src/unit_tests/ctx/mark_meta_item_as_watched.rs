@@ -67,13 +67,15 @@ fn meta_item_mark_as_watched_missing_item_creates_temp() {
         "Library starts empty"
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::MetaItemMarkAsWatched {
-                meta_item: meta_preview(),
-                is_watched: true,
-            }),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::MetaItemMarkAsWatched {
+                    meta_item: meta_preview(),
+                    is_watched: true,
+                }),
+            })
+            .expect("Should dispatch");
     });
     let model = runtime.model().unwrap();
     assert_eq!(model.ctx.library.items.len(), 1, "One item created");
@@ -110,13 +112,15 @@ fn meta_item_mark_as_watched_existing_item_increments() {
         items: vec![("tt123".into(), existing)].into_iter().collect(),
     });
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::MetaItemMarkAsWatched {
-                meta_item: meta_preview(),
-                is_watched: true,
-            }),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::MetaItemMarkAsWatched {
+                    meta_item: meta_preview(),
+                    is_watched: true,
+                }),
+            })
+            .expect("Should dispatch");
     });
     let model = runtime.model().unwrap();
     let item = model.ctx.library.items.get("tt123").expect("Item exists");
@@ -134,13 +138,15 @@ fn meta_item_unwatch_missing_item_is_noop() {
     *NOW.write().unwrap() = Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap();
     let (runtime, _rx) = test_runtime(LibraryBucket::default());
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::MetaItemMarkAsWatched {
-                meta_item: meta_preview(),
-                is_watched: false,
-            }),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::MetaItemMarkAsWatched {
+                    meta_item: meta_preview(),
+                    is_watched: false,
+                }),
+            })
+            .expect("Should dispatch");
     });
     assert!(
         runtime.model().unwrap().ctx.library.items.is_empty(),
@@ -182,13 +188,15 @@ fn meta_item_unwatch_existing_item_resets() {
         items: vec![("tt123".into(), existing)].into_iter().collect(),
     });
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::MetaItemMarkAsWatched {
-                meta_item: meta_preview(),
-                is_watched: false,
-            }),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::MetaItemMarkAsWatched {
+                    meta_item: meta_preview(),
+                    is_watched: false,
+                }),
+            })
+            .expect("Should dispatch");
     });
     let model = runtime.model().unwrap();
     let item = model

@@ -33,10 +33,12 @@ fn test_add_server_url() {
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     let new_url = Url::parse("http://localhost:11470").unwrap();
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::AddServerUrl(new_url.clone())),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::AddServerUrl(new_url.clone())),
+            })
+            .expect("Should dispatch action");
     });
     let server_urls = &runtime.model().unwrap().ctx.streaming_server_urls;
     assert!(
@@ -88,10 +90,12 @@ fn test_delete_server_url() {
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::DeleteServerUrl(initial_url.clone())),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::DeleteServerUrl(initial_url.clone())),
+            })
+            .expect("Should dispatch action");
     });
     let server_urls = &runtime.model().unwrap().ctx.streaming_server_urls;
     assert!(

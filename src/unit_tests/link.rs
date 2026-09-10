@@ -71,10 +71,12 @@ fn create_link_code() {
     };
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(model, vec![], 1000);
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Load(ActionLoad::Link),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Load(ActionLoad::Link),
+            })
+            .expect("Should dispatch action");
     });
     assert_eq!(
         runtime.model().unwrap().link.code,
@@ -91,10 +93,12 @@ fn create_link_code() {
         "link data not loaded"
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Link(ActionLink::ReadData),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Link(ActionLink::ReadData),
+            })
+            .expect("Should dispatch action");
     });
     assert_eq!(
         runtime.model().unwrap().link.code,

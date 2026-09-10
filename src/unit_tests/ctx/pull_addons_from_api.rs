@@ -55,10 +55,12 @@ fn actionctx_pulladdonsfromapi() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::PullAddonsFromAPI),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::PullAddonsFromAPI),
+            })
+            .expect("Should dispatch action");
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
@@ -166,10 +168,12 @@ fn actionctx_pulladdonsfromapi_with_user() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::PullAddonsFromAPI),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::PullAddonsFromAPI),
+            })
+            .expect("Should dispatch action");
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,

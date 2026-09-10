@@ -119,10 +119,12 @@ fn actionctx_addtolibrary() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::AddToLibrary(meta_preview.to_owned())),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::AddToLibrary(meta_preview.to_owned())),
+            })
+            .expect("Should dispatch action");
     });
     assert_eq!(
         runtime.model().unwrap().ctx.library.items.len(),
@@ -257,10 +259,12 @@ fn actionctx_addtolibrary_already_added() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::AddToLibrary(meta_preview.to_owned())),
-        })
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::AddToLibrary(meta_preview.to_owned())),
+            })
+            .expect("Should dispatch action");
     });
     assert_eq!(
         runtime.model().unwrap().ctx.library.items.len(),

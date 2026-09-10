@@ -54,9 +54,9 @@ where
     pub fn model(&self) -> LockResult<RwLockReadGuard<'_, M>> {
         self.model.read()
     }
-    pub fn dispatch(&self, action: RuntimeAction<E, M>) {
+    pub fn dispatch(&self, action: RuntimeAction<E, M>) -> Result<(), &str> {
         let (effects, fields) = {
-            let mut model = self.model.write().expect("model write failed");
+            let mut model = self.model.write().or(Err("model write failed"))?;
             match action {
                 RuntimeAction {
                     field: Some(field),
@@ -66,6 +66,8 @@ where
             }
         };
         self.handle_effects(effects, fields);
+
+        Ok(())
     }
     #[cfg(test)]
     pub async fn close(&mut self) -> Result<(), anyhow::Error> {

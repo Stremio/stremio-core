@@ -56,6 +56,12 @@ fn remote_endpoint() {
     fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
         match request {
             Request { url, method, .. }
+                if method == "GET" && url == "http://127.0.0.1:11470/heartbeat" =>
+            {
+                future::ok(Box::new(SuccessResponse { success: True }) as Box<dyn Any + Send>)
+                    .boxed_env()
+            }
+            Request { url, method, .. }
                 if method == "GET" && url == "http://127.0.0.1:11470/settings" =>
             {
                 future::ok(Box::new(SettingsResponse {
@@ -135,22 +141,26 @@ fn remote_endpoint() {
     );
 
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::StreamingServer(ActionStreamingServer::Reload),
-        });
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::StreamingServer(ActionStreamingServer::Reload),
+            })
+            .expect("Should dispatch");
     });
 
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::StreamingServer(ActionStreamingServer::UpdateSettings(
-                StreamingServerSettings {
-                    remote_https: Some(AVAILABLE_INTERFACE.to_string()),
-                    ..STREAMING_SERVER_SETTINGS
-                },
-            )),
-        });
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::StreamingServer(ActionStreamingServer::UpdateSettings(
+                    StreamingServerSettings {
+                        remote_https: Some(AVAILABLE_INTERFACE.to_string()),
+                        ..STREAMING_SERVER_SETTINGS
+                    },
+                )),
+            })
+            .expect("Should dispatch");
     });
 
     assert!(

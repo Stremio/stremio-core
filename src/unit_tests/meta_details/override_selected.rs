@@ -82,7 +82,7 @@ fn override_selected_default_video_id() {
                     stream_path: None,
                     guess_stream: true,
                 })),
-            });
+            }).expect("Should dispatch");
         }),
     );
     let states = STATES.read().unwrap();
@@ -177,7 +177,7 @@ fn override_selected_meta_id() {
                     stream_path: None,
                     guess_stream: true,
                 })),
-            });
+            }).expect("Should dispatch");
         }),
     );
     let states = STATES.read().unwrap();

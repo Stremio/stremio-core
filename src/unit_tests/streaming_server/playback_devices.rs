@@ -18,10 +18,12 @@ use crate::{
         EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture,
     },
     types::{
+        api::SuccessResponse,
         profile::Profile,
         streaming_server::{
             DeviceInfo, NetworkInfo, Settings as StreamingServerSettings, SettingsResponse,
         },
+        True,
     },
     unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER},
 };
@@ -59,6 +61,12 @@ fn refresh_playback_devices_updates_ready_state() {
 
     fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
         match request {
+            Request { url, method, .. }
+                if method == "GET" && url == "http://127.0.0.1:11470/heartbeat" =>
+            {
+                future::ok(Box::new(SuccessResponse { success: True }) as Box<dyn Any + Send>)
+                    .boxed_env()
+            }
             Request { url, method, .. }
                 if method == "GET" && url == "http://127.0.0.1:11470/settings" =>
             {

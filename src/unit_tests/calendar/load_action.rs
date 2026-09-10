@@ -129,10 +129,12 @@ fn calendar() {
     );
 
     TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Load(ActionLoad::Calendar(None)),
-        });
+        runtime
+            .dispatch(RuntimeAction {
+                field: None,
+                action: Action::Load(ActionLoad::Calendar(None)),
+            })
+            .expect("Should dispatch");
     });
 
     assert_eq!(

@@ -35,7 +35,7 @@ use stremio_core::{
 use super::SerializeModel;
 use crate::env::WebEnv;
 
-#[derive(Model, Clone)]
+#[derive(Model, Clone, Debug)]
 #[cfg_attr(debug_assertions, derive(Serialize))]
 #[model(WebEnv)]
 pub struct WebModel {
