@@ -269,6 +269,7 @@ pub enum ActionLoad {
     /// Loads the data required for Local search
     LocalSearch,
     MetaDetails(MetaDetailsSelected),
+    SourcePreview(String),
     Player(Box<PlayerSelected>),
     Link,
 }

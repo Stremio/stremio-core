@@ -14,4 +14,5 @@ pub mod link;
 pub mod local_search;
 pub mod meta_details;
 pub mod player;
+pub mod source_preview;
 pub mod streaming_server;

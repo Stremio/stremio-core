@@ -21,6 +21,7 @@ use stremio_core::{
         local_search::LocalSearch,
         meta_details::MetaDetails,
         player::Player,
+        source_preview::SourcePreview,
         streaming_server::StreamingServer,
     },
     runtime::Effects,
@@ -52,6 +53,7 @@ pub struct WebModel {
     /// Pre-loaded results for local search
     pub local_search: LocalSearch,
     pub meta_details: MetaDetails,
+    pub source_preview: SourcePreview,
     pub remote_addons: CatalogWithFilters<Descriptor>,
     pub installed_addons: InstalledAddonsWithFilters,
     pub addon_details: AddonDetails,
@@ -103,6 +105,7 @@ impl WebModel {
             calendar: Default::default(),
             search: Default::default(),
             meta_details: Default::default(),
+            source_preview: Default::default(),
             remote_addons,
             installed_addons,
             addon_details: Default::default(),
@@ -178,6 +181,10 @@ impl WebModel {
                 &self.ctx,
                 &self.streaming_server,
             ),
+            WebModelField::SourcePreview => {
+                <JsValue as JsValueSerdeExt>::from_serde(&self.source_preview.preview())
+                    .expect("JsValue from SourcePreview")
+            }
             WebModelField::RemoteAddons => serialize_remote_addons(&self.remote_addons, &self.ctx),
             WebModelField::InstalledAddons => serialize_installed_addons(&self.installed_addons),
             WebModelField::AddonDetails => {

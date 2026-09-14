@@ -505,7 +505,7 @@ fn library_item_sync(library_item: &Option<LibraryItem>, profile: &Profile) -> E
 ///    we use the `MetaItem.preview.id`
 ///
 /// If we haven't found a suitable `video_id`, then we do not override the `Selected::stream_path`.
-fn selected_guess_stream_update(
+pub(super) fn selected_guess_stream_update(
     selected: &mut Option<Selected>,
     meta_items: &[ResourceLoadable<MetaItem>],
 ) -> Effects {
@@ -563,7 +563,7 @@ fn selected_guess_stream_update(
     )
 }
 
-fn meta_items_update<E: Env + 'static>(
+pub(super) fn meta_items_update<E: Env + 'static>(
     meta_items: &mut Vec<ResourceLoadable<MetaItem>>,
     selected: &Option<Selected>,
     profile: &Profile,
@@ -670,7 +670,7 @@ fn send_rating<E: Env + 'static>(
     .into()
 }
 
-fn meta_streams_update(
+pub(super) fn meta_streams_update(
     meta_streams: &mut Vec<ResourceLoadable<Vec<Stream>>>,
     selected: &Option<Selected>,
     meta_items: &[ResourceLoadable<MetaItem>],
@@ -725,7 +725,7 @@ fn meta_streams_update(
     }
 }
 
-fn streams_update<E: Env + 'static>(
+pub(super) fn streams_update<E: Env + 'static>(
     streams: &mut Vec<ResourceLoadable<Vec<Stream>>>,
     selected: &Option<Selected>,
     profile: &Profile,

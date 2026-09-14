@@ -45,6 +45,11 @@ pub type LibraryPlanResponse = (Vec<String>, Vec<String>);
 //
 #[derive(Debug)]
 pub enum Internal {
+    SourcePreviewResult(
+        u64,
+        ResourceRequest,
+        Box<Result<ResourceResponse, EnvError>>,
+    ),
     /// Result for authenticate to API.
     CtxAuthResult(AuthRequest, Result<CtxAuthResponse, CtxError>),
     /// Result for pull addons from API.

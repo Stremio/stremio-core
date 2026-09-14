@@ -11,3 +11,5 @@ mod meta_details;
 mod player;
 mod serde;
 mod streaming_server;
+
+mod source_preview;
