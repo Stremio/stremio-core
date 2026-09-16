@@ -12,7 +12,7 @@ use crate::{
         ctx::Ctx,
     },
     runtime::{
-        msg::{Action, ActionLoad, Internal, Msg},
+        msg::{Action, ActionLiveTvContinueWatching, ActionLoad, Internal, Msg},
         Effects, Env, UpdateWithCtx,
     },
     types::{
@@ -67,7 +67,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LiveTvContinueWatching {
 
                 catalog_effects.join(items_effects)
             }
-            Msg::Internal(Internal::LibraryChanged(true))
+            Msg::Action(Action::LiveTvContinueWatching(
+                ActionLiveTvContinueWatching::RefreshLive,
+            ))
+            | Msg::Internal(Internal::LibraryChanged(true))
             | Msg::Internal(Internal::ProfileChanged)
                 if self.active =>
             {

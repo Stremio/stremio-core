@@ -134,30 +134,21 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LiveTvGuide {
                 let selected_effects =
                     selected_update::<E>(&mut self.selected, selected, &ctx.profile);
                 let selection_changed = previous_selected != self.selected;
-                let stale = self
-                    .last_loaded
-                    .map_or(true, |loaded| E::now() - loaded >= Duration::minutes(15));
-                let catalog_effects = if selection_changed || stale {
+                let catalog_effects = if selection_changed || self.catalog.is_empty() {
                     self.last_loaded = Some(E::now());
-                    let requests = if selection_changed || self.catalog.is_empty() {
-                        self.selected
-                            .as_ref()
-                            .and_then(|selected| {
-                                let request = selected.request.as_ref()?;
-                                Some(
-                                    overlapping_utc_dates(&selected.day_window()?)
-                                        .iter()
-                                        .map(|date| with_date_extra(request, date))
-                                        .collect::<Vec<_>>(),
-                                )
-                            })
-                            .unwrap_or_default()
-                    } else {
-                        self.catalog
-                            .iter()
-                            .map(|page| page.request.clone())
-                            .collect()
-                    };
+                    let requests = self
+                        .selected
+                        .as_ref()
+                        .and_then(|selected| {
+                            let request = selected.request.as_ref()?;
+                            Some(
+                                overlapping_utc_dates(&selected.day_window()?)
+                                    .iter()
+                                    .map(|date| with_date_extra(request, date))
+                                    .collect::<Vec<_>>(),
+                            )
+                        })
+                        .unwrap_or_default();
                     catalog_update::<E>(&mut self.catalog, CatalogPageRequest::First, &requests)
                 } else {
                     Effects::none().unchanged()
@@ -227,6 +218,38 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LiveTvGuide {
                     &self.catalog,
                     &ctx.profile,
                 ))
+            }
+            Msg::Action(Action::LiveTvGuide(ActionLiveTvGuide::RefreshLive)) => {
+                let stale = self
+                    .last_loaded
+                    .map_or(true, |loaded| E::now() - loaded >= Duration::minutes(15));
+                let loading = self
+                    .catalog
+                    .iter()
+                    .any(|page| matches!(page.content, None | Some(Loadable::Loading)));
+                let catalog_effects = if stale && !loading && !self.catalog.is_empty() {
+                    self.last_loaded = Some(E::now());
+                    let requests = self
+                        .catalog
+                        .iter()
+                        .map(|page| page.request.clone())
+                        .collect::<Vec<_>>();
+                    catalog_update::<E>(&mut self.catalog, CatalogPageRequest::First, &requests)
+                } else {
+                    Effects::none().unchanged()
+                };
+                let selectable_effects = selectable_update::<E>(
+                    &mut self.selectable,
+                    &self.selected,
+                    &self.catalog,
+                    &ctx.profile,
+                );
+                let channels_effects =
+                    channels_update(&mut self.channels, &self.selected, &self.catalog);
+
+                catalog_effects
+                    .join(selectable_effects)
+                    .join(channels_effects)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => self
                 .catalog

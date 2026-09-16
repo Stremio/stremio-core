@@ -134,6 +134,13 @@ pub enum ActionLiveTvGuide {
     LoadNextPage,
     /// Retry failed pages without discarding channels that already loaded.
     Retry,
+    RefreshLive,
+}
+
+#[derive(Clone, Deserialize, Debug)]
+#[serde(tag = "action", content = "args")]
+pub enum ActionLiveTvContinueWatching {
+    RefreshLive,
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -312,6 +319,7 @@ pub enum Action {
     LibraryByType(ActionLibraryByType),
     LibraryWithFilters(ActionLibraryWithFilters),
     LiveTvGuide(ActionLiveTvGuide),
+    LiveTvContinueWatching(ActionLiveTvContinueWatching),
     MetaDetails(ActionMetaDetails),
     StreamingServer(ActionStreamingServer),
     Player(ActionPlayer),
