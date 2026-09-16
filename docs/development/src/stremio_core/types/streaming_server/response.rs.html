@@ -145,7 +145,22 @@
 <a href="#144" id="144">144</a>
 <a href="#145" id="145">145</a>
 <a href="#146" id="146">146</a>
-<a href="#147" id="147">147</a></pre></div><pre class="rust"><code><span class="kw">use </span>serde::{Deserialize, Serialize};
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a></pre></div><pre class="rust"><code><span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>url::Url;
 
 <span class="kw">use </span><span class="kw">crate</span>::types::{streaming_server::Settings, torrent::InfoHash};
@@ -170,6 +185,8 @@
 </span><span class="kw">pub struct </span>SettingsOption {
     <span class="kw">pub </span>id: String,
     <span class="kw">pub </span>label: String,
+    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+    </span><span class="kw">pub </span>supports_directory: <span class="prelude-ty">Option</span>&lt;bool&gt;,
     <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Vec::is_empty"</span>)]
     </span><span class="kw">pub </span>selections: Vec&lt;SettingsOptionSelection&gt;,
 }
@@ -261,6 +278,13 @@
                             <span class="string">"val"</span>: null
                         }
                     ]
+                },
+                {
+                    <span class="string">"id"</span>: <span class="string">"cacheRoot"</span>,
+                    <span class="string">"label"</span>: <span class="string">"SETTINGS_CACHING_DRIVE"</span>,
+                    <span class="string">"type"</span>: <span class="string">"select"</span>,
+                    <span class="string">"supportsDirectory"</span>: <span class="bool-val">true</span>,
+                    <span class="string">"selections"</span>: [{ <span class="string">"name"</span>: <span class="string">"Default"</span>, <span class="string">"val"</span>: <span class="string">"C:\\Stremio" </span>}]
                 }
             ],
             <span class="string">"values"</span>: {
@@ -288,8 +312,14 @@
             <span class="string">"baseUrl"</span>: <span class="string">"http://172.18.0.7:11470"
         </span>});
 
-        <span class="kw">let </span>_response = serde_json::from_value::&lt;SettingsResponse&gt;(json)
+        <span class="kw">let </span>response = serde_json::from_value::&lt;SettingsResponse&gt;(json)
             .expect(<span class="string">"Should be able to deserialize settings response"</span>);
+        <span class="macro">assert_eq!</span>(response.options[<span class="number">0</span>].supports_directory, <span class="prelude-val">None</span>);
+        <span class="macro">assert_eq!</span>(response.options[<span class="number">3</span>].supports_directory, <span class="prelude-val">Some</span>(<span class="bool-val">true</span>));
+        <span class="macro">assert_eq!</span>(
+            serde_json::to_value(response).unwrap()[<span class="string">"options"</span>][<span class="number">3</span>][<span class="string">"supportsDirectory"</span>],
+            <span class="bool-val">true
+        </span>);
     }
 }
 </code></pre></div></section></main></body></html>

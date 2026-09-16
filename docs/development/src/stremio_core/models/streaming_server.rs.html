@@ -810,7 +810,96 @@
 <a href="#809" id="809">809</a>
 <a href="#810" id="810">810</a>
 <a href="#811" id="811">811</a>
-<a href="#812" id="812">812</a></pre></div><pre class="rust"><code><span class="kw">use </span>enclose::enclose;
+<a href="#812" id="812">812</a>
+<a href="#813" id="813">813</a>
+<a href="#814" id="814">814</a>
+<a href="#815" id="815">815</a>
+<a href="#816" id="816">816</a>
+<a href="#817" id="817">817</a>
+<a href="#818" id="818">818</a>
+<a href="#819" id="819">819</a>
+<a href="#820" id="820">820</a>
+<a href="#821" id="821">821</a>
+<a href="#822" id="822">822</a>
+<a href="#823" id="823">823</a>
+<a href="#824" id="824">824</a>
+<a href="#825" id="825">825</a>
+<a href="#826" id="826">826</a>
+<a href="#827" id="827">827</a>
+<a href="#828" id="828">828</a>
+<a href="#829" id="829">829</a>
+<a href="#830" id="830">830</a>
+<a href="#831" id="831">831</a>
+<a href="#832" id="832">832</a>
+<a href="#833" id="833">833</a>
+<a href="#834" id="834">834</a>
+<a href="#835" id="835">835</a>
+<a href="#836" id="836">836</a>
+<a href="#837" id="837">837</a>
+<a href="#838" id="838">838</a>
+<a href="#839" id="839">839</a>
+<a href="#840" id="840">840</a>
+<a href="#841" id="841">841</a>
+<a href="#842" id="842">842</a>
+<a href="#843" id="843">843</a>
+<a href="#844" id="844">844</a>
+<a href="#845" id="845">845</a>
+<a href="#846" id="846">846</a>
+<a href="#847" id="847">847</a>
+<a href="#848" id="848">848</a>
+<a href="#849" id="849">849</a>
+<a href="#850" id="850">850</a>
+<a href="#851" id="851">851</a>
+<a href="#852" id="852">852</a>
+<a href="#853" id="853">853</a>
+<a href="#854" id="854">854</a>
+<a href="#855" id="855">855</a>
+<a href="#856" id="856">856</a>
+<a href="#857" id="857">857</a>
+<a href="#858" id="858">858</a>
+<a href="#859" id="859">859</a>
+<a href="#860" id="860">860</a>
+<a href="#861" id="861">861</a>
+<a href="#862" id="862">862</a>
+<a href="#863" id="863">863</a>
+<a href="#864" id="864">864</a>
+<a href="#865" id="865">865</a>
+<a href="#866" id="866">866</a>
+<a href="#867" id="867">867</a>
+<a href="#868" id="868">868</a>
+<a href="#869" id="869">869</a>
+<a href="#870" id="870">870</a>
+<a href="#871" id="871">871</a>
+<a href="#872" id="872">872</a>
+<a href="#873" id="873">873</a>
+<a href="#874" id="874">874</a>
+<a href="#875" id="875">875</a>
+<a href="#876" id="876">876</a>
+<a href="#877" id="877">877</a>
+<a href="#878" id="878">878</a>
+<a href="#879" id="879">879</a>
+<a href="#880" id="880">880</a>
+<a href="#881" id="881">881</a>
+<a href="#882" id="882">882</a>
+<a href="#883" id="883">883</a>
+<a href="#884" id="884">884</a>
+<a href="#885" id="885">885</a>
+<a href="#886" id="886">886</a>
+<a href="#887" id="887">887</a>
+<a href="#888" id="888">888</a>
+<a href="#889" id="889">889</a>
+<a href="#890" id="890">890</a>
+<a href="#891" id="891">891</a>
+<a href="#892" id="892">892</a>
+<a href="#893" id="893">893</a>
+<a href="#894" id="894">894</a>
+<a href="#895" id="895">895</a>
+<a href="#896" id="896">896</a>
+<a href="#897" id="897">897</a>
+<a href="#898" id="898">898</a>
+<a href="#899" id="899">899</a>
+<a href="#900" id="900">900</a>
+<a href="#901" id="901">901</a></pre></div><pre class="rust"><code><span class="kw">use </span>enclose::enclose;
 <span class="kw">use </span>futures::{FutureExt, TryFutureExt};
 <span class="kw">use </span>http::request::Request;
 <span class="kw">use </span>magnet_url::{Magnet, MagnetError};
@@ -858,6 +947,9 @@
     <span class="kw">pub </span>selected: Selected,
     <span class="kw">pub </span>settings: Loadable&lt;Settings, EnvError&gt;,
     <span class="kw">pub </span>settings_options: Vec&lt;SettingsOption&gt;,
+    <span class="kw">pub </span>cache_root_update: <span class="prelude-ty">Option</span>&lt;Loadable&lt;String, EnvError&gt;&gt;,
+    <span class="attr">#[serde(skip)]
+    </span><span class="kw">pub </span>cache_root_update_generation: u64,
     <span class="kw">pub </span>base_url: <span class="prelude-ty">Option</span>&lt;Url&gt;,
     <span class="kw">pub </span>remote_url: <span class="prelude-ty">Option</span>&lt;Url&gt;,
     <span class="kw">pub </span>playback_devices: Loadable&lt;Vec&lt;PlaybackDevice&gt;, EnvError&gt;,
@@ -886,6 +978,8 @@
                 },
                 settings: Loadable::Loading,
                 settings_options: <span class="macro">vec!</span>[],
+                cache_root_update: <span class="prelude-val">None</span>,
+                cache_root_update_generation: <span class="number">0</span>,
                 base_url: <span class="prelude-val">None</span>,
                 remote_url: <span class="prelude-val">None</span>,
                 playback_devices: Loadable::Loading,
@@ -904,6 +998,8 @@
     <span class="kw">fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, msg: <span class="kw-2">&amp;</span>Msg, ctx: <span class="kw-2">&amp;</span>Ctx) -&gt; Effects {
         <span class="kw">match </span>msg {
             Msg::Action(Action::StreamingServer(ActionStreamingServer::Reload)) =&gt; {
+                <span class="self">self</span>.cache_root_update_generation += <span class="number">1</span>;
+                <span class="self">self</span>.cache_root_update = <span class="prelude-val">None</span>;
                 <span class="kw">let </span>settings_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.settings, Loadable::Loading);
                 <span class="kw">let </span>network_info_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.network_info, Loadable::Loading);
                 <span class="kw">let </span>device_info_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.device_info, Loadable::Loading);
@@ -938,15 +1034,38 @@
             }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::UpdateSettings(
                 settings,
-            ))) <span class="kw">if </span><span class="self">self</span>.settings.is_ready() =&gt; {
+            ))) <span class="kw">if </span><span class="self">self</span>.settings.is_ready()
+                &amp;&amp; !<span class="macro">matches!</span>(<span class="self">self</span>.cache_root_update, <span class="prelude-val">Some</span>(Loadable::Loading)) =&gt;
+            {
+                <span class="kw">let </span>cache_root_changed =
+                    <span class="self">self</span>.settings.ready().unwrap().cache_root != settings.cache_root;
                 <span class="kw">let </span>settings_effects =
                     eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.settings, Loadable::Ready(settings.to_owned()));
                 <span class="kw">let </span>remote_url_effects =
                     update_remote_url::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.remote_url, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, settings, ctx);
-                Effects::one(set_settings::&lt;E&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url, settings))
-                    .unchanged()
-                    .join(settings_effects)
-                    .join(remote_url_effects)
+                Effects::one(set_settings::&lt;E&gt;(
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url,
+                    settings,
+                    cache_root_changed,
+                ))
+                .unchanged()
+                .join(settings_effects)
+                .join(remote_url_effects)
+            }
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::UpdateCacheRoot {
+                transport_url,
+                cache_root,
+            })) <span class="kw">if </span><span class="self">self</span>.selected.transport_url == <span class="kw-2">*</span>transport_url
+                &amp;&amp; <span class="self">self</span>.settings.is_ready()
+                &amp;&amp; !<span class="macro">matches!</span>(<span class="self">self</span>.cache_root_update, <span class="prelude-val">Some</span>(Loadable::Loading)) =&gt;
+            {
+                <span class="self">self</span>.cache_root_update_generation += <span class="number">1</span>;
+                <span class="self">self</span>.cache_root_update = <span class="prelude-val">Some</span>(Loadable::Loading);
+                Effects::one(set_cache_root::&lt;E&gt;(
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url,
+                    cache_root,
+                    <span class="self">self</span>.cache_root_update_generation,
+                ))
             }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::CreateTorrent(
                 CreateTorrentArgs::Magnet(magnet),
@@ -1061,6 +1180,8 @@
                 };
                 <span class="self">self</span>.settings = Loadable::Loading;
                 <span class="self">self</span>.settings_options = <span class="macro">vec!</span>[];
+                <span class="self">self</span>.cache_root_update_generation += <span class="number">1</span>;
+                <span class="self">self</span>.cache_root_update = <span class="prelude-val">None</span>;
                 <span class="self">self</span>.network_info = Loadable::Loading;
                 <span class="self">self</span>.device_info = Loadable::Loading;
                 <span class="self">self</span>.base_url = <span class="prelude-val">None</span>;
@@ -1167,6 +1288,29 @@
                         Loadable::Ready(device_info.to_owned()),
                     ),
                     <span class="prelude-val">Err</span>(error) =&gt; eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.device_info, Loadable::Err(error.to_owned())),
+                }
+            }
+            Msg::Internal(Internal::StreamingServerUpdateCacheRootResult(
+                url,
+                generation,
+                result,
+            )) <span class="kw">if </span><span class="self">self</span>.selected.transport_url == <span class="kw-2">*</span>url
+                &amp;&amp; <span class="self">self</span>.cache_root_update_generation == <span class="kw-2">*</span>generation =&gt;
+            {
+                <span class="kw">match </span>result {
+                    <span class="prelude-val">Ok</span>(root) =&gt; {
+                        <span class="kw">if let </span>Loadable::Ready(settings) = <span class="kw-2">&amp;mut </span><span class="self">self</span>.settings {
+                            settings.cache_root.clone_from(root);
+                        }
+                        eq_update(
+                            <span class="kw-2">&amp;mut </span><span class="self">self</span>.cache_root_update,
+                            <span class="prelude-val">Some</span>(Loadable::Ready(root.clone())),
+                        )
+                    }
+                    <span class="prelude-val">Err</span>(error) =&gt; eq_update(
+                        <span class="kw-2">&amp;mut </span><span class="self">self</span>.cache_root_update,
+                        <span class="prelude-val">Some</span>(Loadable::Err(error.clone())),
+                    ),
                 }
             }
             Msg::Internal(Internal::StreamingServerUpdateSettingsResult(url, result))
@@ -1323,12 +1467,46 @@
     .into()
 }
 
-<span class="kw">fn </span>set_settings&lt;E: Env + <span class="lifetime">'static</span>&gt;(url: <span class="kw-2">&amp;</span>Url, settings: <span class="kw-2">&amp;</span>Settings) -&gt; Effect {
+<span class="kw">fn </span>set_cache_root&lt;E: Env + <span class="lifetime">'static</span>&gt;(url: <span class="kw-2">&amp;</span>Url, root: <span class="kw-2">&amp;</span>str, generation: u64) -&gt; Effect {
+    <span class="kw">let </span>url = url.clone();
+    <span class="kw">let </span>endpoint = url.join(<span class="string">"settings"</span>).expect(<span class="string">"url builder failed"</span>);
+    <span class="kw">let </span>request = Request::post(endpoint.as_str())
+        .header(http::header::CONTENT_TYPE, <span class="string">"application/json"</span>)
+        .body(<span class="macro">serde_json::json!</span>({ <span class="string">"cacheRoot"</span>: root }))
+        .expect(<span class="string">"request builder failed"</span>);
+    EffectFuture::Concurrent(
+        <span class="kw">async move </span>{
+            <span class="kw">let </span>result = <span class="kw">async </span>{
+                E::fetch::&lt;<span class="kw">_</span>, SuccessResponse&gt;(request).<span class="kw">await</span><span class="question-mark">?</span>;
+                E::fetch::&lt;<span class="kw">_</span>, SettingsResponse&gt;(
+                    Request::get(endpoint.as_str())
+                        .body(())
+                        .expect(<span class="string">"request builder failed"</span>),
+                )
+                .<span class="kw">await
+                </span>.map(|response| response.values.cache_root)
+            }
+            .<span class="kw">await</span>;
+            Msg::Internal(Internal::StreamingServerUpdateCacheRootResult(
+                url, generation, result,
+            ))
+        }
+        .boxed_env(),
+    )
+    .into()
+}
+
+<span class="kw">fn </span>set_settings&lt;E: Env + <span class="lifetime">'static</span>&gt;(
+    url: <span class="kw-2">&amp;</span>Url,
+    settings: <span class="kw-2">&amp;</span>Settings,
+    cache_root_changed: bool,
+) -&gt; Effect {
     <span class="attr">#[derive(Serialize)]
     #[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span><span class="kw">struct </span>Body {
         cache_size: <span class="prelude-ty">Option</span>&lt;f64&gt;,
-        cache_root: String,
+        <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+        </span>cache_root: <span class="prelude-ty">Option</span>&lt;String&gt;,
         bt_max_connections: u64,
         bt_handshake_timeout: u64,
         bt_request_timeout: u64,
@@ -1342,7 +1520,7 @@
     }
     <span class="kw">let </span>body = Body {
         cache_size: settings.cache_size.to_owned(),
-        cache_root: settings.cache_root.to_owned(),
+        cache_root: cache_root_changed.then(|| settings.cache_root.to_owned()),
         bt_max_connections: settings.bt_max_connections.to_owned(),
         bt_handshake_timeout: settings.bt_handshake_timeout.to_owned(),
         bt_request_timeout: settings.bt_request_timeout.to_owned(),

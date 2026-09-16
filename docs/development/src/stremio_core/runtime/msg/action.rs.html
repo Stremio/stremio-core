@@ -304,7 +304,12 @@
 <a href="#303" id="303">303</a>
 <a href="#304" id="304">304</a>
 <a href="#305" id="305">305</a>
-<a href="#306" id="306">306</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
 
 <span class="kw">use </span>serde::Deserialize;
 <span class="kw">use </span>url::Url;
@@ -486,6 +491,11 @@
     Reload,
     RefreshPlaybackDevices,
     UpdateSettings(StreamingServerSettings),
+    <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
+    </span>UpdateCacheRoot {
+        transport_url: Url,
+        cache_root: String,
+    },
     CreateTorrent(CreateTorrentArgs),
     GetStatistics(StreamingServerStatisticsRequest),
     PlayOnDevice(PlayOnDeviceArgs),

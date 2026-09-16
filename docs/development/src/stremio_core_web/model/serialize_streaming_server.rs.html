@@ -66,7 +66,9 @@
 <a href="#65" id="65">65</a>
 <a href="#66" id="66">66</a>
 <a href="#67" id="67">67</a>
-<a href="#68" id="68">68</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
+<a href="#68" id="68">68</a>
+<a href="#69" id="69">69</a>
+<a href="#70" id="70">70</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
 </span><span class="kw">use </span>gloo_utils::format::JsValueSerdeExt;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>stremio_core::deep_links::MetaItemDeepLinks;
@@ -92,6 +94,7 @@
         <span class="kw">pub </span>selected: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Selected,
         <span class="kw">pub </span>settings: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Loadable&lt;Settings, EnvError&gt;,
         <span class="kw">pub </span>settings_options: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Vec&lt;SettingsOption&gt;,
+        <span class="kw">pub </span>cache_root_update: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;Loadable&lt;String, EnvError&gt;&gt;,
         <span class="kw">pub </span>base_url: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;Url&gt;,
         <span class="kw">pub </span>remote_url: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;Url&gt;,
         <span class="kw">pub </span>playback_devices: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Loadable&lt;Vec&lt;PlaybackDevice&gt;, EnvError&gt;,
@@ -111,6 +114,7 @@
         selected: <span class="kw-2">&amp;</span>streaming_server.selected,
         settings: <span class="kw-2">&amp;</span>streaming_server.settings,
         settings_options: <span class="kw-2">&amp;</span>streaming_server.settings_options,
+        cache_root_update: <span class="kw-2">&amp;</span>streaming_server.cache_root_update,
         base_url: <span class="kw-2">&amp;</span>streaming_server.base_url,
         remote_url: <span class="kw-2">&amp;</span>streaming_server.remote_url,
         playback_devices: <span class="kw-2">&amp;</span>streaming_server.playback_devices,
