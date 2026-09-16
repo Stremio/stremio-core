@@ -7,6 +7,10 @@ on:
   # developer pushes a commit without opening a PR
   # this will still create a package for testing!
   push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
   pull_request:
     branches:
       - development
@@ -19,6 +23,9 @@ concurrency:
 
 jobs:
   build-core:
+    # Same-repository branches are checked on push so they can publish a testing package.
+    # Pull request runs are only needed for forks, whose pushes do not run here.
+    if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) }}
     name: "stremio-core-*: Lint, test and build"
     runs-on: ubuntu-latest
 
@@ -70,7 +77,7 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - uses: taiki-e/install-action@v2.86.5
+      - uses: taiki-e/install-action@v2.87.11
         with:
           tool: wasm-pack@${{ env.WASM_PACK_VERSION }}
 

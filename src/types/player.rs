@@ -2,6 +2,14 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Deserialize, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub enum VideoScale {
+    Contain,
+    Cover,
+    Fill,
+}
+
+#[derive(Clone, Copy, Deserialize, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub enum SubtitleSource {
     Embedded,
     External,

@@ -206,6 +206,10 @@ fn external_player_link_with_vlc_player() {
                 .to_string()
         )
     );
+    assert_eq!(
+        open_player.windows,
+        Some("vlc://http://example.com/stream".to_string())
+    );
 }
 
 #[test]
