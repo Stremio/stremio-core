@@ -518,7 +518,45 @@
 <a href="#517" id="517">517</a>
 <a href="#518" id="518">518</a>
 <a href="#519" id="519">519</a>
-<a href="#520" id="520">520</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::{SKIP_EXTRA_PROP, TYPE_PRIORITIES};
+<a href="#520" id="520">520</a>
+<a href="#521" id="521">521</a>
+<a href="#522" id="522">522</a>
+<a href="#523" id="523">523</a>
+<a href="#524" id="524">524</a>
+<a href="#525" id="525">525</a>
+<a href="#526" id="526">526</a>
+<a href="#527" id="527">527</a>
+<a href="#528" id="528">528</a>
+<a href="#529" id="529">529</a>
+<a href="#530" id="530">530</a>
+<a href="#531" id="531">531</a>
+<a href="#532" id="532">532</a>
+<a href="#533" id="533">533</a>
+<a href="#534" id="534">534</a>
+<a href="#535" id="535">535</a>
+<a href="#536" id="536">536</a>
+<a href="#537" id="537">537</a>
+<a href="#538" id="538">538</a>
+<a href="#539" id="539">539</a>
+<a href="#540" id="540">540</a>
+<a href="#541" id="541">541</a>
+<a href="#542" id="542">542</a>
+<a href="#543" id="543">543</a>
+<a href="#544" id="544">544</a>
+<a href="#545" id="545">545</a>
+<a href="#546" id="546">546</a>
+<a href="#547" id="547">547</a>
+<a href="#548" id="548">548</a>
+<a href="#549" id="549">549</a>
+<a href="#550" id="550">550</a>
+<a href="#551" id="551">551</a>
+<a href="#552" id="552">552</a>
+<a href="#553" id="553">553</a>
+<a href="#554" id="554">554</a>
+<a href="#555" id="555">555</a>
+<a href="#556" id="556">556</a>
+<a href="#557" id="557">557</a>
+<a href="#558" id="558">558</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::{CATALOG_RESOURCE_NAME, SKIP_EXTRA_PROP, TYPE_PRIORITIES};
 <span class="kw">use </span><span class="kw">crate</span>::models::common::{
     compare_with_priorities, eq_update, resource_update_with_vector_content, ResourceAction,
     ResourceLoadable,
@@ -597,6 +635,7 @@
     <span class="kw">pub </span>catalog: String,
     <span class="kw">pub </span>selected: bool,
     <span class="kw">pub </span>request: ResourceRequest,
+    <span class="kw">pub </span>is_epg_guide: bool,
 }
 
 <span class="attr">#[derive(PartialEq, Eq, Serialize, Clone, Debug)]
@@ -674,10 +713,19 @@
 {
     <span class="kw">fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, msg: <span class="kw-2">&amp;</span>Msg, ctx: <span class="kw-2">&amp;</span>Ctx) -&gt; Effects {
         <span class="kw">match </span>msg {
-            Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(selected))) =&gt; {
+            Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(selected)))
+            | Msg::Action(Action::Load(ActionLoad::CatalogWithFiltersSelection(selected))) =&gt; {
                 <span class="kw">let </span>selected_effects =
                     selected_update::&lt;T&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span><span class="self">self</span>.selectable, selected);
                 <span class="kw">let </span>catalog_effects = <span class="kw">match </span><span class="self">self</span>.selected.as_ref() {
+                    <span class="prelude-val">Some</span>(selected)
+                        <span class="kw">if </span><span class="macro">matches!</span>(
+                            msg,
+                            Msg::Action(Action::Load(ActionLoad::CatalogWithFiltersSelection(<span class="kw">_</span>)))
+                        ) &amp;&amp; is_epg_guide_request(<span class="kw-2">&amp;</span>selected.request, <span class="kw-2">&amp;</span>ctx.profile) =&gt;
+                    {
+                        eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.catalog, <span class="macro">vec!</span>[])
+                    }
                     <span class="prelude-val">Some</span>(selected) =&gt; catalog_update::&lt;E, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;mut </span><span class="self">self</span>.catalog,
                         CatalogPageRequest::First,
@@ -791,6 +839,25 @@
     eq_update(selected, next_selected)
 }
 
+<span class="doccomment">/// Whether the request targets a guide catalog of an `epgProvider` addon -
+/// a catalog declaring the `date` extra; their content is EPG data loaded
+/// by the `LiveTvGuide` model instead
+</span><span class="kw">fn </span>is_epg_guide_request(request: <span class="kw-2">&amp;</span>ResourceRequest, profile: <span class="kw-2">&amp;</span>Profile) -&gt; bool {
+    request.path.resource == CATALOG_RESOURCE_NAME
+        &amp;&amp; profile
+            .addons
+            .iter()
+            .filter(|addon| {
+                addon.manifest.behavior_hints.epg_provider &amp;&amp; addon.transport_url == request.base
+            })
+            .flat_map(|addon| addon.manifest.catalogs.iter())
+            .any(|manifest_catalog| {
+                manifest_catalog.id == request.path.id
+                    &amp;&amp; manifest_catalog.r#type == request.path.r#type
+                    &amp;&amp; manifest_catalog.is_epg_guide()
+            })
+}
+
 <span class="kw">fn </span>catalog_update&lt;E, T&gt;(
     catalog: <span class="kw-2">&amp;mut </span>Catalog&lt;T&gt;,
     page_request: CatalogPageRequest,
@@ -841,25 +908,31 @@
                         extra,
                     },
                 };
-                (manifest_catalog, request)
+                <span class="kw">let </span>is_epg_guide = T::resource() == CATALOG_RESOURCE_NAME
+                    &amp;&amp; addon.manifest.behavior_hints.epg_provider
+                    &amp;&amp; manifest_catalog.is_epg_guide();
+                (manifest_catalog, request, is_epg_guide)
             })
         })
-        .map(|(manifest_catalog, request)| SelectableCatalog {
-            catalog: manifest_catalog
-                .name
-                .as_ref()
-                .unwrap_or(<span class="kw-2">&amp;</span>manifest_catalog.id)
-                .to_owned(),
-            selected: selected
-                .as_ref()
-                .map(|selected| {
-                    selected.request.base == request.base
-                        &amp;&amp; selected.request.path.id == request.path.id
-                        &amp;&amp; selected.request.path.resource == request.path.resource
-                })
-                .unwrap_or_default(),
-            request,
-        })
+        .map(
+            |(manifest_catalog, request, is_epg_guide)| SelectableCatalog {
+                catalog: manifest_catalog
+                    .name
+                    .as_ref()
+                    .unwrap_or(<span class="kw-2">&amp;</span>manifest_catalog.id)
+                    .to_owned(),
+                selected: selected
+                    .as_ref()
+                    .map(|selected| {
+                        selected.request.base == request.base
+                            &amp;&amp; selected.request.path.id == request.path.id
+                            &amp;&amp; selected.request.path.resource == request.path.resource
+                    })
+                    .unwrap_or_default(),
+                request,
+                is_epg_guide,
+            },
+        )
         .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
     <span class="kw">let </span>selectable_types = selectable_catalogs
         .iter()
@@ -998,6 +1071,9 @@
                 .extra
                 .iter()
                 .find(|extra_prop| extra_prop.name == SKIP_EXTRA_PROP.name)
+                <span class="comment">// no pages have been requested (e.g. an epgProvider guide
+                // catalog) - there is nothing to page through
+                </span>.filter(|<span class="kw">_</span>| !catalog.is_empty())
                 .and_then(|<span class="kw">_</span>| {
                     catalog
                         .iter()

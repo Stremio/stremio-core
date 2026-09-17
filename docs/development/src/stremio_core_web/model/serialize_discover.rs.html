@@ -238,7 +238,9 @@
 <a href="#237" id="237">237</a>
 <a href="#238" id="238">238</a>
 <a href="#239" id="239">239</a>
-<a href="#240" id="240">240</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
 </span><span class="kw">use </span>{
     <span class="kw">crate</span>::model::deep_links_ext::DeepLinksExt,
     boolinator::Boolinator,
@@ -291,6 +293,7 @@
         <span class="kw">pub </span>r#type: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
         <span class="kw">pub </span>addon: DescriptorPreview&lt;<span class="lifetime">'a</span>&gt;,
         <span class="kw">pub </span>selected: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>bool,
+        <span class="kw">pub </span>is_epg_guide: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>bool,
         <span class="kw">pub </span>deep_links: DiscoverDeepLinks,
     }
     <span class="attr">#[derive(Serialize)]
@@ -386,6 +389,7 @@
                         },
                     },
                     selected: <span class="kw-2">&amp;</span>selectable_catalog.selected,
+                    is_epg_guide: <span class="kw-2">&amp;</span>selectable_catalog.is_epg_guide,
                     deep_links: DiscoverDeepLinks::from(<span class="kw-2">&amp;</span>selectable_catalog.request)
                         .into_web_deep_links(),
                 })

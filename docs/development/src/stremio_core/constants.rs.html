@@ -147,7 +147,13 @@
 <a href="#146" id="146">146</a>
 <a href="#147" id="147">147</a>
 <a href="#148" id="148">148</a>
-<a href="#149" id="149">149</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
 
 <span class="kw">use </span>once_cell::sync::Lazy;
 <span class="kw">use </span>percent_encoding::{AsciiSet, NON_ALPHANUMERIC};
@@ -280,6 +286,12 @@
 });
 <span class="kw">pub static </span>CALENDAR_IDS_EXTRA_PROP: Lazy&lt;ExtraProp&gt; = Lazy::new(|| ExtraProp {
     name: <span class="string">"calendarVideosIds"</span>.to_owned(),
+    is_required: <span class="bool-val">false</span>,
+    options: <span class="macro">vec!</span>[],
+    options_limit: OptionsLimit(<span class="number">1</span>),
+});
+<span class="kw">pub static </span>EPG_DATE_EXTRA_PROP: Lazy&lt;ExtraProp&gt; = Lazy::new(|| ExtraProp {
+    name: <span class="string">"date"</span>.to_owned(),
     is_required: <span class="bool-val">false</span>,
     options: <span class="macro">vec!</span>[],
     options_limit: OptionsLimit(<span class="number">1</span>),

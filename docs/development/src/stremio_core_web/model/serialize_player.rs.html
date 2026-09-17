@@ -398,7 +398,18 @@
 <a href="#397" id="397">397</a>
 <a href="#398" id="398">398</a>
 <a href="#399" id="399">399</a>
-<a href="#400" id="400">400</a></pre></div><pre class="rust"><code><span class="kw">use </span>semver::Version;
+<a href="#400" id="400">400</a>
+<a href="#401" id="401">401</a>
+<a href="#402" id="402">402</a>
+<a href="#403" id="403">403</a>
+<a href="#404" id="404">404</a>
+<a href="#405" id="405">405</a>
+<a href="#406" id="406">406</a>
+<a href="#407" id="407">407</a>
+<a href="#408" id="408">408</a>
+<a href="#409" id="409">409</a>
+<a href="#410" id="410">410</a>
+<a href="#411" id="411">411</a></pre></div><pre class="rust"><code><span class="kw">use </span>semver::Version;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>url::Url;
 <span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
@@ -511,6 +522,7 @@
         <span class="kw">pub </span>meta_item: <span class="prelude-ty">Option</span>&lt;Loadable&lt;model::MetaItem&lt;<span class="lifetime">'a</span>&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>ResourceError&gt;&gt;,
         <span class="kw">pub </span>subtitles: Vec&lt;model::Subtitles&lt;<span class="lifetime">'a</span>&gt;&gt;,
         <span class="kw">pub </span>next_video: <span class="prelude-ty">Option</span>&lt;Video&lt;<span class="lifetime">'a</span>&gt;&gt;,
+        <span class="kw">pub </span>live: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;stremio_core::models::player::LiveChannel&gt;,
         <span class="kw">pub </span>series_info: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>stremio_core::types::resource::SeriesInfo&gt;,
         <span class="kw">pub </span>library_item: <span class="prelude-ty">Option</span>&lt;LibraryItem&lt;<span class="lifetime">'a</span>&gt;&gt;,
         <span class="kw">pub </span>stream_state: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>StreamItemState&gt;,
@@ -531,6 +543,7 @@
     streaming_server: <span class="kw-2">&amp;</span>StreamingServer,
 ) -&gt; JsValue {
     &lt;JsValue <span class="kw">as </span>JsValueSerdeExt&gt;::from_serde(<span class="kw-2">&amp;</span>model::Player {
+        live: <span class="kw-2">&amp;</span>player.live,
         selected: player.selected.as_ref().map(|selected| model::Selected {
             stream: model::Stream {
                 stream: selected.stream.clone(),
@@ -749,6 +762,15 @@
                 })
                 .zip(selected.stream_request.as_ref())
                 .map(|(meta_item, stream_request)| {
+                    <span class="kw">if let </span><span class="prelude-val">Some</span>(live) = <span class="kw-2">&amp;</span>player.live {
+                        <span class="kw">return </span>live
+                            .current_program
+                            .as_ref()
+                            .map(|program| {
+                                <span class="macro">format!</span>(<span class="string">"{} - {}"</span>, meta_item.preview.name, program.title)
+                            })
+                            .unwrap_or_else(|| meta_item.preview.name.clone());
+                    }
                     <span class="kw">match </span>meta_item
                         .videos
                         .iter()

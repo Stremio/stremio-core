@@ -318,7 +318,17 @@
 <a href="#317" id="317">317</a>
 <a href="#318" id="318">318</a>
 <a href="#319" id="319">319</a>
-<a href="#320" id="320">320</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 
 <span class="kw">use </span>chrono::{DateTime, Duration, Utc};
 <span class="kw">use </span>itertools::Itertools;
@@ -362,6 +372,9 @@
 }
 
 <span class="kw">impl </span>LibraryItem {
+    <span class="kw">pub fn </span>is_live(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+        <span class="self">self</span>.behavior_hints.is_live(<span class="kw-2">&amp;</span><span class="self">self</span>.r#type)
+    }
     <span class="attr">#[inline]
     </span><span class="kw">pub fn </span>should_sync&lt;E: Env + <span class="lifetime">'static</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
         <span class="kw">let </span>year_ago = E::now() - Duration::days(<span class="number">365</span>);
@@ -399,6 +412,7 @@
     /// - The LibraryItem should not be temporary but in your LibraryItem
     </span><span class="kw">pub fn </span>should_pull_notifications(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
         !<span class="self">self</span>.state.no_notif
+            &amp;&amp; !<span class="self">self</span>.is_live()
             &amp;&amp; <span class="self">self</span>.r#type != <span class="string">"other"
             </span>&amp;&amp; <span class="self">self</span>.r#type != <span class="string">"movie"
             </span>&amp;&amp; <span class="self">self</span>.behavior_hints.default_video_id.is_none()
@@ -509,7 +523,10 @@
             r#type: meta_item.r#type.to_owned(),
             poster: meta_item.poster.to_owned(),
             poster_shape: meta_item.poster_shape.to_owned(),
-            behavior_hints: meta_item.behavior_hints.to_owned(),
+            behavior_hints: MetaItemBehaviorHints {
+                is_live: meta_item.behavior_hints.is_live(<span class="kw-2">&amp;</span>meta_item.r#type),
+                ..meta_item.behavior_hints.to_owned()
+            },
         }
     }
 }
@@ -522,7 +539,10 @@
             r#type: meta_item.r#type.to_owned(),
             poster: meta_item.poster.to_owned(),
             poster_shape: meta_item.poster_shape.to_owned(),
-            behavior_hints: meta_item.behavior_hints.to_owned(),
+            behavior_hints: MetaItemBehaviorHints {
+                is_live: meta_item.behavior_hints.is_live(<span class="kw-2">&amp;</span>meta_item.r#type),
+                ..meta_item.behavior_hints.to_owned()
+            },
             removed: library_item.removed,
             temp: library_item.temp,
             ctime: library_item.ctime.to_owned(),

@@ -191,7 +191,23 @@
 <a href="#190" id="190">190</a>
 <a href="#191" id="191">191</a>
 <a href="#192" id="192">192</a>
-<a href="#193" id="193">193</a></pre></div><pre class="rust"><code><span class="kw">use </span>gloo_utils::format::JsValueSerdeExt;
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a></pre></div><pre class="rust"><code><span class="kw">use </span>gloo_utils::format::JsValueSerdeExt;
 <span class="kw">use </span>wasm_bindgen::JsValue;
 
 <span class="kw">use super</span>::<span class="kw-2">*</span>;
@@ -211,6 +227,8 @@
         installed_addons_with_filters::InstalledAddonsWithFilters,
         library_with_filters::{ContinueWatchingFilter, LibraryWithFilters, NotRemovedFilter},
         link::Link,
+        live_tv_continue_watching::LiveTvContinueWatching,
+        live_tv_guide::LiveTvGuide,
         local_search::LocalSearch,
         meta_details::MetaDetails,
         player::Player,
@@ -241,6 +259,8 @@
     <span class="kw">pub </span>library: LibraryWithFilters&lt;NotRemovedFilter&gt;,
     <span class="kw">pub </span>continue_watching: LibraryWithFilters&lt;ContinueWatchingFilter&gt;,
     <span class="kw">pub </span>calendar: Calendar,
+    <span class="kw">pub </span>live_tv_guide: LiveTvGuide,
+    <span class="kw">pub </span>live_tv_continue_watching: LiveTvContinueWatching,
     <span class="kw">pub </span>search: CatalogsWithExtra,
     <span class="doccomment">/// Pre-loaded results for local search
     </span><span class="kw">pub </span>local_search: LocalSearch,
@@ -294,6 +314,8 @@
             library: library_,
             continue_watching,
             calendar: Default::default(),
+            live_tv_guide: Default::default(),
+            live_tv_continue_watching: Default::default(),
             search: Default::default(),
             meta_details: Default::default(),
             remote_addons,
@@ -365,6 +387,16 @@
                 .expect(<span class="string">"JsValue from model::CatalogsWithExtra"</span>)
             }
             WebModelField::Calendar =&gt; serialize_calendar(<span class="kw-2">&amp;</span><span class="self">self</span>.calendar),
+            WebModelField::LiveTvGuide =&gt; serialize_live_tv_guide(
+                <span class="kw-2">&amp;</span><span class="self">self</span>.live_tv_guide,
+                <span class="self">self</span>.streaming_server.base_url.as_ref(),
+                <span class="kw-2">&amp;</span><span class="self">self</span>.ctx.profile.settings,
+            ),
+            WebModelField::LiveTvContinueWatching =&gt; serialize_live_tv_continue_watching(
+                <span class="kw-2">&amp;</span><span class="self">self</span>.live_tv_continue_watching,
+                <span class="self">self</span>.streaming_server.base_url.as_ref(),
+                <span class="kw-2">&amp;</span><span class="self">self</span>.ctx.profile.settings,
+            ),
             WebModelField::LocalSearch =&gt; serialize_local_search(<span class="kw-2">&amp;</span><span class="self">self</span>.local_search),
             WebModelField::MetaDetails =&gt; serialize_meta_details::&lt;WebEnv&gt;(
                 <span class="kw-2">&amp;</span><span class="self">self</span>.meta_details,

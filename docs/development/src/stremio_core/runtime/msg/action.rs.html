@@ -313,7 +313,35 @@
 <a href="#312" id="312">312</a>
 <a href="#313" id="313">313</a>
 <a href="#314" id="314">314</a>
-<a href="#315" id="315">315</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
 
 <span class="kw">use </span>serde::Deserialize;
 <span class="kw">use </span>url::Url;
@@ -327,6 +355,7 @@
         installed_addons_with_filters::Selected <span class="kw">as </span>InstalledAddonsWithFiltersSelected,
         library_by_type::Selected <span class="kw">as </span>LibraryByTypeSelected,
         library_with_filters::Selected <span class="kw">as </span>LibraryWithFiltersSelected,
+        live_tv_guide::Selected <span class="kw">as </span>LiveTvGuideSelected,
         meta_details::Selected <span class="kw">as </span>MetaDetailsSelected,
         player::{Selected <span class="kw">as </span>PlayerSelected, VideoParams},
     },
@@ -444,6 +473,21 @@
 
 <span class="attr">#[derive(Clone, Deserialize, Debug)]
 #[serde(tag = <span class="string">"action"</span>, content = <span class="string">"args"</span>)]
+</span><span class="kw">pub enum </span>ActionLiveTvGuide {
+    LoadNextPage,
+    <span class="doccomment">/// Retry failed pages without discarding channels that already loaded.
+    </span>Retry,
+    RefreshLive,
+}
+
+<span class="attr">#[derive(Clone, Deserialize, Debug)]
+#[serde(tag = <span class="string">"action"</span>, content = <span class="string">"args"</span>)]
+</span><span class="kw">pub enum </span>ActionLiveTvContinueWatching {
+    RefreshLive,
+}
+
+<span class="attr">#[derive(Clone, Deserialize, Debug)]
+#[serde(tag = <span class="string">"action"</span>, content = <span class="string">"args"</span>)]
 </span><span class="kw">pub enum </span>ActionLibraryWithFilters {
     LoadNextPage,
 }
@@ -451,6 +495,8 @@
 <span class="attr">#[derive(Clone, Deserialize, Debug)]
 #[serde(tag = <span class="string">"action"</span>, content = <span class="string">"args"</span>)]
 </span><span class="kw">pub enum </span>ActionMetaDetails {
+    <span class="doccomment">/// Reports activity on a live channel page so Core can refresh expired schedules.
+    </span>RefreshLive,
     <span class="doccomment">/// Marks the [`LibraryItem`] as watched.
     ///
     /// Applicable when you have single-video (e.g. a movie) and multi-video (e.g. a movie series) item.
@@ -514,6 +560,8 @@
 <span class="attr">#[derive(Clone, Deserialize, Debug)]
 #[serde(tag = <span class="string">"action"</span>, content = <span class="string">"args"</span>)]
 </span><span class="kw">pub enum </span>ActionPlayer {
+    <span class="doccomment">/// Re-evaluate live programme metadata after activation or clock changes.
+    </span>RefreshLive,
     <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>VideoParamsChanged {
         video_params: <span class="prelude-ty">Option</span>&lt;VideoParams&gt;,
@@ -583,6 +631,8 @@
 </span><span class="kw">pub enum </span>ActionLoad {
     AddonDetails(AddonDetailsSelected),
     CatalogWithFilters(<span class="prelude-ty">Option</span>&lt;CatalogWithFiltersSelected&gt;),
+    <span class="doccomment">/// Guide-aware clients delegate EPG content to LiveTvGuide while retaining filters.
+    </span>CatalogWithFiltersSelection(<span class="prelude-ty">Option</span>&lt;CatalogWithFiltersSelected&gt;),
     CatalogsWithExtra(CatalogsWithExtraSelected),
     DataExport,
     InstalledAddonsWithFilters(InstalledAddonsWithFiltersSelected),
@@ -590,6 +640,10 @@
     LibraryByType(LibraryByTypeSelected),
     <span class="doccomment">/// Loads the Calendar Model
     </span>Calendar(<span class="prelude-ty">Option</span>&lt;CalendarSelected&gt;),
+    <span class="doccomment">/// Loads the LiveTvGuide Model
+    </span>LiveTvGuide(<span class="prelude-ty">Option</span>&lt;LiveTvGuideSelected&gt;),
+    <span class="doccomment">/// Loads the LiveTvContinueWatching Model
+    </span>LiveTvContinueWatching,
     <span class="doccomment">/// Loads the data required for Local search
     </span>LocalSearch,
     MetaDetails(MetaDetailsSelected),
@@ -621,6 +675,8 @@
     CatalogsWithExtra(ActionCatalogsWithExtra),
     LibraryByType(ActionLibraryByType),
     LibraryWithFilters(ActionLibraryWithFilters),
+    LiveTvGuide(ActionLiveTvGuide),
+    LiveTvContinueWatching(ActionLiveTvContinueWatching),
     MetaDetails(ActionMetaDetails),
     StreamingServer(ActionStreamingServer),
     Player(ActionPlayer),
