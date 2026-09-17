@@ -106,6 +106,8 @@ impl StreamsItem {
             } else if is_binge_match {
                 return StreamItemState {
                     subtitle_track: state.subtitle_track.filter(|track| track.embedded),
+                    // Audio IDs are only safe to carry across streams with a language to validate.
+                    audio_track: state.audio_track.filter(|track| track.language.is_some()),
                     subtitle_delay: None,
                     audio_delay: None,
                     ..state
