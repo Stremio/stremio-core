@@ -36,7 +36,8 @@ impl LibraryFilter for ContinueWatchingFilter {
             .get(&library_item.id)
             .filter(|meta_notifs| !meta_notifs.is_empty());
 
-        library_item.is_in_continue_watching() || library_notification.is_some()
+        !library_item.is_live()
+            && (library_item.is_in_continue_watching() || library_notification.is_some())
     }
 }
 

@@ -3,7 +3,10 @@ use crate::models::common::{Loadable, ResourceLoadable};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad};
 use crate::runtime::{EnvFutureExt, Runtime, RuntimeAction, RuntimeEvent, TryEnvFuture};
-use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest, ResourceResponse};
+use crate::types::addon::{
+    Descriptor, ExtraValue, Manifest, ManifestBehaviorHints, ResourcePath, ResourceRequest,
+    ResourceResponse,
+};
 use crate::types::events::DismissedEventsBucket;
 use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
@@ -245,4 +248,115 @@ fn search_catalog() {
             body: "null".to_owned()
         }
     )
+}
+
+#[test]
+fn load_epg_guide_delegation_is_explicit() {
+    for delegate in [false, true] {
+        #[derive(Model, Clone, Debug)]
+        #[model(TestEnv)]
+        struct TestModel {
+            ctx: Ctx,
+            discover: CatalogWithFilters<MetaItemPreview>,
+        }
+
+        let addon = Descriptor {
+            transport_url: Url::parse("https://addon/manifest.json").unwrap(),
+            flags: Default::default(),
+            manifest: Manifest {
+                id: "addon".to_owned(),
+                types: vec!["tv".into()],
+                resources: vec!["catalog".into()],
+                catalogs: vec![serde_json::from_value(
+                    // the `date` extra marks the catalog as a guide catalog
+                    serde_json::json!({
+                        "id": "guide", "type": "tv", "name": "PureTV",
+                        "extra": [{ "name": "date" }],
+                    }),
+                )
+                .unwrap()],
+                behavior_hints: ManifestBehaviorHints {
+                    epg_provider: true,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        };
+
+        let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+
+        *FETCH_HANDLER.write().unwrap() = Box::new(|_| {
+            future::ok(Box::new(ResourceResponse::Metas {
+                metas: vec![MetaItemPreview {
+                    id: "channel".into(),
+                    r#type: "tv".into(),
+                    ..Default::default()
+                }],
+            }) as Box<dyn Any + Send>)
+            .boxed_env()
+        });
+        let (discover, discover_effects) =
+            CatalogWithFilters::<MetaItemPreview>::new(&Profile::default());
+        assert!(!discover_effects.has_changed);
+        let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+            TestModel {
+                ctx: Ctx {
+                    profile: Profile {
+                        addons: vec![addon],
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                discover,
+            },
+            vec![],
+            1000,
+        );
+
+        TestEnv::run(|| {
+            runtime.dispatch(RuntimeAction {
+                field: None,
+                action: Action::Load({
+                    let selected = Some(Selected {
+                        request: ResourceRequest {
+                            base: Url::parse("https://addon/manifest.json").unwrap(),
+                            path: ResourcePath::without_extra("catalog", "tv", "guide"),
+                        },
+                    });
+                    if delegate {
+                        ActionLoad::CatalogWithFiltersSelection(selected)
+                    } else {
+                        ActionLoad::CatalogWithFilters(selected)
+                    }
+                }),
+            });
+        });
+
+        assert_eq!(
+            REQUESTS.read().unwrap().len(),
+            usize::from(!delegate),
+            "only an explicit guide-aware load delegates content fetching"
+        );
+
+        let discover = &runtime.model().unwrap().discover;
+        assert_eq!(discover.catalog.is_empty(), delegate);
+        assert!(
+            !discover.selectable.catalogs.is_empty(),
+            "the guide catalog should still be selectable"
+        );
+        let selected_catalog = discover
+            .selectable
+            .catalogs
+            .iter()
+            .find(|catalog| catalog.selected)
+            .expect("the guide catalog should be selected");
+        assert!(
+        selected_catalog.is_epg_guide,
+        "the selected guide catalog must be flagged is_epg_guide so the UI renders the EPG layout"
+    );
+        assert!(
+            discover.selectable.next_page.is_none(),
+            "an empty catalog must not offer a next page"
+        );
+    }
 }

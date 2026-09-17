@@ -59,6 +59,7 @@ fn meta_item_deep_links_behavior_hints() {
         links: vec![],
         trailer_streams: vec![],
         behavior_hints: MetaItemBehaviorHints {
+            is_live: false,
             default_video_id: Some("bh_video_id".to_string()),
             featured_video_id: None,
             has_scheduled_videos: false,
@@ -102,6 +103,7 @@ fn meta_item_deep_links_behavior_hints_yt_id() {
         links: vec![],
         trailer_streams: vec![],
         behavior_hints: MetaItemBehaviorHints {
+            is_live: false,
             default_video_id: Some("yt_id:UCSMOQeBJ2RAnuFungnQOxLg:aqz-KE-bpKQ".to_string()),
             featured_video_id: None,
             has_scheduled_videos: false,
