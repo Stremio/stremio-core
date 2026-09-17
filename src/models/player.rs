@@ -25,7 +25,9 @@ use crate::types::api::{
     SuccessResponse,
 };
 use crate::types::library::{LibraryBucket, LibraryItem};
-use crate::types::player::{IntroData, IntroOutro, SubtitlePreference, VideoScale};
+use crate::types::player::{
+    AudioPreference, IntroData, IntroOutro, SubtitlePreference, VideoScale,
+};
 use crate::types::profile::{AuthKey, Profile};
 use crate::types::rating::{Rating, RatingSendRequest, RatingSendResponse};
 use crate::types::resource::{
@@ -90,6 +92,13 @@ pub struct Selected {
     pub subtitles_path: Option<ResourcePath>,
 }
 
+#[derive(Clone, Default, PartialEq, Eq, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct LiveChannel {
+    pub current_program: Option<Video>,
+    pub next_program: Option<Video>,
+}
+
 #[derive(Clone, Derivative, Serialize, Debug)]
 #[derivative(Default)]
 #[serde(rename_all = "camelCase")]
@@ -99,12 +108,17 @@ pub struct Player {
     pub meta_item: Option<ResourceLoadable<MetaItem>>,
     pub subtitles: Vec<ResourceLoadable<Vec<Subtitles>>>,
     pub next_video: Option<Video>,
+    /// Broadcast metadata; programme boundaries never select another stream.
+    pub live: Option<LiveChannel>,
+    #[serde(skip)]
+    pub live_schedule_requested_at: Option<(ResourceRequest, DateTime<Utc>)>,
     pub next_streams: Option<ResourceLoadable<Vec<Stream>>>,
     pub next_stream: Option<Stream>,
     pub stream: Option<Loadable<(StreamUrls, Stream<ConvertedStreamSource>), EnvError>>,
     pub series_info: Option<SeriesInfo>,
     pub library_item: Option<LibraryItem>,
     pub stream_state: Option<StreamItemState>,
+    pub audio_preference: Option<AudioPreference>,
     pub subtitle_preference: Option<SubtitlePreference>,
     pub video_scale: Option<VideoScale>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -140,7 +154,7 @@ pub struct Player {
 
 impl<E: Env + 'static> UpdateWithCtx<E> for Player {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
-        match msg {
+        let effects = match msg {
             Msg::Action(Action::Load(ActionLoad::Player(selected))) => {
                 // make sure we send the correct Trakt event if the model hasn't been unloaded
                 let trakt_event_effects = if self.selected.is_some() {
@@ -371,6 +385,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let video_params_effects = eq_update(&mut self.video_params, None);
                 let meta_item_effects = eq_update(&mut self.meta_item, None);
                 let stream_state_effects = eq_update(&mut self.stream_state, None);
+                let audio_preference_effects = eq_update(&mut self.audio_preference, None);
                 let subtitle_preference_effects = eq_update(&mut self.subtitle_preference, None);
                 let video_scale_effects = eq_update(&mut self.video_scale, None);
                 let stream_effects = eq_update(&mut self.stream, None);
@@ -398,6 +413,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(stream_effects)
                     .join(meta_item_effects)
                     .join(stream_state_effects)
+                    .join(audio_preference_effects)
                     .join(subtitle_preference_effects)
                     .join(video_scale_effects)
                     .join(subtitles_effects)
@@ -447,6 +463,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .and_then(|selected| selected.meta_request.to_owned()),
                 }))
                 .unchanged()
+            }
+            Msg::Action(Action::Player(ActionPlayer::AudioPreferenceChanged { preference })) => {
+                if self.selected.is_some() {
+                    eq_update(&mut self.audio_preference, Some(preference.to_owned()))
+                } else {
+                    Effects::none().unchanged()
+                }
             }
             Msg::Action(Action::Player(ActionPlayer::SubtitlePreferenceChanged { preference })) => {
                 if self.selected.is_some() {
@@ -556,6 +579,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     }),
                     Some(library_item),
                 ) => {
+                    let channel_id = library_item.id.clone();
+                    let video_id = if library_item.is_live() {
+                        &channel_id
+                    } else {
+                        video_id
+                    };
                     // if we've selected a new video (like the next episode)
                     library_item.state.last_watched = Some(E::now());
                     if library_item.state.video_id != Some(video_id.to_owned()) {
@@ -587,8 +616,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         duration.clone_into(&mut library_item.state.duration);
                     }
 
-                    // Watched threshold for marking an episode/movie as watched
-                    let should_send_watched = if library_item.state.flagged_watched == 0
+                    // Watched threshold for marking an episode/movie as watched;
+                    // live streams report no duration - without the guard any
+                    // time watched would instantly cross the threshold
+                    let should_send_watched = if !library_item.is_live()
+                        && library_item.state.flagged_watched == 0
+                        && library_item.state.duration > 0
                         && library_item.state.time_watched as f64
                             > library_item.state.duration as f64 * WATCHED_THRESHOLD_COEF
                     {
@@ -993,7 +1026,105 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 Effects::none().unchanged()
             }
             _ => Effects::none().unchanged(),
+        };
+        if matches!(
+            msg,
+            Msg::Action(Action::Load(ActionLoad::Player(_)))
+                | Msg::Action(Action::Unload)
+                | Msg::Action(Action::Player(
+                    ActionPlayer::TimeChanged { .. } | ActionPlayer::RefreshLive
+                ))
+                | Msg::Internal(Internal::ResourceRequestResult(_, _))
+        ) {
+            effects.join(live_update::<E>(self))
+        } else {
+            effects
         }
+    }
+}
+
+fn live_update<E: Env + 'static>(player: &mut Player) -> Effects {
+    let now = E::now();
+    let meta = player
+        .meta_item
+        .as_ref()
+        .and_then(|resource| resource.content.as_ref()?.ready());
+    let next_live = if player.selected.is_none() {
+        None
+    } else if let Some(meta) = meta {
+        meta.is_live().then(|| {
+            let (current, next) = meta.programs_at(now);
+            LiveChannel {
+                current_program: current.cloned(),
+                next_program: next.cloned(),
+            }
+        })
+    } else {
+        player
+            .library_item
+            .as_ref()
+            .filter(|item| item.is_live())
+            .map(|_| {
+                let mut live = player.live.clone().unwrap_or_default();
+                live.current_program = live.current_program.filter(|program| {
+                    program
+                        .epg_info
+                        .as_ref()
+                        .is_some_and(|info| info.is_live(now))
+                });
+                live.next_program = live.next_program.filter(|program| {
+                    program
+                        .epg_info
+                        .as_ref()
+                        .is_some_and(|info| info.start_time > now)
+                });
+                live
+            })
+    };
+    let effects = eq_update(&mut player.live, next_live);
+    if player.live.is_none() {
+        player.live_schedule_requested_at = None;
+        return effects;
+    }
+    let Some(resource) = player.meta_item.as_mut() else {
+        return effects;
+    };
+    let requested_at = player
+        .live_schedule_requested_at
+        .get_or_insert_with(|| (resource.request.clone(), now));
+    if requested_at.0 != resource.request {
+        *requested_at = (resource.request.clone(), now);
+    }
+    let elapsed = now - requested_at.1;
+    let refresh_after = match resource.content.as_ref() {
+        Some(Loadable::Ready(meta)) => {
+            let coverage_expired = meta
+                .videos
+                .iter()
+                .filter_map(|video| video.epg_info.as_ref())
+                .filter(|info| info.start_time < info.end_time)
+                .map(|info| info.end_time)
+                .max()
+                .is_some_and(|end| end <= now);
+            if coverage_expired {
+                Duration::minutes(1)
+            } else {
+                Duration::minutes(15)
+            }
+        }
+        Some(Loadable::Err(_)) => Duration::minutes(1),
+        _ => return effects,
+    };
+    if elapsed >= refresh_after {
+        requested_at.1 = now;
+        resource.content = None;
+        let request = resource.request.clone();
+        effects.join(resource_update::<E, MetaItem>(
+            resource,
+            ResourceAction::ResourceRequested { request: &request },
+        ))
+    } else {
+        effects
     }
 }
 
@@ -1021,6 +1152,10 @@ fn item_state_update(
     marked_video_as_watched: bool,
 ) -> Effects {
     match library_item {
+        Some(library_item) if library_item.is_live() => {
+            library_item.state.time_offset = 0;
+            library_item.state.video_id = Some(library_item.id.clone());
+        }
         Some(library_item)
             if marked_video_as_watched
                 || library_item.state.time_offset as f64

@@ -184,7 +184,7 @@ impl DefaultTokens for ManifestBehaviorHints {
         vec![
             Token::Struct {
                 name: "ManifestBehaviorHints",
-                len: 4,
+                len: 5,
             },
             Token::Str("adult"),
             Token::Bool(false),
@@ -193,6 +193,8 @@ impl DefaultTokens for ManifestBehaviorHints {
             Token::Str("configurable"),
             Token::Bool(false),
             Token::Str("configurationRequired"),
+            Token::Bool(false),
+            Token::Str("epgProvider"),
             Token::Bool(false),
             Token::StructEnd,
         ]

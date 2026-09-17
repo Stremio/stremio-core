@@ -61,6 +61,7 @@ fn library_items_update(
     let next_cw_items = library
         .items
         .values()
+        .filter(|item| !item.is_live())
         .filter_map(|library_item| {
             let library_notification = notifications
                 .items
