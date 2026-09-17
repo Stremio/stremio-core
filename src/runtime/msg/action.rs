@@ -20,7 +20,7 @@ use crate::{
         addon::Descriptor,
         api::AuthRequest,
         library::LibraryItemId,
-        player::{SubtitlePreference, VideoScale},
+        player::{AudioPreference, SubtitlePreference, VideoScale},
         profile::{AuthKey, Password, Settings as ProfileSettings},
         rating::Rating,
         resource::{MetaItemId, MetaItemPreview, Video},
@@ -225,6 +225,10 @@ pub enum ActionPlayer {
     },
     StreamStateChanged {
         state: StreamItemState,
+    },
+    /// Updates the audio preference for the current Player session.
+    AudioPreferenceChanged {
+        preference: AudioPreference,
     },
     /// Updates the subtitle preference for the current Player session.
     SubtitlePreferenceChanged {
