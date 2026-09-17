@@ -309,7 +309,11 @@
 <a href="#308" id="308">308</a>
 <a href="#309" id="309">309</a>
 <a href="#310" id="310">310</a>
-<a href="#311" id="311">311</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
 
 <span class="kw">use </span>serde::Deserialize;
 <span class="kw">use </span>url::Url;
@@ -330,7 +334,7 @@
         addon::Descriptor,
         api::AuthRequest,
         library::LibraryItemId,
-        player::{SubtitlePreference, VideoScale},
+        player::{AudioPreference, SubtitlePreference, VideoScale},
         profile::{AuthKey, Password, Settings <span class="kw">as </span>ProfileSettings},
         rating::Rating,
         resource::{MetaItemId, MetaItemPreview, Video},
@@ -516,6 +520,10 @@
     },
     StreamStateChanged {
         state: StreamItemState,
+    },
+    <span class="doccomment">/// Updates the audio preference for the current Player session.
+    </span>AudioPreferenceChanged {
+        preference: AudioPreference,
     },
     <span class="doccomment">/// Updates the subtitle preference for the current Player session.
     </span>SubtitlePreferenceChanged {

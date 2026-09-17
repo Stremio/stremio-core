@@ -396,7 +396,9 @@
 <a href="#395" id="395">395</a>
 <a href="#396" id="396">396</a>
 <a href="#397" id="397">397</a>
-<a href="#398" id="398">398</a></pre></div><pre class="rust"><code><span class="kw">use </span>semver::Version;
+<a href="#398" id="398">398</a>
+<a href="#399" id="399">399</a>
+<a href="#400" id="400">400</a></pre></div><pre class="rust"><code><span class="kw">use </span>semver::Version;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>url::Url;
 <span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
@@ -409,7 +411,7 @@
 <span class="kw">use </span>stremio_core::models::streaming_server::StreamingServer;
 <span class="kw">use </span>stremio_core::types::{
     addon::{ResourcePath, ResourceRequest},
-    player::{SubtitlePreference, VideoScale},
+    player::{AudioPreference, SubtitlePreference, VideoScale},
     streams::StreamItemState,
 };
 
@@ -512,6 +514,7 @@
         <span class="kw">pub </span>series_info: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>stremio_core::types::resource::SeriesInfo&gt;,
         <span class="kw">pub </span>library_item: <span class="prelude-ty">Option</span>&lt;LibraryItem&lt;<span class="lifetime">'a</span>&gt;&gt;,
         <span class="kw">pub </span>stream_state: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>StreamItemState&gt;,
+        <span class="kw">pub </span>audio_preference: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>AudioPreference&gt;,
         <span class="kw">pub </span>subtitle_preference: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>SubtitlePreference&gt;,
         <span class="kw">pub </span>video_scale: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>VideoScale&gt;,
         <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
@@ -729,6 +732,7 @@
                 },
             }),
         stream_state: player.stream_state.as_ref(),
+        audio_preference: player.audio_preference.as_ref(),
         subtitle_preference: player.subtitle_preference.as_ref(),
         video_scale: player.video_scale.as_ref(),
         intro_outro: player.intro_outro.as_ref(),
