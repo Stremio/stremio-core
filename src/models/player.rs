@@ -140,6 +140,10 @@ pub struct Player {
 
 impl<E: Env + 'static> UpdateWithCtx<E> for Player {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
+        let webhook_url = self
+            .selected
+            .as_ref()
+            .and_then(|selected| selected.stream.behavior_hints.playback_webhook.clone());
         match msg {
             Msg::Action(Action::Load(ActionLoad::Player(selected))) => {
                 // make sure we send the correct Trakt event if the model hasn't been unloaded
@@ -344,6 +348,22 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 } else {
                     Effects::none().unchanged()
                 };
+                // Dispatch webhook event to notify that the player was unloaded/stopped
+                // (only if it didn't finish completely with an 'ended' event first).
+                let webhook_effects = if !self.ended && self.selected.is_some() {
+                    if let Some(url) = &webhook_url {
+                        Effects::one(dispatch_webhook::<E>(
+                            url.to_owned(),
+                            "stopped".to_owned(),
+                            self.selected.as_ref().unwrap().stream.to_owned(),
+                            self.analytics_context.to_owned(),
+                        ))
+                    } else {
+                        Effects::none()
+                    }
+                } else {
+                    Effects::none()
+                };
                 let seek_history_effects = seek_update::<E>(
                     self.selected.as_ref(),
                     self.video_params.as_ref(),
@@ -409,6 +429,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(watched_effects)
                     .join(skip_gaps_effects)
                     .join(ended_effects)
+                    .join(webhook_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::VideoParamsChanged { video_params })) => {
                 let video_params_effects =
@@ -659,16 +680,29 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         Some(library_item),
                         &mut self.skip_gaps,
                     );
+                    // Dispatch webhook event to notify that the playback time offset has updated.
+                    let webhook_effects = if let Some(url) = &webhook_url {
+                        Effects::one(dispatch_webhook::<E>(
+                            url.to_owned(),
+                            "timeChanged".to_owned(),
+                            self.selected.as_ref().unwrap().stream.to_owned(),
+                            self.analytics_context.to_owned(),
+                        ))
+                    } else {
+                        Effects::none()
+                    };
 
                     send_watched_effects
                         .join(push_to_library_effects)
                         .join(intro_outro_effects)
+                        .join(webhook_effects)
                 }
                 _ => Effects::none().unchanged(),
             },
             Msg::Action(Action::Player(ActionPlayer::PausedChanged { paused }))
                 if self.selected.is_some() =>
             {
+                let is_playing = !self.loaded;
                 self.paused = Some(*paused);
                 let trakt_event_effects = if !self.loaded {
                     self.loaded = true;
@@ -700,7 +734,28 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .unchanged(),
                     _ => Effects::none().unchanged(),
                 };
-                trakt_event_effects.join(update_library_item_effects)
+                // Dispatch webhook event based on whether the player is initially loading,
+                // pausing playback, or resuming playback.
+                let webhook_effects = if let Some(url) = &webhook_url {
+                    let event = if is_playing {
+                        "playing"
+                    } else if *paused {
+                        "paused"
+                    } else {
+                        "resumed"
+                    };
+                    Effects::one(dispatch_webhook::<E>(
+                        url.to_owned(),
+                        event.to_owned(),
+                        self.selected.as_ref().unwrap().stream.to_owned(),
+                        self.analytics_context.to_owned(),
+                    ))
+                } else {
+                    Effects::none()
+                };
+                trakt_event_effects
+                    .join(update_library_item_effects)
+                    .join(webhook_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::NextVideo)) => {
                 let seek_history_effects = seek_update::<E>(
@@ -745,12 +800,24 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             }
             Msg::Action(Action::Player(ActionPlayer::Ended)) if self.selected.is_some() => {
                 self.ended = true;
+                // Dispatch webhook event to notify that the playback has finished completely.
+                let webhook_effects = if let Some(url) = &webhook_url {
+                    Effects::one(dispatch_webhook::<E>(
+                        url.to_owned(),
+                        "ended".to_owned(),
+                        self.selected.as_ref().unwrap().stream.to_owned(),
+                        self.analytics_context.to_owned(),
+                    ))
+                } else {
+                    Effects::none()
+                };
                 Effects::msg(Msg::Event(Event::PlayerEnded {
                     context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
                     is_binge_enabled: ctx.profile.settings.binge_watching,
                     is_playing_next_video: self.next_video.is_some(),
                 }))
                 .unchanged()
+                .join(webhook_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::MarkVideoAsWatched(video, is_watched))) => {
                 match (&self.library_item, &self.watched) {
@@ -1679,6 +1746,44 @@ fn send_watched<E: Env + 'static>(auth_key: AuthKey, meta_path: &ResourcePath) -
                     meta_id, result,
                 ))
             }))
+            .boxed_env(),
+    )
+    .into()
+}
+
+/// Payload sent to the playback webhook.
+/// Contains the event type (e.g. playing, paused, resumed, ended, stopped, timeChanged),
+/// the current stream metadata, and the player analytics/item context if available.
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct WebhookPayload {
+    pub event: String,
+    pub stream: Stream,
+    pub meta: Option<AnalyticsContext>,
+}
+
+/// Dispatches a fire-and-forget network request to the specified webhook URL.
+/// Mapped to `Internal::WebhookSent` to log/process the result without altering player state.
+fn dispatch_webhook<E: Env + 'static>(
+    url: Url,
+    event: String,
+    stream: Stream,
+    meta: Option<AnalyticsContext>,
+) -> Effect {
+    let payload = WebhookPayload {
+        event,
+        stream,
+        meta,
+    };
+
+    let request = http::Request::post(url.as_str())
+        .header(http::header::CONTENT_TYPE, "application/json")
+        .body(payload)
+        .expect("request builder should never fail!");
+
+    EffectFuture::Concurrent(
+        E::fetch::<_, serde_json::Value>(request)
+            .map(|result| Msg::Internal(Internal::WebhookSent(result)))
             .boxed_env(),
     )
     .into()
