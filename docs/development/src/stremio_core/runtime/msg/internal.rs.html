@@ -176,7 +176,8 @@
 <a href="#175" id="175">175</a>
 <a href="#176" id="176">176</a>
 <a href="#177" id="177">177</a>
-<a href="#178" id="178">178</a></pre></div><pre class="rust"><code><span class="kw">use </span>url::Url;
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a></pre></div><pre class="rust"><code><span class="kw">use </span>url::Url;
 
 <span class="kw">use </span><span class="kw">crate</span>::models::common::ResourceLoadable;
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::CtxError;
@@ -311,6 +312,7 @@
     </span>StreamingServerCreateTorrentResult(InfoHash, <span class="prelude-ty">Result</span>&lt;(), EnvError&gt;),
     <span class="doccomment">/// Result for playing on device.
     </span>StreamingServerPlayOnDeviceResult(String, <span class="prelude-ty">Result</span>&lt;(), EnvError&gt;),
+    StreamingServerCastingResult(u64, <span class="prelude-ty">Result</span>&lt;(), EnvError&gt;),
     <span class="comment">// Result for get https endpoint request
     </span>StreamingServerGetHTTPSResult(Url, <span class="prelude-ty">Result</span>&lt;GetHTTPSResponse, EnvError&gt;),
     <span class="doccomment">/// Result for streaming server statistics.

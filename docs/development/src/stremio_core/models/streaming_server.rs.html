@@ -899,7 +899,31 @@
 <a href="#898" id="898">898</a>
 <a href="#899" id="899">899</a>
 <a href="#900" id="900">900</a>
-<a href="#901" id="901">901</a></pre></div><pre class="rust"><code><span class="kw">use </span>enclose::enclose;
+<a href="#901" id="901">901</a>
+<a href="#902" id="902">902</a>
+<a href="#903" id="903">903</a>
+<a href="#904" id="904">904</a>
+<a href="#905" id="905">905</a>
+<a href="#906" id="906">906</a>
+<a href="#907" id="907">907</a>
+<a href="#908" id="908">908</a>
+<a href="#909" id="909">909</a>
+<a href="#910" id="910">910</a>
+<a href="#911" id="911">911</a>
+<a href="#912" id="912">912</a>
+<a href="#913" id="913">913</a>
+<a href="#914" id="914">914</a>
+<a href="#915" id="915">915</a>
+<a href="#916" id="916">916</a>
+<a href="#917" id="917">917</a>
+<a href="#918" id="918">918</a>
+<a href="#919" id="919">919</a>
+<a href="#920" id="920">920</a>
+<a href="#921" id="921">921</a>
+<a href="#922" id="922">922</a>
+<a href="#923" id="923">923</a>
+<a href="#924" id="924">924</a>
+<a href="#925" id="925">925</a></pre></div><pre class="rust"><code><span class="kw">use </span>enclose::enclose;
 <span class="kw">use </span>futures::{FutureExt, TryFutureExt};
 <span class="kw">use </span>http::request::Request;
 <span class="kw">use </span>magnet_url::{Magnet, MagnetError};
@@ -924,6 +948,9 @@
     TorrentStatisticsRequest,
 };
 <span class="kw">use </span><span class="kw">crate</span>::types::torrent::InfoHash;
+
+<span class="kw">mod </span>casting;
+<span class="kw">pub use </span>casting::{CastingSession, CastingStatus};
 
 <span class="attr">#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
@@ -955,6 +982,11 @@
     <span class="kw">pub </span>playback_devices: Loadable&lt;Vec&lt;PlaybackDevice&gt;, EnvError&gt;,
     <span class="attr">#[serde(skip)]
     </span><span class="kw">pub </span>playback_devices_generation: u64,
+    <span class="kw">pub </span>casting: <span class="prelude-ty">Option</span>&lt;CastingSession&gt;,
+    <span class="attr">#[serde(skip)]
+    </span>casting_requests: std::collections::VecDeque&lt;casting::CastingRequest&gt;,
+    <span class="attr">#[serde(skip)]
+    </span>casting_generation: u64,
     <span class="kw">pub </span>network_info: Loadable&lt;NetworkInfo, EnvError&gt;,
     <span class="kw">pub </span>device_info: Loadable&lt;DeviceInfo, EnvError&gt;,
     <span class="kw">pub </span>torrent: <span class="prelude-ty">Option</span>&lt;(InfoHash, Loadable&lt;ResourcePath, EnvError&gt;)&gt;,
@@ -984,6 +1016,9 @@
                 remote_url: <span class="prelude-val">None</span>,
                 playback_devices: Loadable::Loading,
                 playback_devices_generation: <span class="number">0</span>,
+                casting: <span class="prelude-val">None</span>,
+                casting_requests: Default::default(),
+                casting_generation: <span class="number">0</span>,
                 network_info: Loadable::Loading,
                 device_info: Loadable::Loading,
                 torrent: <span class="prelude-val">None</span>,
@@ -1170,6 +1205,19 @@
                     },
                     <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
                 }
+            }
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::CastToDevice(args))) =&gt; {
+                <span class="self">self</span>.start_casting::&lt;E&gt;(args)
+            }
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::SetCastingSubtitles {
+                id,
+                subtitles,
+            })) =&gt; <span class="self">self</span>.set_casting_subtitles::&lt;E&gt;(<span class="kw-2">*</span>id, subtitles),
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::StopCasting)) =&gt; {
+                <span class="self">self</span>.stop_casting::&lt;E&gt;()
+            }
+            Msg::Internal(Internal::StreamingServerCastingResult(id, result)) =&gt; {
+                <span class="self">self</span>.casting_result::&lt;E&gt;(<span class="kw-2">*</span>id, result)
             }
             Msg::Internal(Internal::ProfileChanged)
                 <span class="kw">if </span><span class="self">self</span>.selected.transport_url != ctx.profile.settings.streaming_server_url =&gt;

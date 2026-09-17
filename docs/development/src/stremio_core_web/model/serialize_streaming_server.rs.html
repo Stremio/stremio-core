@@ -68,12 +68,14 @@
 <a href="#67" id="67">67</a>
 <a href="#68" id="68">68</a>
 <a href="#69" id="69">69</a>
-<a href="#70" id="70">70</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
+<a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a>
+<a href="#72" id="72">72</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
 </span><span class="kw">use </span>gloo_utils::format::JsValueSerdeExt;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>stremio_core::deep_links::MetaItemDeepLinks;
 <span class="kw">use </span>stremio_core::models::common::Loadable;
-<span class="kw">use </span>stremio_core::models::streaming_server::{PlaybackDevice, Selected};
+<span class="kw">use </span>stremio_core::models::streaming_server::{CastingSession, PlaybackDevice, Selected};
 <span class="kw">use </span>stremio_core::runtime::EnvError;
 <span class="kw">use </span>stremio_core::types::addon::ResourcePath;
 <span class="kw">use </span>stremio_core::types::streaming_server::{
@@ -98,6 +100,7 @@
         <span class="kw">pub </span>base_url: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;Url&gt;,
         <span class="kw">pub </span>remote_url: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;Url&gt;,
         <span class="kw">pub </span>playback_devices: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Loadable&lt;Vec&lt;PlaybackDevice&gt;, EnvError&gt;,
+        <span class="kw">pub </span>casting: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;CastingSession&gt;,
         <span class="kw">pub </span>network_info: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Loadable&lt;NetworkInfo, EnvError&gt;,
         <span class="kw">pub </span>device_info: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Loadable&lt;DeviceInfo, EnvError&gt;,
         <span class="kw">pub </span>torrent: <span class="prelude-ty">Option</span>&lt;(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>InfoHash, TorrentLoadable&lt;<span class="lifetime">'a</span>&gt;)&gt;,
@@ -118,6 +121,7 @@
         base_url: <span class="kw-2">&amp;</span>streaming_server.base_url,
         remote_url: <span class="kw-2">&amp;</span>streaming_server.remote_url,
         playback_devices: <span class="kw-2">&amp;</span>streaming_server.playback_devices,
+        casting: <span class="kw-2">&amp;</span>streaming_server.casting,
         network_info: <span class="kw-2">&amp;</span>streaming_server.network_info,
         device_info: <span class="kw-2">&amp;</span>streaming_server.device_info,
         torrent: streaming_server

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["CastingStatus","Command"],"fn":["cast_error","cast_request","send"],"struct":["CastingRequest","CastingSession"]};
