@@ -65,6 +65,11 @@ pub struct ExternalPlayerLink {
     pub webos: Option<String>,
 }
 
+#[derive(Default)]
+struct InfuseMetadata {
+    filename: Option<String>,
+}
+
 /// Compute a magnet URI directly from a raw [`Stream`] source without needing conversion.
 fn magnet_url_from_raw(stream: &Stream) -> Option<String> {
     match &stream.source {
@@ -82,6 +87,7 @@ fn infuse_open_player_link(
     streaming_url: &str,
     callback_url: &str,
     position: Option<u64>,
+    metadata: InfuseMetadata,
 ) -> String {
     let callback_url = utf8_percent_encode(callback_url, URI_COMPONENT_ENCODE_SET);
     let url_encoded = utf8_percent_encode(streaming_url, URI_COMPONENT_ENCODE_SET);
@@ -89,17 +95,24 @@ fn infuse_open_player_link(
         .map(|position| format!("&position={position}"))
         .unwrap_or_default();
 
-    format!(
+    let mut url = format!(
         "infuse://x-callback-url/play?x-success={callback_url}&x-error={callback_url}&url={url_encoded}{position}"
-    )
+    );
+
+    if let Some(filename) = metadata.filename {
+        let filename_encoded = utf8_percent_encode(&filename, URI_COMPONENT_ENCODE_SET);
+        url.push_str(&format!("&filename={filename_encoded}"));
+    }
+    url
 }
 
 fn infuse_open_player(
     streaming_url: &str,
     callback_url: &str,
     position: Option<u64>,
+    metadata: InfuseMetadata,
 ) -> OpenPlayerLink {
-    let link = infuse_open_player_link(streaming_url, callback_url, position);
+    let link = infuse_open_player_link(streaming_url, callback_url, position, metadata);
 
     OpenPlayerLink {
         ios: Some(link.clone()),
@@ -197,13 +210,33 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
                         visionos: Some(http_regex.replace(url.as_str(), "outplayer://").to_string()),
                         ..Default::default()
                     }),
-                    "infuse" => Some(OpenPlayerLink {
-                        ios: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
-                        macos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
-                        visionos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
-                        tvos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
-                       ..Default::default()
-                    }),
+                    "infuse" => {
+                        // Use behavior_hints.filename (actual filename) as primary, fall back to stream.name (quality label)
+                        let filename = stream
+                            .behavior_hints
+                            .filename
+                            .clone()
+                            .or_else(|| stream.name.clone())
+                            .unwrap_or_default();
+                        if !filename.is_empty() {
+                            let filename_encoded = utf8_percent_encode(&filename, URI_COMPONENT_ENCODE_SET);
+                            Some(OpenPlayerLink {
+                                ios: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}&filename={filename_encoded}")),
+                                macos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}&filename={filename_encoded}")),
+                                visionos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}&filename={filename_encoded}")),
+                                tvos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}&filename={filename_encoded}")),
+                                ..Default::default()
+                            })
+                        } else {
+                            Some(OpenPlayerLink {
+                                ios: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
+                                macos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
+                                visionos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
+                                tvos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
+                                ..Default::default()
+                            })
+                        }
+                    },
                     "vidhub" => Some(OpenPlayerLink {
                         ios: Some(format!("open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
                         macos: Some(format!("open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
@@ -352,8 +385,17 @@ impl From<(&LibraryItem, Option<&StreamsItem>, Option<&Url>, &Settings)> for Lib
                             utf8_percent_encode(&item.meta_id, URI_COMPONENT_ENCODE_SET),
                             utf8_percent_encode(&item.video_id, URI_COMPONENT_ENCODE_SET)
                         );
-                        external_player.open_player =
-                            Some(infuse_open_player(streaming, &callback_url, position));
+                        // Build filename for Infuse
+                        let filename = item.stream.name.clone().unwrap_or_default();
+                        let metadata = InfuseMetadata {
+                            filename: Some(filename),
+                        };
+                        external_player.open_player = Some(infuse_open_player(
+                            streaming,
+                            &callback_url,
+                            position,
+                            metadata,
+                        ));
                     }
                 }
                 external_player
@@ -639,8 +681,13 @@ impl
             ExternalPlayerLink::from((stream, streaming_server_url, settings));
         if settings.player_type.as_deref() == Some("infuse") {
             if let Some(streaming) = external_player.streaming.as_deref() {
+                // Build filename for Infuse
+                let filename = stream.name.clone().unwrap_or_default();
+                let metadata = InfuseMetadata {
+                    filename: Some(filename),
+                };
                 external_player.open_player =
-                    Some(infuse_open_player(streaming, &callback_url, None));
+                    Some(infuse_open_player(streaming, &callback_url, None, metadata));
             }
         }
 
