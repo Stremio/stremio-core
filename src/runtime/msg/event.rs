@@ -149,6 +149,12 @@ pub enum Event {
     PlayingOnDevice {
         device: String,
     },
+    StoppedCasting {
+        device: String,
+    },
+    CastingSubtitlesChanged {
+        device: String,
+    },
     StreamingServerUrlsBucketChanged {
         uid: UID,
     },

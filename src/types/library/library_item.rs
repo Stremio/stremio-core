@@ -42,6 +42,9 @@ pub struct LibraryItem {
 }
 
 impl LibraryItem {
+    pub fn is_live(&self) -> bool {
+        self.behavior_hints.is_live(&self.r#type)
+    }
     #[inline]
     pub fn should_sync<E: Env + 'static>(&self) -> bool {
         let year_ago = E::now() - Duration::days(365);
@@ -79,6 +82,7 @@ impl LibraryItem {
     /// - The LibraryItem should not be temporary but in your LibraryItem
     pub fn should_pull_notifications(&self) -> bool {
         !self.state.no_notif
+            && !self.is_live()
             && self.r#type != "other"
             && self.r#type != "movie"
             && self.behavior_hints.default_video_id.is_none()
@@ -189,7 +193,10 @@ impl<E: Env + 'static> From<(&MetaItemPreview, PhantomData<E>)> for LibraryItem 
             r#type: meta_item.r#type.to_owned(),
             poster: meta_item.poster.to_owned(),
             poster_shape: meta_item.poster_shape.to_owned(),
-            behavior_hints: meta_item.behavior_hints.to_owned(),
+            behavior_hints: MetaItemBehaviorHints {
+                is_live: meta_item.behavior_hints.is_live(&meta_item.r#type),
+                ..meta_item.behavior_hints.to_owned()
+            },
         }
     }
 }
@@ -202,7 +209,10 @@ impl From<(&MetaItemPreview, &LibraryItem)> for LibraryItem {
             r#type: meta_item.r#type.to_owned(),
             poster: meta_item.poster.to_owned(),
             poster_shape: meta_item.poster_shape.to_owned(),
-            behavior_hints: meta_item.behavior_hints.to_owned(),
+            behavior_hints: MetaItemBehaviorHints {
+                is_live: meta_item.behavior_hints.is_live(&meta_item.r#type),
+                ..meta_item.behavior_hints.to_owned()
+            },
             removed: library_item.removed,
             temp: library_item.temp,
             ctime: library_item.ctime.to_owned(),

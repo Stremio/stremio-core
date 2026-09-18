@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::{
@@ -12,6 +12,7 @@ use crate::{
         installed_addons_with_filters::Selected as InstalledAddonsWithFiltersSelected,
         library_by_type::Selected as LibraryByTypeSelected,
         library_with_filters::Selected as LibraryWithFiltersSelected,
+        live_tv_guide::Selected as LiveTvGuideSelected,
         meta_details::Selected as MetaDetailsSelected,
         player::{Selected as PlayerSelected, VideoParams},
     },
@@ -19,7 +20,7 @@ use crate::{
         addon::Descriptor,
         api::AuthRequest,
         library::LibraryItemId,
-        player::{SubtitlePreference, VideoScale},
+        player::{AudioPreference, SubtitlePreference, VideoScale},
         profile::{AuthKey, Password, Settings as ProfileSettings},
         rating::Rating,
         resource::{MetaItemId, MetaItemPreview, Video},
@@ -129,6 +130,21 @@ pub enum ActionLibraryByType {
 
 #[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
+pub enum ActionLiveTvGuide {
+    LoadNextPage,
+    /// Retry failed pages without discarding channels that already loaded.
+    Retry,
+    RefreshLive,
+}
+
+#[derive(Clone, Deserialize, Debug)]
+#[serde(tag = "action", content = "args")]
+pub enum ActionLiveTvContinueWatching {
+    RefreshLive,
+}
+
+#[derive(Clone, Deserialize, Debug)]
+#[serde(tag = "action", content = "args")]
 pub enum ActionLibraryWithFilters {
     LoadNextPage,
 }
@@ -136,6 +152,8 @@ pub enum ActionLibraryWithFilters {
 #[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionMetaDetails {
+    /// Reports activity on a live channel page so Core can refresh expired schedules.
+    RefreshLive,
     /// Marks the [`LibraryItem`] as watched.
     ///
     /// Applicable when you have single-video (e.g. a movie) and multi-video (e.g. a movie series) item.
@@ -172,6 +190,15 @@ pub struct PlayOnDeviceArgs {
     pub device: String,
     pub source: String,
     pub time: Option<u64>,
+    pub subtitles: Option<CastingSubtitles>,
+}
+
+#[derive(Clone, Deserialize, Serialize, PartialEq, Debug, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct CastingSubtitles {
+    pub subtitles_src: Option<Url>,
+    #[serde(default)]
+    pub subtitles_delay: i64,
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -188,6 +215,12 @@ pub enum ActionStreamingServer {
     CreateTorrent(CreateTorrentArgs),
     GetStatistics(StreamingServerStatisticsRequest),
     PlayOnDevice(PlayOnDeviceArgs),
+    CastToDevice(PlayOnDeviceArgs),
+    SetCastingSubtitles {
+        id: u64,
+        subtitles: CastingSubtitles,
+    },
+    StopCasting,
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -199,12 +232,18 @@ pub enum ActionLink {
 #[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionPlayer {
+    /// Re-evaluate live programme metadata after activation or clock changes.
+    RefreshLive,
     #[serde(rename_all = "camelCase")]
     VideoParamsChanged {
         video_params: Option<VideoParams>,
     },
     StreamStateChanged {
         state: StreamItemState,
+    },
+    /// Updates the audio preference for the current Player session.
+    AudioPreferenceChanged {
+        preference: AudioPreference,
     },
     /// Updates the subtitle preference for the current Player session.
     SubtitlePreferenceChanged {
@@ -264,6 +303,8 @@ pub enum ActionPlayer {
 pub enum ActionLoad {
     AddonDetails(AddonDetailsSelected),
     CatalogWithFilters(Option<CatalogWithFiltersSelected>),
+    /// Guide-aware clients delegate EPG content to LiveTvGuide while retaining filters.
+    CatalogWithFiltersSelection(Option<CatalogWithFiltersSelected>),
     CatalogsWithExtra(CatalogsWithExtraSelected),
     DataExport,
     InstalledAddonsWithFilters(InstalledAddonsWithFiltersSelected),
@@ -271,6 +312,10 @@ pub enum ActionLoad {
     LibraryByType(LibraryByTypeSelected),
     /// Loads the Calendar Model
     Calendar(Option<CalendarSelected>),
+    /// Loads the LiveTvGuide Model
+    LiveTvGuide(Option<LiveTvGuideSelected>),
+    /// Loads the LiveTvContinueWatching Model
+    LiveTvContinueWatching,
     /// Loads the data required for Local search
     LocalSearch,
     MetaDetails(MetaDetailsSelected),
@@ -302,6 +347,8 @@ pub enum Action {
     CatalogsWithExtra(ActionCatalogsWithExtra),
     LibraryByType(ActionLibraryByType),
     LibraryWithFilters(ActionLibraryWithFilters),
+    LiveTvGuide(ActionLiveTvGuide),
+    LiveTvContinueWatching(ActionLiveTvContinueWatching),
     MetaDetails(ActionMetaDetails),
     StreamingServer(ActionStreamingServer),
     Player(ActionPlayer),
