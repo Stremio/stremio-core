@@ -305,7 +305,7 @@ fn external_player_link_with_infuse() {
         source: StreamSource::Url {
             url: Url::from_str("http://example.com/stream").unwrap(),
         },
-        name: None,
+        name: Some("My Movie.mp4".to_string()),
         description: None,
         thumbnail: None,
         subtitles: vec![],
@@ -326,7 +326,7 @@ fn external_player_link_with_infuse() {
 
     assert_eq!(
         open_player.ios,
-        Some("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url=http%3A%2F%2Fexample.com%2Fstream".to_string())
+        Some("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url=http%3A%2F%2Fexample.com%2Fstream&filename=My%20Movie.mp4".to_string())
     );
 }
 
