@@ -431,6 +431,35 @@ fn mark_season_as_watched_advances_to_next_released_unwatched_season() {
 }
 
 #[test]
+fn mark_season_as_unwatched_preserves_existing_resume_progress() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
+
+    run_with_library_item(create_library_item("tt123456:1:1"), |runtime| {
+        load_selected_video(&runtime, "tt123456:1:1");
+
+        TestEnv::run(|| {
+            runtime.dispatch(RuntimeAction {
+                field: None,
+                action: Action::MetaDetails(ActionMetaDetails::MarkSeasonAsWatched(1, false)),
+            });
+        });
+
+        let model = runtime.model().unwrap();
+        let library_item = model.ctx.library.items.get("tt123456").unwrap();
+        assert_eq!(
+            library_item.state.video_id,
+            Some("tt123456:1:1".to_owned()),
+            "marking a season unwatched must not move the resume pointer",
+        );
+        assert_eq!(
+            library_item.state.time_offset, PREVIOUS_TIME_WATCHED,
+            "marking a season unwatched must preserve existing resume progress",
+        );
+    });
+}
+
+#[test]
 fn external_player_progress_updates_position_without_known_duration() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
