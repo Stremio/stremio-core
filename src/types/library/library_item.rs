@@ -123,7 +123,7 @@ impl LibraryItem {
         let mut watched = watched.to_owned();
         watched.set_video(&video.id, is_watched);
 
-        self.state.watched = Some(watched.clone().into());
+        self.state.watched = Some(watched.into());
 
         if is_watched {
             self.state.last_watched = match (&self.state.last_watched, &video.released) {
@@ -198,7 +198,7 @@ impl LibraryItem {
             watched.set_video(&video.id, is_watched);
         }
 
-        self.state.watched = Some(watched.into());
+        self.state.watched = Some(watched.clone().into());
 
         if is_watched {
             self.state.last_watched = match (
