@@ -69,11 +69,7 @@ fn fetch_handler_next_season(request: Request) -> TryEnvFuture<Box<dyn Any + Sen
                         r#type: "series".to_owned(),
                         ..Default::default()
                     },
-                    videos: vec![
-                        create_video(1, 1),
-                        create_video(1, 2),
-                        create_video(2, 1),
-                    ],
+                    videos: vec![create_video(1, 1), create_video(1, 2), create_video(2, 1)],
                 },
             }) as Box<dyn Any + Send>)
             .boxed_env()
