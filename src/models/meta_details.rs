@@ -185,19 +185,31 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 is_watched,
             ))) => match (&self.library_item, &self.watched) {
                 (Some(library_item), Some(watched)) => {
-                    // Find videos of given season from the first ready meta item loadable
-                    let videos = self
+                    // Find the first ready meta item and mark all videos from the requested season.
+                    let meta_item = self
                         .meta_items
                         .iter()
                         .find(|meta_item| matches!(&meta_item.content, Some(Loadable::Ready(_))))
                         .and_then(|meta_item| meta_item.content.as_ref())
-                        .and_then(|meta_item| meta_item.ready())
-                        .map(|meta_item| meta_item.videos_by_season(*season));
+                        .and_then(|meta_item| meta_item.ready());
 
-                    match videos {
-                        Some(videos) => {
+                    match meta_item {
+                        Some(meta_item) => {
+                            let videos = meta_item.videos_by_season(*season);
+                            let has_videos = !videos.is_empty();
                             let mut library_item = library_item.to_owned();
-                            library_item.mark_videos_as_watched::<E>(watched, videos, *is_watched);
+                            let watched = library_item.mark_videos_as_watched::<E>(
+                                watched,
+                                videos,
+                                *is_watched,
+                            );
+                            if *is_watched && has_videos {
+                                library_item.reconcile_series_resume_after_watched_change(
+                                    &watched,
+                                    meta_item,
+                                    &E::now(),
+                                );
+                            }
 
                             Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                                 .unchanged()
