@@ -144,6 +144,23 @@ pub trait Env {
         request: Request<IN>,
     ) -> TryEnvFuture<OUT>;
 
+    /// Perform a fetch that also returns the final response URL (after any
+    /// redirects were followed).
+    ///
+    /// The default implementation returns `None` for the URL, keeping backward
+    /// compatibility: environments that only implement [`Env::fetch`] work as
+    /// before, just without redirect resolution.
+    fn fetch_with_url<
+        IN: Serialize + ConditionalSend + 'static,
+        OUT: for<'de> Deserialize<'de> + ConditionalSend + 'static,
+    >(
+        request: Request<IN>,
+    ) -> TryEnvFuture<(OUT, Option<Url>)> {
+        Self::fetch::<IN, OUT>(request)
+            .map_ok(|output| (output, None))
+            .boxed_env()
+    }
+
     fn get_storage<T: for<'de> Deserialize<'de> + ConditionalSend + 'static>(
         key: &str,
     ) -> TryEnvFuture<Option<T>>;

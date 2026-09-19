@@ -141,12 +141,14 @@ impl<T: Env> AddonTransport for AddonLegacyTransport<'_, T> {
             _ => future::err(LegacyErr::UnsupportedResource.into()).boxed_env(),
         }
     }
-    fn manifest(&self) -> TryEnvFuture<Manifest> {
+    fn manifest(&self) -> TryEnvFuture<(Manifest, Option<Url>)> {
         let url = format!("{}/q.json?b={}", self.transport_url, MANIFEST_REQUEST_PARAM);
         let r = Request::get(url).body(()).expect("request builder failed");
-        T::fetch::<_, JsonRPCResp<LegacyManifestResp>>(r)
+        T::fetch_with_url::<_, JsonRPCResp<LegacyManifestResp>>(r)
+            .map_ok(|(resp, _)| resp)
             .and_then(map_response)
             .map_ok(Into::into)
+            .map_ok(|manifest| (manifest, None))
             .boxed_env()
     }
 }

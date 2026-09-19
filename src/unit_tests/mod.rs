@@ -11,6 +11,7 @@ mod link;
 mod live_tv_continue_watching;
 mod live_tv_guide;
 mod meta_details;
+mod models;
 mod player;
 mod serde;
 mod streaming_server;
