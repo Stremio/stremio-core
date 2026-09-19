@@ -108,6 +108,10 @@ impl LibraryItem {
         if is_watched {
             self.state.times_watched = self.state.times_watched.saturating_add(1);
             self.state.last_watched = Some(E::now());
+            // An explicit "mark as watched" action means there is no unfinished
+            // playback to continue at this moment. A later play/rewatch will
+            // establish fresh progress normally.
+            self.state.time_offset = 0;
         } else {
             self.state.times_watched = 0;
         }
