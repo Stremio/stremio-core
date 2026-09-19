@@ -9,7 +9,7 @@ use url::Url;
 
 use crate::{
     runtime::Env,
-    types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape, Video},
+    types::resource::{MetaItem, MetaItemBehaviorHints, MetaItemPreview, PosterShape, Video},
 };
 
 pub type LibraryItemId = String;
@@ -123,7 +123,7 @@ impl LibraryItem {
         let mut watched = watched.to_owned();
         watched.set_video(&video.id, is_watched);
 
-        self.state.watched = Some(watched.into());
+        self.state.watched = Some(watched.clone().into());
 
         if is_watched {
             self.state.last_watched = match (&self.state.last_watched, &video.released) {
@@ -148,12 +148,50 @@ impl LibraryItem {
         self.state.time_offset = 1;
     }
 
+    /// Normalises series resume state after a watched-state mutation.
+    ///
+    /// If the current pointer is now watched, advance through released watched episodes to the
+    /// first released unwatched episode. If there is nothing currently left to continue, clear
+    /// stale resume progress. Unreleased episodes and season 0 boundaries follow MetaItem's
+    /// existing next_video semantics.
+    pub fn reconcile_series_resume_after_watched_change(
+        &mut self,
+        watched: &WatchedBitField,
+        meta_item: &MetaItem,
+        now: &DateTime<Utc>,
+    ) {
+        let Some(mut current_id) = self.state.video_id.clone() else {
+            return;
+        };
+        if !watched.get_video(&current_id)
+            || !meta_item.videos.iter().any(|video| video.id == current_id)
+        {
+            return;
+        }
+
+        loop {
+            match meta_item.next_video(&current_id, now) {
+                Some(next) if watched.get_video(&next.id) => {
+                    current_id = next.id.to_owned();
+                }
+                Some(next) => {
+                    self.advance_to_video(&next.id);
+                    return;
+                }
+                None => {
+                    self.state.time_offset = 0;
+                    return;
+                }
+            }
+        }
+    }
+
     pub fn mark_videos_as_watched<E: Env>(
         &mut self,
         watched: &WatchedBitField,
         videos: Vec<&Video>,
         is_watched: bool,
-    ) {
+    ) -> WatchedBitField {
         let mut watched = watched.to_owned();
 
         for video in &videos {
@@ -174,6 +212,8 @@ impl LibraryItem {
                 (last_watched, _) => last_watched.to_owned(),
             };
         }
+
+        watched
     }
 }
 
