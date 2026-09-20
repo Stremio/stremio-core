@@ -132,11 +132,14 @@ fn stream_deep_links_infuse_callback_returns_to_selected_item() {
         source: StreamSource::Url {
             url: Url::from_str(HTTP_STR_URL).unwrap(),
         },
-        name: None,
+        name: Some("1080p".to_string()),
         description: None,
         thumbnail: None,
         subtitles: vec![],
-        behavior_hints: Default::default(),
+        behavior_hints: StreamBehaviorHints {
+            filename: Some("Example.Series.S01E02.mkv".to_string()),
+            ..Default::default()
+        },
     };
     let stream_request = ResourceRequest {
         base: Url::from_str("http://stream.addon").unwrap(),
@@ -177,6 +180,7 @@ fn stream_deep_links_infuse_callback_returns_to_selected_item() {
         query_param(ios, "x-error"),
         "stremio:///detail/series/tt123/tt123%3A1%3A2"
     );
+    assert_eq!(query_param(ios, "filename"), "Example.Series.S01E02.mkv");
 }
 
 #[test]
