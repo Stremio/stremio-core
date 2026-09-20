@@ -150,12 +150,13 @@ impl LibraryItem {
 
     /// Normalises series resume state after a watched-state mutation.
     ///
-    /// If the current pointer is now watched, advance through released watched episodes to the
-    /// first released unwatched episode. If there is nothing currently left to continue, clear
-    /// stale resume progress. Unreleased episodes and season 0 boundaries follow MetaItem's
-    /// existing next_video semantics.
+    /// If the current pointer belongs to the marked season and is now watched, advance through
+    /// released watched episodes to the first released unwatched episode. If there is nothing
+    /// currently left to continue, clear stale resume progress. Unreleased episodes and season 0
+    /// boundaries follow MetaItem's existing next_video semantics.
     pub fn reconcile_series_resume_after_watched_change(
         &mut self,
+        season: u32,
         watched: &WatchedBitField,
         meta_item: &MetaItem,
         now: &DateTime<Utc>,
@@ -164,7 +165,13 @@ impl LibraryItem {
             return;
         };
         if !watched.get_video(&current_id)
-            || !meta_item.videos.iter().any(|video| video.id == current_id)
+            || !meta_item.videos.iter().any(|video| {
+                video.id == current_id
+                    && video
+                        .series_info
+                        .as_ref()
+                        .is_some_and(|series_info| series_info.season == season)
+            })
         {
             return;
         }

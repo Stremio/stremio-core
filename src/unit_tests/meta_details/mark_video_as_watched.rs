@@ -427,6 +427,43 @@ fn mark_season_as_watched_advances_to_next_released_unwatched_season() {
 }
 
 #[test]
+fn mark_other_season_as_watched_preserves_resume_progress() {
+    for (video_id, season) in [("tt123456:2:1", 1), ("tt123456:1:1", 2)] {
+        let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+        *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler_next_season);
+
+        let mut library_item = create_library_item(video_id);
+        let videos = vec![create_video(1, 1), create_video(1, 2), create_video(2, 1)];
+        let mut watched = library_item.state.watched_bitfield(&videos);
+        watched.set_video(video_id, true);
+        library_item.state.watched = Some(watched.into());
+
+        run_with_library_item(library_item, |runtime| {
+            load_selected_video(&runtime, video_id);
+            TestEnv::run(|| {
+                runtime.dispatch(RuntimeAction {
+                    field: None,
+                    action: Action::MetaDetails(ActionMetaDetails::MarkSeasonAsWatched(
+                        season, true,
+                    )),
+                });
+            });
+
+            let model = runtime.model().unwrap();
+            let library_item = model.ctx.library.items.get("tt123456").unwrap();
+            assert_eq!(library_item.state.video_id.as_deref(), Some(video_id));
+            assert_eq!(library_item.state.time_offset, PREVIOUS_TIME_WATCHED);
+            assert_eq!(library_item.state.time_watched, PREVIOUS_TIME_WATCHED);
+            let watched = library_item.state.watched_bitfield(&videos);
+            assert!(videos
+                .iter()
+                .filter(|video| video.series_info.as_ref().unwrap().season == season)
+                .all(|video| watched.get_video(&video.id)));
+        });
+    }
+}
+
+#[test]
 fn mark_season_as_unwatched_preserves_existing_resume_progress() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);

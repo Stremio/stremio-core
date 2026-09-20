@@ -149,6 +149,25 @@ fn fetch_handler_s1e2_current(request: Request) -> TryEnvFuture<Box<dyn Any + Se
     }
 }
 
+fn fetch_handler_next_season(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
+    match request {
+        Request { url, .. } if url == "https://transport_url/meta/series/tt123456.json" => {
+            future::ok(Box::new(ResourceResponse::Meta {
+                meta: MetaItem {
+                    preview: MetaItemPreview {
+                        id: "tt123456".to_owned(),
+                        r#type: "series".to_owned(),
+                        ..Default::default()
+                    },
+                    videos: vec![create_video(1, 1), create_video(1, 2), create_video(2, 1)],
+                },
+            }) as Box<dyn Any + Send>)
+            .boxed_env()
+        }
+        _ => fetch_handler_s1e1_current(request),
+    }
+}
+
 fn dispatch_time_changed(runtime: &Runtime<TestEnv, TestModel>, time: u64) {
     dispatch_time_changed_with_duration(runtime, time, 3_600_000);
 }
@@ -367,6 +386,68 @@ fn mark_season_as_watched_clears_stale_resume_from_player_path() {
         library_item.state.time_offset, 0,
         "player season watched action should clear stale resume progress when no released episode remains",
     );
+}
+
+#[test]
+fn mark_other_season_as_watched_preserves_resume_progress() {
+    for (video_id, season) in [("tt123456:2:1", 1), ("tt123456:1:1", 2)] {
+        let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+        *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler_next_season);
+
+        let mut library_item = make_library_item(video_id);
+        library_item.state.time_offset = 600_000;
+        library_item.state.time_watched = 600_000;
+        library_item.state.duration = 3_600_000;
+        let videos = vec![create_video(1, 1), create_video(1, 2), create_video(2, 1)];
+        let mut watched = library_item.state.watched_bitfield(&videos);
+        watched.set_video(video_id, true);
+        library_item.state.watched = Some(watched.into());
+
+        let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+            TestModel {
+                ctx: Ctx {
+                    library: LibraryBucket {
+                        uid: None,
+                        items: vec![("tt123456".into(), library_item)]
+                            .into_iter()
+                            .collect(),
+                    },
+                    ..Default::default()
+                },
+                player: Player::default(),
+            },
+            vec![],
+            1000,
+        );
+        TestEnv::run(|| {
+            runtime.dispatch(RuntimeAction {
+                field: None,
+                action: Action::Load(ActionLoad::Player(Box::new(Selected {
+                    stream: create_stream(),
+                    stream_request: Some(make_stream_request(video_id)),
+                    meta_request: Some(make_meta_request()),
+                    subtitles_path: None,
+                }))),
+            });
+        });
+        TestEnv::run(|| {
+            runtime.dispatch(RuntimeAction {
+                field: None,
+                action: Action::Player(ActionPlayer::MarkSeasonAsWatched(season, true)),
+            });
+        });
+
+        let model = runtime.model().unwrap();
+        let library_item = model.ctx.library.items.get("tt123456").unwrap();
+        assert_eq!(library_item.state.video_id.as_deref(), Some(video_id));
+        assert_eq!(library_item.state.time_offset, 600_000);
+        assert_eq!(library_item.state.time_watched, 600_000);
+        let watched = library_item.state.watched_bitfield(&videos);
+        assert!(videos
+            .iter()
+            .filter(|video| video.series_info.as_ref().unwrap().season == season)
+            .all(|video| watched.get_video(&video.id)));
+    }
 }
 
 #[test]

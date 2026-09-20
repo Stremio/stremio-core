@@ -818,15 +818,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         match meta_item {
                             Some(meta_item) => {
                                 let videos = meta_item.videos_by_season(*season);
-                                let has_videos = !videos.is_empty();
                                 let mut library_item = library_item.to_owned();
                                 let watched = library_item.mark_videos_as_watched::<E>(
                                     watched,
                                     videos,
                                     *is_watched,
                                 );
-                                if *is_watched && has_videos {
+                                if *is_watched {
                                     library_item.reconcile_series_resume_after_watched_change(
+                                        *season,
                                         &watched,
                                         meta_item,
                                         &E::now(),
