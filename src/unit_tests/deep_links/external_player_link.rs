@@ -1,7 +1,7 @@
 use crate::constants::{BASE64, URI_COMPONENT_ENCODE_SET};
 use crate::deep_links::ExternalPlayerLink;
 use crate::types::profile::Settings;
-use crate::types::resource::{Stream, StreamSource};
+use crate::types::resource::{Stream, StreamBehaviorHints, StreamSource};
 use base64::Engine;
 use percent_encoding::utf8_percent_encode;
 use std::str::FromStr;
@@ -305,11 +305,14 @@ fn external_player_link_with_infuse() {
         source: StreamSource::Url {
             url: Url::from_str("http://example.com/stream").unwrap(),
         },
-        name: Some("My Movie.mp4".to_string()),
+        name: Some("1080p".to_string()),
         description: None,
         thumbnail: None,
         subtitles: vec![],
-        behavior_hints: Default::default(),
+        behavior_hints: StreamBehaviorHints {
+            filename: Some("Amélie & Friends + 100%.mp4".to_string()),
+            ..Default::default()
+        },
     };
 
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
@@ -326,8 +329,37 @@ fn external_player_link_with_infuse() {
 
     assert_eq!(
         open_player.ios,
-        Some("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url=http%3A%2F%2Fexample.com%2Fstream&filename=My%20Movie.mp4".to_string())
+        Some("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url=http%3A%2F%2Fexample.com%2Fstream&filename=Am%C3%A9lie%20%26%20Friends%20%2B%20100%25.mp4".to_string())
     );
+}
+
+#[test]
+fn external_player_link_with_infuse_without_filename() {
+    let settings = Settings {
+        player_type: Some("infuse".to_string()),
+        ..Default::default()
+    };
+    for filename in [None, Some(String::new())] {
+        let stream = Stream {
+            source: StreamSource::Url {
+                url: Url::from_str("http://example.com/My.Movie.mp4").unwrap(),
+            },
+            name: Some("1080p".to_string()),
+            description: None,
+            thumbnail: None,
+            subtitles: vec![],
+            behavior_hints: StreamBehaviorHints {
+                filename,
+                ..Default::default()
+            },
+        };
+        let epl = ExternalPlayerLink::from((&stream, None, &settings));
+
+        assert_eq!(
+            epl.open_player.unwrap().ios,
+            Some("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url=http%3A%2F%2Fexample.com%2FMy.Movie.mp4".to_string())
+        );
+    }
 }
 
 #[test]

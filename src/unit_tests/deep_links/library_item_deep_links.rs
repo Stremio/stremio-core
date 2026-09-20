@@ -299,9 +299,12 @@ fn library_item_deep_links_infuse_position() {
         },
         behavior_hints: Default::default(),
     };
+    let mut streams_item = TORRENT_STREAMS_ITEM.clone();
+    streams_item.stream.name = None;
+    streams_item.stream.behavior_hints.filename = Some("Ahsoka.S01E05.mkv".to_string());
     let lidl = LibraryItemDeepLinks::from((
         &lib_item,
-        Some(&*TORRENT_STREAMS_ITEM),
+        Some(&streams_item),
         Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
     ));
@@ -315,6 +318,8 @@ fn library_item_deep_links_infuse_position() {
         query_param(ios, "x-success"),
         "stremio:///detail/series/tt13622776/tt13622776%3A1%3A5"
     );
+    assert_eq!(query_param(ios, "x-error"), query_param(ios, "x-success"));
+    assert_eq!(query_param(ios, "filename"), "Ahsoka.S01E05.mkv");
 }
 
 #[test]
