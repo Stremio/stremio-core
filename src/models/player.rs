@@ -139,6 +139,9 @@ pub struct Player {
     /// Whether the selected video has been manually marked as watched
     #[serde(skip_serializing)]
     pub marked_video_as_watched: bool,
+    /// The selected video's season to reconcile when its playback ends.
+    #[serde(skip_serializing)]
+    pub marked_season_as_watched: Option<u32>,
     #[serde(skip_serializing)]
     pub paused: Option<bool>,
     #[serde(skip_serializing)]
@@ -156,6 +159,25 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         let effects = match msg {
             Msg::Action(Action::Load(ActionLoad::Player(selected))) => {
+                let same_video = self.selected.as_ref().is_some_and(|previous| {
+                    previous
+                        .meta_request
+                        .as_ref()
+                        .map(|request| (&request.path.r#type, &request.path.id))
+                        == selected
+                            .meta_request
+                            .as_ref()
+                            .map(|request| (&request.path.r#type, &request.path.id))
+                        && previous
+                            .stream_request
+                            .as_ref()
+                            .map(|request| &request.path.id)
+                            == selected
+                                .stream_request
+                                .as_ref()
+                                .map(|request| &request.path.id)
+                });
+                let reconcile_season = self.marked_season_as_watched.is_some() && !same_video;
                 // make sure we send the correct Trakt event if the model hasn't been unloaded
                 let trakt_event_effects = if self.selected.is_some() {
                     Effects::msg(Msg::Event(Event::TraktPaused {
@@ -174,12 +196,21 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .meta_request
                         .as_ref()
                         .map(|meta_request| &meta_request.path.id)
+                    || reconcile_season
                 {
-                    item_state_update(
+                    let effects = item_state_update::<E>(
                         &mut self.library_item,
                         self.next_video.as_ref(),
                         self.marked_video_as_watched,
-                    )
+                        self.marked_season_as_watched,
+                        &self.meta_item,
+                    );
+                    match &self.library_item {
+                        Some(library_item) if reconcile_season => effects.join(Effects::msg(
+                            Msg::Internal(Internal::UpdateLibraryItem(library_item.to_owned())),
+                        )),
+                        _ => effects,
+                    }
                 } else {
                     Effects::none().unchanged()
                 };
@@ -263,11 +294,16 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.library,
                 );
 
-                let library_item_state_effects = library_item_state_update(
-                    &mut self.library_item,
-                    self.next_video.as_ref(),
-                    &self.selected,
-                );
+                let library_item_state_effects = if reconcile_season {
+                    // Wait for the reconciled item instead of publishing the old ctx snapshot.
+                    Effects::none().unchanged()
+                } else {
+                    library_item_state_update(
+                        &mut self.library_item,
+                        self.next_video.as_ref(),
+                        &self.selected,
+                    )
+                };
 
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
@@ -320,6 +356,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.ended = false;
                 self.paused = None;
                 self.marked_video_as_watched = false;
+                if !same_video {
+                    self.marked_season_as_watched = None;
+                }
                 trakt_event_effects
                     .join(item_state_update_effects)
                     .join(selected_effects)
@@ -369,10 +408,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     None,
                 );
 
-                let item_state_update_effects = item_state_update(
+                let item_state_update_effects = item_state_update::<E>(
                     &mut self.library_item,
                     self.next_video.as_ref(),
                     self.marked_video_as_watched,
+                    self.marked_season_as_watched,
+                    &self.meta_item,
                 );
                 let push_to_library_effects = match &self.library_item {
                     Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
@@ -403,6 +444,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.ended = false;
                 self.paused = None;
                 self.marked_video_as_watched = false;
+                self.marked_season_as_watched = None;
 
                 trakt_event_effects
                     .join(seek_history_effects)
@@ -797,6 +839,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                             .map(|stream_request| &stream_request.path.id);
                         if selected_video_id == Some(&video.id) {
                             self.marked_video_as_watched = *is_watched;
+                            if !is_watched {
+                                self.marked_season_as_watched = None;
+                            }
                         }
                         let mut library_item = library_item.to_owned();
                         library_item.mark_video_as_watched::<E>(watched, video, *is_watched);
@@ -809,16 +854,29 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             Msg::Action(Action::Player(ActionPlayer::MarkSeasonAsWatched(season, is_watched))) => {
                 match (&self.library_item, &self.watched) {
                     (Some(library_item), Some(watched)) => {
-                        // Find videos of given season from the meta item loadable
-                        let videos = self
+                        let meta_item = self
                             .meta_item
                             .as_ref()
                             .and_then(|meta_item| meta_item.content.as_ref())
-                            .and_then(|meta_item| meta_item.ready())
-                            .map(|meta_item| meta_item.videos_by_season(*season));
+                            .and_then(|meta_item| meta_item.ready());
 
-                        match videos {
-                            Some(videos) => {
+                        match meta_item {
+                            Some(meta_item) => {
+                                let videos = meta_item.videos_by_season(*season);
+                                let selected_video_id = self
+                                    .selected
+                                    .as_ref()
+                                    .and_then(|selected| selected.stream_request.as_ref())
+                                    .map(|request| &request.path.id);
+                                if videos
+                                    .iter()
+                                    .any(|video| Some(&video.id) == selected_video_id)
+                                {
+                                    self.marked_season_as_watched = is_watched.then_some(*season);
+                                    if !is_watched {
+                                        self.marked_video_as_watched = false;
+                                    }
+                                }
                                 let mut library_item = library_item.to_owned();
                                 library_item.mark_videos_as_watched::<E>(
                                     watched,
@@ -1146,17 +1204,32 @@ fn push_to_library<E: Env + 'static>(
     }
 }
 
-fn item_state_update(
+fn item_state_update<E: Env>(
     library_item: &mut Option<LibraryItem>,
     next_video: Option<&Video>,
     marked_video_as_watched: bool,
+    marked_season_as_watched: Option<u32>,
+    meta_item: &Option<ResourceLoadable<MetaItem>>,
 ) -> Effects {
-    match library_item {
-        Some(library_item) if library_item.is_live() => {
+    let meta_item = meta_item
+        .as_ref()
+        .and_then(|meta_item| meta_item.content.as_ref())
+        .and_then(|content| content.ready());
+    match (library_item, marked_season_as_watched, meta_item) {
+        (Some(library_item), _, _) if library_item.is_live() => {
             library_item.state.time_offset = 0;
             library_item.state.video_id = Some(library_item.id.clone());
         }
-        Some(library_item)
+        (Some(library_item), Some(season), Some(meta_item)) => {
+            let watched = library_item.state.watched_bitfield(&meta_item.videos);
+            library_item.reconcile_series_resume_after_watched_change(
+                season,
+                &watched,
+                meta_item,
+                &E::now(),
+            );
+        }
+        (Some(library_item), _, _)
             if marked_video_as_watched
                 || library_item.state.time_offset as f64
                     > library_item.state.duration as f64 * CREDITS_THRESHOLD_COEF =>
