@@ -970,7 +970,19 @@
 <a href="#969" id="969">969</a>
 <a href="#970" id="970">970</a>
 <a href="#971" id="971">971</a>
-<a href="#972" id="972">972</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{borrow::Cow, marker::PhantomData};
+<a href="#972" id="972">972</a>
+<a href="#973" id="973">973</a>
+<a href="#974" id="974">974</a>
+<a href="#975" id="975">975</a>
+<a href="#976" id="976">976</a>
+<a href="#977" id="977">977</a>
+<a href="#978" id="978">978</a>
+<a href="#979" id="979">979</a>
+<a href="#980" id="980">980</a>
+<a href="#981" id="981">981</a>
+<a href="#982" id="982">982</a>
+<a href="#983" id="983">983</a>
+<a href="#984" id="984">984</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{borrow::Cow, marker::PhantomData};
 
 <span class="kw">use </span>chrono::{DateTime, Duration, Utc};
 <span class="kw">use </span>enclose::enclose;
@@ -1157,19 +1169,31 @@
                 is_watched,
             ))) =&gt; <span class="kw">match </span>(<span class="kw-2">&amp;</span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span><span class="self">self</span>.watched) {
                 (<span class="prelude-val">Some</span>(library_item), <span class="prelude-val">Some</span>(watched)) =&gt; {
-                    <span class="comment">// Find videos of given season from the first ready meta item loadable
-                    </span><span class="kw">let </span>videos = <span class="self">self
+                    <span class="comment">// Find the first ready meta item and mark all videos from the requested season.
+                    </span><span class="kw">let </span>meta_item = <span class="self">self
                         </span>.meta_items
                         .iter()
                         .find(|meta_item| <span class="macro">matches!</span>(<span class="kw-2">&amp;</span>meta_item.content, <span class="prelude-val">Some</span>(Loadable::Ready(<span class="kw">_</span>))))
                         .and_then(|meta_item| meta_item.content.as_ref())
-                        .and_then(|meta_item| meta_item.ready())
-                        .map(|meta_item| meta_item.videos_by_season(<span class="kw-2">*</span>season));
+                        .and_then(|meta_item| meta_item.ready());
 
-                    <span class="kw">match </span>videos {
-                        <span class="prelude-val">Some</span>(videos) =&gt; {
+                    <span class="kw">match </span>meta_item {
+                        <span class="prelude-val">Some</span>(meta_item) =&gt; {
+                            <span class="kw">let </span>videos = meta_item.videos_by_season(<span class="kw-2">*</span>season);
                             <span class="kw">let </span><span class="kw-2">mut </span>library_item = library_item.to_owned();
-                            library_item.mark_videos_as_watched::&lt;E&gt;(watched, videos, <span class="kw-2">*</span>is_watched);
+                            <span class="kw">let </span>watched = library_item.mark_videos_as_watched::&lt;E&gt;(
+                                watched,
+                                videos,
+                                <span class="kw-2">*</span>is_watched,
+                            );
+                            <span class="kw">if </span><span class="kw-2">*</span>is_watched {
+                                library_item.reconcile_series_resume_after_watched_change(
+                                    <span class="kw-2">*</span>season,
+                                    <span class="kw-2">&amp;</span>watched,
+                                    meta_item,
+                                    <span class="kw-2">&amp;</span>E::now(),
+                                );
+                            }
 
                             Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                                 .unchanged()
