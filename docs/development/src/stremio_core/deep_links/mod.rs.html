@@ -869,7 +869,28 @@
 <a href="#868" id="868">868</a>
 <a href="#869" id="869">869</a>
 <a href="#870" id="870">870</a>
-<a href="#871" id="871">871</a></pre></div><pre class="rust"><code><span class="kw">use </span>chrono::NaiveDate;
+<a href="#871" id="871">871</a>
+<a href="#872" id="872">872</a>
+<a href="#873" id="873">873</a>
+<a href="#874" id="874">874</a>
+<a href="#875" id="875">875</a>
+<a href="#876" id="876">876</a>
+<a href="#877" id="877">877</a>
+<a href="#878" id="878">878</a>
+<a href="#879" id="879">879</a>
+<a href="#880" id="880">880</a>
+<a href="#881" id="881">881</a>
+<a href="#882" id="882">882</a>
+<a href="#883" id="883">883</a>
+<a href="#884" id="884">884</a>
+<a href="#885" id="885">885</a>
+<a href="#886" id="886">886</a>
+<a href="#887" id="887">887</a>
+<a href="#888" id="888">888</a>
+<a href="#889" id="889">889</a>
+<a href="#890" id="890">890</a>
+<a href="#891" id="891">891</a>
+<a href="#892" id="892">892</a></pre></div><pre class="rust"><code><span class="kw">use </span>chrono::NaiveDate;
 <span class="kw">use </span>percent_encoding::utf8_percent_encode;
 <span class="kw">use </span>regex::Regex;
 <span class="kw">use </span>serde::Serialize;
@@ -951,26 +972,37 @@
 
 <span class="kw">fn </span>infuse_open_player_link(
     streaming_url: <span class="kw-2">&amp;</span>str,
-    callback_url: <span class="kw-2">&amp;</span>str,
+    success_url: <span class="kw-2">&amp;</span>str,
+    error_url: <span class="kw-2">&amp;</span>str,
     position: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+    filename: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;,
 ) -&gt; String {
-    <span class="kw">let </span>callback_url = utf8_percent_encode(callback_url, URI_COMPONENT_ENCODE_SET);
+    <span class="kw">let </span>success_url = utf8_percent_encode(success_url, URI_COMPONENT_ENCODE_SET);
+    <span class="kw">let </span>error_url = utf8_percent_encode(error_url, URI_COMPONENT_ENCODE_SET);
     <span class="kw">let </span>url_encoded = utf8_percent_encode(streaming_url, URI_COMPONENT_ENCODE_SET);
     <span class="kw">let </span>position = position
         .map(|position| <span class="macro">format!</span>(<span class="string">"&amp;position={position}"</span>))
         .unwrap_or_default();
 
-    <span class="macro">format!</span>(
-        <span class="string">"infuse://x-callback-url/play?x-success={callback_url}&amp;x-error={callback_url}&amp;url={url_encoded}{position}"
-    </span>)
+    <span class="kw">let </span><span class="kw-2">mut </span>url = <span class="macro">format!</span>(
+        <span class="string">"infuse://x-callback-url/play?x-success={success_url}&amp;x-error={error_url}&amp;url={url_encoded}{position}"
+    </span>);
+
+    <span class="kw">if let </span><span class="prelude-val">Some</span>(filename) = filename.filter(|filename| !filename.is_empty()) {
+        <span class="kw">let </span>filename_encoded = utf8_percent_encode(filename, URI_COMPONENT_ENCODE_SET);
+        url.push_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"&amp;filename={filename_encoded}"</span>));
+    }
+    url
 }
 
 <span class="kw">fn </span>infuse_open_player(
     streaming_url: <span class="kw-2">&amp;</span>str,
-    callback_url: <span class="kw-2">&amp;</span>str,
+    success_url: <span class="kw-2">&amp;</span>str,
+    error_url: <span class="kw-2">&amp;</span>str,
     position: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+    filename: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;,
 ) -&gt; OpenPlayerLink {
-    <span class="kw">let </span>link = infuse_open_player_link(streaming_url, callback_url, position);
+    <span class="kw">let </span>link = infuse_open_player_link(streaming_url, success_url, error_url, position, filename);
 
     OpenPlayerLink {
         ios: <span class="prelude-val">Some</span>(link.clone()),
@@ -1068,13 +1100,13 @@
                         visionos: <span class="prelude-val">Some</span>(http_regex.replace(url.as_str(), <span class="string">"outplayer://"</span>).to_string()),
                         ..Default::default()
                     }),
-                    <span class="string">"infuse" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
-                        ios: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&amp;x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&amp;url={url_encoded}"</span>)),
-                        macos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&amp;x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&amp;url={url_encoded}"</span>)),
-                        visionos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&amp;x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&amp;url={url_encoded}"</span>)),
-                        tvos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&amp;x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&amp;url={url_encoded}"</span>)),
-                       ..Default::default()
-                    }),
+                    <span class="string">"infuse" </span>=&gt; <span class="prelude-val">Some</span>(infuse_open_player(
+                        url.as_str(),
+                        <span class="string">"stremio:///player?externalPlayerSuccess=1"</span>,
+                        <span class="string">"stremio:///player?externalPlayerSuccess=0"</span>,
+                        <span class="prelude-val">None</span>,
+                        stream.behavior_hints.filename.as_deref(),
+                    )),
                     <span class="string">"vidhub" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
                         ios: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&amp;on-failed=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&amp;url={url_encoded}"</span>)),
                         macos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&amp;on-failed=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&amp;url={url_encoded}"</span>)),
@@ -1223,8 +1255,13 @@
                             utf8_percent_encode(<span class="kw-2">&amp;</span>item.meta_id, URI_COMPONENT_ENCODE_SET),
                             utf8_percent_encode(<span class="kw-2">&amp;</span>item.video_id, URI_COMPONENT_ENCODE_SET)
                         );
-                        external_player.open_player =
-                            <span class="prelude-val">Some</span>(infuse_open_player(streaming, <span class="kw-2">&amp;</span>callback_url, position));
+                        external_player.open_player = <span class="prelude-val">Some</span>(infuse_open_player(
+                            streaming,
+                            <span class="kw-2">&amp;</span>callback_url,
+                            <span class="kw-2">&amp;</span>callback_url,
+                            position,
+                            item.stream.behavior_hints.filename.as_deref(),
+                        ));
                     }
                 }
                 external_player
@@ -1510,8 +1547,13 @@
             ExternalPlayerLink::from((stream, streaming_server_url, settings));
         <span class="kw">if </span>settings.player_type.as_deref() == <span class="prelude-val">Some</span>(<span class="string">"infuse"</span>) {
             <span class="kw">if let </span><span class="prelude-val">Some</span>(streaming) = external_player.streaming.as_deref() {
-                external_player.open_player =
-                    <span class="prelude-val">Some</span>(infuse_open_player(streaming, <span class="kw-2">&amp;</span>callback_url, <span class="prelude-val">None</span>));
+                external_player.open_player = <span class="prelude-val">Some</span>(infuse_open_player(
+                    streaming,
+                    <span class="kw-2">&amp;</span>callback_url,
+                    <span class="kw-2">&amp;</span>callback_url,
+                    <span class="prelude-val">None</span>,
+                    stream.behavior_hints.filename.as_deref(),
+                ));
             }
         }
 
