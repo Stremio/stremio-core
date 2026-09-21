@@ -16,6 +16,9 @@ use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
 use crate::types::rating::{RatingGetStatusResponse, RatingSendResponse};
 use crate::types::resource::MetaItemId;
+use crate::types::skip_segments::{
+    SkipSegmentCacheEntry, SkipSegmentCandidate, SkipSegmentContext, SkipSegmentSource,
+};
 use crate::types::streaming_server::{
     DeviceInfo, GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics, StatisticsRequest,
 };
@@ -158,6 +161,18 @@ pub enum Internal {
     SeekLogsResult(SeekLogRequest, Result<SuccessResponse, CtxError>),
     /// Retrieve the skip gaps for skipping intro and outro.
     SkipGapsResult(SkipGapsRequest, Result<SkipGapsResponse, CtxError>),
+    /// Result from an independent skip-segment provider.
+    SkipSegmentsResult(
+        SkipSegmentSource,
+        SkipSegmentContext,
+        Result<Vec<SkipSegmentCandidate>, EnvError>,
+    ),
+    SkipSegmentsCacheResult(
+        SkipSegmentSource,
+        SkipSegmentContext,
+        Result<Option<SkipSegmentCacheEntry>, EnvError>,
+    ),
+    SkipSegmentsCacheWriteResult(Result<(), EnvError>),
     /// The result of querying the data for LocalSearch
     LoadLocalSearchResult(Url, Result<Vec<Searchable>, EnvError>),
     /// Result for getModal request

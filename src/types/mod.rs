@@ -9,6 +9,7 @@ pub mod rating;
 pub mod resource;
 pub mod search_history;
 pub mod server_urls;
+pub mod skip_segments;
 pub mod streaming_server;
 pub mod streams;
 pub mod torrent;

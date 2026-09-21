@@ -16,4 +16,5 @@ pub mod live_tv_guide;
 pub mod local_search;
 pub mod meta_details;
 pub mod player;
+pub mod skip_segments;
 pub mod streaming_server;

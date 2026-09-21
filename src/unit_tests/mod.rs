@@ -13,4 +13,5 @@ mod live_tv_guide;
 mod meta_details;
 mod player;
 mod serde;
+mod skip_segments;
 mod streaming_server;
