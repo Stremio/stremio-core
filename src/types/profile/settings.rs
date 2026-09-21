@@ -19,6 +19,8 @@ pub struct Settings {
     pub video_mode: Option<String>,
     pub frame_rate_matching_strategy: FrameRateMatchingStrategy,
     pub next_video_notification_duration: u32,
+    #[serde(default = "default_skip_intro")]
+    pub skip_intro: bool,
     pub audio_passthrough: bool,
     pub audio_language: Option<String>,
     pub secondary_audio_language: Option<String>,
@@ -72,6 +74,7 @@ impl Default for Settings {
             gamepad_support: false,
             frame_rate_matching_strategy: FrameRateMatchingStrategy::Disabled,
             next_video_notification_duration: 35000,
+            skip_intro: true,
             audio_passthrough: false,
             streaming_server_url: STREAMING_SERVER_URL.to_owned(),
             interface_language: "eng".to_owned(),
@@ -102,4 +105,8 @@ impl Default for Settings {
             discord_rpc_enabled: false,
         }
     }
+}
+
+fn default_skip_intro() -> bool {
+    true
 }
