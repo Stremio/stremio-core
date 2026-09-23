@@ -1,6 +1,7 @@
 use crate::constants::{BASE64, URI_COMPONENT_ENCODE_SET};
 use crate::deep_links::StreamDeepLinks;
 use crate::types::addon::{ResourcePath, ResourceRequest};
+use crate::types::library::{LibraryItem, LibraryItemState};
 use crate::types::profile::Settings;
 use crate::types::resource::{Stream, StreamBehaviorHints, StreamProxyHeaders, StreamSource};
 use base64::Engine;
@@ -181,6 +182,69 @@ fn stream_deep_links_infuse_callback_returns_to_selected_item() {
         "stremio:///detail/series/tt123/tt123%3A1%3A2"
     );
     assert_eq!(query_param(ios, "filename"), "Example.Series.S01E02.mkv");
+}
+
+#[test]
+fn stream_deep_links_infuse_resumes_library_item_position() {
+    let stream = Stream {
+        source: StreamSource::Url {
+            url: Url::from_str(HTTP_STR_URL).unwrap(),
+        },
+        name: None,
+        description: None,
+        thumbnail: None,
+        subtitles: vec![],
+        behavior_hints: Default::default(),
+    };
+    let meta_request = ResourceRequest {
+        base: Url::from_str("http://meta.addon").unwrap(),
+        path: ResourcePath::without_extra("meta", "series", "tt123"),
+    };
+    let library_item = LibraryItem {
+        id: "tt123".to_owned(),
+        name: "Example".to_owned(),
+        r#type: "series".to_owned(),
+        poster: None,
+        poster_shape: Default::default(),
+        removed: false,
+        temp: false,
+        ctime: None,
+        mtime: Default::default(),
+        state: LibraryItemState {
+            video_id: Some("tt123:1:2".to_owned()),
+            time_offset: 125_500,
+            ..Default::default()
+        },
+        behavior_hints: Default::default(),
+    };
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
+    let settings = Settings {
+        player_type: Some("infuse".to_string()),
+        streaming_server_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
+        ..Default::default()
+    };
+    let infuse_link = |video_id: &str| {
+        let stream_request = ResourceRequest {
+            base: Url::from_str("http://stream.addon").unwrap(),
+            path: ResourcePath::without_extra("stream", "series", video_id),
+        };
+        StreamDeepLinks::from((
+            &stream,
+            &stream_request,
+            &meta_request,
+            streaming_server_url.as_ref(),
+            &settings,
+            Some(&library_item),
+        ))
+        .external_player
+        .open_player
+        .unwrap()
+        .ios
+        .unwrap()
+    };
+
+    assert_eq!(query_param(&infuse_link("tt123:1:2"), "position"), "125");
+    assert!(!infuse_link("tt123:1:3").contains("position="));
 }
 
 #[test]

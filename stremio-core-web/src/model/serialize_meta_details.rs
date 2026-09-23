@@ -267,6 +267,7 @@ pub fn serialize_meta_details<E: Env + 'static>(
                                                 &meta_item.request,
                                                 streaming_server.base_url.as_ref(),
                                                 &ctx.profile.settings,
+                                                meta_details.library_item.as_ref(),
                                             ))
                                         },
                                     )

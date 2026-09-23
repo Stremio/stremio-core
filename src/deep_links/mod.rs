@@ -645,6 +645,41 @@ impl
             &Settings,
         ),
     ) -> Self {
+        StreamDeepLinks::from((
+            stream,
+            stream_request,
+            meta_request,
+            streaming_server_url,
+            settings,
+            None,
+        ))
+    }
+}
+
+impl
+    From<(
+        &Stream,
+        &ResourceRequest,
+        &ResourceRequest,
+        Option<&Url>,
+        &Settings,
+        Option<&LibraryItem>,
+    )> for StreamDeepLinks
+{
+    fn from(
+        (stream, stream_request, meta_request, streaming_server_url, settings, library_item): (
+            &Stream,
+            &ResourceRequest,
+            &ResourceRequest,
+            Option<&Url>,
+            &Settings,
+            Option<&LibraryItem>,
+        ),
+    ) -> Self {
+        let position = library_item
+            .filter(|item| item.state.video_id.as_ref() == Some(&stream_request.path.id))
+            .and_then(|item| item.state.time_offset.checked_div(1000))
+            .filter(|position| *position > 0);
         let callback_url = format!(
             "stremio:///detail/{}/{}/{}",
             utf8_percent_encode(&meta_request.path.r#type, URI_COMPONENT_ENCODE_SET),
@@ -659,7 +694,7 @@ impl
                     streaming,
                     &callback_url,
                     &callback_url,
-                    None,
+                    position,
                     stream.behavior_hints.filename.as_deref(),
                 ));
             }
