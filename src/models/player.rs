@@ -820,11 +820,34 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             }
             Msg::Action(Action::Player(ActionPlayer::Ended)) if self.selected.is_some() => {
                 self.ended = true;
+
+                // A genuine player Ended event is stronger completion evidence than seek distance.
+                // Seeking alone still does not accumulate watched time. If the user seeks into the
+                // credits and the player actually reaches Ended, establish watched state before the
+                // normal unload/resume cleanup runs.
+                let completion_effects = if mark_ended_item_as_watched::<E>(
+                    &mut self.library_item,
+                    &self.selected,
+                    &mut self.watched,
+                ) {
+                    self.marked_video_as_watched = true;
+                    match &self.library_item {
+                        Some(library_item) => Effects::msg(Msg::Internal(
+                            Internal::UpdateLibraryItem(library_item.to_owned()),
+                        ))
+                        .unchanged(),
+                        None => Effects::none().unchanged(),
+                    }
+                } else {
+                    Effects::none().unchanged()
+                };
+
                 Effects::msg(Msg::Event(Event::PlayerEnded {
                     context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
                     is_binge_enabled: ctx.profile.settings.binge_watching,
                     is_playing_next_video: self.next_video.is_some(),
                 }))
+                .join(completion_effects)
                 .unchanged()
             }
             Msg::Action(Action::Player(ActionPlayer::MarkVideoAsWatched(video, is_watched))) => {
@@ -1202,6 +1225,46 @@ fn push_to_library<E: Env + 'static>(
     } else {
         Effects::none().unchanged()
     }
+}
+
+fn mark_ended_item_as_watched<E: Env>(
+    library_item: &mut Option<LibraryItem>,
+    selected: &Option<Selected>,
+    watched: &mut Option<WatchedBitField>,
+) -> bool {
+    let Some(library_item) = library_item.as_mut() else {
+        return false;
+    };
+
+    if library_item.is_live()
+        || !matches!(library_item.r#type.as_str(), "movie" | "series")
+        || library_item.state.duration == 0
+        || library_item.state.flagged_watched != 0
+        || library_item.state.time_offset as f64
+            <= library_item.state.duration as f64 * CREDITS_THRESHOLD_COEF
+    {
+        return false;
+    }
+
+    if library_item.r#type == "series" {
+        let Some(video_id) = selected
+            .as_ref()
+            .and_then(|selected| selected.stream_request.as_ref())
+            .map(|stream_request| stream_request.path.id.as_str())
+        else {
+            return false;
+        };
+        let Some(watched) = watched.as_mut() else {
+            return false;
+        };
+        watched.set_video(video_id, true);
+        library_item.state.watched = Some(watched.to_owned().into());
+    }
+
+    library_item.state.flagged_watched = 1;
+    library_item.state.times_watched = library_item.state.times_watched.saturating_add(1);
+    library_item.state.last_watched = Some(E::now());
+    true
 }
 
 fn item_state_update<E: Env>(
