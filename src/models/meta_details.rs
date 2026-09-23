@@ -228,6 +228,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 &self.watched,
                 *time,
             ),
+            Msg::Action(Action::MetaDetails(ActionMetaDetails::ExternalPlayerStreamOpened(
+                stream,
+            ))) => external_player_stream_opened(
+                stream,
+                &self.meta_items,
+                &self.meta_streams,
+                &self.streams,
+            ),
             Msg::Action(Action::MetaDetails(ActionMetaDetails::Rate(rating)))
                 if self.rating_info.is_some() =>
             {
@@ -522,6 +530,36 @@ fn external_player_progress_update<E: Env + 'static>(
     }
 
     Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item))).unchanged()
+}
+
+fn external_player_stream_opened(
+    stream: &Stream,
+    meta_items: &[ResourceLoadable<MetaItem>],
+    meta_streams: &[ResourceLoadable<Vec<Stream>>],
+    streams: &[ResourceLoadable<Vec<Stream>>],
+) -> Effects {
+    let meta_item = meta_items
+        .iter()
+        .find(|meta_item| matches!(meta_item.content, Some(Loadable::Ready(_))));
+    let stream_request = meta_streams
+        .iter()
+        .chain(streams)
+        .find(|resource| match &resource.content {
+            Some(Loadable::Ready(streams)) => streams.contains(stream),
+            _ => false,
+        })
+        .map(|resource| resource.request.to_owned());
+    match (meta_item, stream_request) {
+        (Some(meta_item), Some(stream_request)) => {
+            Effects::msg(Msg::Internal(Internal::StreamLoaded {
+                stream: stream.to_owned(),
+                stream_request: Some(stream_request),
+                meta_item: meta_item.to_owned(),
+            }))
+            .unchanged()
+        }
+        _ => Effects::none().unchanged(),
+    }
 }
 
 fn library_item_sync(library_item: &Option<LibraryItem>, profile: &Profile) -> Effects {
