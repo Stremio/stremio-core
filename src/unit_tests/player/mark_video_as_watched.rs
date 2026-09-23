@@ -1036,4 +1036,3 @@ fn seek_into_credits_without_ended_does_not_mark_watched() {
     assert_eq!(item.state.times_watched, 0);
     assert_eq!(item.state.flagged_watched, 0);
 }
-
