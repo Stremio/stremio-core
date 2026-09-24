@@ -96,7 +96,7 @@ impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
         let request = Request::get(url).body(()).expect("request builder failed");
         E::fetch(request)
     }
-    fn manifest(&self) -> TryEnvFuture<Manifest> {
+    fn manifest(&self) -> TryEnvFuture<(Manifest, Option<Url>)> {
         if self.transport_url.path().ends_with(ADDON_LEGACY_PATH) {
             return AddonLegacyTransport::<E>::new(&self.transport_url).manifest();
         }
@@ -104,6 +104,6 @@ impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
         let request = Request::get(self.transport_url.as_str())
             .body(())
             .expect("request builder failed");
-        E::fetch(request)
+        E::fetch_with_url(request)
     }
 }

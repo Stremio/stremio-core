@@ -62,15 +62,18 @@ impl<E: Env + 'static> UpdateWithCtx<E> for AddonDetails {
                     .join(local_addon_effects)
                     .join(remote_addon_effects)
             }
-            Msg::Internal(Internal::ManifestRequestResult(transport_url, result)) => {
-                descriptor_update::<E>(
-                    &mut self.remote_addon,
-                    DescriptorAction::ManifestRequestResult {
-                        transport_url,
-                        result,
-                    },
-                )
-            }
+            Msg::Internal(Internal::ManifestRequestResult {
+                transport_url,
+                resolved_transport_url,
+                result,
+            }) => descriptor_update::<E>(
+                &mut self.remote_addon,
+                DescriptorAction::ManifestRequestResult {
+                    transport_url,
+                    resolved_transport_url,
+                    result,
+                },
+            ),
             Msg::Internal(Internal::ProfileChanged) => {
                 local_addon_update(&mut self.local_addon, &self.selected, &ctx.profile)
             }
