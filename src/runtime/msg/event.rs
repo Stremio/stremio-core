@@ -109,6 +109,12 @@ pub enum Event {
         transport_url: Url,
         id: String,
     },
+    UserAddonsUpgraded {
+        upgraded: Vec<(Url, String)>,
+        up_to_date: Vec<Url>,
+        skipped: Vec<Url>,
+        failed: Vec<(Url, CtxError)>,
+    },
     AddonUninstalled {
         transport_url: Url,
         id: String,
