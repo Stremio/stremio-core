@@ -356,7 +356,9 @@
 <a href="#355" id="355">355</a>
 <a href="#356" id="356">356</a>
 <a href="#357" id="357">357</a>
-<a href="#358" id="358">358</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
+<a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
 
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>url::Url;
@@ -381,7 +383,7 @@
         player::{AudioPreference, SubtitlePreference, VideoScale},
         profile::{AuthKey, Password, Settings <span class="kw">as </span>ProfileSettings},
         rating::Rating,
-        resource::{MetaItemId, MetaItemPreview, Video},
+        resource::{MetaItemId, MetaItemPreview, Stream, Video},
         streaming_server::{
             Settings <span class="kw">as </span>StreamingServerSettings,
             StatisticsRequest <span class="kw">as </span>StreamingServerStatisticsRequest,
@@ -531,6 +533,8 @@
     /// `time` is in milliseconds.
     </span><span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>ExternalPlayerProgressChanged { time: u64 },
+    <span class="doccomment">/// Records the given [`Stream`] as the last used one after opening it in an external player.
+    </span>ExternalPlayerStreamOpened(Stream),
     <span class="doccomment">/// Rate the current meta item
     </span>Rate(<span class="prelude-ty">Option</span>&lt;Rating&gt;),
 }
