@@ -1,4 +1,4 @@
-use crate::types::resource::{Stream, StreamBehaviorHints, StreamSource, Subtitles};
+use crate::types::resource::{Stream, StreamBehaviorHints, StreamSource, Subtitles, Tag};
 use crate::unit_tests::serde::default_tokens_ext::{DefaultFlattenTokens, DefaultTokens};
 use serde_test::{assert_de_tokens, assert_tokens, Configure, Token};
 
@@ -12,6 +12,7 @@ fn stream() {
                 description: None,
                 thumbnail: None,
                 subtitles: vec![],
+                tags: vec![],
                 behavior_hints: StreamBehaviorHints::default(),
             },
             Stream {
@@ -20,6 +21,7 @@ fn stream() {
                 description: Some("description".to_owned()),
                 thumbnail: Some("thumbnail".to_owned()),
                 subtitles: vec![Subtitles::default()],
+                tags: vec![Tag::default()],
                 behavior_hints: StreamBehaviorHints {
                     not_web_ready: true,
                     ..StreamBehaviorHints::default()
@@ -51,6 +53,13 @@ fn stream() {
             Subtitles::default_tokens(),
             vec![
                 Token::SeqEnd,
+                Token::Str("tags"),
+                Token::Some,
+                Token::Seq { len: Some(1) },
+            ],
+            Tag::default_tokens(),
+            vec![
+                Token::SeqEnd,
                 Token::Str("behaviorHints"),
                 Token::Some,
                 Token::Map { len: None },
@@ -70,6 +79,7 @@ fn stream() {
             description: None,
             thumbnail: None,
             subtitles: vec![],
+            tags: vec![],
             behavior_hints: StreamBehaviorHints::default(),
         }
         .readable(),
@@ -84,6 +94,8 @@ fn stream() {
                 Token::Str("thumbnail"),
                 Token::None,
                 Token::Str("subtitles"),
+                Token::None,
+                Token::Str("tags"),
                 Token::None,
                 Token::Str("behaviorHints"),
                 Token::None,
