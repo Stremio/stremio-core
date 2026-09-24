@@ -4,7 +4,8 @@ use std::collections::HashMap;
 
 use chrono::{serde::ts_milliseconds, DateTime, Utc};
 use derive_more::TryInto;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
+use serde_json::Value;
 use serde_with::{serde_as, DisplayFromStr};
 use url::Url;
 
@@ -49,8 +50,23 @@ impl<T> From<APIResult<T>> for Result<T, APIError> {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CollectionResponse {
+    #[serde(deserialize_with = "deserialize_addons")]
     pub addons: Vec<Descriptor>,
     pub last_modified: DateTime<Utc>,
+}
+
+pub fn deserialize_addons<'de, D>(deserializer: D) -> Result<Vec<Descriptor>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let values: Vec<Value> = Deserialize::deserialize(deserializer)?;
+
+    let addons: Vec<Descriptor> = values
+        .into_iter()
+        .filter_map(|v| serde_json::from_value(v).ok())
+        .collect();
+
+    Ok(addons)
 }
 
 #[derive(Serialize, Deserialize)]
