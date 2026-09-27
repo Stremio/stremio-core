@@ -45,7 +45,7 @@ pub struct ArchiveStreamOptions {
 #[serde(rename_all = "camelCase")]
 pub struct StatisticsRequest {
     pub info_hash: String,
-    pub file_idx: u16,
+    pub file_idx: Option<u16>,
 }
 
 pub struct CreateTorrentBlobRequest {
@@ -130,6 +130,7 @@ impl From<CreateMagnetRequest> for Request<CreateMagnetBody> {
 /// Filename request to the server.
 ///
 /// `{streaming_sever_url}/{info_hash_url_encoded}/{file_idx_url_encoded}/stats.json`
+/// or, without a file index, `{streaming_sever_url}/{info_hash_url_encoded}/stats.json`
 ///
 ///
 /// Example: `http://127.0.0.1:11470/6d0cdb871b81477d00f53f78529028994b364877/7/stats.json`
@@ -142,15 +143,14 @@ impl From<TorrentStatisticsRequest> for Request<()> {
         let info_hash_encoded = url::form_urlencoded::Serializer::new(String::new())
             .append_key_only(&val.request.info_hash.to_string())
             .finish();
-        let file_idx_encoded = url::form_urlencoded::Serializer::new(String::new())
-            .append_key_only(&val.request.file_idx.to_string())
-            .finish();
+        let path = match val.request.file_idx {
+            Some(file_idx) => format!("{info_hash_encoded}/{file_idx}/stats.json"),
+            None => format!("{info_hash_encoded}/stats.json"),
+        };
 
         let uri = val
             .server_url
-            .join(&format!(
-                "{info_hash_encoded}/{file_idx_encoded}/stats.json"
-            ))
+            .join(&path)
             .expect("Should always be valid url!");
 
         Request::get(uri.as_str())

@@ -92,10 +92,10 @@ pub struct Statistics {
     pub unique: u64,
     pub connection_tries: u64,
     pub peer_search_running: bool,
-    pub stream_len: u64,
+    pub stream_len: Option<u64>,
     /// Filename for torrent
-    pub stream_name: String,
-    pub stream_progress: f64,
+    pub stream_name: Option<String>,
+    pub stream_progress: Option<f64>,
     pub swarm_connections: u64,
     pub swarm_paused: bool,
     pub swarm_size: u64,
