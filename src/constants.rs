@@ -25,6 +25,8 @@ pub const STREAM_RESOURCE_NAME: &str = "stream";
 /// `https://{ADDON_URL}/catalog/...` resource
 pub const CATALOG_RESOURCE_NAME: &str = "catalog";
 pub const SUBTITLES_RESOURCE_NAME: &str = "subtitles";
+pub const PLAYER_RESOURCE_NAME: &str = "player";
+pub const LIBRARY_RESOURCE_NAME: &str = "library";
 pub const ADDON_MANIFEST_PATH: &str = "/manifest.json";
 pub const ADDON_LEGACY_PATH: &str = "/stremio/v1";
 pub const CATALOG_PAGE_SIZE: usize = 100;
