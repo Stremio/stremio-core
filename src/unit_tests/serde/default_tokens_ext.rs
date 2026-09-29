@@ -6,7 +6,7 @@ use crate::types::library::LibraryItemState;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Settings, User};
 use crate::types::resource::{
     MetaItem, MetaItemBehaviorHints, PosterShape, SeriesInfo, StreamBehaviorHints, StreamSource,
-    Subtitles,
+    Subtitles, Tag,
 };
 use crate::types::True;
 use serde_test::Token;
@@ -46,6 +46,22 @@ impl DefaultTokens for LibraryItemState {
             Token::None,
             Token::Str("noNotif"),
             Token::Bool(false),
+            Token::StructEnd,
+        ]
+    }
+}
+
+impl DefaultTokens for Tag {
+    fn default_tokens() -> Vec<Token> {
+        vec![
+            Token::Struct {
+                name: "Tag",
+                len: 2,
+            },
+            Token::Str("name"),
+            Token::Str(""),
+            Token::Str("value"),
+            Token::Str(""),
             Token::StructEnd,
         ]
     }
