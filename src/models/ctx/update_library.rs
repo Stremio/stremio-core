@@ -86,6 +86,9 @@ pub fn update_library<E: Env + 'static>(
             Some(library_item) => {
                 let mut library_item = library_item.to_owned();
                 library_item.state.time_offset = 0;
+                if library_item.is_live() {
+                    library_item.state.last_watched = None;
+                }
 
                 Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                     .join(Effects::msg(Msg::Event(Event::LibraryItemRewinded {
