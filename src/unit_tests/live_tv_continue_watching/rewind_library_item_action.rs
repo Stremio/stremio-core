@@ -1,121 +1,67 @@
-use std::any::Any;
-
 use chrono::{TimeZone, Utc};
-use futures::future;
 use stremio_derive::Model;
-use url::Url;
 
 use crate::{
-    constants::META_RESOURCE_NAME,
     models::{ctx::Ctx, live_tv_continue_watching::LiveTvContinueWatching},
     runtime::{
         msg::{Action, ActionCtx, ActionLoad},
-        EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture,
+        Runtime, RuntimeAction, RuntimeEvent,
     },
     types::{
-        addon::{Descriptor, Manifest, ManifestBehaviorHints, ResourceResponse},
-        library::{LibraryBucket, LibraryItem, LibraryItemState},
+        library::{LibraryBucket, LibraryItem},
         profile::Profile,
-        resource::{MetaItem, MetaItemPreview, Video, VideoEpgInfo},
     },
-    unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, NOW},
+    unit_tests::{
+        live_tv_continue_watching::common::{epg_addon, fetch_handler, library_item},
+        TestEnv, FETCH_HANDLER, NOW,
+    },
 };
 
-#[test]
-fn live_tv_continue_watching_rewind_library_item() {
-    #[derive(Model, Clone, Debug)]
-    #[model(TestEnv)]
-    struct TestModel {
-        ctx: Ctx,
-        live_tv_continue_watching: LiveTvContinueWatching,
-    }
+const CHANNEL_ID: &str = "pure:axn";
 
-    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
-        match &request {
-            Request { url, method, .. }
-                if url == "https://addon/meta/tv/pure%3Aaxn.json" && method == "GET" =>
-            {
-                future::ok(Box::new(ResourceResponse::Meta {
-                    meta: MetaItem {
-                        preview: MetaItemPreview {
-                            id: "pure:axn".to_owned(),
-                            r#type: "tv".to_owned(),
-                            name: "AXN".to_owned(),
-                            ..MetaItemPreview::default()
-                        },
-                        videos: vec![Video {
-                            id: "pure:axn:1".to_owned(),
-                            epg_info: Some(VideoEpgInfo {
-                                start_time: Utc.with_ymd_and_hms(2026, 7, 2, 11, 0, 0).unwrap(),
-                                end_time: Utc.with_ymd_and_hms(2026, 7, 2, 13, 0, 0).unwrap(),
-                                runtime: None,
-                                release_info: None,
-                                genres: vec![],
-                                cast: vec![],
-                                directors: vec![],
-                                links: vec![],
-                                ratings: vec![],
-                            }),
-                            ..Video::default()
-                        }],
-                    },
-                }) as Box<dyn Any + Send>)
-                .boxed_env()
-            }
-            _ => default_fetch_handler(request),
-        }
-    }
+#[derive(Model, Clone, Debug)]
+#[model(TestEnv)]
+struct TestModel {
+    ctx: Ctx,
+    live_tv_continue_watching: LiveTvContinueWatching,
+}
 
-    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+/// A channel that was played but never explicitly saved: temporary and
+/// `removed`, which is how the player stores live channels.
+fn temp_channel() -> LibraryItem {
+    library_item(CHANNEL_ID, "tv", 11, true)
+}
+
+/// The same channel after the user explicitly added it to their library.
+fn saved_channel() -> LibraryItem {
+    LibraryItem {
+        removed: false,
+        temp: false,
+        ..temp_channel()
+    }
+}
+
+/// Boots the row with `channel` in the library and loads it, asserting the
+/// channel is on screen before the dismiss under test.
+fn loaded_row(
+    channel: LibraryItem,
+) -> (
+    Runtime<TestEnv, TestModel>,
+    futures::channel::mpsc::Receiver<RuntimeEvent<TestEnv, TestModel>>,
+) {
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     *NOW.write().unwrap() = Utc.with_ymd_and_hms(2026, 7, 2, 11, 30, 0).unwrap();
 
-    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+    let (runtime, rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
                 profile: Profile {
-                    addons: vec![Descriptor {
-                        transport_url: Url::parse("https://addon/manifest.json").unwrap(),
-                        flags: Default::default(),
-                        manifest: Manifest {
-                            id: "addon".to_owned(),
-                            types: vec!["tv".into()],
-                            resources: vec![META_RESOURCE_NAME.into()],
-                            id_prefixes: None,
-                            behavior_hints: ManifestBehaviorHints {
-                                epg_provider: true,
-                                ..Default::default()
-                            },
-                            ..Default::default()
-                        },
-                    }],
+                    addons: vec![epg_addon()],
                     ..Default::default()
                 },
                 library: LibraryBucket {
                     uid: None,
-                    items: [(
-                        "pure:axn".into(),
-                        LibraryItem {
-                            id: "pure:axn".to_owned(),
-                            name: "AXN".to_owned(),
-                            r#type: "tv".to_owned(),
-                            poster: None,
-                            poster_shape: Default::default(),
-                            removed: true,
-                            temp: true,
-                            ctime: None,
-                            mtime: Utc.with_ymd_and_hms(2026, 7, 2, 11, 0, 0).unwrap(),
-                            state: LibraryItemState {
-                                last_watched: Some(
-                                    Utc.with_ymd_and_hms(2026, 7, 2, 11, 0, 0).unwrap(),
-                                ),
-                                ..Default::default()
-                            },
-                            behavior_hints: Default::default(),
-                        },
-                    )]
-                    .into_iter()
-                    .collect(),
+                    items: [(CHANNEL_ID.into(), channel)].into_iter().collect(),
                 },
                 ..Default::default()
             },
@@ -124,16 +70,13 @@ fn live_tv_continue_watching_rewind_library_item() {
         vec![],
         1000,
     );
-    let dispatch = |action: Action| {
-        TestEnv::run(|| {
-            runtime.dispatch(RuntimeAction {
-                field: None,
-                action,
-            });
-        });
-    };
 
-    dispatch(Action::Load(ActionLoad::LiveTvContinueWatching));
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Load(ActionLoad::LiveTvContinueWatching),
+        });
+    });
     assert_eq!(
         runtime
             .model()
@@ -145,30 +88,120 @@ fn live_tv_continue_watching_rewind_library_item() {
         "the watched channel is in the row"
     );
 
-    dispatch(Action::Ctx(ActionCtx::RewindLibraryItem(
-        "pure:axn".to_owned(),
-    )));
+    (runtime, rx)
+}
+
+fn dispatch(runtime: &Runtime<TestEnv, TestModel>, action: ActionCtx) {
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(action),
+        });
+    });
+}
+
+#[test]
+fn rewind_dismisses_a_temporary_live_channel() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    let (runtime, _rx) = loaded_row(temp_channel());
+
+    dispatch(
+        &runtime,
+        ActionCtx::RewindLibraryItem(CHANNEL_ID.to_owned()),
+    );
+
+    let model = runtime.model().unwrap();
+    let library_item = model
+        .ctx
+        .library
+        .items
+        .get(CHANNEL_ID)
+        .expect("library item should still exist");
     assert_eq!(
-        runtime
-            .model()
-            .unwrap()
-            .ctx
-            .library
-            .items
-            .get("pure:axn")
-            .expect("library item should still exist")
-            .state
-            .last_watched,
-        None,
+        library_item.state.last_watched, None,
         "rewinding a live channel clears last_watched"
     );
     assert!(
-        runtime
-            .model()
-            .unwrap()
-            .live_tv_continue_watching
-            .items
-            .is_empty(),
+        library_item.removed && library_item.temp,
+        "rewind must not touch removed/temp: {:?}",
+        (library_item.removed, library_item.temp)
+    );
+    assert!(
+        model.live_tv_continue_watching.items.is_empty(),
         "the dismissed channel is removed from the row"
+    );
+}
+
+/// The reason the dismiss button rewinds instead of removing: a channel the
+/// user saved to their library must stay saved after being dismissed from the
+/// Continue Watching row.
+#[test]
+fn rewind_keeps_a_saved_live_channel_saved() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    let (runtime, _rx) = loaded_row(saved_channel());
+
+    dispatch(
+        &runtime,
+        ActionCtx::RewindLibraryItem(CHANNEL_ID.to_owned()),
+    );
+
+    let model = runtime.model().unwrap();
+    let library_item = model
+        .ctx
+        .library
+        .items
+        .get(CHANNEL_ID)
+        .expect("library item should still exist");
+    assert_eq!(
+        library_item.state.last_watched, None,
+        "rewinding a live channel clears last_watched"
+    );
+    assert!(
+        !library_item.removed,
+        "dismissing must not unsave the channel"
+    );
+    assert!(
+        !library_item.temp,
+        "dismissing must not turn a saved channel back into a temporary one"
+    );
+    assert!(
+        model.live_tv_continue_watching.items.is_empty(),
+        "the dismissed channel is removed from the row"
+    );
+}
+
+/// The contrast the fix is about. `RemoveFromLibrary` also keeps the record -
+/// it is never erased from the bucket - but it flips `removed`/`temp`, which
+/// unsaves a channel the user had added on purpose.
+#[test]
+fn remove_from_library_keeps_the_record_but_unsaves_the_channel() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    let (runtime, _rx) = loaded_row(saved_channel());
+
+    dispatch(
+        &runtime,
+        ActionCtx::RemoveFromLibrary(CHANNEL_ID.to_owned()),
+    );
+
+    let model = runtime.model().unwrap();
+    let library_item = model
+        .ctx
+        .library
+        .items
+        .get(CHANNEL_ID)
+        .expect("RemoveFromLibrary marks the record removed, it does not erase it");
+    assert!(
+        library_item.removed && !library_item.temp,
+        "RemoveFromLibrary unsaves the channel: {:?}",
+        (library_item.removed, library_item.temp)
+    );
+    assert!(
+        library_item.state.last_watched.is_some(),
+        "RemoveFromLibrary leaves last_watched alone - only the removed/temp \
+         flags drop it from the row"
+    );
+    assert!(
+        model.live_tv_continue_watching.items.is_empty(),
+        "the channel is gone from the row either way"
     );
 }

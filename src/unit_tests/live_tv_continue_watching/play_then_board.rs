@@ -312,9 +312,6 @@ fn play_live_channel_then_board_shows_it() {
     );
     drop(model);
 
-    // 5. dismiss the channel - RemoveFromLibrary clears `temp`, which is what
-    // drops it from the row (a rewind would only zero the already-zero
-    // time_offset the row ignores)
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
