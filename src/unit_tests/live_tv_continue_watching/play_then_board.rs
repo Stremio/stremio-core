@@ -270,7 +270,7 @@ fn play_live_channel_then_board_shows_it() {
             .expect("the played channel should be in the library");
         assert_eq!(
             library_item.state.time_offset, 0,
-            "the player zeroes a live channel's time_offset on unload (duration == 0)",
+            "the player zeroes a live channel's time_offset on unload",
         );
         assert!(
             library_item.state.last_watched.is_some(),
@@ -312,19 +312,32 @@ fn play_live_channel_then_board_shows_it() {
     );
     drop(model);
 
-    // 5. dismiss the channel - RemoveFromLibrary clears `temp`, which is what
-    // drops it from the row (a rewind would only zero the already-zero
-    // time_offset the row ignores)
+    // 5. the user dismisses the channel from the row
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
-            action: Action::Ctx(ActionCtx::RemoveFromLibrary(CHANNEL_ID.to_owned())),
+            action: Action::Ctx(ActionCtx::RewindLibraryItem(CHANNEL_ID.to_owned())),
         });
     });
 
     let model = runtime.model().unwrap();
+    let library_item = model
+        .ctx
+        .library
+        .items
+        .get(CHANNEL_ID)
+        .expect("rewind keeps the library record");
+    assert_eq!(
+        library_item.state.last_watched, None,
+        "rewinding a live channel clears last_watched",
+    );
+    assert!(
+        library_item.removed && library_item.temp,
+        "rewind must not touch the temporary channel's removed/temp flags: {:?}",
+        (library_item.removed, library_item.temp),
+    );
     assert!(
         model.live_tv_continue_watching.items.is_empty(),
-        "dismissing the channel (RemoveFromLibrary) removes it from the Live TV row",
+        "dismissing the channel (RewindLibraryItem) removes it from the Live TV row",
     );
 }
