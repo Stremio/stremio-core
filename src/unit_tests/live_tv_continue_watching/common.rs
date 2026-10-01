@@ -44,15 +44,11 @@ pub fn channel_meta(id: &str, name: &str, videos: Vec<Video>) -> MetaItem {
 }
 
 /// Live channels are stored as TEMPORARY items that are also `removed`
-/// (`temp: true, removed: true`) and, after the player unloads, `time_offset =
-/// 0` (live streams report `duration == 0`, so the player's credits-threshold
-/// reset always zeroes it). Recency is therefore keyed on `last_watched`, not
-/// `time_offset`. `watched` false mimics a channel that was never played
-/// (`last_watched = None`), which must be excluded.
-///
-/// A channel the user explicitly saved to their library is the same item with
-/// `removed: false, temp: false`; build one with a struct update:
-/// `LibraryItem { removed: false, temp: false, ..library_item(..) }`.
+/// (`temp: true, removed: true`). The player resets a live item's progress
+/// explicitly - `time_offset = 0` whatever duration the stream reported - so
+/// recency is keyed on `last_watched`, not `time_offset`. `watched` false
+/// mimics a channel that was never played (`last_watched = None`), which must
+/// be excluded.
 pub fn library_item(id: &str, r#type: &str, hour: u32, watched: bool) -> LibraryItem {
     LibraryItem {
         id: id.to_owned(),
@@ -65,8 +61,6 @@ pub fn library_item(id: &str, r#type: &str, hour: u32, watched: bool) -> Library
         ctime: None,
         mtime: Utc.with_ymd_and_hms(2026, 7, 2, hour, 0, 0).unwrap(),
         state: LibraryItemState {
-            // 0 mirrors reality: the player zeroes a live channel's
-            // time_offset on Unload. Included channels must survive that.
             time_offset: 0,
             duration: 0,
             last_watched: watched.then(|| Utc.with_ymd_and_hms(2026, 7, 2, hour, 0, 0).unwrap()),

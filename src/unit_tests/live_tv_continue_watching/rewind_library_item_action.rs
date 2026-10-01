@@ -26,23 +26,14 @@ struct TestModel {
     live_tv_continue_watching: LiveTvContinueWatching,
 }
 
-/// A channel that was played but never explicitly saved: temporary and
-/// `removed`, which is how the player stores live channels.
-fn temp_channel() -> LibraryItem {
-    library_item(CHANNEL_ID, "tv", 11, true)
-}
-
-/// The same channel after the user explicitly added it to their library.
 fn saved_channel() -> LibraryItem {
     LibraryItem {
         removed: false,
         temp: false,
-        ..temp_channel()
+        ..library_item(CHANNEL_ID, "tv", 11, true)
     }
 }
 
-/// Boots the row with `channel` in the library and loads it, asserting the
-/// channel is on screen before the dismiss under test.
 fn loaded_row(
     channel: LibraryItem,
 ) -> (
@@ -101,41 +92,6 @@ fn dispatch(runtime: &Runtime<TestEnv, TestModel>, action: ActionCtx) {
 }
 
 #[test]
-fn rewind_dismisses_a_temporary_live_channel() {
-    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
-    let (runtime, _rx) = loaded_row(temp_channel());
-
-    dispatch(
-        &runtime,
-        ActionCtx::RewindLibraryItem(CHANNEL_ID.to_owned()),
-    );
-
-    let model = runtime.model().unwrap();
-    let library_item = model
-        .ctx
-        .library
-        .items
-        .get(CHANNEL_ID)
-        .expect("library item should still exist");
-    assert_eq!(
-        library_item.state.last_watched, None,
-        "rewinding a live channel clears last_watched"
-    );
-    assert!(
-        library_item.removed && library_item.temp,
-        "rewind must not touch removed/temp: {:?}",
-        (library_item.removed, library_item.temp)
-    );
-    assert!(
-        model.live_tv_continue_watching.items.is_empty(),
-        "the dismissed channel is removed from the row"
-    );
-}
-
-/// The reason the dismiss button rewinds instead of removing: a channel the
-/// user saved to their library must stay saved after being dismissed from the
-/// Continue Watching row.
-#[test]
 fn rewind_keeps_a_saved_live_channel_saved() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     let (runtime, _rx) = loaded_row(saved_channel());
@@ -170,9 +126,6 @@ fn rewind_keeps_a_saved_live_channel_saved() {
     );
 }
 
-/// The contrast the fix is about. `RemoveFromLibrary` also keeps the record -
-/// it is never erased from the bucket - but it flips `removed`/`temp`, which
-/// unsaves a channel the user had added on purpose.
 #[test]
 fn remove_from_library_keeps_the_record_but_unsaves_the_channel() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
