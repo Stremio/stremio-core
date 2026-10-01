@@ -1,4 +1,4 @@
-use crate::constants::STREAMING_SERVER_URLS_STORAGE_KEY;
+use crate::constants::{STREAMING_SERVER_URL, STREAMING_SERVER_URLS_STORAGE_KEY};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Env, Runtime, RuntimeAction};
@@ -67,18 +67,22 @@ fn test_delete_server_url() {
 
     // Initialize with a server URL
     let initial_url = Url::parse("http://localhost:11470").unwrap();
+    let other_url = Url::parse("http://192.168.0.2:11470").unwrap();
     let mut server_urls = ServerUrlsBucket::new::<TestEnv>(None);
     server_urls
         .items
         .insert(initial_url.clone(), TestEnv::now());
+    server_urls.items.insert(other_url.clone(), TestEnv::now());
 
     STORAGE.write().unwrap().insert(
         STREAMING_SERVER_URLS_STORAGE_KEY.to_owned(),
         serde_json::to_string(&server_urls).unwrap(),
     );
+    let mut profile = Profile::default();
+    profile.settings.streaming_server_url = initial_url.clone();
 
     let ctx = Ctx::new(
-        Profile::default(),
+        profile,
         LibraryBucket::default(),
         StreamsBucket::default(),
         server_urls,
@@ -87,6 +91,23 @@ fn test_delete_server_url() {
         DismissedEventsBucket::default(),
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::DeleteServerUrl(other_url.clone())),
+        })
+    });
+    assert_eq!(
+        runtime
+            .model()
+            .unwrap()
+            .ctx
+            .profile
+            .settings
+            .streaming_server_url,
+        initial_url,
+        "Deleting another server URL should keep the selection"
+    );
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
@@ -108,5 +129,16 @@ fn test_delete_server_url() {
                 !stored_bucket.items.contains_key(&initial_url)
             }),
         "Deleted server URL should not be stored"
+    );
+    assert_eq!(
+        runtime
+            .model()
+            .unwrap()
+            .ctx
+            .profile
+            .settings
+            .streaming_server_url,
+        *STREAMING_SERVER_URL,
+        "Deleting the selected server URL should select the default server"
     );
 }

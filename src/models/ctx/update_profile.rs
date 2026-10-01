@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 
-use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
+use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY, STREAMING_SERVER_URL};
 use crate::models::ctx::{CtxError, CtxStatus, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
@@ -259,6 +259,15 @@ pub fn update_profile<E: Env + 'static>(
                 }))
                 .unchanged()
             }
+        }
+        Msg::Action(Action::Ctx(ActionCtx::DeleteServerUrl(url)))
+            if profile.settings.streaming_server_url == *url && *url != *STREAMING_SERVER_URL =>
+        {
+            profile.settings.streaming_server_url = STREAMING_SERVER_URL.to_owned();
+            Effects::msg(Msg::Event(Event::SettingsUpdated {
+                settings: profile.settings.to_owned(),
+            }))
+            .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
         }
         Msg::Internal(Internal::ProfileChanged) => {
             Effects::one(push_profile_to_storage::<E>(profile)).unchanged()
