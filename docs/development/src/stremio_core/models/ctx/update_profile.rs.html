@@ -600,12 +600,21 @@
 <a href="#599" id="599">599</a>
 <a href="#600" id="600">600</a>
 <a href="#601" id="601">601</a>
-<a href="#602" id="602">602</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashSet;
+<a href="#602" id="602">602</a>
+<a href="#603" id="603">603</a>
+<a href="#604" id="604">604</a>
+<a href="#605" id="605">605</a>
+<a href="#606" id="606">606</a>
+<a href="#607" id="607">607</a>
+<a href="#608" id="608">608</a>
+<a href="#609" id="609">609</a>
+<a href="#610" id="610">610</a>
+<a href="#611" id="611">611</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashSet;
 
 <span class="kw">use </span>enclose::enclose;
 <span class="kw">use </span>futures::{future, FutureExt, TryFutureExt};
 
-<span class="kw">use </span><span class="kw">crate</span>::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
+<span class="kw">use </span><span class="kw">crate</span>::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY, STREAMING_SERVER_URL};
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::{CtxError, CtxStatus, OtherError};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
@@ -861,6 +870,15 @@
                 }))
                 .unchanged()
             }
+        }
+        Msg::Action(Action::Ctx(ActionCtx::DeleteServerUrl(url)))
+            <span class="kw">if </span>profile.settings.streaming_server_url == <span class="kw-2">*</span>url &amp;&amp; <span class="kw-2">*</span>url != <span class="kw-2">*</span>STREAMING_SERVER_URL =&gt;
+        {
+            profile.settings.streaming_server_url = STREAMING_SERVER_URL.to_owned();
+            Effects::msg(Msg::Event(Event::SettingsUpdated {
+                settings: profile.settings.to_owned(),
+            }))
+            .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
         }
         Msg::Internal(Internal::ProfileChanged) =&gt; {
             Effects::one(push_profile_to_storage::&lt;E&gt;(profile)).unchanged()

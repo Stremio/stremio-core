@@ -601,7 +601,10 @@
 <a href="#600" id="600">600</a>
 <a href="#601" id="601">601</a>
 <a href="#602" id="602">602</a>
-<a href="#603" id="603">603</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{collections::HashMap, marker::PhantomData};
+<a href="#603" id="603">603</a>
+<a href="#604" id="604">604</a>
+<a href="#605" id="605">605</a>
+<a href="#606" id="606">606</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{collections::HashMap, marker::PhantomData};
 
 <span class="kw">use </span>futures::{
     future::{<span class="self">self</span>, Either},
@@ -689,6 +692,9 @@
             <span class="prelude-val">Some</span>(library_item) =&gt; {
                 <span class="kw">let </span><span class="kw-2">mut </span>library_item = library_item.to_owned();
                 library_item.state.time_offset = <span class="number">0</span>;
+                <span class="kw">if </span>library_item.is_live() {
+                    library_item.state.last_watched = <span class="prelude-val">None</span>;
+                }
 
                 Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                     .join(Effects::msg(Msg::Event(Event::LibraryItemRewinded {
