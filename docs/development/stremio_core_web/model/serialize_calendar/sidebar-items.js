@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["serialize_calendar"],"mod":["model"]};
+window.SIDEBAR_ITEMS = {"fn":["calendar_model","serialize_calendar"],"mod":["model"]};
