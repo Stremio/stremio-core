@@ -19,7 +19,7 @@ use crate::{
     unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS},
 };
 use futures::{channel::mpsc::Receiver, future};
-use std::any::Any;
+use std::{any::Any, ops::RangeInclusive};
 use stremio_derive::Model;
 
 #[derive(Model, Default, Clone, Debug)]
@@ -53,7 +53,7 @@ fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
                         r#type: "series".to_owned(),
                         ..Default::default()
                     },
-                    videos: vec![create_video(1), create_video(2)],
+                    videos: (1..=102).map(create_video).collect(),
                 },
             }) as Box<dyn Any + Send>)
             .boxed_env()
@@ -239,7 +239,7 @@ fn ended_playback_sends_a_single_stop() {
 }
 
 #[test]
-fn mark_season_as_watched_sends_one_library_event_per_changed_video() {
+fn mark_season_as_watched_sends_changed_videos_in_batches() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _rx) = new_runtime();
@@ -251,10 +251,20 @@ fn mark_season_as_watched_sends_one_library_event_per_changed_video() {
     );
     player_action(&runtime, ActionPlayer::MarkSeasonAsWatched(1, true));
 
-    let url = "https://tracker/library/series/tt123456/action=watched&videoId=tt123456%3A1%3A";
+    let url = "https://tracker/library/series/tt123456/action=watched&videoId=";
+    let video_ids = |episodes: RangeInclusive<u32>| {
+        episodes
+            .map(|episode| format!("tt123456%3A1%3A{episode}"))
+            .collect::<Vec<_>>()
+            .join("%2C")
+    };
     assert_eq!(
         tracker_urls(),
-        vec![format!("{url}1.json"), format!("{url}2.json")],
-        "the already watched video is not notified again"
+        vec![
+            format!("{url}{}.json", video_ids(1..=1)),
+            format!("{url}{}.json", video_ids(2..=101)),
+            format!("{url}{}.json", video_ids(102..=102)),
+        ],
+        "the already watched video is not notified again, the rest go in batches of 100"
     );
 }

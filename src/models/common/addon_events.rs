@@ -2,7 +2,7 @@ use futures::FutureExt;
 use stremio_watched_bitfield::WatchedBitField;
 
 use crate::{
-    constants::{LIBRARY_RESOURCE_NAME, PLAYER_RESOURCE_NAME},
+    constants::{LIBRARY_EVENT_VIDEOS_COUNT, LIBRARY_RESOURCE_NAME, PLAYER_RESOURCE_NAME},
     runtime::{
         msg::{Internal, Msg},
         EffectFuture, Effects, Env, EnvFutureExt,
@@ -115,12 +115,15 @@ pub fn videos_watched_event_paths(
     videos
         .iter()
         .filter(|video| watched.get_video(&video.id) != is_watched)
-        .map(|video| {
+        .map(|video| video.id.as_str())
+        .collect::<Vec<_>>()
+        .chunks(LIBRARY_EVENT_VIDEOS_COUNT)
+        .map(|video_ids| {
             library_event_path(
                 &library_item.r#type,
                 &library_item.id,
                 LibraryEventAction::from_watched(is_watched),
-                Some(&video.id),
+                Some(&video_ids.join(",")),
             )
         })
         .collect()

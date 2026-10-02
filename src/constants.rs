@@ -35,6 +35,7 @@ pub const LIBRARY_RECENT_COUNT: usize = 200;
 pub const NOTIFICATION_ITEMS_COUNT: usize = 100;
 /// Maximum calendar items to fetch from `calendarIds` resource
 pub const CALENDAR_ITEMS_COUNT: usize = 100;
+pub const LIBRARY_EVENT_VIDEOS_COUNT: usize = 100;
 
 /// Account age in days to be considered a new user
 pub const NEW_USER_DAYS: chrono::Duration = chrono::Duration::days(30);
