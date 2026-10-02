@@ -25,6 +25,8 @@ pub const STREAM_RESOURCE_NAME: &str = "stream";
 /// `https://{ADDON_URL}/catalog/...` resource
 pub const CATALOG_RESOURCE_NAME: &str = "catalog";
 pub const SUBTITLES_RESOURCE_NAME: &str = "subtitles";
+pub const PLAYER_RESOURCE_NAME: &str = "player";
+pub const LIBRARY_RESOURCE_NAME: &str = "library";
 pub const ADDON_MANIFEST_PATH: &str = "/manifest.json";
 pub const ADDON_LEGACY_PATH: &str = "/stremio/v1";
 pub const CATALOG_PAGE_SIZE: usize = 100;
@@ -33,6 +35,7 @@ pub const LIBRARY_RECENT_COUNT: usize = 200;
 pub const NOTIFICATION_ITEMS_COUNT: usize = 100;
 /// Maximum calendar items to fetch from `calendarIds` resource
 pub const CALENDAR_ITEMS_COUNT: usize = 100;
+pub const LIBRARY_EVENT_VIDEOS_COUNT: usize = 100;
 
 /// Account age in days to be considered a new user
 pub const NEW_USER_DAYS: chrono::Duration = chrono::Duration::days(30);
