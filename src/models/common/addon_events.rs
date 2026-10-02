@@ -1,4 +1,5 @@
 use futures::FutureExt;
+use stremio_watched_bitfield::WatchedBitField;
 
 use crate::{
     constants::{LIBRARY_RESOURCE_NAME, PLAYER_RESOURCE_NAME},
@@ -107,11 +108,13 @@ pub fn item_watched_event_path(library_item: &LibraryItem, is_watched: bool) -> 
 
 pub fn videos_watched_event_paths(
     library_item: &LibraryItem,
+    watched: &WatchedBitField,
     videos: &[&Video],
     is_watched: bool,
 ) -> Vec<ResourcePath> {
     videos
         .iter()
+        .filter(|video| watched.get_video(&video.id) != is_watched)
         .map(|video| {
             library_event_path(
                 &library_item.r#type,

@@ -239,17 +239,22 @@ fn ended_playback_sends_a_single_stop() {
 }
 
 #[test]
-fn mark_season_as_watched_sends_one_library_event_per_video() {
+fn mark_season_as_watched_sends_one_library_event_per_changed_video() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _rx) = new_runtime();
 
     load(&runtime);
+    player_action(
+        &runtime,
+        ActionPlayer::MarkVideoAsWatched(create_video(1), true),
+    );
     player_action(&runtime, ActionPlayer::MarkSeasonAsWatched(1, true));
 
     let url = "https://tracker/library/series/tt123456/action=watched&videoId=tt123456%3A1%3A";
     assert_eq!(
         tracker_urls(),
         vec![format!("{url}1.json"), format!("{url}2.json")],
+        "the already watched video is not notified again"
     );
 }

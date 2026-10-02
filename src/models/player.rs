@@ -896,7 +896,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         library_item.mark_video_as_watched::<E>(watched, video, *is_watched);
                         let addon_events = addon_events_effects::<E>(
                             &ctx.profile.addons,
-                            videos_watched_event_paths(&library_item, &[video], *is_watched),
+                            videos_watched_event_paths(
+                                &library_item,
+                                watched,
+                                &[video],
+                                *is_watched,
+                            ),
                         );
                         Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                             .unchanged()
@@ -933,7 +938,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                                 }
                                 let addon_events = addon_events_effects::<E>(
                                     &ctx.profile.addons,
-                                    videos_watched_event_paths(library_item, &videos, *is_watched),
+                                    videos_watched_event_paths(
+                                        library_item,
+                                        watched,
+                                        &videos,
+                                        *is_watched,
+                                    ),
                                 );
                                 let mut library_item = library_item.to_owned();
                                 library_item.mark_videos_as_watched::<E>(
