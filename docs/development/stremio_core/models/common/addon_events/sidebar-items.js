@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["LibraryEventAction","PlayerEventAction"],"fn":["addon_events_effects","extra_value","item_watched_event_path","library_event_path","player_event_path","videos_watched_event_paths"]};

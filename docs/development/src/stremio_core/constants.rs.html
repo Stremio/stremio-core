@@ -153,7 +153,10 @@
 <a href="#152" id="152">152</a>
 <a href="#153" id="153">153</a>
 <a href="#154" id="154">154</a>
-<a href="#155" id="155">155</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
 
 <span class="kw">use </span>once_cell::sync::Lazy;
 <span class="kw">use </span>percent_encoding::{AsciiSet, NON_ALPHANUMERIC};
@@ -180,6 +183,8 @@
 <span class="doccomment">/// `https://{ADDON_URL}/catalog/...` resource
 </span><span class="kw">pub const </span>CATALOG_RESOURCE_NAME: <span class="kw-2">&amp;</span>str = <span class="string">"catalog"</span>;
 <span class="kw">pub const </span>SUBTITLES_RESOURCE_NAME: <span class="kw-2">&amp;</span>str = <span class="string">"subtitles"</span>;
+<span class="kw">pub const </span>PLAYER_RESOURCE_NAME: <span class="kw-2">&amp;</span>str = <span class="string">"player"</span>;
+<span class="kw">pub const </span>LIBRARY_RESOURCE_NAME: <span class="kw-2">&amp;</span>str = <span class="string">"library"</span>;
 <span class="kw">pub const </span>ADDON_MANIFEST_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"/manifest.json"</span>;
 <span class="kw">pub const </span>ADDON_LEGACY_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"/stremio/v1"</span>;
 <span class="kw">pub const </span>CATALOG_PAGE_SIZE: usize = <span class="number">100</span>;
@@ -188,6 +193,7 @@
 <span class="kw">pub const </span>NOTIFICATION_ITEMS_COUNT: usize = <span class="number">100</span>;
 <span class="doccomment">/// Maximum calendar items to fetch from `calendarIds` resource
 </span><span class="kw">pub const </span>CALENDAR_ITEMS_COUNT: usize = <span class="number">100</span>;
+<span class="kw">pub const </span>LIBRARY_EVENT_VIDEOS_COUNT: usize = <span class="number">100</span>;
 
 <span class="doccomment">/// Account age in days to be considered a new user
 </span><span class="kw">pub const </span>NEW_USER_DAYS: chrono::Duration = chrono::Duration::days(<span class="number">30</span>);

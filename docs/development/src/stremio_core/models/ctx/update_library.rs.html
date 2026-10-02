@@ -604,7 +604,51 @@
 <a href="#603" id="603">603</a>
 <a href="#604" id="604">604</a>
 <a href="#605" id="605">605</a>
-<a href="#606" id="606">606</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{collections::HashMap, marker::PhantomData};
+<a href="#606" id="606">606</a>
+<a href="#607" id="607">607</a>
+<a href="#608" id="608">608</a>
+<a href="#609" id="609">609</a>
+<a href="#610" id="610">610</a>
+<a href="#611" id="611">611</a>
+<a href="#612" id="612">612</a>
+<a href="#613" id="613">613</a>
+<a href="#614" id="614">614</a>
+<a href="#615" id="615">615</a>
+<a href="#616" id="616">616</a>
+<a href="#617" id="617">617</a>
+<a href="#618" id="618">618</a>
+<a href="#619" id="619">619</a>
+<a href="#620" id="620">620</a>
+<a href="#621" id="621">621</a>
+<a href="#622" id="622">622</a>
+<a href="#623" id="623">623</a>
+<a href="#624" id="624">624</a>
+<a href="#625" id="625">625</a>
+<a href="#626" id="626">626</a>
+<a href="#627" id="627">627</a>
+<a href="#628" id="628">628</a>
+<a href="#629" id="629">629</a>
+<a href="#630" id="630">630</a>
+<a href="#631" id="631">631</a>
+<a href="#632" id="632">632</a>
+<a href="#633" id="633">633</a>
+<a href="#634" id="634">634</a>
+<a href="#635" id="635">635</a>
+<a href="#636" id="636">636</a>
+<a href="#637" id="637">637</a>
+<a href="#638" id="638">638</a>
+<a href="#639" id="639">639</a>
+<a href="#640" id="640">640</a>
+<a href="#641" id="641">641</a>
+<a href="#642" id="642">642</a>
+<a href="#643" id="643">643</a>
+<a href="#644" id="644">644</a>
+<a href="#645" id="645">645</a>
+<a href="#646" id="646">646</a>
+<a href="#647" id="647">647</a>
+<a href="#648" id="648">648</a>
+<a href="#649" id="649">649</a>
+<a href="#650" id="650">650</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{collections::HashMap, marker::PhantomData};
 
 <span class="kw">use </span>futures::{
     future::{<span class="self">self</span>, Either},
@@ -616,7 +660,12 @@
         LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY,
         LIBRARY_STORAGE_KEY,
     },
-    models::ctx::{CtxError, CtxStatus, OtherError},
+    models::{
+        common::{
+            addon_events_effects, item_watched_event_path, library_event_path, LibraryEventAction,
+        },
+        ctx::{CtxError, CtxStatus, OtherError},
+    },
     runtime::{
         msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg},
         Effect, EffectFuture, Effects, Env, EnvFutureExt,
@@ -649,7 +698,20 @@
             }
         }
         Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(meta_preview))) =&gt; {
-            <span class="kw">let </span><span class="kw-2">mut </span>library_item = <span class="kw">match </span>library.items.get(<span class="kw-2">&amp;</span>meta_preview.id) {
+            <span class="kw">let </span>prev_library_item = library.items.get(<span class="kw-2">&amp;</span>meta_preview.id);
+            <span class="kw">let </span>addon_events = <span class="kw">match </span>prev_library_item {
+                <span class="prelude-val">Some</span>(library_item) <span class="kw">if </span>!library_item.removed =&gt; Effects::none().unchanged(),
+                <span class="kw">_ </span>=&gt; addon_events_effects::&lt;E&gt;(
+                    <span class="kw-2">&amp;</span>profile.addons,
+                    <span class="macro">vec!</span>[library_event_path(
+                        <span class="kw-2">&amp;</span>meta_preview.r#type,
+                        <span class="kw-2">&amp;</span>meta_preview.id,
+                        LibraryEventAction::LibraryAdd,
+                        <span class="prelude-val">None</span>,
+                    )],
+                ),
+            };
+            <span class="kw">let </span><span class="kw-2">mut </span>library_item = <span class="kw">match </span>prev_library_item {
                 <span class="prelude-val">Some</span>(library_item) =&gt; LibraryItem::from((meta_preview, library_item)),
                 <span class="kw">_ </span>=&gt; LibraryItem::from((meta_preview, PhantomData::&lt;E&gt;)),
             };
@@ -659,10 +721,24 @@
                 .join(Effects::msg(Msg::Event(Event::LibraryItemAdded {
                     id: meta_preview.id.to_owned(),
                 })))
+                .join(addon_events)
                 .unchanged()
         }
         Msg::Action(Action::Ctx(ActionCtx::RemoveFromLibrary(id))) =&gt; <span class="kw">match </span>library.items.get(id) {
             <span class="prelude-val">Some</span>(library_item) =&gt; {
+                <span class="kw">let </span>addon_events = <span class="kw">if </span>library_item.removed {
+                    Effects::none().unchanged()
+                } <span class="kw">else </span>{
+                    addon_events_effects::&lt;E&gt;(
+                        <span class="kw-2">&amp;</span>profile.addons,
+                        <span class="macro">vec!</span>[library_event_path(
+                            <span class="kw-2">&amp;</span>library_item.r#type,
+                            <span class="kw-2">&amp;</span>library_item.id,
+                            LibraryEventAction::LibraryRemove,
+                            <span class="prelude-val">None</span>,
+                        )],
+                    )
+                };
                 <span class="kw">let </span><span class="kw-2">mut </span>library_item = library_item.to_owned();
                 library_item.removed = <span class="bool-val">true</span>;
                 library_item.temp = <span class="bool-val">false</span>;
@@ -680,6 +756,7 @@
                     .join(Effects::msg(Msg::Event(Event::LibraryItemRemoved {
                         id: id.to_owned(),
                     })))
+                    .join(addon_events)
                     .unchanged()
             }
             <span class="kw">_ </span>=&gt; Effects::msg(Msg::Event(Event::Error {
@@ -755,8 +832,13 @@
                 <span class="prelude-val">Some</span>(library_item) =&gt; {
                     <span class="kw">let </span><span class="kw-2">mut </span>library_item = library_item.to_owned();
                     library_item.mark_as_watched::&lt;E&gt;(<span class="kw-2">*</span>is_watched);
+                    <span class="kw">let </span>addon_events = addon_events_effects::&lt;E&gt;(
+                        <span class="kw-2">&amp;</span>profile.addons,
+                        <span class="macro">vec!</span>[item_watched_event_path(<span class="kw-2">&amp;</span>library_item, <span class="kw-2">*</span>is_watched)],
+                    );
                     Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                         .unchanged()
+                        .join(addon_events)
                 }
                 <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
             }
@@ -771,7 +853,13 @@
                 <span class="kw">_ </span>=&gt; <span class="kw">return </span>Effects::none().unchanged(),
             };
             library_item.mark_as_watched::&lt;E&gt;(<span class="kw-2">*</span>is_watched);
-            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item))).unchanged()
+            <span class="kw">let </span>addon_events = addon_events_effects::&lt;E&gt;(
+                <span class="kw-2">&amp;</span>profile.addons,
+                <span class="macro">vec!</span>[item_watched_event_path(<span class="kw-2">&amp;</span>library_item, <span class="kw-2">*</span>is_watched)],
+            );
+            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
+                .unchanged()
+                .join(addon_events)
         }
         Msg::Internal(Internal::UpdateLibraryItem(library_item))
             <span class="kw">if </span>library

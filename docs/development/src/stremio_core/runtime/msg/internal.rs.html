@@ -177,7 +177,8 @@
 <a href="#176" id="176">176</a>
 <a href="#177" id="177">177</a>
 <a href="#178" id="178">178</a>
-<a href="#179" id="179">179</a></pre></div><pre class="rust"><code><span class="kw">use </span>url::Url;
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a></pre></div><pre class="rust"><code><span class="kw">use </span>url::Url;
 
 <span class="kw">use </span><span class="kw">crate</span>::models::common::ResourceLoadable;
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::CtxError;
@@ -355,5 +356,6 @@
     /// Mark Season as watched (meta item)
     /// Mark move as watched (meta item)
     </span>WatchedSendResult(MetaItemId, <span class="prelude-ty">Result</span>&lt;RatingSendResponse, EnvError&gt;),
+    AddonEventResult(ResourceRequest, Box&lt;<span class="prelude-ty">Result</span>&lt;ResourceResponse, EnvError&gt;&gt;),
 }
 </code></pre></div></section></main></body></html>
