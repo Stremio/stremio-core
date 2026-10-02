@@ -194,10 +194,10 @@
     <span class="kw">pub </span>unique: u64,
     <span class="kw">pub </span>connection_tries: u64,
     <span class="kw">pub </span>peer_search_running: bool,
-    <span class="kw">pub </span>stream_len: u64,
+    <span class="kw">pub </span>stream_len: <span class="prelude-ty">Option</span>&lt;u64&gt;,
     <span class="doccomment">/// Filename for torrent
-    </span><span class="kw">pub </span>stream_name: String,
-    <span class="kw">pub </span>stream_progress: f64,
+    </span><span class="kw">pub </span>stream_name: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>stream_progress: <span class="prelude-ty">Option</span>&lt;f64&gt;,
     <span class="kw">pub </span>swarm_connections: u64,
     <span class="kw">pub </span>swarm_paused: bool,
     <span class="kw">pub </span>swarm_size: u64,

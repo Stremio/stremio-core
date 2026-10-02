@@ -206,7 +206,7 @@
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>StatisticsRequest {
     <span class="kw">pub </span>info_hash: String,
-    <span class="kw">pub </span>file_idx: u16,
+    <span class="kw">pub </span>file_idx: <span class="prelude-ty">Option</span>&lt;u16&gt;,
 }
 
 <span class="kw">pub struct </span>CreateTorrentBlobRequest {
@@ -291,6 +291,7 @@
 <span class="doccomment">/// Filename request to the server.
 ///
 /// `{streaming_sever_url}/{info_hash_url_encoded}/{file_idx_url_encoded}/stats.json`
+/// or, without a file index, `{streaming_sever_url}/{info_hash_url_encoded}/stats.json`
 ///
 ///
 /// Example: `http://127.0.0.1:11470/6d0cdb871b81477d00f53f78529028994b364877/7/stats.json`
@@ -303,15 +304,14 @@
         <span class="kw">let </span>info_hash_encoded = url::form_urlencoded::Serializer::new(String::new())
             .append_key_only(<span class="kw-2">&amp;</span>val.request.info_hash.to_string())
             .finish();
-        <span class="kw">let </span>file_idx_encoded = url::form_urlencoded::Serializer::new(String::new())
-            .append_key_only(<span class="kw-2">&amp;</span>val.request.file_idx.to_string())
-            .finish();
+        <span class="kw">let </span>path = <span class="kw">match </span>val.request.file_idx {
+            <span class="prelude-val">Some</span>(file_idx) =&gt; <span class="macro">format!</span>(<span class="string">"{info_hash_encoded}/{file_idx}/stats.json"</span>),
+            <span class="prelude-val">None </span>=&gt; <span class="macro">format!</span>(<span class="string">"{info_hash_encoded}/stats.json"</span>),
+        };
 
         <span class="kw">let </span>uri = val
             .server_url
-            .join(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
-                <span class="string">"{info_hash_encoded}/{file_idx_encoded}/stats.json"
-            </span>))
+            .join(<span class="kw-2">&amp;</span>path)
             .expect(<span class="string">"Should always be valid url!"</span>);
 
         Request::get(uri.as_str())
