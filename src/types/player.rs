@@ -2,9 +2,26 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Deserialize, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub enum VideoScale {
+    Contain,
+    Cover,
+    Fill,
+}
+
+#[derive(Clone, Copy, Deserialize, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub enum SubtitleSource {
     Embedded,
     External,
+}
+
+/// Audio preference for the current Player session, preserved across Player loads.
+#[derive(Clone, Deserialize, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AudioPreference {
+    /// Preferred normalized language code, or `None` when it is unavailable.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub language: Option<String>,
 }
 
 /// Subtitle preference for the current Player session.

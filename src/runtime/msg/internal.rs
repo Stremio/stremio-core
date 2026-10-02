@@ -127,10 +127,13 @@ pub enum Internal {
     StreamingServerDeviceInfoResult(Url, Result<DeviceInfo, EnvError>),
     /// Result for updating streaming server settings.
     StreamingServerUpdateSettingsResult(Url, Result<(), EnvError>),
+    /// Result for a confirmed cache directory change.
+    StreamingServerUpdateCacheRootResult(Url, u64, Result<String, EnvError>),
     /// Result for creating a torrent.
     StreamingServerCreateTorrentResult(InfoHash, Result<(), EnvError>),
     /// Result for playing on device.
     StreamingServerPlayOnDeviceResult(String, Result<(), EnvError>),
+    StreamingServerCastingResult(u64, Result<(), EnvError>),
     // Result for get https endpoint request
     StreamingServerGetHTTPSResult(Url, Result<GetHTTPSResponse, EnvError>),
     /// Result for streaming server statistics.

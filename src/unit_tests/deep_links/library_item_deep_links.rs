@@ -241,6 +241,7 @@ fn library_item_deep_links_behavior_hints_default_video_id() {
             no_notif: true,
         },
         behavior_hints: MetaItemBehaviorHints {
+            is_live: false,
             default_video_id: Some("tt13622776:1:5".to_string()),
             featured_video_id: None,
             has_scheduled_videos: false,
@@ -298,9 +299,12 @@ fn library_item_deep_links_infuse_position() {
         },
         behavior_hints: Default::default(),
     };
+    let mut streams_item = TORRENT_STREAMS_ITEM.clone();
+    streams_item.stream.name = None;
+    streams_item.stream.behavior_hints.filename = Some("Ahsoka.S01E05.mkv".to_string());
     let lidl = LibraryItemDeepLinks::from((
         &lib_item,
-        Some(&*TORRENT_STREAMS_ITEM),
+        Some(&streams_item),
         Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
     ));
@@ -314,6 +318,8 @@ fn library_item_deep_links_infuse_position() {
         query_param(ios, "x-success"),
         "stremio:///detail/series/tt13622776/tt13622776%3A1%3A5"
     );
+    assert_eq!(query_param(ios, "x-error"), query_param(ios, "x-success"));
+    assert_eq!(query_param(ios, "filename"), "Ahsoka.S01E05.mkv");
 }
 
 #[test]
@@ -341,6 +347,7 @@ fn library_item_deep_links_state_and_behavior_hints_default_video_id() {
             no_notif: true,
         },
         behavior_hints: MetaItemBehaviorHints {
+            is_live: false,
             default_video_id: Some("bh_video_id".to_string()),
             featured_video_id: None,
             has_scheduled_videos: false,
@@ -397,6 +404,7 @@ fn library_item_deep_links_state_no_time_offset_and_behavior_hints_default_video
             no_notif: true,
         },
         behavior_hints: MetaItemBehaviorHints {
+            is_live: false,
             default_video_id: Some("bh_video_id".to_string()),
             featured_video_id: None,
             has_scheduled_videos: false,

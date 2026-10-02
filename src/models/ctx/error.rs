@@ -40,6 +40,7 @@ pub enum OtherError {
     AddonConfigurationRequired,
     UserAddonsAreLocked,
     UserLibraryIsMissing,
+    InvalidStreamingServerUrl,
 }
 
 impl OtherError {
@@ -53,6 +54,7 @@ impl OtherError {
             OtherError::AddonConfigurationRequired => "Addon requires configuration".to_owned(),
             OtherError::UserAddonsAreLocked => "Fetching Addons from the API failed and we have defaulted the addons to the officials ones until the request succeeds".to_owned(),
             OtherError::UserLibraryIsMissing => "Fetching Library from the API failed and we have defaulted to empty library until the request succeeds".to_owned(),
+            OtherError::InvalidStreamingServerUrl => "Streaming server URL must be http or https".to_owned(),
         }
     }
     pub fn code(&self) -> u64 {
@@ -65,6 +67,7 @@ impl OtherError {
             OtherError::AddonConfigurationRequired => 6,
             OtherError::UserAddonsAreLocked => 7,
             OtherError::UserLibraryIsMissing => 8,
+            OtherError::InvalidStreamingServerUrl => 9,
         }
     }
 }

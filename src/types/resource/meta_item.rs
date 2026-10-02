@@ -9,8 +9,8 @@ use itertools::Itertools;
 use percent_encoding::utf8_percent_encode;
 use serde::{Deserialize, Serialize};
 use serde_with::{
-    formats::PreferMany, serde_as, DefaultOnNull, DeserializeAs, NoneAsEmptyString, OneOrMany,
-    PickFirst, TimestampMilliSeconds,
+    formats::PreferMany, serde_as, DefaultOnError, DefaultOnNull, DeserializeAs, NoneAsEmptyString,
+    OneOrMany, PickFirst, TimestampMilliSeconds, VecSkipError,
 };
 use url::Url;
 
@@ -268,26 +268,65 @@ impl MetaItem {
         }
     }
 
-    /// Returns the next video after the given one, without crossing into season 0 specials
-    pub fn next_video(&self, video_id: &str) -> Option<&Video> {
-        self.videos
+    pub fn is_live(&self) -> bool {
+        self.preview.behavior_hints.is_live(&self.preview.r#type)
+    }
+
+    /// Current and upcoming broadcasts, independent of the selected playback video.
+    pub fn programs_at(&self, now: DateTime<Utc>) -> (Option<&Video>, Option<&Video>) {
+        let current = self
+            .videos
             .iter()
-            .find_position(|v| v.id == video_id)
-            .and_then(|(pos, current)| self.videos.get(pos + 1).map(|next| (current, next)))
-            .filter(|(current, next)| {
-                let cur_season = current
-                    .series_info
+            .filter(|video| {
+                video
+                    .epg_info
                     .as_ref()
-                    .map(|s| s.season)
-                    .unwrap_or_default();
-                let next_season = next
-                    .series_info
-                    .as_ref()
-                    .map(|s| s.season)
-                    .unwrap_or_default();
-                next_season != 0 || cur_season == next_season
+                    .is_some_and(|info| info.is_live(now))
             })
-            .map(|(_, next)| next)
+            .max_by_key(|video| video.epg_info.as_ref().map(|info| info.start_time));
+        let next = self
+            .videos
+            .iter()
+            .filter(|video| {
+                video.epg_info.as_ref().is_some_and(|info| {
+                    info.start_time < info.end_time
+                        && info.start_time > now
+                        && current
+                            .and_then(|video| video.epg_info.as_ref())
+                            .map_or(true, |current| info.start_time >= current.end_time)
+                })
+            })
+            .min_by_key(|video| video.epg_info.as_ref().map(|info| info.start_time));
+        (current, next)
+    }
+
+    /// Returns the next released episode without crossing into season 0 specials.
+    /// Broadcasts do not advance channel playback at programme boundaries.
+    pub fn next_video(&self, video_id: &str, now: &DateTime<Utc>) -> Option<&Video> {
+        if self.is_live() {
+            return None;
+        }
+        let (position, current) = self
+            .videos
+            .iter()
+            .find_position(|video| video.id == video_id)?;
+        self.videos.get(position + 1).filter(|next| {
+            let cur_season = current
+                .series_info
+                .as_ref()
+                .map(|s| s.season)
+                .unwrap_or_default();
+            let next_season = next
+                .series_info
+                .as_ref()
+                .map(|s| s.season)
+                .unwrap_or_default();
+            let released = next
+                .released
+                .as_ref()
+                .map_or(true, |released| released <= now);
+            (next_season != 0 || cur_season == next_season) && released
+        })
     }
 
     /// Returns a vector of videos for a given season
@@ -326,6 +365,49 @@ pub struct SeriesInfo {
 /// For example when using the id as key in a [`HashMap`].
 pub type VideoId = String;
 
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+pub struct ContentRating {
+    pub value: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub system: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub icon: Option<String>,
+}
+
+/// Program guide information of a [`Video`], provided for the shows of
+/// live TV channels by addons with the `epgProvider` manifest behavior hint.
+///
+/// Its presence on a [`Video`] marks it as a scheduled program show.
+#[serde_as]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct VideoEpgInfo {
+    pub start_time: DateTime<Utc>,
+    pub end_time: DateTime<Utc>,
+    #[serde(default)]
+    pub runtime: Option<String>,
+    #[serde(default)]
+    pub release_info: Option<String>,
+    #[serde(default)]
+    pub genres: Vec<String>,
+    #[serde(default)]
+    pub cast: Vec<String>,
+    #[serde(default)]
+    pub directors: Vec<String>,
+    #[serde(default)]
+    pub links: Vec<Link>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde_as(deserialize_as = "DefaultOnError<VecSkipError<_>>")]
+    pub ratings: Vec<ContentRating>,
+}
+
+impl VideoEpgInfo {
+    /// Whether the show is currently on air
+    pub fn is_live(&self, now: DateTime<Utc>) -> bool {
+        self.start_time <= now && now < self.end_time
+    }
+}
+
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]
@@ -345,6 +427,8 @@ pub struct Video {
     pub streams: Vec<Stream>,
     #[serde(default, flatten)]
     pub series_info: Option<SeriesInfo>,
+    #[serde(default, flatten)]
+    pub epg_info: Option<VideoEpgInfo>,
     #[serde(default)]
     pub trailer_streams: Vec<Stream>,
 }
@@ -421,6 +505,9 @@ pub struct Link {
 #[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItemBehaviorHints {
+    /// A live channel has stable playback identity independent of its schedule.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub is_live: bool,
     #[serde(default)]
     pub default_video_id: Option<String>,
     #[serde(default)]
@@ -431,8 +518,17 @@ pub struct MetaItemBehaviorHints {
     pub other: HashMap<String, serde_json::Value>,
 }
 
+impl MetaItemBehaviorHints {
+    /// `tv` is the legacy channel type, including addons predating `isLive`.
+    pub fn is_live(&self, r#type: &str) -> bool {
+        self.is_live || r#type == "tv"
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use chrono::Duration;
+
     use super::*;
 
     fn create_video(id: &str, season: u32, episode: u32) -> Video {
@@ -445,6 +541,7 @@ mod tests {
 
     #[test]
     fn next_video() {
+        let now = Utc::now();
         let meta_item = MetaItem {
             preview: Default::default(),
             videos: vec![
@@ -452,35 +549,125 @@ mod tests {
                 create_video("s0e2", 0, 2),
                 create_video("s1e1", 1, 1),
                 create_video("s1e2", 1, 2),
+                create_video("s2e1", 2, 1),
                 create_video("s0e3", 0, 3),
             ],
         };
         assert_eq!(
-            meta_item.next_video("s0e1").map(|video| video.id.as_str()),
+            meta_item
+                .next_video("s0e1", &now)
+                .map(|video| video.id.as_str()),
             Some("s0e2")
         );
         assert_eq!(
-            meta_item.next_video("s0e2").map(|video| video.id.as_str()),
+            meta_item
+                .next_video("s0e2", &now)
+                .map(|video| video.id.as_str()),
             Some("s1e1")
         );
         assert_eq!(
-            meta_item.next_video("s1e1").map(|video| video.id.as_str()),
+            meta_item
+                .next_video("s1e1", &now)
+                .map(|video| video.id.as_str()),
             Some("s1e2")
         );
         assert_eq!(
-            meta_item.next_video("s1e2").map(|video| video.id.as_str()),
+            meta_item
+                .next_video("s1e2", &now)
+                .map(|video| video.id.as_str()),
+            Some("s2e1")
+        );
+        assert_eq!(
+            meta_item
+                .next_video("s2e1", &now)
+                .map(|video| video.id.as_str()),
             None,
             "should not cross into season 0 specials"
         );
         assert_eq!(
-            meta_item.next_video("s0e3").map(|video| video.id.as_str()),
+            meta_item
+                .next_video("s0e3", &now)
+                .map(|video| video.id.as_str()),
             None
         );
         assert_eq!(
             meta_item
-                .next_video("missing")
+                .next_video("missing", &now)
                 .map(|video| video.id.as_str()),
             None
+        );
+    }
+
+    #[test]
+    fn live_programs_do_not_advance_playback() {
+        use chrono::TimeZone;
+
+        fn create_show(id: &str, start: u32, end: u32) -> Video {
+            Video {
+                id: id.to_owned(),
+                epg_info: Some(VideoEpgInfo {
+                    start_time: Utc.with_ymd_and_hms(2026, 7, 2, start, 0, 0).unwrap(),
+                    end_time: Utc.with_ymd_and_hms(2026, 7, 2, end, 0, 0).unwrap(),
+                    runtime: None,
+                    release_info: None,
+                    genres: vec![],
+                    cast: vec![],
+                    directors: vec![],
+                    links: vec![],
+                    ratings: vec![],
+                }),
+                ..Default::default()
+            }
+        }
+
+        let meta_item = MetaItem {
+            preview: MetaItemPreview {
+                r#type: "tv".to_owned(),
+                ..Default::default()
+            },
+            // out of schedule order on purpose, with a gap after "morning"
+            videos: vec![
+                create_show("noon", 12, 13),
+                create_show("morning", 9, 10),
+                create_show("afternoon", 13, 14),
+                Video {
+                    id: "trailer".to_owned(),
+                    ..Default::default()
+                },
+            ],
+        };
+        let at = |hour, minute| Utc.with_ymd_and_hms(2026, 7, 2, hour, minute, 0).unwrap();
+        assert_eq!(meta_item.next_video("morning", &at(9, 30)), None);
+        let (current, next) = meta_item.programs_at(at(9, 30));
+        assert_eq!(current.map(|video| video.id.as_str()), Some("morning"));
+        assert_eq!(next.map(|video| video.id.as_str()), Some("noon"));
+        let (current, next) = meta_item.programs_at(at(10, 30));
+        assert_eq!(current, None, "a gap must not reuse an expired programme");
+        assert_eq!(next.map(|video| video.id.as_str()), Some("noon"));
+        let (current, next) = meta_item.programs_at(at(13, 0));
+        assert_eq!(current.map(|video| video.id.as_str()), Some("afternoon"));
+        assert_eq!(next, None);
+        assert_eq!(meta_item.programs_at(at(14, 0)), (None, None));
+    }
+
+    #[test]
+    fn next_video_excludes_unreleased_video() {
+        let now = Utc::now();
+        let mut next_video = create_video("s1e2", 1, 2);
+        next_video.released = Some(now + Duration::days(1));
+        let mut meta_item = MetaItem {
+            preview: Default::default(),
+            videos: vec![create_video("s1e1", 1, 1), next_video],
+        };
+
+        assert_eq!(meta_item.next_video("s1e1", &now), None);
+
+        meta_item.videos[1].released = Some(now);
+        assert_eq!(
+            meta_item
+                .next_video("s1e1", &now)
+                .map(|video| video.id.as_str()),
+            Some("s1e2")
         );
     }
 }

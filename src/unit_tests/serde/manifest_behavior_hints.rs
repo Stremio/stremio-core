@@ -9,11 +9,12 @@ fn manifest_behavior_hints() {
             p2p: true,
             configurable: true,
             configuration_required: true,
+            epg_provider: true,
         },
         &[
             Token::Struct {
                 name: "ManifestBehaviorHints",
-                len: 4,
+                len: 5,
             },
             Token::Str("adult"),
             Token::Bool(true),
@@ -22,6 +23,8 @@ fn manifest_behavior_hints() {
             Token::Str("configurable"),
             Token::Bool(true),
             Token::Str("configurationRequired"),
+            Token::Bool(true),
+            Token::Str("epgProvider"),
             Token::Bool(true),
             Token::StructEnd,
         ],
@@ -32,6 +35,7 @@ fn manifest_behavior_hints() {
             p2p: false,
             configurable: false,
             configuration_required: false,
+            epg_provider: false,
         },
         &[
             Token::Struct {

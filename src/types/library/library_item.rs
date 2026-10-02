@@ -9,7 +9,7 @@ use url::Url;
 
 use crate::{
     runtime::Env,
-    types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape, Video},
+    types::resource::{MetaItem, MetaItemBehaviorHints, MetaItemPreview, PosterShape, Video},
 };
 
 pub type LibraryItemId = String;
@@ -42,6 +42,9 @@ pub struct LibraryItem {
 }
 
 impl LibraryItem {
+    pub fn is_live(&self) -> bool {
+        self.behavior_hints.is_live(&self.r#type)
+    }
     #[inline]
     pub fn should_sync<E: Env + 'static>(&self) -> bool {
         let year_ago = E::now() - Duration::days(365);
@@ -79,6 +82,7 @@ impl LibraryItem {
     /// - The LibraryItem should not be temporary but in your LibraryItem
     pub fn should_pull_notifications(&self) -> bool {
         !self.state.no_notif
+            && !self.is_live()
             && self.r#type != "other"
             && self.r#type != "movie"
             && self.behavior_hints.default_video_id.is_none()
@@ -104,6 +108,10 @@ impl LibraryItem {
         if is_watched {
             self.state.times_watched = self.state.times_watched.saturating_add(1);
             self.state.last_watched = Some(E::now());
+            // An explicit "mark as watched" action means there is no unfinished
+            // playback to continue at this moment. A later play/rewatch will
+            // establish fresh progress normally.
+            self.state.time_offset = 0;
         } else {
             self.state.times_watched = 0;
         }
@@ -144,19 +152,64 @@ impl LibraryItem {
         self.state.time_offset = 1;
     }
 
+    /// Normalises series resume state after a watched-state mutation.
+    ///
+    /// If the current pointer belongs to the marked season and is now watched, advance through
+    /// released watched episodes to the first released unwatched episode. If there is nothing
+    /// currently left to continue, clear stale resume progress. Unreleased episodes and season 0
+    /// boundaries follow MetaItem's existing next_video semantics.
+    pub fn reconcile_series_resume_after_watched_change(
+        &mut self,
+        season: u32,
+        watched: &WatchedBitField,
+        meta_item: &MetaItem,
+        now: &DateTime<Utc>,
+    ) {
+        let Some(mut current_id) = self.state.video_id.clone() else {
+            return;
+        };
+        if !watched.get_video(&current_id)
+            || !meta_item.videos.iter().any(|video| {
+                video.id == current_id
+                    && video
+                        .series_info
+                        .as_ref()
+                        .is_some_and(|series_info| series_info.season == season)
+            })
+        {
+            return;
+        }
+
+        loop {
+            match meta_item.next_video(&current_id, now) {
+                Some(next) if watched.get_video(&next.id) => {
+                    current_id = next.id.to_owned();
+                }
+                Some(next) => {
+                    self.advance_to_video(&next.id);
+                    return;
+                }
+                None => {
+                    self.state.time_offset = 0;
+                    return;
+                }
+            }
+        }
+    }
+
     pub fn mark_videos_as_watched<E: Env>(
         &mut self,
         watched: &WatchedBitField,
         videos: Vec<&Video>,
         is_watched: bool,
-    ) {
+    ) -> WatchedBitField {
         let mut watched = watched.to_owned();
 
         for video in &videos {
             watched.set_video(&video.id, is_watched);
         }
 
-        self.state.watched = Some(watched.into());
+        self.state.watched = Some(watched.clone().into());
 
         if is_watched {
             self.state.last_watched = match (
@@ -170,6 +223,8 @@ impl LibraryItem {
                 (last_watched, _) => last_watched.to_owned(),
             };
         }
+
+        watched
     }
 }
 
@@ -189,7 +244,10 @@ impl<E: Env + 'static> From<(&MetaItemPreview, PhantomData<E>)> for LibraryItem 
             r#type: meta_item.r#type.to_owned(),
             poster: meta_item.poster.to_owned(),
             poster_shape: meta_item.poster_shape.to_owned(),
-            behavior_hints: meta_item.behavior_hints.to_owned(),
+            behavior_hints: MetaItemBehaviorHints {
+                is_live: meta_item.behavior_hints.is_live(&meta_item.r#type),
+                ..meta_item.behavior_hints.to_owned()
+            },
         }
     }
 }
@@ -202,7 +260,10 @@ impl From<(&MetaItemPreview, &LibraryItem)> for LibraryItem {
             r#type: meta_item.r#type.to_owned(),
             poster: meta_item.poster.to_owned(),
             poster_shape: meta_item.poster_shape.to_owned(),
-            behavior_hints: meta_item.behavior_hints.to_owned(),
+            behavior_hints: MetaItemBehaviorHints {
+                is_live: meta_item.behavior_hints.is_live(&meta_item.r#type),
+                ..meta_item.behavior_hints.to_owned()
+            },
             removed: library_item.removed,
             temp: library_item.temp,
             ctime: library_item.ctime.to_owned(),

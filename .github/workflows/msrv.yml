@@ -2,6 +2,8 @@ name: MSRV build
 
 on:
   push:
+    tags-ignore:
+      - '**'
   # will checkout the default branch `development`
   schedule:
     # run every Friday at 17:00

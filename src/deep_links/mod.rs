@@ -1,3 +1,4 @@
+use chrono::NaiveDate;
 use percent_encoding::utf8_percent_encode;
 use regex::Regex;
 use serde::Serialize;
@@ -79,26 +80,37 @@ fn magnet_url_from_raw(stream: &Stream) -> Option<String> {
 
 fn infuse_open_player_link(
     streaming_url: &str,
-    callback_url: &str,
+    success_url: &str,
+    error_url: &str,
     position: Option<u64>,
+    filename: Option<&str>,
 ) -> String {
-    let callback_url = utf8_percent_encode(callback_url, URI_COMPONENT_ENCODE_SET);
+    let success_url = utf8_percent_encode(success_url, URI_COMPONENT_ENCODE_SET);
+    let error_url = utf8_percent_encode(error_url, URI_COMPONENT_ENCODE_SET);
     let url_encoded = utf8_percent_encode(streaming_url, URI_COMPONENT_ENCODE_SET);
     let position = position
         .map(|position| format!("&position={position}"))
         .unwrap_or_default();
 
-    format!(
-        "infuse://x-callback-url/play?x-success={callback_url}&x-error={callback_url}&url={url_encoded}{position}"
-    )
+    let mut url = format!(
+        "infuse://x-callback-url/play?x-success={success_url}&x-error={error_url}&url={url_encoded}{position}"
+    );
+
+    if let Some(filename) = filename.filter(|filename| !filename.is_empty()) {
+        let filename_encoded = utf8_percent_encode(filename, URI_COMPONENT_ENCODE_SET);
+        url.push_str(&format!("&filename={filename_encoded}"));
+    }
+    url
 }
 
 fn infuse_open_player(
     streaming_url: &str,
-    callback_url: &str,
+    success_url: &str,
+    error_url: &str,
     position: Option<u64>,
+    filename: Option<&str>,
 ) -> OpenPlayerLink {
-    let link = infuse_open_player_link(streaming_url, callback_url, position);
+    let link = infuse_open_player_link(streaming_url, success_url, error_url, position, filename);
 
     OpenPlayerLink {
         ios: Some(link.clone()),
@@ -174,6 +186,7 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
                             "{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
                             http_regex.replace(url.as_str(), "intent://"),
                         )),
+                        windows: Some(format!("vlc://{url}")),
                         ..Default::default()
                     }),
                     "mxplayer" => Some(OpenPlayerLink {
@@ -195,13 +208,13 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
                         visionos: Some(http_regex.replace(url.as_str(), "outplayer://").to_string()),
                         ..Default::default()
                     }),
-                    "infuse" => Some(OpenPlayerLink {
-                        ios: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
-                        macos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
-                        visionos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
-                        tvos: Some(format!("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
-                       ..Default::default()
-                    }),
+                    "infuse" => Some(infuse_open_player(
+                        url.as_str(),
+                        "stremio:///player?externalPlayerSuccess=1",
+                        "stremio:///player?externalPlayerSuccess=0",
+                        None,
+                        stream.behavior_hints.filename.as_deref(),
+                    )),
                     "vidhub" => Some(OpenPlayerLink {
                         ios: Some(format!("open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
                         macos: Some(format!("open-vidhub://x-callback-url/open?on-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&on-failed=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url={url_encoded}")),
@@ -350,8 +363,13 @@ impl From<(&LibraryItem, Option<&StreamsItem>, Option<&Url>, &Settings)> for Lib
                             utf8_percent_encode(&item.meta_id, URI_COMPONENT_ENCODE_SET),
                             utf8_percent_encode(&item.video_id, URI_COMPONENT_ENCODE_SET)
                         );
-                        external_player.open_player =
-                            Some(infuse_open_player(streaming, &callback_url, position));
+                        external_player.open_player = Some(infuse_open_player(
+                            streaming,
+                            &callback_url,
+                            &callback_url,
+                            position,
+                            item.stream.behavior_hints.filename.as_deref(),
+                        ));
                     }
                 }
                 external_player
@@ -390,29 +408,25 @@ impl From<(MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
 
 impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
     fn from((item, request): (&MetaItemPreview, &ResourceRequest)) -> Self {
+        let default_video_id = if item.behavior_hints.is_live(&item.r#type) {
+            Some(&item.id)
+        } else {
+            item.behavior_hints.default_video_id.as_ref()
+        };
         MetaItemDeepLinks {
-            meta_details_videos: item
-                .behavior_hints
-                .default_video_id
-                .as_ref()
-                .cloned()
-                .xor(Some(format!(
-                    "stremio:///detail/{}/{}",
+            meta_details_videos: default_video_id.cloned().xor(Some(format!(
+                "stremio:///detail/{}/{}",
+                utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
+            ))),
+            meta_details_streams: default_video_id.map(|video_id| {
+                format!(
+                    "stremio:///detail/{}/{}/{}",
                     utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
-                    utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
-                ))),
-            meta_details_streams: item
-                .behavior_hints
-                .default_video_id
-                .as_ref()
-                .map(|video_id| {
-                    format!(
-                        "stremio:///detail/{}/{}/{}",
-                        utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(video_id, URI_COMPONENT_ENCODE_SET)
-                    )
-                }),
+                    utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(video_id, URI_COMPONENT_ENCODE_SET)
+                )
+            }),
             player: item
                 .behavior_hints
                 .default_video_id
@@ -631,6 +645,41 @@ impl
             &Settings,
         ),
     ) -> Self {
+        StreamDeepLinks::from((
+            stream,
+            stream_request,
+            meta_request,
+            streaming_server_url,
+            settings,
+            None,
+        ))
+    }
+}
+
+impl
+    From<(
+        &Stream,
+        &ResourceRequest,
+        &ResourceRequest,
+        Option<&Url>,
+        &Settings,
+        Option<&LibraryItem>,
+    )> for StreamDeepLinks
+{
+    fn from(
+        (stream, stream_request, meta_request, streaming_server_url, settings, library_item): (
+            &Stream,
+            &ResourceRequest,
+            &ResourceRequest,
+            Option<&Url>,
+            &Settings,
+            Option<&LibraryItem>,
+        ),
+    ) -> Self {
+        let position = library_item
+            .filter(|item| item.state.video_id.as_ref() == Some(&stream_request.path.id))
+            .and_then(|item| item.state.time_offset.checked_div(1000))
+            .filter(|position| *position > 0);
         let callback_url = format!(
             "stremio:///detail/{}/{}/{}",
             utf8_percent_encode(&meta_request.path.r#type, URI_COMPONENT_ENCODE_SET),
@@ -641,8 +690,13 @@ impl
             ExternalPlayerLink::from((stream, streaming_server_url, settings));
         if settings.player_type.as_deref() == Some("infuse") {
             if let Some(streaming) = external_player.streaming.as_deref() {
-                external_player.open_player =
-                    Some(infuse_open_player(streaming, &callback_url, None));
+                external_player.open_player = Some(infuse_open_player(
+                    streaming,
+                    &callback_url,
+                    &callback_url,
+                    position,
+                    stream.behavior_hints.filename.as_deref(),
+                ));
             }
         }
 
@@ -803,6 +857,37 @@ impl From<(&MetaItem, &Video)> for CalendarItemDeepLinks {
                 utf8_percent_encode(&meta_item.preview.id, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
             ),
+        }
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LiveTvGuideDeepLinks {
+    pub live_tv_guide: String,
+}
+
+impl From<&NaiveDate> for LiveTvGuideDeepLinks {
+    fn from(date: &NaiveDate) -> Self {
+        Self {
+            live_tv_guide: format!("stremio:///discover?epg_date={}", date.format("%Y-%m-%d")),
+        }
+    }
+}
+
+impl From<(&ResourceRequest, &NaiveDate)> for LiveTvGuideDeepLinks {
+    fn from((request, date): (&ResourceRequest, &NaiveDate)) -> Self {
+        let mut request = request.clone();
+        request
+            .path
+            .extra
+            .retain(|extra| !matches!(extra.name.as_str(), "date" | "skip" | "epg_date"));
+        request.path.extra.push(ExtraValue {
+            name: "epg_date".to_owned(),
+            value: date.format("%Y-%m-%d").to_string(),
+        });
+        Self {
+            live_tv_guide: DiscoverDeepLinks::from(&request).discover,
         }
     }
 }

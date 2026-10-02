@@ -24,6 +24,9 @@ use crate::types::streaming_server::{
 };
 use crate::types::torrent::InfoHash;
 
+mod casting;
+pub use casting::{CastingSession, CastingStatus};
+
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct PlaybackDevice {
@@ -46,11 +49,19 @@ pub struct StreamingServer {
     pub selected: Selected,
     pub settings: Loadable<Settings, EnvError>,
     pub settings_options: Vec<SettingsOption>,
+    pub cache_root_update: Option<Loadable<String, EnvError>>,
+    #[serde(skip)]
+    pub cache_root_update_generation: u64,
     pub base_url: Option<Url>,
     pub remote_url: Option<Url>,
     pub playback_devices: Loadable<Vec<PlaybackDevice>, EnvError>,
     #[serde(skip)]
     pub playback_devices_generation: u64,
+    pub casting: Option<CastingSession>,
+    #[serde(skip)]
+    casting_requests: std::collections::VecDeque<casting::CastingRequest>,
+    #[serde(skip)]
+    casting_generation: u64,
     pub network_info: Loadable<NetworkInfo, EnvError>,
     pub device_info: Loadable<DeviceInfo, EnvError>,
     pub torrent: Option<(InfoHash, Loadable<ResourcePath, EnvError>)>,
@@ -74,10 +85,15 @@ impl StreamingServer {
                 },
                 settings: Loadable::Loading,
                 settings_options: vec![],
+                cache_root_update: None,
+                cache_root_update_generation: 0,
                 base_url: None,
                 remote_url: None,
                 playback_devices: Loadable::Loading,
                 playback_devices_generation: 0,
+                casting: None,
+                casting_requests: Default::default(),
+                casting_generation: 0,
                 network_info: Loadable::Loading,
                 device_info: Loadable::Loading,
                 torrent: None,
@@ -92,6 +108,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::StreamingServer(ActionStreamingServer::Reload)) => {
+                self.cache_root_update_generation += 1;
+                self.cache_root_update = None;
                 let settings_effects = eq_update(&mut self.settings, Loadable::Loading);
                 let network_info_effects = eq_update(&mut self.network_info, Loadable::Loading);
                 let device_info_effects = eq_update(&mut self.device_info, Loadable::Loading);
@@ -126,15 +144,38 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
             }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::UpdateSettings(
                 settings,
-            ))) if self.settings.is_ready() => {
+            ))) if self.settings.is_ready()
+                && !matches!(self.cache_root_update, Some(Loadable::Loading)) =>
+            {
+                let cache_root_changed =
+                    self.settings.ready().unwrap().cache_root != settings.cache_root;
                 let settings_effects =
                     eq_update(&mut self.settings, Loadable::Ready(settings.to_owned()));
                 let remote_url_effects =
                     update_remote_url::<E>(&mut self.remote_url, &self.selected, settings, ctx);
-                Effects::one(set_settings::<E>(&self.selected.transport_url, settings))
-                    .unchanged()
-                    .join(settings_effects)
-                    .join(remote_url_effects)
+                Effects::one(set_settings::<E>(
+                    &self.selected.transport_url,
+                    settings,
+                    cache_root_changed,
+                ))
+                .unchanged()
+                .join(settings_effects)
+                .join(remote_url_effects)
+            }
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::UpdateCacheRoot {
+                transport_url,
+                cache_root,
+            })) if self.selected.transport_url == *transport_url
+                && self.settings.is_ready()
+                && !matches!(self.cache_root_update, Some(Loadable::Loading)) =>
+            {
+                self.cache_root_update_generation += 1;
+                self.cache_root_update = Some(Loadable::Loading);
+                Effects::one(set_cache_root::<E>(
+                    &self.selected.transport_url,
+                    cache_root,
+                    self.cache_root_update_generation,
+                ))
             }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::CreateTorrent(
                 CreateTorrentArgs::Magnet(magnet),
@@ -240,6 +281,19 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     _ => Effects::none().unchanged(),
                 }
             }
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::CastToDevice(args))) => {
+                self.start_casting::<E>(args)
+            }
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::SetCastingSubtitles {
+                id,
+                subtitles,
+            })) => self.set_casting_subtitles::<E>(*id, subtitles),
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::StopCasting)) => {
+                self.stop_casting::<E>()
+            }
+            Msg::Internal(Internal::StreamingServerCastingResult(id, result)) => {
+                self.casting_result::<E>(*id, result)
+            }
             Msg::Internal(Internal::ProfileChanged)
                 if self.selected.transport_url != ctx.profile.settings.streaming_server_url =>
             {
@@ -249,6 +303,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 };
                 self.settings = Loadable::Loading;
                 self.settings_options = vec![];
+                self.cache_root_update_generation += 1;
+                self.cache_root_update = None;
                 self.network_info = Loadable::Loading;
                 self.device_info = Loadable::Loading;
                 self.base_url = None;
@@ -355,6 +411,29 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         Loadable::Ready(device_info.to_owned()),
                     ),
                     Err(error) => eq_update(&mut self.device_info, Loadable::Err(error.to_owned())),
+                }
+            }
+            Msg::Internal(Internal::StreamingServerUpdateCacheRootResult(
+                url,
+                generation,
+                result,
+            )) if self.selected.transport_url == *url
+                && self.cache_root_update_generation == *generation =>
+            {
+                match result {
+                    Ok(root) => {
+                        if let Loadable::Ready(settings) = &mut self.settings {
+                            settings.cache_root.clone_from(root);
+                        }
+                        eq_update(
+                            &mut self.cache_root_update,
+                            Some(Loadable::Ready(root.clone())),
+                        )
+                    }
+                    Err(error) => eq_update(
+                        &mut self.cache_root_update,
+                        Some(Loadable::Err(error.clone())),
+                    ),
                 }
             }
             Msg::Internal(Internal::StreamingServerUpdateSettingsResult(url, result))
@@ -511,12 +590,46 @@ fn get_device_info<E: Env + 'static>(url: &Url) -> Effect {
     .into()
 }
 
-fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
+fn set_cache_root<E: Env + 'static>(url: &Url, root: &str, generation: u64) -> Effect {
+    let url = url.clone();
+    let endpoint = url.join("settings").expect("url builder failed");
+    let request = Request::post(endpoint.as_str())
+        .header(http::header::CONTENT_TYPE, "application/json")
+        .body(serde_json::json!({ "cacheRoot": root }))
+        .expect("request builder failed");
+    EffectFuture::Concurrent(
+        async move {
+            let result = async {
+                E::fetch::<_, SuccessResponse>(request).await?;
+                E::fetch::<_, SettingsResponse>(
+                    Request::get(endpoint.as_str())
+                        .body(())
+                        .expect("request builder failed"),
+                )
+                .await
+                .map(|response| response.values.cache_root)
+            }
+            .await;
+            Msg::Internal(Internal::StreamingServerUpdateCacheRootResult(
+                url, generation, result,
+            ))
+        }
+        .boxed_env(),
+    )
+    .into()
+}
+
+fn set_settings<E: Env + 'static>(
+    url: &Url,
+    settings: &Settings,
+    cache_root_changed: bool,
+) -> Effect {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     struct Body {
         cache_size: Option<f64>,
-        cache_root: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        cache_root: Option<String>,
         bt_max_connections: u64,
         bt_handshake_timeout: u64,
         bt_request_timeout: u64,
@@ -530,7 +643,7 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
     }
     let body = Body {
         cache_size: settings.cache_size.to_owned(),
-        cache_root: settings.cache_root.to_owned(),
+        cache_root: cache_root_changed.then(|| settings.cache_root.to_owned()),
         bt_max_connections: settings.bt_max_connections.to_owned(),
         bt_handshake_timeout: settings.bt_handshake_timeout.to_owned(),
         bt_request_timeout: settings.bt_request_timeout.to_owned(),

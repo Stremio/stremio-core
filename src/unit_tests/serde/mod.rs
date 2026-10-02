@@ -12,6 +12,7 @@ mod default_tokens_ext;
 mod descriptor;
 mod descriptor_flags;
 mod descriptor_preview;
+mod epg_response_example;
 mod extra_prop;
 mod extra_value;
 mod gdpr_consent;

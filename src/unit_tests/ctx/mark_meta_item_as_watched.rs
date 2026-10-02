@@ -97,6 +97,8 @@ fn meta_item_mark_as_watched_existing_item_increments() {
         state: LibraryItemState {
             times_watched: 2,
             last_watched: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+            time_offset: 342_284,
+            duration: 6_923_626,
             ..Default::default()
         },
         name: "Test Movie".to_owned(),
@@ -123,6 +125,14 @@ fn meta_item_mark_as_watched_existing_item_increments() {
     assert_eq!(
         item.state.times_watched, 3,
         "times_watched incremented to 3"
+    );
+    assert_eq!(
+        item.state.time_offset, 0,
+        "explicit mark as watched clears stale resume progress"
+    );
+    assert!(
+        !item.is_in_continue_watching(),
+        "watched item is dismissed from Continue Watching"
     );
     assert!(!item.temp, "Item remains non-temp");
     assert!(!item.removed, "Item remains non-removed");
@@ -169,6 +179,8 @@ fn meta_item_unwatch_existing_item_resets() {
         state: LibraryItemState {
             times_watched: 5,
             last_watched: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+            time_offset: 123_456,
+            duration: 7_200_000,
             ..Default::default()
         },
         name: "Test Movie".to_owned(),
@@ -198,4 +210,12 @@ fn meta_item_unwatch_existing_item_resets() {
         .get("tt123")
         .expect("Item still exists");
     assert_eq!(item.state.times_watched, 0, "times_watched reset to 0");
+    assert_eq!(
+        item.state.time_offset, 123_456,
+        "marking not watched preserves the current resume position"
+    );
+    assert!(
+        item.is_in_continue_watching(),
+        "unwatch does not discard active playback progress"
+    );
 }

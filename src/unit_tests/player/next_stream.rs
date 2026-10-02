@@ -46,6 +46,7 @@ fn create_video(season: u32, episode: u32) -> Video {
         thumbnail: None,
         streams: vec![],
         series_info: Some(SeriesInfo { season, episode }),
+        epg_info: None,
         trailer_streams: vec![],
     }
 }

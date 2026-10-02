@@ -23,7 +23,7 @@ where
     if url.scheme() == "stremio" {
         let replaced_url = url.as_str().replacen("stremio://", "https://", 1);
 
-        Ok(replaced_url.parse().expect("Should be able to parse URL"))
+        replaced_url.parse().map_err(serde::de::Error::custom)
     } else {
         Ok(url)
     }
@@ -115,5 +115,13 @@ mod test {
 
             assert_eq!(expected, selected.transport_url.as_str());
         }
+    }
+
+    #[test]
+    fn test_deserialization_of_select_with_hostless_stremio_url() {
+        let selected_json = json!({ "transportUrl": "stremio://" });
+
+        from_value::<Selected>(selected_json)
+            .expect_err("Should not deserialize a stremio URL without a host");
     }
 }
