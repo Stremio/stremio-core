@@ -3,7 +3,10 @@ use itertools::Itertools;
 use serde::Serialize;
 use stremio_core::{
     deep_links::{CalendarDeepLinks, CalendarItemDeepLinks},
-    models::calendar::{FullDate, MonthInfo, Selected, YearMonthDate},
+    models::{
+        calendar::{FullDate, MonthInfo, Selected, YearMonthDate},
+        common::{Loadable, ResourceError},
+    },
     types::resource::SeriesInfo,
 };
 use url::Url;
@@ -54,13 +57,19 @@ mod model {
         pub selected: &'a Option<Selected>,
         pub selectable: Selectable<'a>,
         pub month_info: &'a MonthInfo,
-        pub items: &'a Vec<CalendarItem<'a>>,
+        pub meta_items: Vec<Loadable<(), &'a ResourceError>>,
+        pub items: Vec<CalendarItem<'a>>,
     }
 }
 
 #[cfg(feature = "wasm")]
 pub fn serialize_calendar(calendar: &stremio_core::models::calendar::Calendar) -> JsValue {
-    <JsValue as JsValueSerdeExt>::from_serde(&model::Calendar {
+    <JsValue as JsValueSerdeExt>::from_serde(&calendar_model(calendar))
+        .expect("JsValue from model::Calendar")
+}
+
+fn calendar_model(calendar: &stremio_core::models::calendar::Calendar) -> model::Calendar<'_> {
+    model::Calendar {
         selected: &calendar.selected,
         selectable: model::Selectable {
             prev: model::SelectableDate {
@@ -75,7 +84,17 @@ pub fn serialize_calendar(calendar: &stremio_core::models::calendar::Calendar) -
             },
         },
         month_info: &calendar.month_info,
-        items: &calendar
+        meta_items: calendar
+            .meta_items
+            .iter()
+            .filter_map(|meta_items| {
+                meta_items
+                    .content
+                    .as_ref()
+                    .map(|content| content.as_ref().map(|_| ()))
+            })
+            .collect_vec(),
+        items: calendar
             .items
             .iter()
             .map(|item| model::CalendarItem {
@@ -96,6 +115,49 @@ pub fn serialize_calendar(calendar: &stremio_core::models::calendar::Calendar) -
                     .collect_vec(),
             })
             .collect_vec(),
-    })
-    .expect("JsValue from model::Calendar")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use stremio_core::{
+        models::{
+            calendar::Calendar,
+            common::{Loadable, ResourceError, ResourceLoadable},
+        },
+        types::addon::{ResourcePath, ResourceRequest},
+    };
+
+    use super::calendar_model;
+
+    #[test]
+    fn calendar_web_state_exposes_requests_state() {
+        let meta_items = |content| ResourceLoadable {
+            request: ResourceRequest::new(
+                "https://addon.example.com/manifest.json".parse().unwrap(),
+                ResourcePath::without_extra("catalog", "series", "calendar-videos"),
+            ),
+            content: Some(content),
+        };
+        let state = Calendar {
+            meta_items: vec![
+                meta_items(Loadable::Loading),
+                meta_items(Loadable::Ready(vec![])),
+                meta_items(Loadable::Err(ResourceError::EmptyContent)),
+            ],
+            ..Default::default()
+        };
+
+        let value = serde_json::to_value(calendar_model(&state)).unwrap();
+
+        assert_eq!(
+            value["metaItems"],
+            serde_json::json!([
+                { "type": "Loading" },
+                { "type": "Ready", "content": null },
+                { "type": "Err", "content": { "type": "EmptyContent" } },
+            ]),
+            "the frontend derives the loading state from the requests, without their content"
+        );
+    }
 }
