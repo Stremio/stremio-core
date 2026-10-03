@@ -10,6 +10,7 @@ pub struct Settings {
     pub interface_scale: u8,
     pub hide_spoilers: bool,
     pub gamepad_support: bool,
+    #[serde(deserialize_with = "deserialize_streaming_server_url")]
     pub streaming_server_url: Url,
     pub player_type: Option<String>,
     pub binge_watching: bool,
@@ -57,6 +58,25 @@ pub enum FrameRateMatchingStrategy {
     Disabled,
     FrameRateOnly,
     FrameRateAndResolution,
+}
+
+/// Ensures the streaming server URL path ends with `/`, so that request URLs
+/// built with relative `Url::join` calls keep the configured path. Without it,
+/// a server served under e.g. `https://host/stremio` would lose `/stremio` as
+/// soon as `join("settings")` (or any other relative path) is applied.
+pub(crate) fn ensure_trailing_slash(url: &mut Url) {
+    if !url.path().ends_with('/') {
+        url.set_path(&format!("{}/", url.path()));
+    }
+}
+
+fn deserialize_streaming_server_url<'de, D>(deserializer: D) -> Result<Url, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let mut url = Url::deserialize(deserializer)?;
+    ensure_trailing_slash(&mut url);
+    Ok(url)
 }
 
 impl Default for Settings {
