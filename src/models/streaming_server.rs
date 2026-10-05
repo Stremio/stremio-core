@@ -863,7 +863,7 @@ fn get_https_endpoint<E: Env + 'static>(
 ) -> Effect {
     let endpoint = url
         .join(&format!(
-            "/get-https?authKey={}&ipAddress={}",
+            "get-https?authKey={}&ipAddress={}",
             auth_key, ip_address,
         ))
         .expect("url builder failed");
