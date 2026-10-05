@@ -1947,25 +1947,19 @@ fn player_event_effects<E: Env + 'static>(
     match (
         action,
         selected.and_then(|selected| selected.stream_request.as_ref()),
-        analytics_context,
     ) {
-        (
-            Some(action),
-            Some(stream_request),
-            Some(AnalyticsContext {
-                r#type: Some(r#type),
-                time: Some(time),
-                duration: Some(duration),
-                ..
-            }),
-        ) => addon_events_effects::<E>(
+        (Some(action), Some(stream_request)) => addon_events_effects::<E>(
             addons,
             vec![player_event_path(
-                r#type,
+                &stream_request.path.r#type,
                 &stream_request.path.id,
                 action,
-                *time,
-                *duration,
+                analytics_context
+                    .and_then(|analytics_context| analytics_context.time)
+                    .unwrap_or_default(),
+                analytics_context
+                    .and_then(|analytics_context| analytics_context.duration)
+                    .unwrap_or_default(),
             )],
         ),
         _ => Effects::none().unchanged(),
