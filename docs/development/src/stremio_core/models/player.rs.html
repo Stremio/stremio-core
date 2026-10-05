@@ -2048,13 +2048,7 @@
 <a href="#2047" id="2047">2047</a>
 <a href="#2048" id="2048">2048</a>
 <a href="#2049" id="2049">2049</a>
-<a href="#2050" id="2050">2050</a>
-<a href="#2051" id="2051">2051</a>
-<a href="#2052" id="2052">2052</a>
-<a href="#2053" id="2053">2053</a>
-<a href="#2054" id="2054">2054</a>
-<a href="#2055" id="2055">2055</a>
-<a href="#2056" id="2056">2056</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#2050" id="2050">2050</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>std::ops::Div;
 
 <span class="kw">use </span>base64::Engine;
@@ -4003,25 +3997,19 @@
     <span class="kw">match </span>(
         action,
         selected.and_then(|selected| selected.stream_request.as_ref()),
-        analytics_context,
     ) {
-        (
-            <span class="prelude-val">Some</span>(action),
-            <span class="prelude-val">Some</span>(stream_request),
-            <span class="prelude-val">Some</span>(AnalyticsContext {
-                r#type: <span class="prelude-val">Some</span>(r#type),
-                time: <span class="prelude-val">Some</span>(time),
-                duration: <span class="prelude-val">Some</span>(duration),
-                ..
-            }),
-        ) =&gt; addon_events_effects::&lt;E&gt;(
+        (<span class="prelude-val">Some</span>(action), <span class="prelude-val">Some</span>(stream_request)) =&gt; addon_events_effects::&lt;E&gt;(
             addons,
             <span class="macro">vec!</span>[player_event_path(
-                r#type,
+                <span class="kw-2">&amp;</span>stream_request.path.r#type,
                 <span class="kw-2">&amp;</span>stream_request.path.id,
                 action,
-                <span class="kw-2">*</span>time,
-                <span class="kw-2">*</span>duration,
+                analytics_context
+                    .and_then(|analytics_context| analytics_context.time)
+                    .unwrap_or_default(),
+                analytics_context
+                    .and_then(|analytics_context| analytics_context.duration)
+                    .unwrap_or_default(),
             )],
         ),
         <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
