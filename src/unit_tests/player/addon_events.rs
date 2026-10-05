@@ -73,19 +73,6 @@ fn new_runtime() -> (
     Runtime<TestEnv, TestModel>,
     Receiver<RuntimeEvent<TestEnv, TestModel>>,
 ) {
-    let tracker = Descriptor {
-        manifest: Manifest {
-            resources: vec![
-                ManifestResource::Short("player".to_owned()),
-                ManifestResource::Short("library".to_owned()),
-            ],
-            types: vec!["series".to_owned()],
-            id_prefixes: Some(vec!["tt".to_owned()]),
-            ..Default::default()
-        },
-        transport_url: "https://tracker/manifest.json".parse().unwrap(),
-        flags: Default::default(),
-    };
     let library_item = LibraryItem {
         id: "tt123456".into(),
         name: "Test Series".into(),
@@ -99,6 +86,33 @@ fn new_runtime() -> (
         state: Default::default(),
         behavior_hints: Default::default(),
     };
+    new_runtime_with_library(LibraryBucket {
+        uid: None,
+        items: vec![("tt123456".into(), library_item)]
+            .into_iter()
+            .collect(),
+    })
+}
+
+fn new_runtime_with_library(
+    library: LibraryBucket,
+) -> (
+    Runtime<TestEnv, TestModel>,
+    Receiver<RuntimeEvent<TestEnv, TestModel>>,
+) {
+    let tracker = Descriptor {
+        manifest: Manifest {
+            resources: vec![
+                ManifestResource::Short("player".to_owned()),
+                ManifestResource::Short("library".to_owned()),
+            ],
+            types: vec!["series".to_owned()],
+            id_prefixes: Some(vec!["tt".to_owned()]),
+            ..Default::default()
+        },
+        transport_url: "https://tracker/manifest.json".parse().unwrap(),
+        flags: Default::default(),
+    };
     Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
@@ -106,12 +120,7 @@ fn new_runtime() -> (
                     addons: vec![tracker],
                     ..Default::default()
                 },
-                library: LibraryBucket {
-                    uid: None,
-                    items: vec![("tt123456".into(), library_item)]
-                        .into_iter()
-                        .collect(),
-                },
+                library,
                 ..Default::default()
             },
             player: Player::default(),
@@ -130,29 +139,30 @@ fn dispatch(runtime: &Runtime<TestEnv, TestModel>, action: Action) {
     });
 }
 
-fn load(runtime: &Runtime<TestEnv, TestModel>) {
+fn load_action() -> Action {
     let request = |resource: &str, id: &str| ResourceRequest {
         base: "https://transport_url/manifest.json".parse().unwrap(),
         path: ResourcePath::without_extra(resource, "series", id),
     };
-    dispatch(
-        runtime,
-        Action::Load(ActionLoad::Player(Box::new(Selected {
-            stream: Stream {
-                source: StreamSource::Url {
-                    url: "https://source_url".parse().unwrap(),
-                },
-                name: None,
-                description: None,
-                thumbnail: None,
-                subtitles: vec![],
-                behavior_hints: Default::default(),
+    Action::Load(ActionLoad::Player(Box::new(Selected {
+        stream: Stream {
+            source: StreamSource::Url {
+                url: "https://source_url".parse().unwrap(),
             },
-            stream_request: Some(request(STREAM_RESOURCE_NAME, "tt123456:1:1")),
-            meta_request: Some(request(META_RESOURCE_NAME, "tt123456")),
-            subtitles_path: None,
-        }))),
-    );
+            name: None,
+            description: None,
+            thumbnail: None,
+            subtitles: vec![],
+            behavior_hints: Default::default(),
+        },
+        stream_request: Some(request(STREAM_RESOURCE_NAME, "tt123456:1:1")),
+        meta_request: Some(request(META_RESOURCE_NAME, "tt123456")),
+        subtitles_path: None,
+    })))
+}
+
+fn load(runtime: &Runtime<TestEnv, TestModel>) {
+    dispatch(runtime, load_action());
 }
 
 fn player_action(runtime: &Runtime<TestEnv, TestModel>, action: ActionPlayer) {
@@ -235,6 +245,44 @@ fn ended_playback_sends_a_single_stop() {
             format!("{url}/action=stop&currentTime=3590000&duration=3600000.json"),
         ],
         "automatic watched is left to the tracker, no library event is sent"
+    );
+}
+
+#[test]
+fn playback_before_meta_is_loaded_sends_start() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
+    let (runtime, _rx) = new_runtime_with_library(LibraryBucket::default());
+
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: load_action(),
+        });
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Player(ActionPlayer::PausedChanged { paused: false }),
+        });
+    });
+    player_action(
+        &runtime,
+        ActionPlayer::TimeChanged {
+            time: 600_000,
+            duration: 3_600_000,
+            device: "test".to_owned(),
+        },
+    );
+    player_action(&runtime, ActionPlayer::PausedChanged { paused: true });
+    dispatch(&runtime, Action::Unload);
+
+    let url = "https://tracker/player/series/tt123456%3A1%3A1";
+    assert_eq!(
+        tracker_urls(),
+        vec![
+            format!("{url}/action=start&currentTime=0&duration=0.json"),
+            format!("{url}/action=pause&currentTime=600000&duration=3600000.json"),
+            format!("{url}/action=stop&currentTime=600000&duration=3600000.json"),
+        ],
     );
 }
 
