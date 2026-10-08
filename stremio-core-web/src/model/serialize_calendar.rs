@@ -23,6 +23,8 @@ mod model {
         pub id: &'a String,
         pub name: &'a String,
         pub poster: &'a Option<Url>,
+        pub background: &'a Option<Url>,
+        pub thumbnail: &'a Option<String>,
         pub title: &'a String,
         #[serde(flatten)]
         pub series_info: &'a Option<SeriesInfo>,
@@ -106,6 +108,8 @@ fn calendar_model(calendar: &stremio_core::models::calendar::Calendar) -> model:
                         id: &item.video.id,
                         name: &item.meta_item.preview.name,
                         poster: &item.meta_item.preview.poster,
+                        background: &item.meta_item.preview.background,
+                        thumbnail: &item.video.thumbnail,
                         title: &item.video.title,
                         series_info: &item.video.series_info,
                         deep_links: CalendarItemDeepLinks::from((&item.meta_item, &item.video))
