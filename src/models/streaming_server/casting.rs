@@ -10,6 +10,7 @@ use crate::{
         msg::{CastingSubtitles, Event, Internal, Msg, PlayOnDeviceArgs},
         Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt,
     },
+    types::streaming_server::{apply_basic_auth, split_basic_auth},
 };
 
 #[derive(Clone, Serialize, Debug)]
@@ -262,7 +263,7 @@ fn cast_error(device: String, command: Command, error: EnvError) -> Effects {
 }
 
 fn cast_request<E: Env + 'static>(request: CastingRequest) -> Effect {
-    let mut endpoint = request.session.transport_url.clone();
+    let (mut endpoint, auth) = split_basic_auth(&request.session.transport_url);
     endpoint
         .path_segments_mut()
         .expect("streaming server URL has a path")
@@ -275,17 +276,22 @@ fn cast_request<E: Env + 'static>(request: CastingRequest) -> Effect {
                 Command::Play(args) => {
                     send::<E>(
                         &endpoint,
+                        auth.as_ref(),
                         json!({ "source": args.source, "time": args.time.unwrap_or(0) }),
                     )
                     .await?;
                     // Source initialization resets subtitle state in existing servers.
                     if let Some(subtitles) = args.subtitles {
-                        send::<E>(&endpoint, json!(subtitles)).await?;
+                        send::<E>(&endpoint, auth.as_ref(), json!(subtitles)).await?;
                     }
                     Ok(())
                 }
-                Command::Subtitles(subtitles) => send::<E>(&endpoint, json!(subtitles)).await,
-                Command::Stop => send::<E>(&endpoint, json!({ "source": null })).await,
+                Command::Subtitles(subtitles) => {
+                    send::<E>(&endpoint, auth.as_ref(), json!(subtitles)).await
+                }
+                Command::Stop => {
+                    send::<E>(&endpoint, auth.as_ref(), json!({ "source": null })).await
+                }
             }
         }
         .map(move |result| Msg::Internal(Internal::StreamingServerCastingResult(id, result)))
@@ -294,11 +300,18 @@ fn cast_request<E: Env + 'static>(request: CastingRequest) -> Effect {
     .into()
 }
 
-async fn send<E: Env + 'static>(endpoint: &Url, body: Value) -> Result<(), EnvError> {
-    let request = Request::post(endpoint.as_str())
-        .header(http::header::CONTENT_TYPE, "application/json")
-        .body(body)
-        .expect("request builder failed");
+async fn send<E: Env + 'static>(
+    endpoint: &Url,
+    auth: Option<&http::HeaderValue>,
+    body: Value,
+) -> Result<(), EnvError> {
+    let request = apply_basic_auth(
+        Request::post(endpoint.as_str())
+            .header(http::header::CONTENT_TYPE, "application/json")
+            .body(body)
+            .expect("request builder failed"),
+        auth,
+    );
     let response = E::fetch::<_, Value>(request).await?;
     // Older servers return cast failures as HTTP 200 strings or error objects.
     match response

@@ -18,9 +18,9 @@ use crate::types::api::SuccessResponse;
 use crate::types::empty_string_as_null;
 use crate::types::profile::{AuthKey, Profile};
 use crate::types::streaming_server::{
-    CreateMagnetRequest, CreateTorrentBlobRequest, DeviceInfo, GetHTTPSResponse, NetworkInfo,
-    Settings, SettingsOption, SettingsResponse, Statistics, StatisticsRequest,
-    TorrentStatisticsRequest,
+    apply_basic_auth, split_basic_auth, CreateMagnetRequest, CreateTorrentBlobRequest, DeviceInfo,
+    GetHTTPSResponse, NetworkInfo, Settings, SettingsOption, SettingsResponse, Statistics,
+    StatisticsRequest, TorrentStatisticsRequest,
 };
 use crate::types::torrent::InfoHash;
 
@@ -526,10 +526,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
 }
 
 fn get_settings<E: Env + 'static>(url: &Url) -> Effect {
-    let endpoint = url.join("settings").expect("url builder failed");
-    let request = Request::get(endpoint.as_str())
-        .body(())
-        .expect("request builder failed");
+    let (server_url, auth) = split_basic_auth(url);
+    let endpoint = server_url.join("settings").expect("url builder failed");
+    let request = apply_basic_auth(
+        Request::get(endpoint.as_str())
+            .body(())
+            .expect("request builder failed"),
+        auth.as_ref(),
+    );
     EffectFuture::Concurrent(
         E::fetch::<_, SettingsResponse>(request)
             .map(enclose!((url) move |result| {
@@ -543,10 +547,14 @@ fn get_settings<E: Env + 'static>(url: &Url) -> Effect {
 }
 
 fn get_playback_devices<E: Env + 'static>(url: &Url, generation: u64) -> Effect {
-    let endpoint = url.join("casting").expect("url builder failed");
-    let request = Request::get(endpoint.as_str())
-        .body(())
-        .expect("request builder failed");
+    let (server_url, auth) = split_basic_auth(url);
+    let endpoint = server_url.join("casting").expect("url builder failed");
+    let request = apply_basic_auth(
+        Request::get(endpoint.as_str())
+            .body(())
+            .expect("request builder failed"),
+        auth.as_ref(),
+    );
     EffectFuture::Concurrent(
         E::fetch::<_, Vec<PlaybackDevice>>(request)
             .map_ok(|resp| resp)
@@ -559,10 +567,14 @@ fn get_playback_devices<E: Env + 'static>(url: &Url, generation: u64) -> Effect 
 }
 
 fn get_network_info<E: Env + 'static>(url: &Url) -> Effect {
-    let endpoint = url.join("network-info").expect("url builder failed");
-    let request = Request::get(endpoint.as_str())
-        .body(())
-        .expect("request builder failed");
+    let (server_url, auth) = split_basic_auth(url);
+    let endpoint = server_url.join("network-info").expect("url builder failed");
+    let request = apply_basic_auth(
+        Request::get(endpoint.as_str())
+            .body(())
+            .expect("request builder failed"),
+        auth.as_ref(),
+    );
     EffectFuture::Concurrent(
         E::fetch::<_, NetworkInfo>(request)
             .map_ok(|resp| resp)
@@ -575,10 +587,14 @@ fn get_network_info<E: Env + 'static>(url: &Url) -> Effect {
 }
 
 fn get_device_info<E: Env + 'static>(url: &Url) -> Effect {
-    let endpoint = url.join("device-info").expect("url builder failed");
-    let request = Request::get(endpoint.as_str())
-        .body(())
-        .expect("request builder failed");
+    let (server_url, auth) = split_basic_auth(url);
+    let endpoint = server_url.join("device-info").expect("url builder failed");
+    let request = apply_basic_auth(
+        Request::get(endpoint.as_str())
+            .body(())
+            .expect("request builder failed"),
+        auth.as_ref(),
+    );
     EffectFuture::Concurrent(
         E::fetch::<_, DeviceInfo>(request)
             .map_ok(|resp| resp)
@@ -592,20 +608,25 @@ fn get_device_info<E: Env + 'static>(url: &Url) -> Effect {
 
 fn set_cache_root<E: Env + 'static>(url: &Url, root: &str, generation: u64) -> Effect {
     let url = url.clone();
-    let endpoint = url.join("settings").expect("url builder failed");
-    let request = Request::post(endpoint.as_str())
-        .header(http::header::CONTENT_TYPE, "application/json")
-        .body(serde_json::json!({ "cacheRoot": root }))
-        .expect("request builder failed");
+    let (server_url, auth) = split_basic_auth(&url);
+    let endpoint = server_url.join("settings").expect("url builder failed");
+    let request = apply_basic_auth(
+        Request::post(endpoint.as_str())
+            .header(http::header::CONTENT_TYPE, "application/json")
+            .body(serde_json::json!({ "cacheRoot": root }))
+            .expect("request builder failed"),
+        auth.as_ref(),
+    );
     EffectFuture::Concurrent(
         async move {
             let result = async {
                 E::fetch::<_, SuccessResponse>(request).await?;
-                E::fetch::<_, SettingsResponse>(
+                E::fetch::<_, SettingsResponse>(apply_basic_auth(
                     Request::get(endpoint.as_str())
                         .body(())
                         .expect("request builder failed"),
-                )
+                    auth.as_ref(),
+                ))
                 .await
                 .map(|response| response.values.cache_root)
             }
@@ -654,11 +675,15 @@ fn set_settings<E: Env + 'static>(
         proxy_streams_enabled: settings.proxy_streams_enabled.to_owned(),
         transcode_profile: settings.transcode_profile.to_owned(),
     };
-    let endpoint = url.join("settings").expect("url builder failed");
-    let request = Request::post(endpoint.as_str())
-        .header(http::header::CONTENT_TYPE, "application/json")
-        .body(body)
-        .expect("request builder failed");
+    let (server_url, auth) = split_basic_auth(&url);
+    let endpoint = server_url.join("settings").expect("url builder failed");
+    let request = apply_basic_auth(
+        Request::post(endpoint.as_str())
+            .header(http::header::CONTENT_TYPE, "application/json")
+            .body(body)
+            .expect("request builder failed"),
+        auth.as_ref(),
+    );
     EffectFuture::Concurrent(
         E::fetch::<_, SuccessResponse>(request)
             .map_ok(|_| ())
@@ -834,17 +859,21 @@ fn play_on_device<E: Env + 'static>(url: &Url, args: &PlayOnDeviceArgs) -> Effec
         time: u64,
     }
     let device = args.device.clone();
-    let endpoint = url
+    let (server_url, auth) = split_basic_auth(url);
+    let endpoint = server_url
         .join(&format!("casting/{device}/player"))
         .expect("url builder failed");
     let body = Body {
         source: args.source.to_owned(),
         time: args.time.unwrap_or(0),
     };
-    let request = Request::post(endpoint.as_str())
-        .header(http::header::CONTENT_TYPE, "application/json")
-        .body(body)
-        .expect("request builder failed");
+    let request = apply_basic_auth(
+        Request::post(endpoint.as_str())
+            .header(http::header::CONTENT_TYPE, "application/json")
+            .body(body)
+            .expect("request builder failed"),
+        auth.as_ref(),
+    );
     EffectFuture::Concurrent(
         E::fetch::<_, serde_json::Value>(request)
             .map_ok(|_| ())
@@ -861,16 +890,20 @@ fn get_https_endpoint<E: Env + 'static>(
     auth_key: &AuthKey,
     ip_address: &String,
 ) -> Effect {
-    let endpoint = url
+    let (server_url, auth) = split_basic_auth(url);
+    let endpoint = server_url
         .join(&format!(
             "/get-https?authKey={}&ipAddress={}",
             auth_key, ip_address,
         ))
         .expect("url builder failed");
-    let request = Request::get(endpoint.as_str())
-        .header(http::header::CONTENT_TYPE, "application/json")
-        .body(())
-        .expect("request builder failed");
+    let request = apply_basic_auth(
+        Request::get(endpoint.as_str())
+            .header(http::header::CONTENT_TYPE, "application/json")
+            .body(())
+            .expect("request builder failed"),
+        auth.as_ref(),
+    );
     EffectFuture::Concurrent(
         E::fetch::<_, GetHTTPSResponse>(request)
             .map(enclose!((url) move |result|
