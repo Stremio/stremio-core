@@ -2097,7 +2097,7 @@
 <span class="kw">use </span>once_cell::sync::Lazy;
 
 <span class="doccomment">/// The duration that must have passed in order for a library item to be updated.
-</span><span class="kw">pub static </span>PUSH_TO_LIBRARY_EVERY: Lazy&lt;Duration&gt; = Lazy::new(|| Duration::seconds(<span class="number">90</span>));
+</span><span class="kw">pub static </span>PUSH_TO_LIBRARY_EVERY: Lazy&lt;Duration&gt; = Lazy::new(|| Duration::seconds(<span class="number">180</span>));
 
 <span class="attr">#[derive(Clone, Default, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
