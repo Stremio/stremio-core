@@ -47,7 +47,7 @@ use serde::{Deserialize, Serialize};
 use once_cell::sync::Lazy;
 
 /// The duration that must have passed in order for a library item to be updated.
-pub static PUSH_TO_LIBRARY_EVERY: Lazy<Duration> = Lazy::new(|| Duration::seconds(90));
+pub static PUSH_TO_LIBRARY_EVERY: Lazy<Duration> = Lazy::new(|| Duration::seconds(180));
 
 #[derive(Clone, Default, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
