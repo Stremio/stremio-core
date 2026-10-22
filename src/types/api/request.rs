@@ -144,6 +144,8 @@ pub struct SkipGapsRequest {
     /// base64 encoded SHA-256 hash of the Stream file name.
     #[serde(rename = "stHash")]
     pub stream_name_hash: String,
+    /// Current playing stream duration in milliseconds.
+    pub duration: u64,
 }
 
 impl FetchRequestParams<APIRequest> for APIRequest {
@@ -346,8 +348,31 @@ pub enum DatastoreCommand {
 #[cfg(test)]
 mod tests {
     use http::Method;
+    use serde_json::json;
 
-    use crate::types::api::FetchRequestParams;
+    use crate::types::{
+        api::{APIRequest, FetchRequestParams, SkipGapsRequest},
+        profile::AuthKey,
+        resource::SeriesInfo,
+    };
+
+    #[test]
+    fn skip_gaps_request_includes_stream_duration() {
+        let request = APIRequest::SkipGaps(SkipGapsRequest {
+            auth_key: AuthKey("auth-key".into()),
+            os_hash: "os-hash".into(),
+            item_id: "tt123:1:2".into(),
+            series_info: SeriesInfo {
+                season: 1,
+                episode: 2,
+            },
+            stream_name_hash: "stream-hash".into(),
+            duration: 1_234_567,
+        });
+
+        let value = serde_json::to_value(request).expect("request should serialize");
+        assert_eq!(value["duration"], json!(1_234_567));
+    }
 
     #[test]
     fn test_versioning_of_api_fetch_request_params() {
