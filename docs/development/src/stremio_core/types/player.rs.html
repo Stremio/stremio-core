@@ -54,9 +54,7 @@
 <a href="#53" id="53">53</a>
 <a href="#54" id="54">54</a>
 <a href="#55" id="55">55</a>
-<a href="#56" id="56">56</a>
-<a href="#57" id="57">57</a>
-<a href="#58" id="58">58</a></pre></div><pre class="rust"><code><span class="kw">use </span>serde::{Deserialize, Serialize};
+<a href="#56" id="56">56</a></pre></div><pre class="rust"><code><span class="kw">use </span>serde::{Deserialize, Serialize};
 
 <span class="attr">#[derive(Clone, Copy, Deserialize, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
@@ -110,8 +108,6 @@
 </span><span class="kw">pub struct </span>IntroData {
     <span class="kw">pub </span>from: u64,
     <span class="kw">pub </span>to: u64,
-    <span class="doccomment">/// `Some` if the difference between the skip gap data
-    /// and stream duration ([`LibraryItem.state.duration`]) &gt; 0!
-    </span><span class="kw">pub </span>duration: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+    <span class="kw">pub </span>duration: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 }
 </code></pre></div></section></main></body></html>

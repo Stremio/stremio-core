@@ -377,7 +377,32 @@
 <a href="#376" id="376">376</a>
 <a href="#377" id="377">377</a>
 <a href="#378" id="378">378</a>
-<a href="#379" id="379">379</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
+<a href="#379" id="379">379</a>
+<a href="#380" id="380">380</a>
+<a href="#381" id="381">381</a>
+<a href="#382" id="382">382</a>
+<a href="#383" id="383">383</a>
+<a href="#384" id="384">384</a>
+<a href="#385" id="385">385</a>
+<a href="#386" id="386">386</a>
+<a href="#387" id="387">387</a>
+<a href="#388" id="388">388</a>
+<a href="#389" id="389">389</a>
+<a href="#390" id="390">390</a>
+<a href="#391" id="391">391</a>
+<a href="#392" id="392">392</a>
+<a href="#393" id="393">393</a>
+<a href="#394" id="394">394</a>
+<a href="#395" id="395">395</a>
+<a href="#396" id="396">396</a>
+<a href="#397" id="397">397</a>
+<a href="#398" id="398">398</a>
+<a href="#399" id="399">399</a>
+<a href="#400" id="400">400</a>
+<a href="#401" id="401">401</a>
+<a href="#402" id="402">402</a>
+<a href="#403" id="403">403</a>
+<a href="#404" id="404">404</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
 
 <span class="kw">use </span><span class="kw">crate</span>::constants::{API_URL, LINK_API_URL};
 <span class="kw">use </span><span class="kw">crate</span>::types::addon::Descriptor;
@@ -523,6 +548,8 @@
     /// base64 encoded SHA-256 hash of the Stream file name.
     </span><span class="attr">#[serde(rename = <span class="string">"stHash"</span>)]
     </span><span class="kw">pub </span>stream_name_hash: String,
+    <span class="doccomment">/// Current playing stream duration in milliseconds.
+    </span><span class="kw">pub </span>duration: u64,
 }
 
 <span class="kw">impl </span>FetchRequestParams&lt;APIRequest&gt; <span class="kw">for </span>APIRequest {
@@ -725,8 +752,31 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
     <span class="kw">use </span>http::Method;
+    <span class="kw">use </span>serde_json::json;
 
-    <span class="kw">use </span><span class="kw">crate</span>::types::api::FetchRequestParams;
+    <span class="kw">use </span><span class="kw">crate</span>::types::{
+        api::{APIRequest, FetchRequestParams, SkipGapsRequest},
+        profile::AuthKey,
+        resource::SeriesInfo,
+    };
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>skip_gaps_request_includes_stream_duration() {
+        <span class="kw">let </span>request = APIRequest::SkipGaps(SkipGapsRequest {
+            auth_key: AuthKey(<span class="string">"auth-key"</span>.into()),
+            os_hash: <span class="string">"os-hash"</span>.into(),
+            item_id: <span class="string">"tt123:1:2"</span>.into(),
+            series_info: SeriesInfo {
+                season: <span class="number">1</span>,
+                episode: <span class="number">2</span>,
+            },
+            stream_name_hash: <span class="string">"stream-hash"</span>.into(),
+            duration: <span class="number">1_234_567</span>,
+        });
+
+        <span class="kw">let </span>value = serde_json::to_value(request).expect(<span class="string">"request should serialize"</span>);
+        <span class="macro">assert_eq!</span>(value[<span class="string">"duration"</span>], <span class="macro">json!</span>(<span class="number">1_234_567</span>));
+    }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_versioning_of_api_fetch_request_params() {
