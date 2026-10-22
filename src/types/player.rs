@@ -52,7 +52,5 @@ pub struct IntroOutro {
 pub struct IntroData {
     pub from: u64,
     pub to: u64,
-    /// `Some` if the difference between the skip gap data
-    /// and stream duration ([`LibraryItem.state.duration`]) > 0!
     pub duration: Option<u64>,
 }
