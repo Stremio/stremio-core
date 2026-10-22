@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
+mod auth;
+pub use auth::*;
+
 mod device_info;
 pub use device_info::*;
 
