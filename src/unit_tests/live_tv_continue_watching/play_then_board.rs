@@ -69,6 +69,8 @@ fn channel_meta() -> MetaItem {
                 directors: vec![],
                 links: vec![],
                 ratings: vec![],
+                imdb_id: None,
+                background: None,
             }),
             ..Video::default()
         }],

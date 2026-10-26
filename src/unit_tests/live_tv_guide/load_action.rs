@@ -33,6 +33,8 @@ fn epg_info(start: (u32, u32), end: (u32, u32)) -> VideoEpgInfo {
         directors: vec![],
         links: vec![],
         ratings: vec![],
+        imdb_id: None,
+        background: None,
     }
 }
 
