@@ -344,21 +344,7 @@
 <a href="#343" id="343">343</a>
 <a href="#344" id="344">344</a>
 <a href="#345" id="345">345</a>
-<a href="#346" id="346">346</a>
-<a href="#347" id="347">347</a>
-<a href="#348" id="348">348</a>
-<a href="#349" id="349">349</a>
-<a href="#350" id="350">350</a>
-<a href="#351" id="351">351</a>
-<a href="#352" id="352">352</a>
-<a href="#353" id="353">353</a>
-<a href="#354" id="354">354</a>
-<a href="#355" id="355">355</a>
-<a href="#356" id="356">356</a>
-<a href="#357" id="357">357</a>
-<a href="#358" id="358">358</a>
-<a href="#359" id="359">359</a>
-<a href="#360" id="360">360</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
+<a href="#346" id="346">346</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
 
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>url::Url;
@@ -380,7 +366,6 @@
         addon::Descriptor,
         api::AuthRequest,
         library::LibraryItemId,
-        player::{AudioPreference, SubtitlePreference, VideoScale},
         profile::{AuthKey, Password, Settings <span class="kw">as </span>ProfileSettings},
         rating::Rating,
         resource::{MetaItemId, MetaItemPreview, Stream, Video},
@@ -602,19 +587,6 @@
     },
     StreamStateChanged {
         state: StreamItemState,
-    },
-    <span class="doccomment">/// Updates the audio preference for the current Player session.
-    </span>AudioPreferenceChanged {
-        preference: AudioPreference,
-    },
-    <span class="doccomment">/// Updates the subtitle preference for the current Player session.
-    </span>SubtitlePreferenceChanged {
-        preference: SubtitlePreference,
-    },
-    <span class="doccomment">/// Updates the video scale for the current Player session.
-    </span><span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
-    </span>VideoScaleChanged {
-        video_scale: VideoScale,
     },
     <span class="doccomment">/// Seek performed by the user when using the seekbar or
     /// the shortcuts for seeking.

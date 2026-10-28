@@ -121,7 +121,12 @@
 <a href="#120" id="120">120</a>
 <a href="#121" id="121">121</a>
 <a href="#122" id="122">122</a>
-<a href="#123" id="123">123</a></pre></div><pre class="rust"><code><span class="kw">use </span>chrono::{DateTime, Utc};
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a></pre></div><pre class="rust"><code><span class="kw">use </span>chrono::{DateTime, Utc};
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>serde_with::serde_as;
 <span class="kw">use </span>url::Url;
@@ -152,6 +157,8 @@
 </span><span class="kw">pub struct </span>StreamItemState {
     <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>subtitle_track: <span class="prelude-ty">Option</span>&lt;SubtitleTrack&gt;,
+    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+    </span><span class="kw">pub </span>subtitles_enabled: <span class="prelude-ty">Option</span>&lt;bool&gt;,
     <span class="doccomment">/// In milliseconds
     </span><span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>subtitle_delay: <span class="prelude-ty">Option</span>&lt;i64&gt;,
@@ -215,7 +222,8 @@
     ///         for subtitle and audio delay, as these are not relevant when playing
     ///         a stream for next binge video as audio/subtitle sync might be different,
     ///         but we want to retain track ids as next binge group might have
-    ///         the same embedded tracks with same ids;
+    ///         the same embedded tracks with same ids, and addon tracks with a
+    ///         language so the same language can be selected again;
     ///     Otherwise retain only playback speed and player type as these should not change
     ///         regardless of the video, since you usually want to maintain these throughout
     ///         the whole series;
@@ -228,7 +236,9 @@
                 <span class="kw">return </span>state;
             } <span class="kw">else if </span>is_binge_match {
                 <span class="kw">return </span>StreamItemState {
-                    subtitle_track: state.subtitle_track.filter(|track| track.embedded),
+                    subtitle_track: state
+                        .subtitle_track
+                        .filter(|track| track.embedded || track.language.is_some()),
                     <span class="comment">// Audio IDs are only safe to carry across streams with a language to validate.
                     </span>audio_track: state.audio_track.filter(|track| track.language.is_some()),
                     subtitle_delay: <span class="prelude-val">None</span>,

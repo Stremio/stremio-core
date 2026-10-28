@@ -402,14 +402,7 @@
 <a href="#401" id="401">401</a>
 <a href="#402" id="402">402</a>
 <a href="#403" id="403">403</a>
-<a href="#404" id="404">404</a>
-<a href="#405" id="405">405</a>
-<a href="#406" id="406">406</a>
-<a href="#407" id="407">407</a>
-<a href="#408" id="408">408</a>
-<a href="#409" id="409">409</a>
-<a href="#410" id="410">410</a>
-<a href="#411" id="411">411</a></pre></div><pre class="rust"><code><span class="kw">use </span>semver::Version;
+<a href="#404" id="404">404</a></pre></div><pre class="rust"><code><span class="kw">use </span>semver::Version;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>url::Url;
 <span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
@@ -422,7 +415,6 @@
 <span class="kw">use </span>stremio_core::models::streaming_server::StreamingServer;
 <span class="kw">use </span>stremio_core::types::{
     addon::{ResourcePath, ResourceRequest},
-    player::{AudioPreference, SubtitlePreference, VideoScale},
     streams::StreamItemState,
 };
 
@@ -526,9 +518,6 @@
         <span class="kw">pub </span>series_info: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>stremio_core::types::resource::SeriesInfo&gt;,
         <span class="kw">pub </span>library_item: <span class="prelude-ty">Option</span>&lt;LibraryItem&lt;<span class="lifetime">'a</span>&gt;&gt;,
         <span class="kw">pub </span>stream_state: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>StreamItemState&gt;,
-        <span class="kw">pub </span>audio_preference: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>AudioPreference&gt;,
-        <span class="kw">pub </span>subtitle_preference: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>SubtitlePreference&gt;,
-        <span class="kw">pub </span>video_scale: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>VideoScale&gt;,
         <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
         </span><span class="kw">pub </span>intro_outro: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>stremio_core::types::player::IntroOutro&gt;,
         <span class="kw">pub </span>title: <span class="prelude-ty">Option</span>&lt;String&gt;,
@@ -745,9 +734,6 @@
                 },
             }),
         stream_state: player.stream_state.as_ref(),
-        audio_preference: player.audio_preference.as_ref(),
-        subtitle_preference: player.subtitle_preference.as_ref(),
-        video_scale: player.video_scale.as_ref(),
         intro_outro: player.intro_outro.as_ref(),
         title: player.selected.as_ref().and_then(|selected| {
             player
