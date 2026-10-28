@@ -29,6 +29,8 @@ pub struct StreamsItem {
 pub struct StreamItemState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subtitle_track: Option<SubtitleTrack>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subtitles_enabled: Option<bool>,
     /// In milliseconds
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subtitle_delay: Option<i64>,
@@ -92,7 +94,8 @@ impl StreamsItem {
     ///         for subtitle and audio delay, as these are not relevant when playing
     ///         a stream for next binge video as audio/subtitle sync might be different,
     ///         but we want to retain track ids as next binge group might have
-    ///         the same embedded tracks with same ids;
+    ///         the same embedded tracks with same ids, and addon tracks with a
+    ///         language so the same language can be selected again;
     ///     Otherwise retain only playback speed and player type as these should not change
     ///         regardless of the video, since you usually want to maintain these throughout
     ///         the whole series;
@@ -105,7 +108,9 @@ impl StreamsItem {
                 return state;
             } else if is_binge_match {
                 return StreamItemState {
-                    subtitle_track: state.subtitle_track.filter(|track| track.embedded),
+                    subtitle_track: state
+                        .subtitle_track
+                        .filter(|track| track.embedded || track.language.is_some()),
                     // Audio IDs are only safe to carry across streams with a language to validate.
                     audio_track: state.audio_track.filter(|track| track.language.is_some()),
                     subtitle_delay: None,

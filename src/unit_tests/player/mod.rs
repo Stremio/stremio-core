@@ -1,9 +1,7 @@
 mod addon_events;
-mod audio_preference;
 mod mark_video_as_watched;
 mod next_stream;
-mod subtitle_preference;
-mod video_scale;
+mod stream_state;
 
 use crate::{
     models::{

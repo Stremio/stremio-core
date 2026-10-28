@@ -20,7 +20,6 @@ use crate::{
         addon::Descriptor,
         api::AuthRequest,
         library::LibraryItemId,
-        player::{AudioPreference, SubtitlePreference, VideoScale},
         profile::{AuthKey, Password, Settings as ProfileSettings},
         rating::Rating,
         resource::{MetaItemId, MetaItemPreview, Stream, Video},
@@ -242,19 +241,6 @@ pub enum ActionPlayer {
     },
     StreamStateChanged {
         state: StreamItemState,
-    },
-    /// Updates the audio preference for the current Player session.
-    AudioPreferenceChanged {
-        preference: AudioPreference,
-    },
-    /// Updates the subtitle preference for the current Player session.
-    SubtitlePreferenceChanged {
-        preference: SubtitlePreference,
-    },
-    /// Updates the video scale for the current Player session.
-    #[serde(rename_all = "camelCase")]
-    VideoScaleChanged {
-        video_scale: VideoScale,
     },
     /// Seek performed by the user when using the seekbar or
     /// the shortcuts for seeking.
