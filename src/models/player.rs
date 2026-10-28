@@ -24,9 +24,7 @@ use crate::types::api::{
     SuccessResponse,
 };
 use crate::types::library::{LibraryBucket, LibraryItem};
-use crate::types::player::{
-    AudioPreference, IntroData, IntroOutro, SubtitlePreference, VideoScale,
-};
+use crate::types::player::{IntroData, IntroOutro};
 use crate::types::profile::{AuthKey, Profile};
 use crate::types::rating::{Rating, RatingSendRequest, RatingSendResponse};
 use crate::types::resource::{
@@ -117,9 +115,6 @@ pub struct Player {
     pub series_info: Option<SeriesInfo>,
     pub library_item: Option<LibraryItem>,
     pub stream_state: Option<StreamItemState>,
-    pub audio_preference: Option<AudioPreference>,
-    pub subtitle_preference: Option<SubtitlePreference>,
-    pub video_scale: Option<VideoScale>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub intro_outro: Option<IntroOutro>,
     #[serde(skip_serializing)]
@@ -439,9 +434,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let video_params_effects = eq_update(&mut self.video_params, None);
                 let meta_item_effects = eq_update(&mut self.meta_item, None);
                 let stream_state_effects = eq_update(&mut self.stream_state, None);
-                let audio_preference_effects = eq_update(&mut self.audio_preference, None);
-                let subtitle_preference_effects = eq_update(&mut self.subtitle_preference, None);
-                let video_scale_effects = eq_update(&mut self.video_scale, None);
                 let stream_effects = eq_update(&mut self.stream, None);
                 let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
                 let next_video_effects = eq_update(&mut self.next_video, None);
@@ -469,9 +461,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(stream_effects)
                     .join(meta_item_effects)
                     .join(stream_state_effects)
-                    .join(audio_preference_effects)
-                    .join(subtitle_preference_effects)
-                    .join(video_scale_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(next_streams_effects)
@@ -520,27 +509,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .and_then(|selected| selected.meta_request.to_owned()),
                 }))
                 .unchanged()
-            }
-            Msg::Action(Action::Player(ActionPlayer::AudioPreferenceChanged { preference })) => {
-                if self.selected.is_some() {
-                    eq_update(&mut self.audio_preference, Some(preference.to_owned()))
-                } else {
-                    Effects::none().unchanged()
-                }
-            }
-            Msg::Action(Action::Player(ActionPlayer::SubtitlePreferenceChanged { preference })) => {
-                if self.selected.is_some() {
-                    eq_update(&mut self.subtitle_preference, Some(preference.to_owned()))
-                } else {
-                    Effects::none().unchanged()
-                }
-            }
-            Msg::Action(Action::Player(ActionPlayer::VideoScaleChanged { video_scale })) => {
-                if self.selected.is_some() {
-                    eq_update(&mut self.video_scale, Some(*video_scale))
-                } else {
-                    Effects::none().unchanged()
-                }
             }
             Msg::Action(Action::Player(ActionPlayer::Seek {
                 time,
@@ -988,19 +956,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(watched_effects)
             }
             Msg::Internal(Internal::StreamsChanged(_)) => {
-                let stream_state_effects =
-                    stream_state_update(&mut self.stream_state, &self.selected, &ctx.streams);
-                let video_scale_effects = if self.video_scale.is_none() {
-                    eq_update(
-                        &mut self.video_scale,
-                        self.stream_state
-                            .as_ref()
-                            .and_then(|state| state.video_scale),
-                    )
-                } else {
-                    Effects::none().unchanged()
-                };
-                stream_state_effects.join(video_scale_effects)
+                stream_state_update(&mut self.stream_state, &self.selected, &ctx.streams)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result))
                 if self.selected.is_some() =>
