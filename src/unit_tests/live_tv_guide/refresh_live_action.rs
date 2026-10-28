@@ -55,6 +55,8 @@ fn live_tv_guide_refresh_live() {
                                 directors: vec![],
                                 links: vec![],
                                 ratings: vec![],
+                                imdb_id: None,
+                                background: None,
                             }),
                             ..Video::default()
                         }],

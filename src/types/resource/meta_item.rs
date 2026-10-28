@@ -399,6 +399,11 @@ pub struct VideoEpgInfo {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[serde_as(deserialize_as = "DefaultOnError<VecSkipError<_>>")]
     pub ratings: Vec<ContentRating>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub imdb_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde_as(deserialize_as = "DefaultOnError")]
+    pub background: Option<Url>,
 }
 
 impl VideoEpgInfo {
@@ -615,6 +620,8 @@ mod tests {
                     directors: vec![],
                     links: vec![],
                     ratings: vec![],
+                    imdb_id: None,
+                    background: None,
                 }),
                 ..Default::default()
             }

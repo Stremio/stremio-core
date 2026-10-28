@@ -745,6 +745,8 @@ fn video_epg_info() {
         "cast": ["Takuya Eguchi"],
         "directors": ["Kazuhiro Furuhashi"],
         "links": [],
+        "imdbId": "tt13706018",
+        "background": "https://example.com/background.jpg",
     }))
     .expect("Failed to deserialize Video with EPG info");
     let epg_info = video.epg_info.as_ref().expect("epg_info should be present");
@@ -755,11 +757,26 @@ fn video_epg_info() {
     assert_eq!(epg_info.runtime.as_deref(), Some("28 min"));
     assert_eq!(epg_info.release_info.as_deref(), Some("2022"));
     assert_eq!(epg_info.genres, vec!["Action", "Anime"]);
+    assert_eq!(epg_info.imdb_id.as_deref(), Some("tt13706018"));
+    assert_eq!(
+        epg_info.background,
+        Some("https://example.com/background.jpg".parse().unwrap())
+    );
     // on air only within [startTime, endTime)
     assert!(!epg_info.is_live(Utc.with_ymd_and_hms(2026, 7, 2, 11, 54, 59).unwrap()));
     assert!(epg_info.is_live(Utc.with_ymd_and_hms(2026, 7, 2, 11, 55, 0).unwrap()));
     assert!(epg_info.is_live(Utc.with_ymd_and_hms(2026, 7, 2, 12, 22, 59).unwrap()));
     assert!(!epg_info.is_live(Utc.with_ymd_and_hms(2026, 7, 2, 12, 23, 0).unwrap()));
+
+    let video = serde_json::from_value::<Video>(serde_json::json!({
+        "id": "pure:axn:2026-07-02T11:55",
+        "title": "Spy x Family",
+        "startTime": "2026-07-02T11:55:00Z",
+        "endTime": "2026-07-02T12:23:00Z",
+        "background": "not a url",
+    }))
+    .expect("Failed to deserialize Video with invalid background");
+    assert!(video.epg_info.unwrap().background.is_none());
 
     // videos without EPG fields must keep deserializing with no epg_info
     let video = serde_json::from_value::<Video>(serde_json::json!({
@@ -789,6 +806,8 @@ fn video_epg_info() {
         directors: vec![],
         links: vec![],
         ratings: vec![],
+        imdb_id: Some("tt13706018".to_owned()),
+        background: Some("https://example.com/background.jpg".parse().unwrap()),
     };
     let json = serde_json::to_value(Video {
         id: "id".to_owned(),
@@ -805,6 +824,8 @@ fn video_epg_info() {
     assert_eq!(json["startTime"], "2026-07-02T11:55:00Z");
     assert_eq!(json["endTime"], "2026-07-02T12:23:00Z");
     assert!(json.get("ratings").is_none());
+    assert_eq!(json["imdbId"], "tt13706018");
+    assert_eq!(json["background"], "https://example.com/background.jpg");
     let roundtrip = serde_json::from_value::<Video>(json).unwrap();
     assert_eq!(roundtrip.epg_info, Some(epg_info));
 }
