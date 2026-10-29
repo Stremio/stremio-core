@@ -91,6 +91,16 @@ impl Sort {
             Sort::NameReverse => b.name.to_lowercase().cmp(&a.name.to_lowercase()),
         }
     }
+
+    /// Whether a [`LibraryItem`] belongs in the list under this [`Sort`]:
+    /// `Watched` and `NotWatched` are "show only" choices, the others keep every item.
+    pub fn filter_item(&self, library_item: &LibraryItem) -> bool {
+        match self {
+            Sort::Watched => library_item.watched(),
+            Sort::NotWatched => !library_item.watched(),
+            _ => true,
+        }
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
@@ -326,6 +336,7 @@ fn selectable_update<F: LibraryFilter>(
                 Some(r#type) => library_item.r#type == *r#type,
                 None => true,
             })
+            .filter(|library_item| selected.request.sort.filter_item(library_item))
             .nth(selected.request.page.get() * CATALOG_PAGE_SIZE)
             .map(|_| SelectablePage {
                 request: LibraryRequest {
@@ -360,6 +371,7 @@ fn catalog_update<F: LibraryFilter>(
                 Some(r#type) => library_item.r#type == *r#type,
                 None => true,
             })
+            .filter(|library_item| selected.request.sort.filter_item(library_item))
             .sorted_by(|a, b| selected.request.sort.sort_items(a, b))
             .take(selected.request.page.get() * CATALOG_PAGE_SIZE)
             .cloned()
@@ -374,11 +386,59 @@ mod test {
     use chrono::{Duration, Utc};
 
     use crate::types::{
-        library::{LibraryItem, LibraryItemState},
+        library::{LibraryBucket, LibraryItem, LibraryItemState},
+        notifications::NotificationsBucket,
         resource::PosterShape,
     };
 
-    use super::Sort;
+    use super::{catalog_update, LibraryRequest, NotRemovedFilter, Selected, Sort};
+
+    #[test]
+    fn test_watched_and_not_watched_show_only_those_items() {
+        let not_watched = LibraryItem {
+            id: "tt0000001".into(),
+            name: "Any".into(),
+            r#type: "movie".into(),
+            poster: None,
+            poster_shape: PosterShape::Poster,
+            removed: false,
+            temp: false,
+            ctime: Some(Utc::now()),
+            mtime: Utc::now(),
+            state: LibraryItemState::default(),
+            behavior_hints: crate::types::resource::MetaItemBehaviorHints::default(),
+        };
+        let watched = LibraryItem {
+            id: "tt0000002".into(),
+            state: LibraryItemState {
+                times_watched: 1,
+                ..Default::default()
+            },
+            ..not_watched.clone()
+        };
+        let library = LibraryBucket::new(None, vec![not_watched, watched]);
+        let notifications = NotificationsBucket::new::<crate::unit_tests::TestEnv>(None, vec![]);
+        let ids_for = |sort: Sort| -> Vec<String> {
+            let mut catalog = vec![];
+            let selected = Some(Selected {
+                request: LibraryRequest {
+                    r#type: None,
+                    sort,
+                    page: Default::default(),
+                },
+            });
+            let _ = catalog_update::<NotRemovedFilter>(
+                &mut catalog,
+                &selected,
+                &library,
+                &notifications,
+            );
+            catalog.into_iter().map(|item| item.id).collect()
+        };
+        assert_eq!(ids_for(Sort::Watched), vec!["tt0000002"]);
+        assert_eq!(ids_for(Sort::NotWatched), vec!["tt0000001"]);
+        assert_eq!(ids_for(Sort::LastWatched).len(), 2);
+    }
 
     #[test]
     fn test_watched_and_not_watched_sort_items_ordering_of_library_items() {
