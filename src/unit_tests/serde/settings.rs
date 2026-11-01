@@ -1,4 +1,6 @@
-use crate::types::profile::{FrameRateMatchingStrategy, IgnoredStream, Settings, SmartPlayHdrPreference};
+use crate::types::profile::{
+    FrameRateMatchingStrategy, IgnoredStream, Settings, SmartPlayHdrPreference,
+};
 use chrono::{TimeZone, Utc};
 use serde_test::{assert_de_tokens, assert_tokens, Token};
 use url::Url;
