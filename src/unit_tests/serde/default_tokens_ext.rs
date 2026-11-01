@@ -378,7 +378,7 @@ impl DefaultTokens for Settings {
         vec![
             Token::Struct {
                 name: "Settings",
-                len: 38,
+                len: 41,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -461,6 +461,16 @@ impl DefaultTokens for Settings {
             Token::Bool(true),
             Token::Str("discordRpcEnabled"),
             Token::Bool(false),
+            Token::Str("smartPlay"),
+            Token::Bool(false),
+            Token::Str("smartPlayHdrPreference"),
+            Token::UnitVariant {
+                name: "SmartPlayHdrPreference",
+                variant: "auto",
+            },
+            Token::Str("ignoredStreams"),
+            Token::Seq { len: Some(0) },
+            Token::SeqEnd,
             Token::StructEnd,
         ]
     }

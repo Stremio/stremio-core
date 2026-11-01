@@ -50,6 +50,12 @@ pub struct Settings {
     pub server_in_foreground: bool,
     pub send_crash_reports: bool,
     pub discord_rpc_enabled: bool,
+    #[serde(default)]
+    pub smart_play: bool,
+    #[serde(default)]
+    pub smart_play_hdr_preference: SmartPlayHdrPreference,
+    #[serde(default)]
+    pub ignored_streams: Vec<IgnoredStream>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -57,6 +63,25 @@ pub enum FrameRateMatchingStrategy {
     Disabled,
     FrameRateOnly,
     FrameRateAndResolution,
+}
+
+#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SmartPlayHdrPreference {
+    #[default]
+    Auto,
+    Hdr,
+    Sdr,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IgnoredStream {
+    pub key: String,
+    pub label: String,
+    pub meta_id: String,
+    #[serde(default)]
+    pub video_id: Option<String>,
 }
 
 impl Default for Settings {
@@ -100,6 +125,9 @@ impl Default for Settings {
             server_in_foreground: false,
             send_crash_reports: true,
             discord_rpc_enabled: false,
+            smart_play: false,
+            smart_play_hdr_preference: SmartPlayHdrPreference::Auto,
+            ignored_streams: Vec::new(),
         }
     }
 }

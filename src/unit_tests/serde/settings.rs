@@ -1,4 +1,4 @@
-use crate::types::profile::{FrameRateMatchingStrategy, Settings};
+use crate::types::profile::{FrameRateMatchingStrategy, IgnoredStream, Settings, SmartPlayHdrPreference};
 use chrono::{TimeZone, Utc};
 use serde_test::{assert_de_tokens, assert_tokens, Token};
 use url::Url;
@@ -47,11 +47,19 @@ fn settings() {
             server_in_foreground: false,
             send_crash_reports: true,
             discord_rpc_enabled: false,
+            smart_play: true,
+            smart_play_hdr_preference: SmartPlayHdrPreference::Hdr,
+            ignored_streams: vec![IgnoredStream {
+                key: "stream-key".to_owned(),
+                label: "Stream label".to_owned(),
+                meta_id: "meta-id".to_owned(),
+                video_id: Some("video-id".to_owned()),
+            }],
         },
         &[
             Token::Struct {
                 name: "Settings",
-                len: 38,
+                len: 41,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -139,6 +147,30 @@ fn settings() {
             Token::Bool(true),
             Token::Str("discordRpcEnabled"),
             Token::Bool(false),
+            Token::Str("smartPlay"),
+            Token::Bool(true),
+            Token::Str("smartPlayHdrPreference"),
+            Token::UnitVariant {
+                name: "SmartPlayHdrPreference",
+                variant: "hdr",
+            },
+            Token::Str("ignoredStreams"),
+            Token::Seq { len: Some(1) },
+            Token::Struct {
+                name: "IgnoredStream",
+                len: 4,
+            },
+            Token::Str("key"),
+            Token::Str("stream-key"),
+            Token::Str("label"),
+            Token::Str("Stream label"),
+            Token::Str("metaId"),
+            Token::Str("meta-id"),
+            Token::Str("videoId"),
+            Token::Some,
+            Token::Str("video-id"),
+            Token::StructEnd,
+            Token::SeqEnd,
             Token::StructEnd,
         ],
     );
@@ -151,7 +183,7 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 38,
+                len: 41,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
