@@ -7,7 +7,7 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCatalogWithFilters, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{
-    Descriptor, DescriptorPreview, ExtraExt, Manifest, ManifestCatalog, ResourcePath,
+    Descriptor, DescriptorPreview, ExtraExt, ExtraValue, Manifest, ManifestCatalog, ResourcePath,
     ResourceRequest, ResourceResponse,
 };
 use crate::types::profile::Profile;
@@ -325,6 +325,67 @@ where
     effects
 }
 
+/// The selected catalog's counterpart for another type: a catalog with the same id and that type, preferring
+/// the same add-on, keeping each selected extra the counterpart also accepts (and filling in required ones).
+fn same_place_for_type<T: CatalogResourceAdapter>(
+    profile: &Profile,
+    selected: &Selected,
+    r#type: &str,
+) -> Option<ResourceRequest> {
+    let (addon, catalog) = profile
+        .addons
+        .iter()
+        .flat_map(|addon| {
+            T::catalogs(&addon.manifest)
+                .iter()
+                .map(move |manifest_catalog| (addon, manifest_catalog))
+        })
+        .filter(|(_, manifest_catalog)| {
+            manifest_catalog.id == selected.request.path.id && manifest_catalog.r#type == r#type
+        })
+        .sorted_by_key(|(addon, _)| addon.transport_url != selected.request.base)
+        .next()?;
+    let mut extra = selected
+        .request
+        .path
+        .extra
+        .iter()
+        .filter(|extra_value| {
+            extra_value.name != SKIP_EXTRA_PROP.name
+                && catalog.extra.iter().any(|extra_prop| {
+                    extra_prop.name == extra_value.name
+                        && (extra_prop.options.is_empty()
+                            || extra_prop.options.contains(&extra_value.value))
+                })
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    for extra_prop in catalog
+        .extra
+        .iter()
+        .filter(|extra_prop| extra_prop.is_required)
+    {
+        if !extra
+            .iter()
+            .any(|extra_value| extra_value.name == extra_prop.name)
+        {
+            extra.push(ExtraValue {
+                name: extra_prop.name.to_owned(),
+                value: extra_prop.options.first()?.to_owned(),
+            });
+        }
+    }
+    Some(ResourceRequest {
+        base: addon.transport_url.to_owned(),
+        path: ResourcePath {
+            id: catalog.id.to_owned(),
+            r#type: r#type.to_owned(),
+            resource: T::resource().to_owned(),
+            extra,
+        },
+    })
+}
+
 fn selectable_update<T: CatalogResourceAdapter>(
     selectable: &mut Selectable,
     selected: &Option<Selected>,
@@ -389,6 +450,17 @@ fn selectable_update<T: CatalogResourceAdapter>(
         })
         .unique_by(|request| &request.path.r#type)
         .cloned()
+        .map(|request| match selected {
+            // switching type keeps your place: the same catalog for the other type (from the same add-on if it
+            // has one), with every selected extra whose value that catalog also offers
+            Some(selected)
+                if selected.request.path.r#type != request.path.r#type
+                    && selected.request.path.resource == T::resource() =>
+            {
+                same_place_for_type::<T>(profile, selected, &request.path.r#type).unwrap_or(request)
+            }
+            _ => request,
+        })
         .map(|request| SelectableType {
             r#type: request.path.r#type.to_owned(),
             selected: selected
