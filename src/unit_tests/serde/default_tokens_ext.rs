@@ -54,17 +54,14 @@ impl DefaultTokens for LibraryItemState {
 impl DefaultTokens for Subtitles {
     fn default_tokens() -> Vec<Token> {
         vec![
-            Token::Struct {
-                name: "Subtitles",
-                len: 3,
-            },
+            Token::Map { len: None },
             Token::Str("id"),
             Token::Str(""),
             Token::Str("lang"),
             Token::Str(""),
             Token::Str("url"),
             Token::Str("protocol://host"),
-            Token::StructEnd,
+            Token::MapEnd,
         ]
     }
 }
