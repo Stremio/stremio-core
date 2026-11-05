@@ -5,7 +5,8 @@
 pub mod model {
     #[cfg(feature = "wasm")]
     pub use {
-        deep_links_ext::DeepLinksExt, model::*, serialize_calendar::serialize_calendar,
+        deep_links_ext::DeepLinksExt, model::*, serialize_board_catalogs::serialize_board_catalogs,
+        serialize_calendar::serialize_calendar,
         serialize_continue_watching_preview::serialize_continue_watching_preview,
         serialize_ctx::serialize_ctx, serialize_data_export::serialize_data_export,
         serialize_discover::serialize_discover,
@@ -52,6 +53,7 @@ pub mod model {
     #[cfg(feature = "wasm")]
     mod model;
 
+    pub mod serialize_board_catalogs;
     pub mod serialize_calendar;
     pub mod serialize_catalogs_with_extra;
     pub mod serialize_continue_watching_preview;

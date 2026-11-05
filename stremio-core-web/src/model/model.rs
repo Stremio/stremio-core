@@ -9,6 +9,7 @@ use serde::Serialize;
 use stremio_core::{
     models::{
         addon_details::AddonDetails,
+        board_catalogs::BoardCatalogs,
         calendar::Calendar,
         catalog_with_filters::CatalogWithFilters,
         catalogs_with_extra::CatalogsWithExtra,
@@ -46,6 +47,7 @@ pub struct WebModel {
     pub data_export: DataExport,
     pub continue_watching_preview: ContinueWatchingPreview,
     pub board: CatalogsWithExtra,
+    pub board_catalogs: BoardCatalogs,
     pub discover: CatalogWithFilters<MetaItemPreview>,
     pub library: LibraryWithFilters<NotRemovedFilter>,
     pub continue_watching: LibraryWithFilters<ContinueWatchingFilter>,
@@ -101,6 +103,7 @@ impl WebModel {
             local_search,
             continue_watching_preview,
             board: Default::default(),
+            board_catalogs: Default::default(),
             discover,
             library: library_,
             continue_watching,
@@ -151,6 +154,9 @@ impl WebModel {
                 )
                 .serialize_model()
                 .expect("JsValue from model::CatalogsWithExtra")
+            }
+            WebModelField::BoardCatalogs => {
+                serialize_board_catalogs(&self.board_catalogs, &self.ctx)
             }
             WebModelField::Discover => {
                 serialize_discover(&self.discover, &self.ctx, &self.streaming_server)

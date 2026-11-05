@@ -1,6 +1,7 @@
 mod env;
 pub use env::*;
 
+mod board_catalogs;
 mod calendar;
 mod catalog_with_filters;
 mod catalogs_with_extra;

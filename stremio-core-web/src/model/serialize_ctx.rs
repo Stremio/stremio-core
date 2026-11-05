@@ -16,10 +16,8 @@ mod model {
     use serde::Serialize;
 
     use stremio_core::deep_links::SearchHistoryItemDeepLinks;
-    use stremio_core::models::catalogs_with_extra::{board_catalogs, board_spotlight_request};
     use stremio_core::types::{
-        addon::ResourceRequest, events::Events, notifications::NotificationItem,
-        resource::MetaItemId,
+        events::Events, notifications::NotificationItem, resource::MetaItemId,
     };
     use url::Url;
 
@@ -33,31 +31,6 @@ mod model {
         pub search_history: Vec<SearchHistoryItem<'a>>,
         pub events: &'a Events,
         pub streaming_server_urls: Vec<StreamingServerUrlItem>,
-        pub board_catalogs: Vec<BoardCatalog<'a>>,
-    }
-
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct ManifestPreview<'a> {
-        pub id: &'a str,
-        pub name: &'a str,
-    }
-
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct DescriptorPreview<'a> {
-        pub manifest: ManifestPreview<'a>,
-    }
-
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct BoardCatalog<'a> {
-        pub id: &'a str,
-        pub name: &'a str,
-        pub r#type: &'a str,
-        pub addon: DescriptorPreview<'a>,
-        pub request: ResourceRequest,
-        pub selected: bool,
     }
 
     #[derive(Serialize)]
@@ -108,7 +81,6 @@ mod model {
 
     impl<'a> From<&'a stremio_core::models::ctx::Ctx> for Ctx<'a> {
         fn from(ctx: &'a stremio_core::models::ctx::Ctx) -> Self {
-            let spotlight_request = board_spotlight_request(&ctx.profile);
             Self {
                 profile: Profile {
                     profile: &ctx.profile,
@@ -152,22 +124,6 @@ mod model {
                         mtime: *mtime,
                     })
                     .sorted_by(|a, b| Ord::cmp(&a.mtime, &b.mtime))
-                    .collect(),
-                board_catalogs: board_catalogs(&ctx.profile.addons)
-                    .into_iter()
-                    .map(|(addon, catalog, request)| BoardCatalog {
-                        id: &catalog.id,
-                        name: catalog.name.as_deref().unwrap_or(&addon.manifest.name),
-                        r#type: &catalog.r#type,
-                        addon: DescriptorPreview {
-                            manifest: ManifestPreview {
-                                id: &addon.manifest.id,
-                                name: &addon.manifest.name,
-                            },
-                        },
-                        selected: spotlight_request.as_ref() == Some(&request),
-                        request,
-                    })
                     .collect(),
             }
         }

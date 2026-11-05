@@ -9,7 +9,7 @@ use crate::model::deep_links_ext::DeepLinksExt;
 pub use stremio_core::{
     deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks},
     models::{
-        catalogs_with_extra::{CatalogPage, Selected},
+        catalogs_with_extra::{spotlight_items as spotlight_meta_items, CatalogPage, Selected},
         common::Loadable,
         ctx::Ctx,
         streaming_server::StreamingServer,
@@ -18,7 +18,6 @@ pub use stremio_core::{
 };
 
 const CATALOG_ITEMS_COUNT: usize = 10;
-const SPOTLIGHT_ITEMS_COUNT: usize = 6;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -82,12 +81,7 @@ fn catalog_items(
 fn spotlight_items(
     meta_items: &[stremio_core::types::resource::MetaItemPreview],
 ) -> Vec<&stremio_core::types::resource::MetaItemPreview> {
-    meta_items
-        .iter()
-        .filter(|meta_item| meta_item.background.is_some())
-        .unique_by(|meta_item| &meta_item.id)
-        .take(SPOTLIGHT_ITEMS_COUNT)
-        .collect()
+    spotlight_meta_items(meta_items).collect()
 }
 
 fn serialize_page<'a>(

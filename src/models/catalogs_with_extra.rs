@@ -11,8 +11,11 @@ use crate::types::addon::{
 use crate::types::profile::Profile;
 use crate::types::resource::MetaItemPreview;
 use futures::FutureExt;
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::ops::Range;
+
+pub const SPOTLIGHT_ITEMS_COUNT: usize = 6;
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct Selected {
@@ -244,7 +247,15 @@ fn spotlight_request(selected: &Option<Selected>, profile: &Profile) -> Option<R
     }
 }
 
-fn resource_effect<E: Env + 'static>(request: ResourceRequest) -> Effect {
+pub fn spotlight_items(items: &[MetaItemPreview]) -> impl Iterator<Item = &MetaItemPreview> {
+    items
+        .iter()
+        .filter(|item| item.background.is_some())
+        .unique_by(|item| &item.id)
+        .take(SPOTLIGHT_ITEMS_COUNT)
+}
+
+pub fn resource_effect<E: Env + 'static>(request: ResourceRequest) -> Effect {
     EffectFuture::Concurrent(
         E::addon_transport(&request.base)
             .resource(&request.path)
