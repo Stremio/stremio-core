@@ -3,6 +3,7 @@ pub use env::*;
 
 mod calendar;
 mod catalog_with_filters;
+mod catalogs_with_extra;
 mod continue_watching_preview;
 mod ctx;
 mod data_export;

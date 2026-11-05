@@ -7,7 +7,9 @@ use serde::{Deserialize, Deserializer, Serialize};
 use serde_with::{serde_as, DefaultOnError, DefaultOnNull, DeserializeAs, NoneAsEmptyString};
 use url::Url;
 
-use crate::constants::{EPG_DATE_EXTRA_PROP, SKIP_EXTRA_PROP};
+use crate::constants::{
+    CALENDAR_IDS_EXTRA_PROP, EPG_DATE_EXTRA_PROP, LAST_VIDEOS_IDS_EXTRA_PROP, SKIP_EXTRA_PROP,
+};
 use crate::types::addon::{ExtraValue, ResourcePath};
 use crate::types::{UniqueVec, UniqueVecAdapter};
 
@@ -295,6 +297,13 @@ impl ManifestCatalog {
                     .any(|extra_value| extra_value.name == extra_prop.name)
             });
         all_supported && required_satisfied
+    }
+    pub fn is_board_catalog(&self) -> bool {
+        self.is_extra_supported(&[])
+            && !self.extra.iter().any(|extra_prop| {
+                extra_prop.name == LAST_VIDEOS_IDS_EXTRA_PROP.name
+                    || extra_prop.name == CALENDAR_IDS_EXTRA_PROP.name
+            })
     }
     pub fn are_extra_names_supported(&self, extra_names: &[String]) -> bool {
         let all_supported = extra_names.iter().all(|extra_name| {
