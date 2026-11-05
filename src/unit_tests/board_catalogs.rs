@@ -1,6 +1,6 @@
 use crate::constants::CATALOG_RESOURCE_NAME;
 use crate::models::board_catalogs::{BoardCatalogs, Selected};
-use crate::models::catalogs_with_extra::spotlight_items;
+use crate::models::common::spotlight_items;
 use crate::models::common::{Loadable, ResourceLoadable};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx, ActionLoad};

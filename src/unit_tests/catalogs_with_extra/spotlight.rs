@@ -55,8 +55,21 @@ fn cinemeta_request(r#type: &str, id: &str) -> ResourceRequest {
     )
 }
 
+fn fetch_handler_without_artwork(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
+    match request {
+        Request { url, method, .. } if url == POPULAR_MOVIES_URL && method == "GET" => {
+            future::ok(Box::new(ResourceResponse::Metas {
+                metas: vec![MetaItemPreview::default()],
+            }) as Box<dyn Any + Send>)
+            .boxed_env()
+        }
+        _ => default_fetch_handler(request),
+    }
+}
+
 fn runtime_with(
     board_spotlight: BoardSpotlight,
+    fetch_handler: fn(Request) -> TryEnvFuture<Box<dyn Any + Send>>,
 ) -> (
     Runtime<TestEnv, TestModel>,
     Receiver<RuntimeEvent<TestEnv, TestModel>>,
@@ -100,7 +113,7 @@ fn load_board() -> RuntimeAction<TestEnv, TestModel> {
 #[test]
 fn spotlight_shares_the_catalog_request() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
-    let (runtime, _rx) = runtime_with(BoardSpotlight::default());
+    let (runtime, _rx) = runtime_with(BoardSpotlight::default(), fetch_handler);
     TestEnv::run(|| {
         runtime.dispatch(load_board());
         runtime.dispatch(RuntimeAction {
@@ -138,10 +151,13 @@ fn spotlight_shares_the_catalog_request() {
 #[test]
 fn spotlight_hides_the_catalog_row() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
-    let (runtime, _rx) = runtime_with(BoardSpotlight {
-        show_catalog_row: false,
-        ..BoardSpotlight::default()
-    });
+    let (runtime, _rx) = runtime_with(
+        BoardSpotlight {
+            show_catalog_row: false,
+            ..BoardSpotlight::default()
+        },
+        fetch_handler,
+    );
     TestEnv::run(|| runtime.dispatch(load_board()));
     let board = &runtime.model().unwrap().board;
     assert_matches!(
@@ -159,16 +175,56 @@ fn spotlight_hides_the_catalog_row() {
 }
 
 #[test]
+fn spotlight_row_returns_without_artwork() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    let (runtime, _rx) = runtime_with(
+        BoardSpotlight {
+            show_catalog_row: false,
+            ..BoardSpotlight::default()
+        },
+        fetch_handler_without_artwork,
+    );
+    TestEnv::run(|| runtime.dispatch(load_board()));
+    let board = &runtime.model().unwrap().board;
+    assert_matches!(
+        &board.spotlight,
+        Some(ResourceLoadable {
+            request,
+            content: Some(Loadable::Ready(items)),
+        }) if *request == cinemeta_request("movie", "top") && items.len() == 1
+    );
+    assert_matches!(
+        board.catalogs.first().and_then(|catalog| catalog.first()),
+        Some(ResourceLoadable {
+            request,
+            content: Some(Loadable::Ready(items)),
+        }) if *request == cinemeta_request("movie", "top") && items.len() == 1
+    );
+    assert_eq!(
+        REQUESTS
+            .read()
+            .unwrap()
+            .iter()
+            .filter(|request| request.url == POPULAR_MOVIES_URL)
+            .count(),
+        1
+    );
+}
+
+#[test]
 fn spotlight_falls_back_to_the_first_catalog() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     let missing_catalog = ResourceRequest::new(
         Url::parse("https://addon/manifest.json").unwrap(),
         ResourcePath::without_extra(CATALOG_RESOURCE_NAME, "movie", "missing"),
     );
-    let (runtime, _rx) = runtime_with(BoardSpotlight {
-        catalog: Some(missing_catalog.to_owned()),
-        ..BoardSpotlight::default()
-    });
+    let (runtime, _rx) = runtime_with(
+        BoardSpotlight {
+            catalog: Some(missing_catalog.to_owned()),
+            ..BoardSpotlight::default()
+        },
+        fetch_handler,
+    );
     TestEnv::run(|| runtime.dispatch(load_board()));
     let model = runtime.model().unwrap();
     assert_matches!(
@@ -185,11 +241,14 @@ fn spotlight_falls_back_to_the_first_catalog() {
 #[test]
 fn spotlight_disabled() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
-    let (runtime, _rx) = runtime_with(BoardSpotlight {
-        enabled: false,
-        show_catalog_row: false,
-        ..BoardSpotlight::default()
-    });
+    let (runtime, _rx) = runtime_with(
+        BoardSpotlight {
+            enabled: false,
+            show_catalog_row: false,
+            ..BoardSpotlight::default()
+        },
+        fetch_handler,
+    );
     TestEnv::run(|| runtime.dispatch(load_board()));
     let board = &runtime.model().unwrap().board;
     assert!(board.spotlight.is_none());

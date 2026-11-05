@@ -9,8 +9,8 @@ use crate::model::deep_links_ext::DeepLinksExt;
 pub use stremio_core::{
     deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks},
     models::{
-        catalogs_with_extra::{spotlight_items as spotlight_meta_items, CatalogPage, Selected},
-        common::Loadable,
+        catalogs_with_extra::Selected,
+        common::{spotlight_items as spotlight_meta_items, CatalogPage, Loadable},
         ctx::Ctx,
         streaming_server::StreamingServer,
     },

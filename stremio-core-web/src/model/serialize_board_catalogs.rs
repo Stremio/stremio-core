@@ -60,15 +60,12 @@ pub fn serialize_board_catalogs(
     board_catalogs: &stremio_core::models::board_catalogs::BoardCatalogs,
     ctx: &stremio_core::models::ctx::Ctx,
 ) -> JsValue {
-    use stremio_core::models::{
-        catalogs_with_extra::{
-            board_catalogs as eligible_catalogs, board_spotlight_request, spotlight_items,
-        },
-        common::Loadable,
+    use stremio_core::models::common::{
+        board_plan, board_spotlight_request, spotlight_items, Loadable,
     };
 
     let spotlight_request = board_spotlight_request(&ctx.profile);
-    let catalogs = eligible_catalogs(&ctx.profile.addons);
+    let catalogs = board_plan(&ctx.profile);
     let default_request = catalogs.first().map(|(_, _, request)| request.to_owned());
     <JsValue as JsValueSerdeExt>::from_serde(&model::BoardCatalogs {
         selected: &board_catalogs.selected,
