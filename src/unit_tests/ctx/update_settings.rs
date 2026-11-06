@@ -1,15 +1,21 @@
-use crate::constants::PROFILE_STORAGE_KEY;
-use crate::models::ctx::Ctx;
-use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Runtime, RuntimeAction};
-use crate::types::events::DismissedEventsBucket;
-use crate::types::library::LibraryBucket;
-use crate::types::notifications::NotificationsBucket;
-use crate::types::profile::{Profile, Settings};
-use crate::types::search_history::SearchHistoryBucket;
-use crate::types::server_urls::ServerUrlsBucket;
-use crate::types::streams::StreamsBucket;
-use crate::unit_tests::{TestEnv, REQUESTS, STORAGE};
+use crate::{
+    constants::PROFILE_STORAGE_KEY,
+    models::ctx::Ctx,
+    runtime::{
+        msg::{Action, ActionCtx},
+        Runtime, RuntimeAction,
+    },
+    types::{
+        events::DismissedEventsBucket,
+        library::LibraryBucket,
+        notifications::NotificationsBucket,
+        profile::{Profile, Settings},
+        search_history::SearchHistoryBucket,
+        server_urls::ServerUrlsBucket,
+        streams::StreamsBucket,
+    },
+    unit_tests::{TestEnv, REQUESTS, STORAGE},
+};
 use stremio_derive::Model;
 use url::Url;
 
@@ -23,6 +29,8 @@ fn actionctx_updatesettings() {
     let settings = Settings {
         subtitles_language: Some("bg".to_string()),
         subtitles_size: 150,
+        show_clock_in_player: true,
+        player_clock_always_visible: true,
         ..Settings::default()
     };
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
@@ -57,6 +65,21 @@ fn actionctx_updatesettings() {
             }),
         "Settings updated successfully in storage"
     );
+    let disabled = Settings {
+        show_clock_in_player: false,
+        player_clock_always_visible: false,
+        ..settings.clone()
+    };
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::UpdateSettings(disabled.clone())),
+        })
+    });
+    let stored = STORAGE.read().unwrap();
+    let reloaded: Profile = serde_json::from_str(stored.get(PROFILE_STORAGE_KEY).unwrap()).unwrap();
+    assert_eq!(reloaded.settings, disabled);
+
     assert!(
         REQUESTS.read().unwrap().is_empty(),
         "No requests have been sent"
