@@ -1,6 +1,6 @@
 use crate::constants::CATALOG_RESOURCE_NAME;
 use crate::models::board_catalogs::{BoardCatalogs, Selected};
-use crate::models::common::spotlight_items;
+use crate::models::common::{spotlight_items, CatalogPage};
 use crate::models::common::{Loadable, ResourceLoadable};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx, ActionLoad};
@@ -100,6 +100,13 @@ fn runtime_with(
     )
 }
 
+fn ready_page(items: Vec<MetaItemPreview>) -> CatalogPage<MetaItemPreview> {
+    ResourceLoadable {
+        request: cinemeta_request("movie", "top"),
+        content: Some(Loadable::Ready(items)),
+    }
+}
+
 fn load(all: bool) -> RuntimeAction<TestEnv, TestModel> {
     RuntimeAction {
         field: None,
@@ -108,21 +115,25 @@ fn load(all: bool) -> RuntimeAction<TestEnv, TestModel> {
 }
 
 #[test]
-fn loads_only_the_selected_catalog() {
+fn loads_only_the_selected_catalogs() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     let (runtime, _rx) = runtime_with(BoardSpotlight::default());
     TestEnv::run(|| runtime.dispatch(load(false)));
     let catalogs = &runtime.model().unwrap().board_catalogs.catalogs;
     assert_eq!(catalogs.len(), 6);
-    assert_matches!(
-        catalogs.first(),
-        Some(ResourceLoadable {
-            request,
-            content: Some(Loadable::Ready(_)),
-        }) if *request == cinemeta_request("movie", "top")
+    let loaded = catalogs
+        .iter()
+        .filter(|page| page.content.is_some())
+        .map(|page| page.request.to_owned())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        loaded,
+        vec![
+            cinemeta_request("movie", "top"),
+            cinemeta_request("series", "top")
+        ]
     );
-    assert!(catalogs[1..].iter().all(|page| page.content.is_none()));
-    assert_eq!(REQUESTS.read().unwrap().len(), 1);
+    assert_eq!(REQUESTS.read().unwrap().len(), 2);
 }
 
 #[test]
@@ -160,14 +171,20 @@ fn reloads_only_the_failed_catalogs() {
 #[test]
 fn loads_the_new_pick() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
-    let (runtime, _rx) = runtime_with(BoardSpotlight::default());
+    let (runtime, _rx) = runtime_with(BoardSpotlight {
+        catalogs: vec![cinemeta_request("movie", "top")],
+        ..BoardSpotlight::default()
+    });
     TestEnv::run(|| {
         runtime.dispatch(load(false));
         runtime.dispatch(RuntimeAction {
             field: None,
             action: Action::Ctx(ActionCtx::UpdateSettings(Settings {
                 board_spotlight: BoardSpotlight {
-                    catalog: Some(cinemeta_request("series", "top")),
+                    catalogs: vec![
+                        cinemeta_request("movie", "top"),
+                        cinemeta_request("series", "top"),
+                    ],
                     ..BoardSpotlight::default()
                 },
                 ..Settings::default()
@@ -203,11 +220,14 @@ fn spotlight_items_are_unique_with_background() {
             ..Default::default()
         })
         .collect::<Vec<_>>();
-    let ids = spotlight_items(&items)
-        .map(|item| item.id.to_owned())
+    let page = ready_page(items);
+    let items = spotlight_items(std::iter::once(&page));
+    let ids = items
+        .iter()
+        .map(|(_, item)| item.id.to_owned())
         .collect::<Vec<_>>();
     assert_eq!(ids, vec!["tt0", "tt1", "tt2", "tt3", "tt4"]);
-    assert!(spotlight_items(&items).all(|item| item.background.is_some()));
+    assert!(items.iter().all(|(_, item)| item.background.is_some()));
     let many = (0..20)
         .map(|index| MetaItemPreview {
             id: format!("tt{index}"),
@@ -215,5 +235,6 @@ fn spotlight_items_are_unique_with_background() {
             ..Default::default()
         })
         .collect::<Vec<_>>();
-    assert_eq!(spotlight_items(&many).count(), 6);
+    let page = ready_page(many);
+    assert_eq!(spotlight_items(std::iter::once(&page)).len(), 6);
 }

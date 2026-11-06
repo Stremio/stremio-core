@@ -42,7 +42,7 @@ mod model {
         pub r#type: &'a str,
         pub addon: DescriptorPreview<'a>,
         pub request: &'a ResourceRequest,
-        pub selected: bool,
+        pub selected: Option<usize>,
         pub default: bool,
         pub content: Option<Loadable<Option<Preview<'a>>, String>>,
     }
@@ -52,7 +52,25 @@ mod model {
     pub struct BoardCatalogs<'a> {
         pub selected: &'a Option<Selected>,
         pub catalogs: Vec<BoardCatalog<'a>>,
+        pub spotlight: Option<Preview<'a>>,
     }
+}
+
+#[cfg(feature = "wasm")]
+fn preview<'a>(
+    items: &[(
+        &'a stremio_core::types::addon::ResourceRequest,
+        &'a stremio_core::types::resource::MetaItemPreview,
+    )],
+) -> Option<model::Preview<'a>> {
+    items.first().and_then(|(_, item)| {
+        item.background.as_ref().map(|background| model::Preview {
+            background,
+            logo: item.logo.as_ref(),
+            name: &item.name,
+            count: items.len(),
+        })
+    })
 }
 
 #[cfg(feature = "wasm")]
@@ -61,12 +79,12 @@ pub fn serialize_board_catalogs(
     ctx: &stremio_core::models::ctx::Ctx,
 ) -> JsValue {
     use stremio_core::models::common::{
-        board_plan, board_spotlight_request, spotlight_items, Loadable,
+        board_plan, board_spotlight_requests, default_spotlight_requests, spotlight_items, Loadable,
     };
 
-    let spotlight_request = board_spotlight_request(&ctx.profile);
+    let spotlight_requests = board_spotlight_requests(&ctx.profile);
     let catalogs = board_plan(&ctx.profile);
-    let default_request = catalogs.first().map(|(_, _, request)| request.to_owned());
+    let default_requests = default_spotlight_requests(&catalogs);
     <JsValue as JsValueSerdeExt>::from_serde(&model::BoardCatalogs {
         selected: &board_catalogs.selected,
         catalogs: board_catalogs
@@ -89,25 +107,27 @@ pub fn serialize_board_catalogs(
                     },
                 },
                 request: &page.request,
-                selected: spotlight_request.as_ref() == Some(&page.request),
-                default: default_request.as_ref() == Some(&page.request),
+                selected: spotlight_requests
+                    .iter()
+                    .position(|request| *request == page.request),
+                default: default_requests.contains(&page.request),
                 content: page.content.as_ref().map(|content| match content {
-                    Loadable::Ready(items) => {
-                        let items = spotlight_items(items).collect::<Vec<_>>();
-                        Loadable::Ready(items.first().and_then(|item| {
-                            item.background.as_ref().map(|background| model::Preview {
-                                background,
-                                logo: item.logo.as_ref(),
-                                name: &item.name,
-                                count: items.len(),
-                            })
-                        }))
+                    Loadable::Ready(_) => {
+                        Loadable::Ready(preview(&spotlight_items(std::iter::once(page))))
                     }
                     Loadable::Loading => Loadable::Loading,
                     Loadable::Err(error) => Loadable::Err(error.to_string()),
                 }),
             })
             .collect(),
+        spotlight: preview(&spotlight_items(spotlight_requests.iter().filter_map(
+            |request| {
+                board_catalogs
+                    .catalogs
+                    .iter()
+                    .find(|page| page.request == *request)
+            },
+        ))),
     })
     .expect("JsValue from BoardCatalogs")
 }

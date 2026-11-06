@@ -1,9 +1,10 @@
+use std::collections::HashSet;
+
 use futures::FutureExt;
-use itertools::Itertools;
 
 use crate::{
     constants::{CALENDAR_IDS_EXTRA_PROP, LAST_VIDEOS_IDS_EXTRA_PROP},
-    models::common::ResourceLoadable,
+    models::common::{Loadable, ResourceLoadable},
     runtime::{
         msg::{Internal, Msg},
         Effect, EffectFuture, Env, EnvFutureExt,
@@ -16,6 +17,8 @@ use crate::{
 };
 
 pub const SPOTLIGHT_ITEMS_COUNT: usize = 6;
+pub const SPOTLIGHT_CATALOGS_COUNT: usize = 3;
+const SPOTLIGHT_DEFAULT_TYPES: [&str; 2] = ["movie", "series"];
 
 pub type CatalogPage<T> = ResourceLoadable<Vec<T>>;
 
@@ -44,24 +47,101 @@ pub fn board_plan(profile: &Profile) -> Vec<(&Descriptor, &ManifestCatalog, Reso
     .collect()
 }
 
-pub fn board_spotlight_request(profile: &Profile) -> Option<ResourceRequest> {
-    let plan = board_plan(profile);
-    profile
-        .settings
-        .board_spotlight
-        .catalog
-        .as_ref()
-        .filter(|catalog| plan.iter().any(|(_, _, request)| request == *catalog))
-        .cloned()
-        .or_else(|| plan.into_iter().next().map(|(_, _, request)| request))
+pub fn default_spotlight_requests(
+    plan: &[(&Descriptor, &ManifestCatalog, ResourceRequest)],
+) -> Vec<ResourceRequest> {
+    let requests = SPOTLIGHT_DEFAULT_TYPES
+        .iter()
+        .filter_map(|r#type| {
+            plan.iter()
+                .find(|(_, catalog, _)| catalog.r#type == *r#type)
+        })
+        .map(|(_, _, request)| request.to_owned())
+        .collect::<Vec<_>>();
+    if requests.is_empty() {
+        plan.iter()
+            .take(1)
+            .map(|(_, _, request)| request.to_owned())
+            .collect()
+    } else {
+        requests
+    }
 }
 
-pub fn spotlight_items(items: &[MetaItemPreview]) -> impl Iterator<Item = &MetaItemPreview> {
-    items
+pub fn board_spotlight_requests(profile: &Profile) -> Vec<ResourceRequest> {
+    let plan = board_plan(profile);
+    let picks = profile
+        .settings
+        .board_spotlight
+        .catalogs
         .iter()
-        .filter(|item| item.background.is_some())
-        .unique_by(|item| &item.id)
-        .take(SPOTLIGHT_ITEMS_COUNT)
+        .filter(|catalog| plan.iter().any(|(_, _, request)| request == *catalog))
+        .take(SPOTLIGHT_CATALOGS_COUNT)
+        .cloned()
+        .collect::<Vec<_>>();
+    if picks.is_empty() {
+        default_spotlight_requests(&plan)
+    } else {
+        picks
+    }
+}
+
+fn merge_spotlight_items<'a>(
+    pages: impl Iterator<Item = &'a CatalogPage<MetaItemPreview>>,
+) -> Vec<(&'a ResourceRequest, &'a MetaItemPreview)> {
+    let mut queues = pages
+        .filter_map(|page| match &page.content {
+            Some(Loadable::Ready(items)) => Some((
+                &page.request,
+                items.iter().filter(|item| item.background.is_some()),
+            )),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    let mut seen = HashSet::new();
+    let mut slides = vec![];
+    while slides.len() < SPOTLIGHT_ITEMS_COUNT {
+        let turn = queues
+            .iter_mut()
+            .filter_map(|(request, items)| {
+                items
+                    .find(|item| seen.insert(&item.id))
+                    .map(|item| (*request, item))
+            })
+            .collect::<Vec<_>>();
+        if turn.is_empty() {
+            break;
+        }
+        slides.extend(turn);
+    }
+    slides.truncate(SPOTLIGHT_ITEMS_COUNT);
+    slides
+}
+
+pub fn spotlight_items<'a>(
+    pages: impl Iterator<Item = &'a CatalogPage<MetaItemPreview>>,
+) -> Vec<(&'a ResourceRequest, &'a MetaItemPreview)> {
+    merge_spotlight_items(pages.take_while(|page| spotlight_page_answered(page)))
+}
+
+pub fn spotlight_page_answered(page: &CatalogPage<MetaItemPreview>) -> bool {
+    matches!(
+        page.content,
+        Some(Loadable::Ready(_)) | Some(Loadable::Err(_))
+    )
+}
+
+pub fn spotlight_hides_row(
+    page: &CatalogPage<MetaItemPreview>,
+    pages: &[CatalogPage<MetaItemPreview>],
+) -> bool {
+    match &page.content {
+        Some(Loadable::Ready(_)) => merge_spotlight_items(pages.iter())
+            .iter()
+            .any(|(request, _)| **request == page.request),
+        Some(Loadable::Err(_)) => false,
+        _ => true,
+    }
 }
 
 pub fn resource_effect<E: Env + 'static>(request: ResourceRequest) -> Effect {

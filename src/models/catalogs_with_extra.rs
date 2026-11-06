@@ -1,7 +1,7 @@
 use crate::constants::SKIP_EXTRA_PROP;
 use crate::models::common::{
-    board_plan, board_spotlight_request, eq_update, resource_effect,
-    resource_update_with_vector_content, spotlight_items, Loadable, ResourceAction,
+    board_plan, board_spotlight_requests, eq_update, resource_effect,
+    resource_update_with_vector_content, spotlight_hides_row, Loadable, ResourceAction,
     ResourceLoadable,
 };
 use crate::models::ctx::Ctx;
@@ -29,7 +29,7 @@ pub type Catalog<T> = Vec<CatalogPage<T>>;
 pub struct CatalogsWithExtra {
     pub selected: Option<Selected>,
     pub catalogs: Vec<Catalog<MetaItemPreview>>,
-    pub spotlight: Option<CatalogPage<MetaItemPreview>>,
+    pub spotlight: Vec<CatalogPage<MetaItemPreview>>,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
@@ -64,7 +64,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);
                 let catalogs_effects = eq_update(&mut self.catalogs, vec![]);
-                let spotlight_effects = eq_update(&mut self.spotlight, None);
+                let spotlight_effects = eq_update(&mut self.spotlight, vec![]);
                 selected_effects
                     .join(catalogs_effects)
                     .join(spotlight_effects)
@@ -162,8 +162,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                     .unwrap_or_else(|| Effects::none().unchanged());
                 let spotlight_effects = match self
                     .spotlight
-                    .as_mut()
-                    .filter(|page| page.request == *request)
+                    .iter_mut()
+                    .find(|page| page.request == *request)
                 {
                     Some(page) => resource_update_with_vector_content::<E, _>(
                         page,
@@ -203,57 +203,53 @@ fn is_board(selected: &Selected) -> bool {
     selected.r#type.is_none() && selected.extra.is_empty()
 }
 
-fn spotlight_request(selected: &Option<Selected>, profile: &Profile) -> Option<ResourceRequest> {
+fn spotlight_requests(selected: &Option<Selected>, profile: &Profile) -> Vec<ResourceRequest> {
     match selected {
         Some(selected) if is_board(selected) && profile.settings.board_spotlight.enabled => {
-            board_spotlight_request(profile)
+            board_spotlight_requests(profile)
         }
-        _ => None,
-    }
-}
-
-fn spotlight_hides_row(spotlight: &Option<CatalogPage<MetaItemPreview>>) -> bool {
-    match spotlight.as_ref().and_then(|page| page.content.as_ref()) {
-        Some(Loadable::Ready(items)) => spotlight_items(items).next().is_some(),
-        Some(Loadable::Err(_)) => false,
-        _ => true,
+        _ => vec![],
     }
 }
 
 fn catalogs_update<E: Env + 'static>(
     catalogs: &mut Vec<Catalog<MetaItemPreview>>,
-    spotlight: &mut Option<CatalogPage<MetaItemPreview>>,
+    spotlight: &mut Vec<CatalogPage<MetaItemPreview>>,
     selected: &Option<Selected>,
     range: Option<&Range<usize>>,
     profile: &Profile,
 ) -> Effects {
-    let spotlight_request = spotlight_request(selected, profile);
-    let (next_spotlight, spotlight_effect) = match &spotlight_request {
-        Some(request) => spotlight
-            .as_ref()
-            .filter(|page| page.request == *request && page.content.is_some())
-            .or_else(|| {
-                catalogs.iter().find_map(|catalog| {
-                    catalog
-                        .first()
-                        .filter(|page| page.request == *request && page.content.is_some())
+    let (next_spotlight, spotlight_effects) = spotlight_requests(selected, profile)
+        .into_iter()
+        .map(|request| {
+            spotlight
+                .iter()
+                .find(|page| page.request == request && page.content.is_some())
+                .or_else(|| {
+                    catalogs.iter().find_map(|catalog| {
+                        catalog
+                            .first()
+                            .filter(|page| page.request == request && page.content.is_some())
+                    })
                 })
-            })
-            .map(|page| (Some(page.to_owned()), None))
-            .unwrap_or_else(|| {
-                (
-                    Some(ResourceLoadable {
-                        request: request.to_owned(),
-                        content: Some(Loadable::Loading),
-                    }),
-                    Some(resource_effect::<E>(request.to_owned())),
-                )
-            }),
-        None => (None, None),
-    };
-    let hidden_request = spotlight_request
-        .filter(|_| !profile.settings.board_spotlight.show_catalog_row)
-        .filter(|_| spotlight_hides_row(&next_spotlight));
+                .map(|page| (page.to_owned(), None))
+                .unwrap_or_else(|| {
+                    (
+                        ResourceLoadable {
+                            request: request.to_owned(),
+                            content: Some(Loadable::Loading),
+                        },
+                        Some(resource_effect::<E>(request)),
+                    )
+                })
+        })
+        .unzip::<_, _, Vec<_>, Vec<_>>();
+    let hidden_requests = next_spotlight
+        .iter()
+        .filter(|_| !profile.settings.board_spotlight.show_catalog_rows)
+        .filter(|page| spotlight_hides_row(page, &next_spotlight))
+        .map(|page| &page.request)
+        .collect::<Vec<_>>();
     let (next_catalogs, effects) = match selected {
         Some(selected) => {
             let requests = if is_board(selected) {
@@ -273,7 +269,7 @@ fn catalogs_update<E: Env + 'static>(
             };
             requests
                 .into_iter()
-                .filter(|request| hidden_request.as_ref() != Some(request))
+                .filter(|request| !hidden_requests.contains(&request))
                 .enumerate()
                 .map(|(index, request)| {
                     catalogs
@@ -284,8 +280,8 @@ fn catalogs_update<E: Env + 'static>(
                         .map(|catalog| (catalog.to_owned(), None))
                         .or_else(|| {
                             next_spotlight
-                                .as_ref()
-                                .filter(|page| page.request == request && page.content.is_some())
+                                .iter()
+                                .find(|page| page.request == request && page.content.is_some())
                                 .map(|page| (vec![page.to_owned()], None))
                         })
                         .unwrap_or_else(|| match range {
@@ -312,7 +308,7 @@ fn catalogs_update<E: Env + 'static>(
     Effects::many(
         effects
             .into_iter()
-            .chain(std::iter::once(spotlight_effect))
+            .chain(spotlight_effects)
             .flatten()
             .collect(),
     )

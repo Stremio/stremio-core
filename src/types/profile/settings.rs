@@ -59,16 +59,16 @@ pub struct Settings {
 #[serde(rename_all = "camelCase", default)]
 pub struct BoardSpotlight {
     pub enabled: bool,
-    pub catalog: Option<ResourceRequest>,
-    pub show_catalog_row: bool,
+    pub catalogs: Vec<ResourceRequest>,
+    pub show_catalog_rows: bool,
 }
 
 impl Default for BoardSpotlight {
     fn default() -> Self {
         BoardSpotlight {
             enabled: true,
-            catalog: None,
-            show_catalog_row: true,
+            catalogs: vec![],
+            show_catalog_rows: true,
         }
     }
 }
