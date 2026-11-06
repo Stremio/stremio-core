@@ -378,7 +378,7 @@ impl DefaultTokens for Settings {
         vec![
             Token::Struct {
                 name: "Settings",
-                len: 38,
+                len: 41,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -461,6 +461,12 @@ impl DefaultTokens for Settings {
             Token::Bool(true),
             Token::Str("discordRpcEnabled"),
             Token::Bool(false),
+            Token::Str("subtitlesLanguageFilterEnabled"),
+            Token::Bool(false),
+            Token::Str("preferredSubtitleLanguage1"),
+            Token::Str("eng"),
+            Token::Str("preferredSubtitleLanguage2"),
+            Token::None,
             Token::StructEnd,
         ]
     }
