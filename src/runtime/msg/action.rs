@@ -6,6 +6,7 @@ use url::Url;
 use crate::{
     models::{
         addon_details::Selected as AddonDetailsSelected,
+        board_catalogs::Selected as BoardCatalogsSelected,
         calendar::Selected as CalendarSelected,
         catalog_with_filters::Selected as CatalogWithFiltersSelected,
         catalogs_with_extra::Selected as CatalogsWithExtraSelected,
@@ -290,6 +291,7 @@ pub enum ActionPlayer {
 /// Action to load a specific Model.
 pub enum ActionLoad {
     AddonDetails(AddonDetailsSelected),
+    BoardCatalogs(BoardCatalogsSelected),
     CatalogWithFilters(Option<CatalogWithFiltersSelected>),
     /// Guide-aware clients delegate EPG content to LiveTvGuide while retaining filters.
     CatalogWithFiltersSelection(Option<CatalogWithFiltersSelected>),

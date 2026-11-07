@@ -378,7 +378,7 @@ impl DefaultTokens for Settings {
         vec![
             Token::Struct {
                 name: "Settings",
-                len: 38,
+                len: 39,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -461,6 +461,19 @@ impl DefaultTokens for Settings {
             Token::Bool(true),
             Token::Str("discordRpcEnabled"),
             Token::Bool(false),
+            Token::Str("boardSpotlight"),
+            Token::Struct {
+                name: "BoardSpotlight",
+                len: 3,
+            },
+            Token::Str("enabled"),
+            Token::Bool(true),
+            Token::Str("catalogs"),
+            Token::Seq { len: Some(0) },
+            Token::SeqEnd,
+            Token::Str("showCatalogRows"),
+            Token::Bool(true),
+            Token::StructEnd,
             Token::StructEnd,
         ]
     }

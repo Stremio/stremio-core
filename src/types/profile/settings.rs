@@ -1,4 +1,5 @@
 use crate::constants::STREAMING_SERVER_URL;
+use crate::types::addon::ResourceRequest;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -50,6 +51,26 @@ pub struct Settings {
     pub server_in_foreground: bool,
     pub send_crash_reports: bool,
     pub discord_rpc_enabled: bool,
+    #[serde(default)]
+    pub board_spotlight: BoardSpotlight,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct BoardSpotlight {
+    pub enabled: bool,
+    pub catalogs: Vec<ResourceRequest>,
+    pub show_catalog_rows: bool,
+}
+
+impl Default for BoardSpotlight {
+    fn default() -> Self {
+        BoardSpotlight {
+            enabled: true,
+            catalogs: vec![],
+            show_catalog_rows: true,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -100,6 +121,7 @@ impl Default for Settings {
             server_in_foreground: false,
             send_crash_reports: true,
             discord_rpc_enabled: false,
+            board_spotlight: BoardSpotlight::default(),
         }
     }
 }

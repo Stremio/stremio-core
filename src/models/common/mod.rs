@@ -1,6 +1,9 @@
 mod addon_events;
 pub use addon_events::*;
 
+mod board;
+pub use board::*;
+
 mod compare_with_priorities;
 pub use compare_with_priorities::*;
 
