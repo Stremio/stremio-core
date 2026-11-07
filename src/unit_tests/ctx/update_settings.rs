@@ -30,8 +30,7 @@ fn actionctx_updatesettings() {
         subtitles_language: Some("bg".to_string()),
         subtitles_size: 150,
         subtitles_language_filter_enabled: true,
-        preferred_subtitle_language1: "fra".to_owned(),
-        preferred_subtitle_language2: Some("jpn".to_owned()),
+        secondary_subtitles_language: Some("jpn".to_owned()),
         ..Settings::default()
     };
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
@@ -79,9 +78,8 @@ fn actionctx_updatesettings() {
     let stored = STORAGE.read().unwrap();
     let reloaded: Profile = serde_json::from_str(stored.get(PROFILE_STORAGE_KEY).unwrap()).unwrap();
     assert_eq!(reloaded.settings, disabled_settings);
-    assert_eq!(reloaded.settings.preferred_subtitle_language1, "fra");
     assert_eq!(
-        reloaded.settings.preferred_subtitle_language2.as_deref(),
+        reloaded.settings.secondary_subtitles_language.as_deref(),
         Some("jpn")
     );
     assert_eq!(reloaded.settings.subtitles_language.as_deref(), Some("bg"));

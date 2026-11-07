@@ -907,12 +907,6 @@ fn migrate_storage_schema_to_v26<E: Env>() -> TryEnvFuture<()> {
                     settings
                         .entry("subtitlesLanguageFilterEnabled".to_owned())
                         .or_insert(serde_json::Value::Bool(false));
-                    settings
-                        .entry("preferredSubtitleLanguage1".to_owned())
-                        .or_insert(serde_json::Value::String("eng".to_owned()));
-                    settings
-                        .entry("preferredSubtitleLanguage2".to_owned())
-                        .or_insert(serde_json::Value::Null);
                     E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
                 }
                 _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
@@ -1033,15 +1027,11 @@ mod test {
             expected.settings.subtitles_auto_select = false;
             if already_configured {
                 expected.settings.subtitles_language_filter_enabled = true;
-                expected.settings.preferred_subtitle_language1 = "deu".to_owned();
-                expected.settings.preferred_subtitle_language2 = Some("nld".to_owned());
             }
             let mut profile = serde_json::to_value(&expected).unwrap();
             if !already_configured {
                 let settings = profile["settings"].as_object_mut().unwrap();
                 settings.remove("subtitlesLanguageFilterEnabled");
-                settings.remove("preferredSubtitleLanguage1");
-                settings.remove("preferredSubtitleLanguage2");
             }
             set_profile_and_schema_version(&profile, 25);
             TestEnv::migrate_storage_schema()

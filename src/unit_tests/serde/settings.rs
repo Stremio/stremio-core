@@ -48,13 +48,11 @@ fn settings() {
             send_crash_reports: true,
             discord_rpc_enabled: false,
             subtitles_language_filter_enabled: true,
-            preferred_subtitle_language1: "fra".to_owned(),
-            preferred_subtitle_language2: Some("jpn".to_owned()),
         },
         &[
             Token::Struct {
                 name: "Settings",
-                len: 41,
+                len: 39,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -144,11 +142,6 @@ fn settings() {
             Token::Bool(false),
             Token::Str("subtitlesLanguageFilterEnabled"),
             Token::Bool(true),
-            Token::Str("preferredSubtitleLanguage1"),
-            Token::Str("fra"),
-            Token::Str("preferredSubtitleLanguage2"),
-            Token::Some,
-            Token::Str("jpn"),
             Token::StructEnd,
         ],
     );
@@ -250,8 +243,6 @@ fn old_settings_default_to_an_unfiltered_subtitle_menu() {
     let mut stored = serde_json::to_value(Settings::default()).unwrap();
     let settings = stored.as_object_mut().unwrap();
     settings.remove("subtitlesLanguageFilterEnabled");
-    settings.remove("preferredSubtitleLanguage1");
-    settings.remove("preferredSubtitleLanguage2");
     assert_eq!(
         serde_json::from_value::<Settings>(stored).unwrap(),
         Settings::default()
