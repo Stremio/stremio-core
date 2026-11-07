@@ -31,6 +31,7 @@ fn actionctx_updatesettings() {
         subtitles_size: 150,
         subtitles_language_filter_enabled: true,
         secondary_subtitles_language: Some("jpn".to_owned()),
+        secondary_audio_language: Some("fra".to_owned()),
         ..Settings::default()
     };
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
