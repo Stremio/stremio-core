@@ -334,6 +334,12 @@ pub trait Env {
                         .await?;
                     schema_version = 25;
                 }
+                if schema_version == 25 {
+                    migrate_storage_schema_to_v26::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 26;
+                }
                 if schema_version != SCHEMA_VERSION {
                     panic!(
                         "Storage schema version must be upgraded from {} to {}",
@@ -888,6 +894,28 @@ fn migrate_storage_schema_to_v25<E: Env>() -> TryEnvFuture<()> {
         .boxed_env()
 }
 
+fn migrate_storage_schema_to_v26<E: Env>() -> TryEnvFuture<()> {
+    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
+        .and_then(|mut profile| {
+            match profile
+                .as_mut()
+                .and_then(|profile| profile.as_object_mut())
+                .and_then(|profile| profile.get_mut("settings"))
+                .and_then(|settings| settings.as_object_mut())
+            {
+                Some(settings) => {
+                    settings
+                        .entry("subtitlesLanguageFilterEnabled".to_owned())
+                        .or_insert(serde_json::Value::Bool(false));
+                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
+                }
+                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+            }
+        })
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&26)))
+        .boxed_env()
+}
+
 #[cfg(test)]
 mod test {
     use serde_json::{json, Value};
@@ -984,6 +1012,36 @@ mod test {
                     .expect("Should have the schema set"),
                 "Scheme version should now be updated"
             );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_subtitle_filter_migration_preserves_profile_and_selection_settings() {
+        use crate::types::profile::Profile;
+
+        for already_configured in [false, true] {
+            let _guard = TestEnv::reset().expect("Should lock TestEnv");
+            let mut expected = Profile::default();
+            expected.settings.subtitles_language = Some("fra".to_owned());
+            expected.settings.secondary_subtitles_language = Some("jpn".to_owned());
+            expected.settings.subtitles_auto_select = false;
+            if already_configured {
+                expected.settings.subtitles_language_filter_enabled = true;
+            }
+            let mut profile = serde_json::to_value(&expected).unwrap();
+            if !already_configured {
+                let settings = profile["settings"].as_object_mut().unwrap();
+                settings.remove("subtitlesLanguageFilterEnabled");
+            }
+            set_profile_and_schema_version(&profile, 25);
+            TestEnv::migrate_storage_schema()
+                .await
+                .expect("Should migrate");
+            assert_storage_schema_version(26);
+            let storage = STORAGE.read().unwrap();
+            let reloaded: Profile =
+                serde_json::from_str(storage.get(PROFILE_STORAGE_KEY).unwrap()).unwrap();
+            assert_eq!(reloaded, expected);
         }
     }
 

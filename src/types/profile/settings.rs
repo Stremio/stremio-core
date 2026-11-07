@@ -50,6 +50,9 @@ pub struct Settings {
     pub server_in_foreground: bool,
     pub send_crash_reports: bool,
     pub discord_rpc_enabled: bool,
+    /// Restrict the subtitle menu without changing automatic track selection.
+    #[serde(default)]
+    pub subtitles_language_filter_enabled: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -100,6 +103,7 @@ impl Default for Settings {
             server_in_foreground: false,
             send_crash_reports: true,
             discord_rpc_enabled: false,
+            subtitles_language_filter_enabled: false,
         }
     }
 }
