@@ -52,8 +52,6 @@ pub struct Settings {
     pub discord_rpc_enabled: bool,
     #[serde(default)]
     pub show_clock_in_player: bool,
-    #[serde(default)]
-    pub player_clock_always_visible: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -105,7 +103,6 @@ impl Default for Settings {
             send_crash_reports: true,
             discord_rpc_enabled: false,
             show_clock_in_player: false,
-            player_clock_always_visible: false,
         }
     }
 }

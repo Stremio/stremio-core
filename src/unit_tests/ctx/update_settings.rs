@@ -30,7 +30,6 @@ fn actionctx_updatesettings() {
         subtitles_language: Some("bg".to_string()),
         subtitles_size: 150,
         show_clock_in_player: true,
-        player_clock_always_visible: true,
         ..Settings::default()
     };
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
@@ -67,7 +66,6 @@ fn actionctx_updatesettings() {
     );
     let disabled = Settings {
         show_clock_in_player: false,
-        player_clock_always_visible: false,
         ..settings.clone()
     };
     TestEnv::run(|| {

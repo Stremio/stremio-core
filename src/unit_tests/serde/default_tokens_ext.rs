@@ -378,7 +378,7 @@ impl DefaultTokens for Settings {
         vec![
             Token::Struct {
                 name: "Settings",
-                len: 40,
+                len: 39,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -462,8 +462,6 @@ impl DefaultTokens for Settings {
             Token::Str("discordRpcEnabled"),
             Token::Bool(false),
             Token::Str("showClockInPlayer"),
-            Token::Bool(false),
-            Token::Str("playerClockAlwaysVisible"),
             Token::Bool(false),
             Token::StructEnd,
         ]

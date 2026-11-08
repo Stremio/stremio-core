@@ -334,12 +334,6 @@ pub trait Env {
                         .await?;
                     schema_version = 25;
                 }
-                if schema_version == 25 {
-                    migrate_storage_schema_to_v26::<Self>()
-                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
-                        .await?;
-                    schema_version = 26;
-                }
                 if schema_version != SCHEMA_VERSION {
                     panic!(
                         "Storage schema version must be upgraded from {} to {}",
@@ -894,31 +888,6 @@ fn migrate_storage_schema_to_v25<E: Env>() -> TryEnvFuture<()> {
         .boxed_env()
 }
 
-fn migrate_storage_schema_to_v26<E: Env>() -> TryEnvFuture<()> {
-    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
-        .and_then(|mut profile| {
-            match profile
-                .as_mut()
-                .and_then(|profile| profile.as_object_mut())
-                .and_then(|profile| profile.get_mut("settings"))
-                .and_then(|settings| settings.as_object_mut())
-            {
-                Some(settings) => {
-                    settings
-                        .entry("showClockInPlayer".to_owned())
-                        .or_insert(serde_json::Value::Bool(false));
-                    settings
-                        .entry("playerClockAlwaysVisible".to_owned())
-                        .or_insert(serde_json::Value::Bool(false));
-                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
-                }
-                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
-            }
-        })
-        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&26)))
-        .boxed_env()
-}
-
 #[cfg(test)]
 mod test {
     use serde_json::{json, Value};
@@ -1019,26 +988,28 @@ mod test {
     }
 
     #[tokio::test]
-    async fn test_clock_migration_preserves_profile_and_existing_preferences() {
+    async fn test_clock_loads_without_migrating_existing_preferences() {
         use crate::types::profile::Profile;
         for already_configured in [false, true] {
             let _guard = TestEnv::reset().expect("Should lock TestEnv");
             let mut expected = Profile::default();
             expected.settings.subtitles_auto_select = false;
             expected.settings.show_clock_in_player = already_configured;
-            expected.settings.player_clock_always_visible = already_configured;
             let mut profile = serde_json::to_value(&expected).unwrap();
             if !already_configured {
                 let settings = profile["settings"].as_object_mut().unwrap();
                 settings.remove("showClockInPlayer");
-                settings.remove("playerClockAlwaysVisible");
             }
             set_profile_and_schema_version(&profile, 25);
             TestEnv::migrate_storage_schema()
                 .await
                 .expect("Should migrate");
-            assert_storage_schema_version(26);
+            assert_storage_schema_version(25);
             let storage = STORAGE.read().unwrap();
+            assert_eq!(
+                serde_json::from_str::<Value>(storage.get(PROFILE_STORAGE_KEY).unwrap()).unwrap(),
+                profile
+            );
             let reloaded: Profile =
                 serde_json::from_str(storage.get(PROFILE_STORAGE_KEY).unwrap()).unwrap();
             assert_eq!(reloaded, expected);
