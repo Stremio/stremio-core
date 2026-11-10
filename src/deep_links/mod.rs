@@ -78,13 +78,14 @@ fn magnet_url_from_raw(stream: &Stream) -> Option<String> {
     }
 }
 
-fn infuse_open_player_link(
+fn x_callback_open_player(
+    player_type: &str,
     streaming_url: &str,
     success_url: &str,
     error_url: &str,
     position: Option<u64>,
     filename: Option<&str>,
-) -> String {
+) -> OpenPlayerLink {
     let success_url = utf8_percent_encode(success_url, URI_COMPONENT_ENCODE_SET);
     let error_url = utf8_percent_encode(error_url, URI_COMPONENT_ENCODE_SET);
     let url_encoded = utf8_percent_encode(streaming_url, URI_COMPONENT_ENCODE_SET);
@@ -93,30 +94,19 @@ fn infuse_open_player_link(
         .unwrap_or_default();
 
     let mut url = format!(
-        "infuse://x-callback-url/play?x-success={success_url}&x-error={error_url}&url={url_encoded}{position}"
+        "{player_type}://x-callback-url/play?x-success={success_url}&x-error={error_url}&url={url_encoded}{position}"
     );
 
     if let Some(filename) = filename.filter(|filename| !filename.is_empty()) {
         let filename_encoded = utf8_percent_encode(filename, URI_COMPONENT_ENCODE_SET);
         url.push_str(&format!("&filename={filename_encoded}"));
     }
-    url
-}
-
-fn infuse_open_player(
-    streaming_url: &str,
-    success_url: &str,
-    error_url: &str,
-    position: Option<u64>,
-    filename: Option<&str>,
-) -> OpenPlayerLink {
-    let link = infuse_open_player_link(streaming_url, success_url, error_url, position, filename);
-
+    let is_infuse = player_type == "infuse";
     OpenPlayerLink {
-        ios: Some(link.clone()),
-        macos: Some(link.clone()),
-        visionos: Some(link.clone()),
-        tvos: Some(link),
+        ios: is_infuse.then(|| url.clone()),
+        macos: is_infuse.then(|| url.clone()),
+        visionos: is_infuse.then(|| url.clone()),
+        tvos: Some(url),
         ..Default::default()
     }
 }
@@ -208,7 +198,8 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
                         visionos: Some(http_regex.replace(url.as_str(), "outplayer://").to_string()),
                         ..Default::default()
                     }),
-                    "infuse" => Some(infuse_open_player(
+                    "infuse" | "nativeplayer" => Some(x_callback_open_player(
+                        player_type,
                         url.as_str(),
                         "stremio:///player?externalPlayerSuccess=1",
                         "stremio:///player?externalPlayerSuccess=0",
@@ -355,7 +346,9 @@ impl From<(&LibraryItem, Option<&StreamsItem>, Option<&Url>, &Settings)> for Lib
             external_player: streams_item.map(|item| {
                 let mut external_player =
                     ExternalPlayerLink::from((&item.stream, streaming_server_url, settings));
-                if settings.player_type.as_deref() == Some("infuse") {
+                if let Some(player_type @ ("infuse" | "nativeplayer")) =
+                    settings.player_type.as_deref()
+                {
                     if let Some(streaming) = external_player.streaming.as_deref() {
                         let callback_url = format!(
                             "stremio:///detail/{}/{}/{}",
@@ -363,7 +356,8 @@ impl From<(&LibraryItem, Option<&StreamsItem>, Option<&Url>, &Settings)> for Lib
                             utf8_percent_encode(&item.meta_id, URI_COMPONENT_ENCODE_SET),
                             utf8_percent_encode(&item.video_id, URI_COMPONENT_ENCODE_SET)
                         );
-                        external_player.open_player = Some(infuse_open_player(
+                        external_player.open_player = Some(x_callback_open_player(
+                            player_type,
                             streaming,
                             &callback_url,
                             &callback_url,
@@ -688,9 +682,10 @@ impl
         );
         let mut external_player =
             ExternalPlayerLink::from((stream, streaming_server_url, settings));
-        if settings.player_type.as_deref() == Some("infuse") {
+        if let Some(player_type @ ("infuse" | "nativeplayer")) = settings.player_type.as_deref() {
             if let Some(streaming) = external_player.streaming.as_deref() {
-                external_player.open_player = Some(infuse_open_player(
+                external_player.open_player = Some(x_callback_open_player(
+                    player_type,
                     streaming,
                     &callback_url,
                     &callback_url,
