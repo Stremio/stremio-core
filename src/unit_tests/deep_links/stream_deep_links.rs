@@ -128,7 +128,7 @@ fn stream_deep_links_http() {
 }
 
 #[test]
-fn stream_deep_links_callback_player_returns_to_selected_item() {
+fn stream_deep_links_infuse_callback_returns_to_selected_item() {
     let stream = Stream {
         source: StreamSource::Url {
             url: Url::from_str(HTTP_STR_URL).unwrap(),
@@ -152,36 +152,59 @@ fn stream_deep_links_callback_player_returns_to_selected_item() {
     };
 
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
-    for player_type in ["infuse", "nativeplayer"] {
-        let settings = Settings {
-            player_type: Some(player_type.to_owned()),
-            streaming_server_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
-            ..Default::default()
-        };
-        let sdl = StreamDeepLinks::from((
+    let settings = Settings {
+        player_type: Some("infuse".to_string()),
+        streaming_server_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
+        ..Default::default()
+    };
+    let sdl = StreamDeepLinks::from((
+        &stream,
+        &stream_request,
+        &meta_request,
+        streaming_server_url.as_ref(),
+        &settings,
+    ));
+    let ios = sdl
+        .external_player
+        .open_player
+        .as_ref()
+        .unwrap()
+        .ios
+        .as_deref()
+        .unwrap();
+
+    assert_eq!(
+        query_param(ios, "x-success"),
+        "stremio:///detail/series/tt123/tt123%3A1%3A2"
+    );
+    assert_eq!(
+        query_param(ios, "x-error"),
+        "stremio:///detail/series/tt123/tt123%3A1%3A2"
+    );
+    assert_eq!(query_param(ios, "filename"), "Example.Series.S01E02.mkv");
+    let settings = Settings {
+        player_type: Some("nativeplayer".into()),
+        ..settings.clone()
+    };
+    assert_eq!(
+        StreamDeepLinks::from((
             &stream,
             &stream_request,
             &meta_request,
             streaming_server_url.as_ref(),
-            &settings,
-        ));
-        let tvos = sdl.external_player.open_player.unwrap().tvos.unwrap();
-
-        assert_eq!(Url::parse(&tvos).unwrap().scheme(), player_type);
-        assert_eq!(
-            query_param(&tvos, "x-success"),
-            "stremio:///detail/series/tt123/tt123%3A1%3A2"
-        );
-        assert_eq!(
-            query_param(&tvos, "x-error"),
-            "stremio:///detail/series/tt123/tt123%3A1%3A2"
-        );
-        assert_eq!(query_param(&tvos, "filename"), "Example.Series.S01E02.mkv");
-    }
+            &settings
+        ))
+        .external_player
+        .open_player,
+        Some(crate::deep_links::OpenPlayerLink {
+            tvos: Some("nativeplayer://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fdetail%2Fseries%2Ftt123%2Ftt123%253A1%253A2&x-error=stremio%3A%2F%2F%2Fdetail%2Fseries%2Ftt123%2Ftt123%253A1%253A2&url=http%3A%2F%2Fdomain.root%2Fsome%2Fpath&filename=Example.Series.S01E02.mkv".into()),
+            ..Default::default()
+        })
+    );
 }
 
 #[test]
-fn stream_deep_links_callback_player_resumes_library_item_position() {
+fn stream_deep_links_infuse_resumes_library_item_position() {
     let stream = Stream {
         source: StreamSource::Url {
             url: Url::from_str(HTTP_STR_URL).unwrap(),
@@ -214,12 +237,12 @@ fn stream_deep_links_callback_player_resumes_library_item_position() {
         behavior_hints: Default::default(),
     };
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
-    let player_link = |player_type: &str, video_id: &str| {
-        let settings = Settings {
-            player_type: Some(player_type.to_owned()),
-            streaming_server_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
-            ..Default::default()
-        };
+    let settings = Settings {
+        player_type: Some("infuse".to_string()),
+        streaming_server_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
+        ..Default::default()
+    };
+    let infuse_link = |video_id: &str| {
         let stream_request = ResourceRequest {
             base: Url::from_str("http://stream.addon").unwrap(),
             path: ResourcePath::without_extra("stream", "series", video_id),
@@ -235,17 +258,12 @@ fn stream_deep_links_callback_player_resumes_library_item_position() {
         .external_player
         .open_player
         .unwrap()
-        .tvos
+        .ios
         .unwrap()
     };
 
-    for player_type in ["infuse", "nativeplayer"] {
-        assert_eq!(
-            query_param(&player_link(player_type, "tt123:1:2"), "position"),
-            "125"
-        );
-        assert!(!player_link(player_type, "tt123:1:3").contains("position="));
-    }
+    assert_eq!(query_param(&infuse_link("tt123:1:2"), "position"), "125");
+    assert!(!infuse_link("tt123:1:3").contains("position="));
 }
 
 #[test]

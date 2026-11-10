@@ -274,7 +274,7 @@ fn library_item_deep_links_behavior_hints_default_video_id() {
 }
 
 #[test]
-fn library_item_deep_links_callback_player_position() {
+fn library_item_deep_links_infuse_position() {
     let lib_item = LibraryItem {
         id: "tt13622776".to_string(),
         name: "Ahsoka".to_string(),
@@ -302,31 +302,43 @@ fn library_item_deep_links_callback_player_position() {
     let mut streams_item = TORRENT_STREAMS_ITEM.clone();
     streams_item.stream.name = None;
     streams_item.stream.behavior_hints.filename = Some("Ahsoka.S01E05.mkv".to_string());
-    for player_type in ["infuse", "nativeplayer"] {
-        let settings = Settings {
-            player_type: Some(player_type.to_owned()),
-            ..Default::default()
-        };
-        let lidl = LibraryItemDeepLinks::from((
+    let lidl = LibraryItemDeepLinks::from((
+        &lib_item,
+        Some(&streams_item),
+        Some(&*STREAMING_SERVER_URL),
+        &*INFUSE_PLAYER_SETTINGS,
+    ));
+    let player = lidl.player.as_deref().unwrap();
+    let open_player = lidl.external_player.unwrap().open_player.unwrap();
+    let ios = open_player.ios.as_deref().unwrap();
+
+    assert_eq!(query_param(player, "position"), "61");
+    assert_eq!(query_param(ios, "position"), "61");
+    assert_eq!(
+        query_param(ios, "x-success"),
+        "stremio:///detail/series/tt13622776/tt13622776%3A1%3A5"
+    );
+    assert_eq!(query_param(ios, "x-error"), query_param(ios, "x-success"));
+    assert_eq!(query_param(ios, "filename"), "Ahsoka.S01E05.mkv");
+    let settings = Settings {
+        player_type: Some("nativeplayer".into()),
+        ..Default::default()
+    };
+    assert_eq!(
+        LibraryItemDeepLinks::from((
             &lib_item,
             Some(&streams_item),
             Some(&*STREAMING_SERVER_URL),
-            &settings,
-        ));
-        let player = lidl.player.as_deref().unwrap();
-        let open_player = lidl.external_player.unwrap().open_player.unwrap();
-        let tvos = open_player.tvos.as_deref().unwrap();
-
-        assert_eq!(Url::parse(tvos).unwrap().scheme(), player_type);
-        assert_eq!(query_param(player, "position"), "61");
-        assert_eq!(query_param(tvos, "position"), "61");
-        assert_eq!(
-            query_param(tvos, "x-success"),
-            "stremio:///detail/series/tt13622776/tt13622776%3A1%3A5"
-        );
-        assert_eq!(query_param(tvos, "x-error"), query_param(tvos, "x-success"));
-        assert_eq!(query_param(tvos, "filename"), "Ahsoka.S01E05.mkv");
-    }
+            &settings
+        ))
+        .external_player
+        .unwrap()
+        .open_player,
+        Some(crate::deep_links::OpenPlayerLink {
+            tvos: Some("nativeplayer://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fdetail%2Fseries%2Ftt13622776%2Ftt13622776%253A1%253A5&x-error=stremio%3A%2F%2F%2Fdetail%2Fseries%2Ftt13622776%2Ftt13622776%253A1%253A5&url=http%3A%2F%2F127.0.0.1%3A11470%2Fdf2c94aec35f97943c4e432f25081b590cd35326%2F0%3F&position=61&filename=Ahsoka.S01E05.mkv".into()),
+            ..Default::default()
+        })
+    );
 }
 
 #[test]

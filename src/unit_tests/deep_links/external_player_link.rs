@@ -331,6 +331,17 @@ fn external_player_link_with_infuse() {
         open_player.ios,
         Some("infuse://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url=http%3A%2F%2Fexample.com%2Fstream&filename=Am%C3%A9lie%20%26%20Friends%20%2B%20100%25.mp4".to_string())
     );
+    let settings = Settings {
+        player_type: Some("nativeplayer".into()),
+        ..settings
+    };
+    assert_eq!(
+        ExternalPlayerLink::from((&stream, streaming_server_url.as_ref(), &settings)).open_player,
+        Some(crate::deep_links::OpenPlayerLink {
+            tvos: Some("nativeplayer://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D1&x-error=stremio%3A%2F%2F%2Fplayer%3FexternalPlayerSuccess%3D0&url=http%3A%2F%2Fexample.com%2Fstream&filename=Am%C3%A9lie%20%26%20Friends%20%2B%20100%25.mp4".into()),
+            ..Default::default()
+        })
+    );
 }
 
 #[test]
