@@ -320,6 +320,25 @@ fn library_item_deep_links_infuse_position() {
     );
     assert_eq!(query_param(ios, "x-error"), query_param(ios, "x-success"));
     assert_eq!(query_param(ios, "filename"), "Ahsoka.S01E05.mkv");
+    let settings = Settings {
+        player_type: Some("nativeplayer".into()),
+        ..Default::default()
+    };
+    assert_eq!(
+        LibraryItemDeepLinks::from((
+            &lib_item,
+            Some(&streams_item),
+            Some(&*STREAMING_SERVER_URL),
+            &settings
+        ))
+        .external_player
+        .unwrap()
+        .open_player,
+        Some(crate::deep_links::OpenPlayerLink {
+            tvos: Some("nativeplayer://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fdetail%2Fseries%2Ftt13622776%2Ftt13622776%253A1%253A5&x-error=stremio%3A%2F%2F%2Fdetail%2Fseries%2Ftt13622776%2Ftt13622776%253A1%253A5&url=http%3A%2F%2F127.0.0.1%3A11470%2Fdf2c94aec35f97943c4e432f25081b590cd35326%2F0%3F&position=61&filename=Ahsoka.S01E05.mkv".into()),
+            ..Default::default()
+        })
+    );
 }
 
 #[test]
