@@ -66,7 +66,7 @@ pub struct BoardSpotlight {
 impl Default for BoardSpotlight {
     fn default() -> Self {
         BoardSpotlight {
-            enabled: true,
+            enabled: false,
             catalogs: vec![],
             show_catalog_rows: true,
         }

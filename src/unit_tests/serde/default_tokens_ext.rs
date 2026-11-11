@@ -467,7 +467,7 @@ impl DefaultTokens for Settings {
                 len: 3,
             },
             Token::Str("enabled"),
-            Token::Bool(true),
+            Token::Bool(false),
             Token::Str("catalogs"),
             Token::Seq { len: Some(0) },
             Token::SeqEnd,

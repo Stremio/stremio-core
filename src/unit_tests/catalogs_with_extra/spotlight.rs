@@ -198,7 +198,13 @@ fn spotlight_requests(board: &CatalogsWithExtra) -> Vec<ResourceRequest> {
 #[test]
 fn spotlight_defaults_to_movies_and_series() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
-    let (runtime, _rx) = runtime_with(BoardSpotlight::default(), fetch_handler);
+    let (runtime, _rx) = runtime_with(
+        BoardSpotlight {
+            enabled: true,
+            ..BoardSpotlight::default()
+        },
+        fetch_handler,
+    );
     TestEnv::run(|| {
         runtime.dispatch(load_board());
         runtime.dispatch(RuntimeAction {
@@ -246,6 +252,7 @@ fn spotlight_hides_the_catalog_rows() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     let (runtime, _rx) = runtime_with(
         BoardSpotlight {
+            enabled: true,
             show_catalog_rows: false,
             ..BoardSpotlight::default()
         },
@@ -263,6 +270,7 @@ fn spotlight_row_returns_without_artwork() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     let (runtime, _rx) = runtime_with(
         BoardSpotlight {
+            enabled: true,
             show_catalog_rows: false,
             ..BoardSpotlight::default()
         },
@@ -292,6 +300,7 @@ fn spotlight_row_returns_when_a_pick_fails() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     let (runtime, _rx) = runtime_with(
         BoardSpotlight {
+            enabled: true,
             show_catalog_rows: false,
             ..BoardSpotlight::default()
         },
@@ -309,6 +318,7 @@ fn spotlight_ignores_missing_picks() {
     let catalogs = vec![missing_request(), cinemeta_request("series", "top")];
     let (runtime, _rx) = runtime_with(
         BoardSpotlight {
+            enabled: true,
             catalogs: catalogs.to_owned(),
             ..BoardSpotlight::default()
         },
@@ -331,6 +341,7 @@ fn spotlight_falls_back_to_the_default() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     let (runtime, _rx) = runtime_with(
         BoardSpotlight {
+            enabled: true,
             catalogs: vec![missing_request()],
             ..BoardSpotlight::default()
         },
