@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     models::{ctx::Ctx, streaming_server::StreamingServer},
     runtime::{Env, EnvFuture, EnvFutureExt, Model, Runtime, RuntimeEvent, TryEnvFuture},
+    types::remote_config::ClientInfo,
 };
 
 pub static FETCH_HANDLER: Lazy<RwLock<FetchHandler>> =
@@ -27,6 +28,7 @@ pub static STATES: Lazy<RwLock<Vec<Box<dyn Any + Send + Sync + 'static>>>> =
 pub static NOW: Lazy<RwLock<DateTime<Utc>>> = Lazy::new(|| RwLock::new(Utc::now()));
 pub static LOCAL_TIMEZONE_OFFSET: Lazy<RwLock<FixedOffset>> =
     Lazy::new(|| RwLock::new(FixedOffset::east_opt(0).unwrap()));
+pub static CLIENT_INFO: Lazy<RwLock<ClientInfo>> = Lazy::new(|| RwLock::new(default_client_info()));
 pub static ENV_MUTEX: Mutex<()> = Mutex::new(());
 
 pub type FetchHandler =
@@ -69,6 +71,7 @@ impl TestEnv {
         *STATES.write().unwrap() = vec![];
         *NOW.write().unwrap() = Utc::now();
         *LOCAL_TIMEZONE_OFFSET.write().unwrap() = FixedOffset::east_opt(0).unwrap();
+        *CLIENT_INFO.write().unwrap() = default_client_info();
         env_mutex
     }
     pub fn run<F: FnOnce()>(runnable: F) {
@@ -155,6 +158,9 @@ impl Env for TestEnv {
     fn flush_analytics() -> EnvFuture<'static, ()> {
         future::ready(()).boxed_env()
     }
+    fn client_info() -> ClientInfo {
+        CLIENT_INFO.read().unwrap().to_owned()
+    }
     fn analytics_context(
         _ctx: &Ctx,
         _streaming_server: &StreamingServer,
@@ -169,4 +175,15 @@ impl Env for TestEnv {
 
 pub fn default_fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
     panic!("Unhandled fetch request: {:#?}", request)
+}
+
+pub fn default_client_info() -> ClientInfo {
+    ClientInfo {
+        platform: "web".to_owned(),
+        os: Some("windows".to_owned()),
+        app_version: Some("5.0.0".to_owned()),
+        shell_version: None,
+        installation_id: Some("0123456789abcdef0123".to_owned()),
+        notification_templates: vec!["prompt".to_owned()],
+    }
 }

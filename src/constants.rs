@@ -17,6 +17,7 @@ pub const STREAMING_SERVER_URLS_STORAGE_KEY: &str = "streaming_server_urls";
 pub const NOTIFICATIONS_STORAGE_KEY: &str = "notifications";
 pub const CALENDAR_STORAGE_KEY: &str = "calendar";
 pub const DISMISSED_EVENTS_STORAGE_KEY: &str = "dismissed_events";
+pub const REMOTE_CONFIG_STORAGE_KEY: &str = "remote_config";
 pub const LIBRARY_COLLECTION_NAME: &str = "libraryItem";
 pub const SEARCH_EXTRA_NAME: &str = "search";
 /// `https://{ADDON_UR}/meta/...` resource
@@ -39,6 +40,21 @@ pub const LIBRARY_EVENT_VIDEOS_COUNT: usize = 100;
 
 /// Account age in days to be considered a new user
 pub const NEW_USER_DAYS: chrono::Duration = chrono::Duration::days(30);
+
+pub const REMOTE_CONFIG_DEFAULT_REFRESH_SECONDS: u64 = 300;
+pub const REMOTE_CONFIG_MIN_REFRESH_SECONDS: u64 = 60;
+pub const REMOTE_CONFIG_MAX_REFRESH_SECONDS: u64 = 86400;
+pub const REMOTE_CONFIG_RETRY_INTERVAL: chrono::Duration = chrono::Duration::seconds(60);
+pub const REMOTE_CONFIG_MAX_AGE: chrono::Duration = chrono::Duration::days(7);
+pub const REMOTE_CONFIG_GEO_MAX_AGE: chrono::Duration = chrono::Duration::hours(24);
+pub const REMOTE_CONFIG_DEFAULT_COOLDOWN_SECONDS: u64 = 86400;
+pub const REMOTE_CONFIG_MAX_COOLDOWN_SECONDS: u64 = 2_592_000;
+pub const REMOTE_CONFIG_OUTBOX_CAPACITY: usize = 50;
+pub const REMOTE_CONFIG_OUTBOX_MAX_AGE: chrono::Duration = chrono::Duration::days(7);
+pub const REMOTE_CONFIG_EVENTS_BATCH_SIZE: usize = 20;
+pub const REMOTE_CONFIG_RECORD_MAX_AGE: chrono::Duration = chrono::Duration::days(365);
+pub const REMOTE_CONFIG_ASSIGNMENT_MAX_ABSENCE: chrono::Duration = chrono::Duration::days(30);
+pub const REMOTE_CONFIG_MAX_ACCOUNT_KEYS: usize = 8;
 
 /// A `LibraryItem` is considered watched once we've watched more than the `duration * threshold`:
 ///

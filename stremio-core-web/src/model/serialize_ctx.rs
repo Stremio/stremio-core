@@ -17,7 +17,8 @@ mod model {
 
     use stremio_core::deep_links::SearchHistoryItemDeepLinks;
     use stremio_core::types::{
-        events::Events, notifications::NotificationItem, resource::MetaItemId,
+        events::Events, notifications::NotificationItem, remote_config::RemoteConfig,
+        resource::MetaItemId,
     };
     use url::Url;
 
@@ -31,6 +32,7 @@ mod model {
         pub search_history: Vec<SearchHistoryItem<'a>>,
         pub events: &'a Events,
         pub streaming_server_urls: Vec<StreamingServerUrlItem>,
+        pub remote_config: &'a RemoteConfig,
     }
 
     #[derive(Serialize)]
@@ -125,6 +127,7 @@ mod model {
                     })
                     .sorted_by(|a, b| Ord::cmp(&a.mtime, &b.mtime))
                     .collect(),
+                remote_config: &ctx.remote_config,
             }
         }
     }

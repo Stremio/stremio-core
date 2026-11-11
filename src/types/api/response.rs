@@ -141,6 +141,11 @@ pub struct GetNotificationResponse {
     pub external_url: Option<Url>,
 }
 
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+pub struct GeoResponse {
+    pub country: Option<String>,
+}
+
 /// API response for the [`LibraryItem`]s which skips invalid items
 /// when deserializing.
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]

@@ -23,7 +23,7 @@ use stremio_core::{
         msg::{Action, ActionCtx, Event},
         Env, EnvError, EnvFuture, EnvFutureExt, TryEnvFuture,
     },
-    types::{api::AuthRequest, resource::StreamSource},
+    types::{api::AuthRequest, remote_config::ClientInfo, resource::StreamSource},
 };
 
 use crate::{
@@ -40,6 +40,8 @@ extern "C" {
     static APP_VERSION: String;
     #[wasm_bindgen(js_namespace = ["self"], js_name = shell_version)]
     static SHELL_VERSION: Option<String>;
+    #[wasm_bindgen(js_namespace = ["self"], js_name = client_info)]
+    static CLIENT_INFO: Option<String>;
     #[wasm_bindgen(catch, js_namespace = ["self"])]
     async fn get_location_hash() -> Result<JsValue, JsValue>;
     #[wasm_bindgen(catch, js_namespace = ["self"])]
@@ -57,6 +59,14 @@ static PLAYER_REGEX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"^/player/([^/]*)(?:/([^/]*)/([^/]*)/([^/]*)/([^/]*)/([^/]*))?$")
         .expect("Player Regex failed to build")
 });
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HostClientInfo {
+    platform: Option<String>,
+    os: Option<String>,
+    notification_templates: Option<Vec<String>>,
+}
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -467,6 +477,36 @@ impl Env for WebEnv {
 
     fn flush_analytics() -> EnvFuture<'static, ()> {
         ANALYTICS.flush().boxed_local()
+    }
+
+    fn client_info() -> ClientInfo {
+        let host = CLIENT_INFO
+            .as_deref()
+            .and_then(|client_info| serde_json::from_str::<HostClientInfo>(client_info).ok())
+            .unwrap_or_default();
+        let platform = if cfg!(feature = "theater") {
+            "theater"
+        } else {
+            match host.platform.as_deref() {
+                Some("web") => "web",
+                Some("desktop") => "desktop",
+                _ => "unknown",
+            }
+        };
+        ClientInfo {
+            platform: platform.to_owned(),
+            os: host.os.map(|os| os.to_lowercase()),
+            app_version: Some(APP_VERSION.to_owned()),
+            shell_version: SHELL_VERSION.to_owned(),
+            installation_id: INSTALLATION_ID
+                .read()
+                .expect("installation id read failed")
+                .to_owned(),
+            notification_templates: match platform {
+                "unknown" => vec![],
+                _ => host.notification_templates.unwrap_or_default(),
+            },
+        }
     }
 
     fn analytics_context(

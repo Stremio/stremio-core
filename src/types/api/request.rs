@@ -4,6 +4,7 @@ use crate::constants::{API_URL, LINK_API_URL};
 use crate::types::addon::Descriptor;
 use crate::types::library::LibraryItem;
 use crate::types::profile::{AuthKey, GDPRConsent, Password, User};
+use crate::types::remote_config::ConfigEvent;
 use crate::types::resource::SeriesInfo;
 use chrono::{DateTime, Local};
 #[cfg(test)]
@@ -93,9 +94,10 @@ pub enum APIRequest {
     GetModal {
         date: DateTime<Local>,
     },
-    #[serde(rename_all = "camelCase")]
-    GetNotification {
-        date: DateTime<Local>,
+    GetGeo {},
+    ConfigEvents {
+        platform: String,
+        events: Vec<ConfigEvent>,
     },
 }
 
@@ -173,7 +175,8 @@ impl FetchRequestParams<APIRequest> for APIRequest {
             APIRequest::SeekLog { .. } => "seekLog".to_owned(),
             APIRequest::SkipGaps { .. } => "getSkipGaps".to_owned(),
             APIRequest::GetModal { .. } => "getModal".to_owned(),
-            APIRequest::GetNotification { .. } => "getNotification".to_owned(),
+            APIRequest::GetGeo { .. } => "getGeo".to_owned(),
+            APIRequest::ConfigEvents { .. } => "configEvents".to_owned(),
         }
     }
     fn query(&self) -> Option<String> {
