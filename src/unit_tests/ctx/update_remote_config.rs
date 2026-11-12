@@ -620,6 +620,12 @@ fn targeting_rules() {
             json!({ "settings": { "boardSpotlight.enabled": false } }),
             Profile::default(),
             None,
+            true,
+        ),
+        (
+            json!({ "settings": { "unknownSetting.enabled": false } }),
+            Profile::default(),
+            None,
             false,
         ),
         (
@@ -1021,7 +1027,8 @@ fn unsafe_settings_patches_hide_the_prompt() {
     set_now(now());
     let patches = vec![
         (json!({ "hideSpoilers": true }), true),
-        (json!({ "boardSpotlight": { "enabled": true } }), false),
+        (json!({ "boardSpotlight": { "enabled": true } }), true),
+        (json!({ "unknownSetting": { "enabled": true } }), false),
         (json!({ "playerType": "external" }), false),
         (
             json!({ "streamingServerUrl": "http://127.0.0.1:11470/" }),
