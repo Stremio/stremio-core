@@ -378,7 +378,7 @@ impl DefaultTokens for Settings {
         vec![
             Token::Struct {
                 name: "Settings",
-                len: 39,
+                len: 40,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -463,6 +463,19 @@ impl DefaultTokens for Settings {
             Token::Bool(false),
             Token::Str("showClockInPlayer"),
             Token::Bool(false),
+            Token::Str("boardSpotlight"),
+            Token::Struct {
+                name: "BoardSpotlight",
+                len: 3,
+            },
+            Token::Str("enabled"),
+            Token::Bool(false),
+            Token::Str("catalogs"),
+            Token::Seq { len: Some(0) },
+            Token::SeqEnd,
+            Token::Str("showCatalogRows"),
+            Token::Bool(true),
+            Token::StructEnd,
             Token::StructEnd,
         ]
     }

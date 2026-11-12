@@ -55,6 +55,7 @@ pub enum Event {
     DismissedEventsPushedToStorage {
         uid: UID,
     },
+    RemoteConfigPushedToStorage,
     UserPulledFromAPI {
         uid: UID,
     },

@@ -8,9 +8,16 @@ use crate::model::deep_links_ext::DeepLinksExt;
 
 pub use stremio_core::{
     deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks},
-    models::{catalogs_with_extra::Selected, common::Loadable, ctx::Ctx},
-    types::resource::PosterShape,
+    models::{
+        catalogs_with_extra::Selected,
+        common::{spotlight_items, spotlight_page_answered, CatalogPage, Loadable},
+        ctx::Ctx,
+        streaming_server::StreamingServer,
+    },
+    types::{addon::ResourceRequest, resource::PosterShape},
 };
+
+const CATALOG_ITEMS_COUNT: usize = 10;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -58,13 +65,154 @@ pub struct ResourceLoadable<'a> {
 pub struct CatalogsWithExtra<'a> {
     pub selected: &'a Option<Selected>,
     pub catalogs: Vec<ResourceLoadable<'a>>,
+    pub spotlight: Option<Loadable<Vec<MetaItemPreview<'a>>, String>>,
+}
+
+fn catalog_items(
+    meta_items: &[stremio_core::types::resource::MetaItemPreview],
+) -> Vec<&stremio_core::types::resource::MetaItemPreview> {
+    meta_items
+        .iter()
+        .unique_by(|meta_item| &meta_item.id)
+        .take(CATALOG_ITEMS_COUNT)
+        .collect()
+}
+
+fn serialize_item<'a>(
+    meta_item: &'a stremio_core::types::resource::MetaItemPreview,
+    poster_shape: &'a PosterShape,
+    request: &ResourceRequest,
+    ctx: &'a Ctx,
+    streaming_server: &StreamingServer,
+) -> MetaItemPreview<'a> {
+    MetaItemPreview {
+        meta_item,
+        poster_shape,
+        trailer_streams: meta_item
+            .trailer_streams
+            .iter()
+            .take(1)
+            .map(|stream| Stream {
+                stream,
+                deep_links: StreamDeepLinks::from((
+                    stream,
+                    streaming_server.base_url.as_ref(),
+                    &ctx.profile.settings,
+                ))
+                .into_web_deep_links(),
+            })
+            .collect::<Vec<_>>(),
+        watched: ctx
+            .library
+            .items
+            .get(&meta_item.id)
+            .map(|library_item| library_item.watched())
+            .unwrap_or_default(),
+        in_library: ctx
+            .library
+            .items
+            .get(&meta_item.id)
+            .map(|library_item| !library_item.removed)
+            .unwrap_or_default(),
+        deep_links: MetaItemDeepLinks::from((meta_item, request)).into_web_deep_links(),
+    }
+}
+
+fn serialize_page<'a>(
+    catalog: &'a CatalogPage<stremio_core::types::resource::MetaItemPreview>,
+    ctx: &'a Ctx,
+    streaming_server: &StreamingServer,
+) -> Option<ResourceLoadable<'a>> {
+    ctx.profile
+        .addons
+        .iter()
+        .find(|addon| addon.transport_url == catalog.request.base)
+        .and_then(|addon| {
+            addon
+                .manifest
+                .catalogs
+                .iter()
+                .find(|manifest_catalog| {
+                    manifest_catalog.id == catalog.request.path.id
+                        && manifest_catalog.r#type == catalog.request.path.r#type
+                })
+                .map(|manifest_catalog| (addon, manifest_catalog))
+        })
+        .map(|(addon, manifest_catalog)| ResourceLoadable {
+            id: manifest_catalog.id.to_string(),
+            name: manifest_catalog
+                .name
+                .as_ref()
+                .unwrap_or(&addon.manifest.name)
+                .to_string(),
+            r#type: manifest_catalog.r#type.to_string(),
+            addon: DescriptorPreview {
+                manifest: ManifestPreview {
+                    id: &addon.manifest.id,
+                    name: &addon.manifest.name,
+                },
+            },
+            content: match &catalog.content {
+                Some(Loadable::Ready(meta_items)) => {
+                    let poster_shape = meta_items.first().map(|meta_item| &meta_item.poster_shape);
+                    Some(Loadable::Ready(
+                        catalog_items(meta_items)
+                            .into_iter()
+                            .map(|meta_item| {
+                                serialize_item(
+                                    meta_item,
+                                    poster_shape.unwrap_or(&meta_item.poster_shape),
+                                    &catalog.request,
+                                    ctx,
+                                    streaming_server,
+                                )
+                            })
+                            .collect::<Vec<_>>(),
+                    ))
+                }
+                Some(Loadable::Loading) => Some(Loadable::Loading),
+                Some(Loadable::Err(error)) => Some(Loadable::Err(error.to_string())),
+                None => None,
+            },
+            deep_links: DiscoverDeepLinks::from(&catalog.request).into_web_deep_links(),
+        })
+}
+
+fn serialize_spotlight<'a>(
+    pages: &'a [CatalogPage<stremio_core::types::resource::MetaItemPreview>],
+    ctx: &'a Ctx,
+    streaming_server: &StreamingServer,
+) -> Option<Loadable<Vec<MetaItemPreview<'a>>, String>> {
+    if pages.is_empty() {
+        return None;
+    }
+
+    let items = spotlight_items(pages.iter());
+    if items.is_empty() && !pages.iter().all(spotlight_page_answered) {
+        return Some(Loadable::Loading);
+    }
+
+    Some(Loadable::Ready(
+        items
+            .into_iter()
+            .map(|(request, meta_item)| {
+                serialize_item(
+                    meta_item,
+                    &meta_item.poster_shape,
+                    request,
+                    ctx,
+                    streaming_server,
+                )
+            })
+            .collect::<Vec<_>>(),
+    ))
 }
 
 impl<'a> CatalogsWithExtra<'a> {
     pub fn new(
         catalogs_with_extra: &'a stremio_core::models::catalogs_with_extra::CatalogsWithExtra,
         ctx: &'a Ctx,
-        streaming_server: &stremio_core::models::streaming_server::StreamingServer,
+        streaming_server: &StreamingServer,
     ) -> Self {
         Self {
             selected: &catalogs_with_extra.selected,
@@ -72,92 +220,9 @@ impl<'a> CatalogsWithExtra<'a> {
                 .catalogs
                 .iter()
                 .filter_map(|catalog| catalog.first())
-                .filter_map(|catalog| {
-                    ctx.profile
-                        .addons
-                        .iter()
-                        .find(|addon| addon.transport_url == catalog.request.base)
-                        .and_then(|addon| {
-                            addon
-                                .manifest
-                                .catalogs
-                                .iter()
-                                .find(|manifest_catalog| {
-                                    manifest_catalog.id == catalog.request.path.id
-                                        && manifest_catalog.r#type == catalog.request.path.r#type
-                                })
-                                .map(|manifest_catalog| (addon, manifest_catalog, catalog))
-                        })
-                })
-                .map(|(addon, manifest_catalog, catalog)| ResourceLoadable {
-                    id: manifest_catalog.id.to_string(),
-                    name: manifest_catalog
-                        .name
-                        .as_ref()
-                        .unwrap_or(&addon.manifest.name)
-                        .to_string(),
-                    r#type: manifest_catalog.r#type.to_string(),
-                    addon: DescriptorPreview {
-                        manifest: ManifestPreview {
-                            id: &addon.manifest.id,
-                            name: &addon.manifest.name,
-                        },
-                    },
-                    content: match &catalog.content {
-                        Some(Loadable::Ready(meta_items)) => {
-                            let poster_shape =
-                                meta_items.first().map(|meta_item| &meta_item.poster_shape);
-                            Some(Loadable::Ready(
-                                meta_items
-                                    .iter()
-                                    .unique_by(|meta_item| &meta_item.id)
-                                    .take(10)
-                                    .map(|meta_item| MetaItemPreview {
-                                        meta_item,
-                                        poster_shape: poster_shape
-                                            .unwrap_or(&meta_item.poster_shape),
-                                        trailer_streams: meta_item
-                                            .trailer_streams
-                                            .iter()
-                                            .take(1)
-                                            .map(|stream| Stream {
-                                                stream,
-                                                deep_links: StreamDeepLinks::from((
-                                                    stream,
-                                                    streaming_server.base_url.as_ref(),
-                                                    &ctx.profile.settings,
-                                                ))
-                                                .into_web_deep_links(),
-                                            })
-                                            .collect::<Vec<_>>(),
-                                        watched: ctx
-                                            .library
-                                            .items
-                                            .get(&meta_item.id)
-                                            .map(|library_item| library_item.watched())
-                                            .unwrap_or_default(),
-                                        in_library: ctx
-                                            .library
-                                            .items
-                                            .get(&meta_item.id)
-                                            .map(|library_item| !library_item.removed)
-                                            .unwrap_or_default(),
-                                        deep_links: MetaItemDeepLinks::from((
-                                            meta_item,
-                                            &catalog.request,
-                                        ))
-                                        .into_web_deep_links(),
-                                    })
-                                    .collect::<Vec<_>>(),
-                            ))
-                        }
-                        Some(Loadable::Loading) => Some(Loadable::Loading),
-                        Some(Loadable::Err(error)) => Some(Loadable::Err(error.to_string())),
-                        None => None,
-                    },
-                    deep_links: DiscoverDeepLinks::from(&catalog.request).into_web_deep_links(),
-                })
+                .filter_map(|catalog| serialize_page(catalog, ctx, streaming_server))
                 .collect::<Vec<_>>(),
+            spotlight: serialize_spotlight(&catalogs_with_extra.spotlight, ctx, streaming_server),
         }
     }
 }

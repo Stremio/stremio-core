@@ -238,7 +238,8 @@ pub fn update_profile<E: Env + 'static>(
             }))
             .unchanged(),
         },
-        Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(settings))) => {
+        Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(settings)))
+        | Msg::Internal(Internal::UpdateSettings(settings)) => {
             if !matches!(settings.streaming_server_url.scheme(), "http" | "https") {
                 Effects::msg(Msg::Event(Event::Error {
                     error: CtxError::from(OtherError::InvalidStreamingServerUrl),

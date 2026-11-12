@@ -3,9 +3,9 @@ use crate::{
     models::{
         common::{DescriptorLoadable, Loadable, ResourceLoadable},
         ctx::{
-            update_events, update_library, update_notifications, update_profile,
-            update_search_history, update_streaming_server_urls, update_streams,
-            update_trakt_addon, CtxError, OtherError,
+            evaluate_remote_config, update_events, update_library, update_notifications,
+            update_profile, update_remote_config, update_search_history,
+            update_streaming_server_urls, update_streams, update_trakt_addon, CtxError, OtherError,
         },
     },
     runtime::{
@@ -21,6 +21,7 @@ use crate::{
         library::LibraryBucket,
         notifications::NotificationsBucket,
         profile::{Auth, AuthKey, Profile},
+        remote_config::{RemoteConfig, RemoteConfigBucket},
         resource::MetaItem,
         search_history::SearchHistoryBucket,
         server_urls::ServerUrlsBucket,
@@ -75,6 +76,9 @@ pub struct Ctx {
     pub notification_catalogs: Vec<ResourceLoadable<Vec<MetaItem>>>,
 
     pub events: Events,
+    pub remote_config: RemoteConfig,
+    #[serde(skip)]
+    pub remote_config_bucket: RemoteConfigBucket,
 }
 
 impl Ctx {
@@ -101,9 +105,24 @@ impl Ctx {
             status: CtxStatus::Ready,
             events: Events {
                 modal: Loadable::Loading,
-                notification: Loadable::Loading,
+                notification: Loadable::Ready(None),
             },
+            remote_config: RemoteConfig::default(),
+            remote_config_bucket: RemoteConfigBucket::default(),
         }
+    }
+
+    pub fn with_remote_config<E: Env + 'static>(
+        mut self,
+        bucket: Option<RemoteConfigBucket>,
+    ) -> Self {
+        self.remote_config_bucket = bucket.unwrap_or_default();
+        let _ = evaluate_remote_config::<E>(
+            &mut self.remote_config,
+            &mut self.remote_config_bucket,
+            &self.profile,
+        );
+        self
     }
 }
 
@@ -127,6 +146,12 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 };
                 let profile_effects =
                     update_profile::<E>(&mut self.profile, &mut self.streams, &self.status, msg);
+                let remote_config_effects = update_remote_config::<E>(
+                    &mut self.remote_config,
+                    &mut self.remote_config_bucket,
+                    &self.profile,
+                    msg,
+                );
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
@@ -163,12 +188,19 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(server_urls_effects)
                     .join(search_history_effects)
                     .join(events_effects)
+                    .join(remote_config_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
             }
             Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => {
                 let profile_effects =
                     update_profile::<E>(&mut self.profile, &mut self.streams, &self.status, msg);
+                let remote_config_effects = update_remote_config::<E>(
+                    &mut self.remote_config,
+                    &mut self.remote_config_bucket,
+                    &self.profile,
+                    msg,
+                );
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let trakt_addon_effects = update_trakt_addon::<E>(
@@ -264,11 +296,18 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(notifications_effects)
                     .join(search_history_effects)
                     .join(events_effects)
+                    .join(remote_config_effects)
                     .join(ctx_effects)
             }
             _ => {
                 let profile_effects =
                     update_profile::<E>(&mut self.profile, &mut self.streams, &self.status, msg);
+                let remote_config_effects = update_remote_config::<E>(
+                    &mut self.remote_config,
+                    &mut self.remote_config_bucket,
+                    &self.profile,
+                    msg,
+                );
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
@@ -303,6 +342,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(notifications_effects)
                     .join(search_history_effects)
                     .join(events_effects)
+                    .join(remote_config_effects)
             }
         }
     }
