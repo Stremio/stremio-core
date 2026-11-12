@@ -435,7 +435,14 @@
 <a href="#434" id="434">434</a>
 <a href="#435" id="435">435</a>
 <a href="#436" id="436">436</a>
-<a href="#437" id="437">437</a></pre></div><pre class="rust"><code><span class="kw">use </span>chrono::{DateTime, Duration, Utc};
+<a href="#437" id="437">437</a>
+<a href="#438" id="438">438</a>
+<a href="#439" id="439">439</a>
+<a href="#440" id="440">440</a>
+<a href="#441" id="441">441</a>
+<a href="#442" id="442">442</a>
+<a href="#443" id="443">443</a>
+<a href="#444" id="444">444</a></pre></div><pre class="rust"><code><span class="kw">use </span>chrono::{DateTime, Duration, Utc};
 <span class="kw">use </span>futures::{future, FutureExt, TryFutureExt};
 <span class="kw">use </span>http::Request;
 <span class="kw">use </span>serde::Deserialize;
@@ -449,7 +456,7 @@
     models::ctx::CtxError,
     runtime::{
         msg::{Action, ActionCtx, ActionRemoteConfig, Event, Internal, Msg},
-        Effect, EffectFuture, Effects, Env, EnvFutureExt,
+        Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt,
     },
     types::{
         api::{fetch_api, APIRequest, APIResult, GeoResponse, SuccessResponse},
@@ -829,7 +836,14 @@
         .expect(<span class="string">"request builder failed"</span>);
     EffectFuture::Concurrent(
         E::fetch::&lt;<span class="kw">_</span>, RemoteConfigResponse&gt;(request)
-            .map(<span class="kw">move </span>|result| Msg::Internal(Internal::RemoteConfigResult(started_at, result)))
+            .map(<span class="kw">move </span>|result| {
+                <span class="kw">let </span>result = result.and_then(|config| {
+                    (config != RemoteConfigResponse::default())
+                        .then_some(config)
+                        .ok_or_else(|| EnvError::Fetch(<span class="string">"Empty remote config"</span>.to_owned()))
+                });
+                Msg::Internal(Internal::RemoteConfigResult(started_at, result))
+            })
             .boxed_env(),
     )
     .into()
