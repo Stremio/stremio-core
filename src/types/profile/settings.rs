@@ -52,6 +52,8 @@ pub struct Settings {
     pub send_crash_reports: bool,
     pub discord_rpc_enabled: bool,
     #[serde(default)]
+    pub show_clock_in_player: bool,
+    #[serde(default)]
     pub board_spotlight: BoardSpotlight,
 }
 
@@ -121,6 +123,7 @@ impl Default for Settings {
             server_in_foreground: false,
             send_crash_reports: true,
             discord_rpc_enabled: false,
+            show_clock_in_player: false,
             board_spotlight: BoardSpotlight::default(),
         }
     }
