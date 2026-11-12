@@ -344,7 +344,21 @@
 <a href="#343" id="343">343</a>
 <a href="#344" id="344">344</a>
 <a href="#345" id="345">345</a>
-<a href="#346" id="346">346</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
 
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>url::Url;
@@ -352,6 +366,7 @@
 <span class="kw">use crate</span>::{
     models::{
         addon_details::Selected <span class="kw">as </span>AddonDetailsSelected,
+        board_catalogs::Selected <span class="kw">as </span>BoardCatalogsSelected,
         calendar::Selected <span class="kw">as </span>CalendarSelected,
         catalog_with_filters::Selected <span class="kw">as </span>CatalogWithFiltersSelected,
         catalogs_with_extra::Selected <span class="kw">as </span>CatalogsWithExtraSelected,
@@ -444,7 +459,7 @@
     ///
     /// [`LibraryItem`]: crate::types::library::LibraryItem
     </span>PullNotifications,
-    <span class="doccomment">/// Make request to api to get events modal and notification
+    <span class="doccomment">/// Make request to api to get the events modal
     </span>GetEvents,
     <span class="doccomment">/// Dismiss an event by id, either a Modal or Notification
     </span>DismissEvent(String),
@@ -452,6 +467,18 @@
     </span>AddServerUrl(Url),
     <span class="doccomment">/// Delete a server URL from the list of available streaming servers
     </span>DeleteServerUrl(Url),
+    RemoteConfig(ActionRemoteConfig),
+}
+
+<span class="attr">#[derive(Clone, Deserialize, Debug)]
+#[serde(tag = <span class="string">"action"</span>, content = <span class="string">"args"</span>)]
+</span><span class="kw">pub enum </span>ActionRemoteConfig {
+    Pull,
+    NotificationShown(String),
+    NotificationAction { id: String, button: String },
+    DismissNotification(String),
+    ExperimentExposed(String),
+    ExperimentEvent { id: String, event: String },
 }
 
 <span class="attr">#[derive(Clone, Deserialize, Debug)]
@@ -636,6 +663,7 @@
 </span><span class="doccomment">/// Action to load a specific Model.
 </span><span class="kw">pub enum </span>ActionLoad {
     AddonDetails(AddonDetailsSelected),
+    BoardCatalogs(BoardCatalogsSelected),
     CatalogWithFilters(<span class="prelude-ty">Option</span>&lt;CatalogWithFiltersSelected&gt;),
     <span class="doccomment">/// Guide-aware clients delegate EPG content to LiveTvGuide while retaining filters.
     </span>CatalogWithFiltersSelection(<span class="prelude-ty">Option</span>&lt;CatalogWithFiltersSelected&gt;),

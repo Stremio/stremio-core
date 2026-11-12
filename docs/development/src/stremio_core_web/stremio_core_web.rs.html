@@ -357,10 +357,15 @@
 <a href="#356" id="356">356</a>
 <a href="#357" id="357">357</a>
 <a href="#358" id="358">358</a>
-<a href="#359" id="359">359</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::sync::RwLock;
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
+<a href="#362" id="362">362</a>
+<a href="#363" id="363">363</a>
+<a href="#364" id="364">364</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::sync::RwLock;
 
 <span class="kw">use </span>enclose::enclose;
-<span class="kw">use </span>futures::{future, try_join, FutureExt, StreamExt};
+<span class="kw">use </span>futures::{future, try_join, FutureExt, StreamExt, TryFutureExt};
 <span class="kw">use </span>gloo_utils::format::JsValueSerdeExt;
 <span class="kw">use </span>once_cell::sync::Lazy;
 <span class="kw">use </span>serde::Serialize;
@@ -371,8 +376,8 @@
 <span class="kw">use </span>stremio_core::{
     constants::{
         DISMISSED_EVENTS_STORAGE_KEY, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
-        NOTIFICATIONS_STORAGE_KEY, PROFILE_STORAGE_KEY, SEARCH_HISTORY_STORAGE_KEY,
-        STREAMING_SERVER_URLS_STORAGE_KEY, STREAMS_STORAGE_KEY,
+        NOTIFICATIONS_STORAGE_KEY, PROFILE_STORAGE_KEY, REMOTE_CONFIG_STORAGE_KEY,
+        SEARCH_HISTORY_STORAGE_KEY, STREAMING_SERVER_URLS_STORAGE_KEY, STREAMS_STORAGE_KEY,
     },
     models::common::Loadable,
     runtime::{msg::Action, Env, EnvError, Runtime, RuntimeAction, RuntimeEvent},
@@ -381,6 +386,7 @@
         library::LibraryBucket,
         notifications::NotificationsBucket,
         profile::Profile,
+        remote_config::RemoteConfigBucket,
         resource::{Stream, StreamSource},
         search_history::SearchHistoryBucket,
         server_urls::ServerUrlsBucket,
@@ -478,6 +484,8 @@
                 WebEnv::get_storage::&lt;NotificationsBucket&gt;(NOTIFICATIONS_STORAGE_KEY),
                 WebEnv::get_storage::&lt;SearchHistoryBucket&gt;(SEARCH_HISTORY_STORAGE_KEY),
                 WebEnv::get_storage::&lt;DismissedEventsBucket&gt;(DISMISSED_EVENTS_STORAGE_KEY),
+                WebEnv::get_storage::&lt;RemoteConfigBucket&gt;(REMOTE_CONFIG_STORAGE_KEY)
+                    .or_else(|<span class="kw">_</span>| future::ok(<span class="prelude-val">None</span>)),
             );
             <span class="kw">match </span>storage_result {
                 <span class="prelude-val">Ok</span>((
@@ -489,6 +497,7 @@
                     notifications_bucket,
                     search_history_bucket,
                     dismissed_events_bucket,
+                    remote_config_bucket,
                 )) =&gt; {
                     <span class="kw">let </span>profile = profile.unwrap_or_default();
                     <span class="kw">let </span><span class="kw-2">mut </span>library = LibraryBucket::new(profile.uid(), <span class="macro">vec!</span>[]);
@@ -517,6 +526,7 @@
                         notifications_bucket,
                         search_history_bucket,
                         dismissed_events_bucket,
+                        remote_config_bucket,
                     );
                     <span class="kw">let </span>(runtime, rx) = Runtime::&lt;WebEnv, <span class="kw">_</span>&gt;::new(
                         model,

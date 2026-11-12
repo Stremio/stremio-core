@@ -78,14 +78,17 @@
 <a href="#77" id="77">77</a>
 <a href="#78" id="78">78</a>
 <a href="#79" id="79">79</a>
-<a href="#80" id="80">80</a></pre></div><pre class="rust"><code><span class="attr">#![allow(clippy::module_inception)]
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a></pre></div><pre class="rust"><code><span class="attr">#![allow(clippy::module_inception)]
 #![allow(deprecated)]
 #![allow(clippy::all)]
 
 </span><span class="kw">pub mod </span>model {
     <span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
     </span><span class="kw">pub use </span>{
-        deep_links_ext::DeepLinksExt, model::<span class="kw-2">*</span>, serialize_calendar::serialize_calendar,
+        deep_links_ext::DeepLinksExt, model::<span class="kw-2">*</span>, serialize_board_catalogs::serialize_board_catalogs,
+        serialize_calendar::serialize_calendar,
         serialize_continue_watching_preview::serialize_continue_watching_preview,
         serialize_ctx::serialize_ctx, serialize_data_export::serialize_data_export,
         serialize_discover::serialize_discover,
@@ -132,6 +135,7 @@
     <span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
     </span><span class="kw">mod </span>model;
 
+    <span class="kw">pub mod </span>serialize_board_catalogs;
     <span class="kw">pub mod </span>serialize_calendar;
     <span class="kw">pub mod </span>serialize_catalogs_with_extra;
     <span class="kw">pub mod </span>serialize_continue_watching_preview;

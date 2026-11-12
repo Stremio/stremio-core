@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["get_modal","get_notification","push_dismissed_events_to_storage","update_events"]};
+window.SIDEBAR_ITEMS = {"fn":["get_modal","push_dismissed_events_to_storage","update_events"]};

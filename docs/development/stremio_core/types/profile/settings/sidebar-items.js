@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["FrameRateMatchingStrategy"],"struct":["Settings"]};
+window.SIDEBAR_ITEMS = {"enum":["FrameRateMatchingStrategy"],"struct":["BoardSpotlight","Settings"]};

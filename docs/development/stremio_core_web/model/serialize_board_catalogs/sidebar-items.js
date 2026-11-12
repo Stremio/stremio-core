@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["preview","serialize_board_catalogs"],"mod":["model"],"struct":["BoardCatalog","BoardCatalogs","DescriptorPreview","ManifestPreview","Preview"]};

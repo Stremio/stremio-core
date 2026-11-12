@@ -224,9 +224,103 @@
 <a href="#223" id="223">223</a>
 <a href="#224" id="224">224</a>
 <a href="#225" id="225">225</a>
-<a href="#226" id="226">226</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::SKIP_EXTRA_PROP;
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::SKIP_EXTRA_PROP;
 <span class="kw">use </span><span class="kw">crate</span>::models::common::{
-    eq_update, resource_update_with_vector_content, Loadable, ResourceAction, ResourceLoadable,
+    board_plan, board_spotlight_requests, eq_update, resource_effect,
+    resource_update_with_vector_content, spotlight_hides_row, Loadable, ResourceAction,
+    ResourceLoadable,
 };
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::Ctx;
 <span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionCatalogsWithExtra, ActionLoad, Internal, Msg};
@@ -238,6 +332,8 @@
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>std::ops::Range;
 
+<span class="kw">pub use </span><span class="kw">crate</span>::models::common::CatalogPage;
+
 <span class="attr">#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 </span><span class="kw">pub struct </span>Selected {
     <span class="kw">pub </span>r#type: <span class="prelude-ty">Option</span>&lt;String&gt;,
@@ -245,14 +341,13 @@
     </span><span class="kw">pub </span>extra: Vec&lt;ExtraValue&gt;,
 }
 
-<span class="kw">pub type </span>CatalogPage&lt;T&gt; = ResourceLoadable&lt;Vec&lt;T&gt;&gt;;
-
 <span class="kw">pub type </span>Catalog&lt;T&gt; = Vec&lt;CatalogPage&lt;T&gt;&gt;;
 
 <span class="attr">#[derive(Default, Clone, Serialize, Debug)]
 </span><span class="kw">pub struct </span>CatalogsWithExtra {
     <span class="kw">pub </span>selected: <span class="prelude-ty">Option</span>&lt;Selected&gt;,
     <span class="kw">pub </span>catalogs: Vec&lt;Catalog&lt;MetaItemPreview&gt;&gt;,
+    <span class="kw">pub </span>spotlight: Vec&lt;CatalogPage&lt;MetaItemPreview&gt;&gt;,
 }
 
 <span class="kw">impl</span>&lt;E: Env + <span class="lifetime">'static</span>&gt; UpdateWithCtx&lt;E&gt; <span class="kw">for </span>CatalogsWithExtra {
@@ -260,8 +355,13 @@
         <span class="kw">match </span>msg {
             Msg::Action(Action::Load(ActionLoad::CatalogsWithExtra(selected))) =&gt; {
                 <span class="kw">let </span>selected_effects = selected_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.selected, selected);
-                <span class="kw">let </span>catalogs_effects =
-                    catalogs_update::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.catalogs, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="prelude-val">None</span>, <span class="kw-2">&amp;</span>ctx.profile);
+                <span class="kw">let </span>catalogs_effects = catalogs_update::&lt;E&gt;(
+                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.catalogs,
+                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.spotlight,
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
+                    <span class="prelude-val">None</span>,
+                    <span class="kw-2">&amp;</span>ctx.profile,
+                );
                 <span class="kw">let </span>search_effects = <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.selected {
                     <span class="prelude-val">Some</span>(Selected { extra, .. }) =&gt; <span class="kw">match </span>extra
                         .iter()
@@ -282,11 +382,15 @@
             Msg::Action(Action::Unload) =&gt; {
                 <span class="kw">let </span>selected_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.selected, <span class="prelude-val">None</span>);
                 <span class="kw">let </span>catalogs_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.catalogs, <span class="macro">vec!</span>[]);
-                selected_effects.join(catalogs_effects)
+                <span class="kw">let </span>spotlight_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.spotlight, <span class="macro">vec!</span>[]);
+                selected_effects
+                    .join(catalogs_effects)
+                    .join(spotlight_effects)
             }
             Msg::Action(Action::CatalogsWithExtra(ActionCatalogsWithExtra::LoadRange(range))) =&gt; {
                 catalogs_update::&lt;E&gt;(
                     <span class="kw-2">&amp;mut </span><span class="self">self</span>.catalogs,
+                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.spotlight,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
                     <span class="prelude-val">Some</span>(range),
                     <span class="kw-2">&amp;</span>ctx.profile,
@@ -362,20 +466,45 @@
                 },
                 <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
             },
-            Msg::Internal(Internal::ResourceRequestResult(request, result)) =&gt; <span class="self">self
-                </span>.catalogs
-                .iter_mut()
-                .find_map(|catalog| catalog.last_mut().filter(|page| page.request == <span class="kw-2">*</span>request))
-                .map(|page| {
-                    resource_update_with_vector_content::&lt;E, <span class="kw">_</span>&gt;(
+            Msg::Internal(Internal::ResourceRequestResult(request, result)) =&gt; {
+                <span class="kw">let </span>catalogs_effects = <span class="self">self
+                    </span>.catalogs
+                    .iter_mut()
+                    .find_map(|catalog| catalog.last_mut().filter(|page| page.request == <span class="kw-2">*</span>request))
+                    .map(|page| {
+                        resource_update_with_vector_content::&lt;E, <span class="kw">_</span>&gt;(
+                            page,
+                            ResourceAction::ResourceRequestResult { request, result },
+                        )
+                    })
+                    .unwrap_or_else(|| Effects::none().unchanged());
+                <span class="kw">let </span>spotlight_effects = <span class="kw">match </span><span class="self">self
+                    </span>.spotlight
+                    .iter_mut()
+                    .find(|page| page.request == <span class="kw-2">*</span>request)
+                {
+                    <span class="prelude-val">Some</span>(page) =&gt; resource_update_with_vector_content::&lt;E, <span class="kw">_</span>&gt;(
                         page,
                         ResourceAction::ResourceRequestResult { request, result },
                     )
-                })
-                .unwrap_or_else(|| Effects::none().unchanged()),
-            Msg::Internal(Internal::ProfileChanged) =&gt; {
-                catalogs_update::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.catalogs, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="prelude-val">None</span>, <span class="kw-2">&amp;</span>ctx.profile)
+                    .join(catalogs_update::&lt;E&gt;(
+                        <span class="kw-2">&amp;mut </span><span class="self">self</span>.catalogs,
+                        <span class="kw-2">&amp;mut </span><span class="self">self</span>.spotlight,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
+                        <span class="prelude-val">None</span>,
+                        <span class="kw-2">&amp;</span>ctx.profile,
+                    )),
+                    <span class="prelude-val">None </span>=&gt; Effects::none().unchanged(),
+                };
+                catalogs_effects.join(spotlight_effects)
             }
+            Msg::Internal(Internal::ProfileChanged) =&gt; catalogs_update::&lt;E&gt;(
+                <span class="kw-2">&amp;mut </span><span class="self">self</span>.catalogs,
+                <span class="kw-2">&amp;mut </span><span class="self">self</span>.spotlight,
+                <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
+                <span class="prelude-val">None</span>,
+                <span class="kw-2">&amp;</span>ctx.profile,
+            ),
             Msg::Internal(Internal::LibraryChanged(<span class="kw">_</span>)) =&gt; Effects::none(),
             <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
         }
@@ -388,22 +517,77 @@
     eq_update(selected, <span class="prelude-val">Some</span>(next_selected))
 }
 
+<span class="kw">fn </span>is_board(selected: <span class="kw-2">&amp;</span>Selected) -&gt; bool {
+    selected.r#type.is_none() &amp;&amp; selected.extra.is_empty()
+}
+
+<span class="kw">fn </span>spotlight_requests(selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;, profile: <span class="kw-2">&amp;</span>Profile) -&gt; Vec&lt;ResourceRequest&gt; {
+    <span class="kw">match </span>selected {
+        <span class="prelude-val">Some</span>(selected) <span class="kw">if </span>is_board(selected) &amp;&amp; profile.settings.board_spotlight.enabled =&gt; {
+            board_spotlight_requests(profile)
+        }
+        <span class="kw">_ </span>=&gt; <span class="macro">vec!</span>[],
+    }
+}
+
 <span class="kw">fn </span>catalogs_update&lt;E: Env + <span class="lifetime">'static</span>&gt;(
     catalogs: <span class="kw-2">&amp;mut </span>Vec&lt;Catalog&lt;MetaItemPreview&gt;&gt;,
+    spotlight: <span class="kw-2">&amp;mut </span>Vec&lt;CatalogPage&lt;MetaItemPreview&gt;&gt;,
     selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
     range: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Range&lt;usize&gt;&gt;,
     profile: <span class="kw-2">&amp;</span>Profile,
 ) -&gt; Effects {
+    <span class="kw">let </span>(next_spotlight, spotlight_effects) = spotlight_requests(selected, profile)
+        .into_iter()
+        .map(|request| {
+            spotlight
+                .iter()
+                .find(|page| page.request == request &amp;&amp; page.content.is_some())
+                .or_else(|| {
+                    catalogs.iter().find_map(|catalog| {
+                        catalog
+                            .first()
+                            .filter(|page| page.request == request &amp;&amp; page.content.is_some())
+                    })
+                })
+                .map(|page| (page.to_owned(), <span class="prelude-val">None</span>))
+                .unwrap_or_else(|| {
+                    (
+                        ResourceLoadable {
+                            request: request.to_owned(),
+                            content: <span class="prelude-val">Some</span>(Loadable::Loading),
+                        },
+                        <span class="prelude-val">Some</span>(resource_effect::&lt;E&gt;(request)),
+                    )
+                })
+        })
+        .unzip::&lt;<span class="kw">_</span>, <span class="kw">_</span>, Vec&lt;<span class="kw">_</span>&gt;, Vec&lt;<span class="kw">_</span>&gt;&gt;();
+    <span class="kw">let </span>hidden_requests = next_spotlight
+        .iter()
+        .filter(|<span class="kw">_</span>| !profile.settings.board_spotlight.show_catalog_rows)
+        .filter(|page| spotlight_hides_row(page, <span class="kw-2">&amp;</span>next_spotlight))
+        .map(|page| <span class="kw-2">&amp;</span>page.request)
+        .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
     <span class="kw">let </span>(next_catalogs, effects) = <span class="kw">match </span>selected {
         <span class="prelude-val">Some</span>(selected) =&gt; {
-            <span class="kw">let </span>request = AggrRequest::AllCatalogs {
-                extra: <span class="kw-2">&amp;</span>selected.extra,
-                r#type: <span class="kw-2">&amp;</span>selected.r#type,
-            };
-            request
+            <span class="kw">let </span>requests = <span class="kw">if </span>is_board(selected) {
+                board_plan(profile)
+                    .into_iter()
+                    .map(|(<span class="kw">_</span>, <span class="kw">_</span>, request)| request)
+                    .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
+            } <span class="kw">else </span>{
+                AggrRequest::AllCatalogs {
+                    extra: <span class="kw-2">&amp;</span>selected.extra,
+                    r#type: <span class="kw-2">&amp;</span>selected.r#type,
+                }
                 .plan(<span class="kw-2">&amp;</span>profile.addons)
                 .into_iter()
                 .map(|(<span class="kw">_</span>, request)| request)
+                .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
+            };
+            requests
+                .into_iter()
+                .filter(|request| !hidden_requests.contains(<span class="kw-2">&amp;</span>request))
                 .enumerate()
                 .map(|(index, request)| {
                     catalogs
@@ -412,26 +596,19 @@
                             <span class="macro">matches!</span>(catalog.first(), <span class="prelude-val">Some</span>(resource) <span class="kw">if </span>resource.request == request &amp;&amp; resource.content.is_some())
                         })
                         .map(|catalog| (catalog.to_owned(), <span class="prelude-val">None</span>))
+                        .or_else(|| {
+                            next_spotlight
+                                .iter()
+                                .find(|page| page.request == request &amp;&amp; page.content.is_some())
+                                .map(|page| (<span class="macro">vec!</span>[page.to_owned()], <span class="prelude-val">None</span>))
+                        })
                         .unwrap_or_else(|| <span class="kw">match </span>range {
                             <span class="prelude-val">Some</span>(range) <span class="kw">if </span>range.start &lt;= index &amp;&amp; index &lt;= range.end =&gt; (
                                 <span class="macro">vec!</span>[ResourceLoadable {
                                     request: request.to_owned(),
                                     content: <span class="prelude-val">Some</span>(Loadable::Loading),
                                 }],
-                                <span class="prelude-val">Some</span>(
-                                    EffectFuture::Concurrent(
-                                        E::addon_transport(<span class="kw-2">&amp;</span>request.base)
-                                            .resource(<span class="kw-2">&amp;</span>request.path)
-                                            .map(|result| {
-                                                Msg::Internal(Internal::ResourceRequestResult(
-                                                    request,
-                                                    Box::new(result),
-                                                ))
-                                            })
-                                            .boxed_env(),
-                                    )
-                                    .into(),
-                                ),
+                                <span class="prelude-val">Some</span>(resource_effect::&lt;E&gt;(request)),
                             ),
                             <span class="kw">_ </span>=&gt; (
                                 <span class="macro">vec!</span>[ResourceLoadable {
@@ -446,8 +623,15 @@
         }
         <span class="kw">_ </span>=&gt; Default::default(),
     };
-    Effects::many(effects.into_iter().flatten().collect())
-        .unchanged()
-        .join(eq_update(catalogs, next_catalogs))
+    Effects::many(
+        effects
+            .into_iter()
+            .chain(spotlight_effects)
+            .flatten()
+            .collect(),
+    )
+    .unchanged()
+    .join(eq_update(catalogs, next_catalogs))
+    .join(eq_update(spotlight, next_spotlight))
 }
 </code></pre></div></section></main></body></html>

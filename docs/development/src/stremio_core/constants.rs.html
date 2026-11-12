@@ -156,7 +156,23 @@
 <a href="#155" id="155">155</a>
 <a href="#156" id="156">156</a>
 <a href="#157" id="157">157</a>
-<a href="#158" id="158">158</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
 
 <span class="kw">use </span>once_cell::sync::Lazy;
 <span class="kw">use </span>percent_encoding::{AsciiSet, NON_ALPHANUMERIC};
@@ -175,6 +191,7 @@
 <span class="kw">pub const </span>NOTIFICATIONS_STORAGE_KEY: <span class="kw-2">&amp;</span>str = <span class="string">"notifications"</span>;
 <span class="kw">pub const </span>CALENDAR_STORAGE_KEY: <span class="kw-2">&amp;</span>str = <span class="string">"calendar"</span>;
 <span class="kw">pub const </span>DISMISSED_EVENTS_STORAGE_KEY: <span class="kw-2">&amp;</span>str = <span class="string">"dismissed_events"</span>;
+<span class="kw">pub const </span>REMOTE_CONFIG_STORAGE_KEY: <span class="kw-2">&amp;</span>str = <span class="string">"remote_config"</span>;
 <span class="kw">pub const </span>LIBRARY_COLLECTION_NAME: <span class="kw-2">&amp;</span>str = <span class="string">"libraryItem"</span>;
 <span class="kw">pub const </span>SEARCH_EXTRA_NAME: <span class="kw-2">&amp;</span>str = <span class="string">"search"</span>;
 <span class="doccomment">/// `https://{ADDON_UR}/meta/...` resource
@@ -197,6 +214,21 @@
 
 <span class="doccomment">/// Account age in days to be considered a new user
 </span><span class="kw">pub const </span>NEW_USER_DAYS: chrono::Duration = chrono::Duration::days(<span class="number">30</span>);
+
+<span class="kw">pub const </span>REMOTE_CONFIG_DEFAULT_REFRESH_SECONDS: u64 = <span class="number">300</span>;
+<span class="kw">pub const </span>REMOTE_CONFIG_MIN_REFRESH_SECONDS: u64 = <span class="number">60</span>;
+<span class="kw">pub const </span>REMOTE_CONFIG_MAX_REFRESH_SECONDS: u64 = <span class="number">86400</span>;
+<span class="kw">pub const </span>REMOTE_CONFIG_RETRY_INTERVAL: chrono::Duration = chrono::Duration::seconds(<span class="number">60</span>);
+<span class="kw">pub const </span>REMOTE_CONFIG_MAX_AGE: chrono::Duration = chrono::Duration::days(<span class="number">7</span>);
+<span class="kw">pub const </span>REMOTE_CONFIG_GEO_MAX_AGE: chrono::Duration = chrono::Duration::hours(<span class="number">24</span>);
+<span class="kw">pub const </span>REMOTE_CONFIG_DEFAULT_COOLDOWN_SECONDS: u64 = <span class="number">86400</span>;
+<span class="kw">pub const </span>REMOTE_CONFIG_MAX_COOLDOWN_SECONDS: u64 = <span class="number">2_592_000</span>;
+<span class="kw">pub const </span>REMOTE_CONFIG_OUTBOX_CAPACITY: usize = <span class="number">50</span>;
+<span class="kw">pub const </span>REMOTE_CONFIG_OUTBOX_MAX_AGE: chrono::Duration = chrono::Duration::days(<span class="number">7</span>);
+<span class="kw">pub const </span>REMOTE_CONFIG_EVENTS_BATCH_SIZE: usize = <span class="number">20</span>;
+<span class="kw">pub const </span>REMOTE_CONFIG_RECORD_MAX_AGE: chrono::Duration = chrono::Duration::days(<span class="number">365</span>);
+<span class="kw">pub const </span>REMOTE_CONFIG_ASSIGNMENT_MAX_ABSENCE: chrono::Duration = chrono::Duration::days(<span class="number">30</span>);
+<span class="kw">pub const </span>REMOTE_CONFIG_MAX_ACCOUNT_KEYS: usize = <span class="number">8</span>;
 
 <span class="doccomment">/// A `LibraryItem` is considered watched once we've watched more than the `duration * threshold`:
 ///

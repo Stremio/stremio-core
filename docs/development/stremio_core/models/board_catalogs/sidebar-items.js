@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["catalogs_update"],"struct":["BoardCatalogs","Selected"]};

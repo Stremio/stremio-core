@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["catalogs_update","selected_update"],"struct":["CatalogsWithExtra","Selected"],"type":["Catalog","CatalogPage"]};
+window.SIDEBAR_ITEMS = {"fn":["catalogs_update","is_board","selected_update","spotlight_requests"],"struct":["CatalogsWithExtra","Selected"],"type":["Catalog"]};

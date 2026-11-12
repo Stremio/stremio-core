@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["FrameRateMatchingStrategy"],"mod":["auth","profile","settings","user"],"struct":["Auth","AuthKey","GDPRConsent","Password","Profile","Settings","TraktInfo","User","UserId"],"type":["UID"]};
+window.SIDEBAR_ITEMS = {"enum":["FrameRateMatchingStrategy"],"mod":["auth","profile","settings","user"],"struct":["Auth","AuthKey","BoardSpotlight","GDPRConsent","Password","Profile","Settings","TraktInfo","User","UserId"],"type":["UID"]};

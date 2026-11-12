@@ -402,12 +402,16 @@
 <a href="#401" id="401">401</a>
 <a href="#402" id="402">402</a>
 <a href="#403" id="403">403</a>
-<a href="#404" id="404">404</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
+<a href="#404" id="404">404</a>
+<a href="#405" id="405">405</a>
+<a href="#406" id="406">406</a>
+<a href="#407" id="407">407</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
 
 <span class="kw">use </span><span class="kw">crate</span>::constants::{API_URL, LINK_API_URL};
 <span class="kw">use </span><span class="kw">crate</span>::types::addon::Descriptor;
 <span class="kw">use </span><span class="kw">crate</span>::types::library::LibraryItem;
 <span class="kw">use </span><span class="kw">crate</span>::types::profile::{AuthKey, GDPRConsent, Password, User};
+<span class="kw">use </span><span class="kw">crate</span>::types::remote_config::ConfigEvent;
 <span class="kw">use </span><span class="kw">crate</span>::types::resource::SeriesInfo;
 <span class="kw">use </span>chrono::{DateTime, Local};
 <span class="attr">#[cfg(test)]
@@ -497,9 +501,10 @@
     </span>GetModal {
         date: DateTime&lt;Local&gt;,
     },
-    <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
-    </span>GetNotification {
-        date: DateTime&lt;Local&gt;,
+    GetGeo {},
+    ConfigEvents {
+        platform: String,
+        events: Vec&lt;ConfigEvent&gt;,
     },
 }
 
@@ -577,7 +582,8 @@
             APIRequest::SeekLog { .. } =&gt; <span class="string">"seekLog"</span>.to_owned(),
             APIRequest::SkipGaps { .. } =&gt; <span class="string">"getSkipGaps"</span>.to_owned(),
             APIRequest::GetModal { .. } =&gt; <span class="string">"getModal"</span>.to_owned(),
-            APIRequest::GetNotification { .. } =&gt; <span class="string">"getNotification"</span>.to_owned(),
+            APIRequest::GetGeo { .. } =&gt; <span class="string">"getGeo"</span>.to_owned(),
+            APIRequest::ConfigEvents { .. } =&gt; <span class="string">"configEvents"</span>.to_owned(),
         }
     }
     <span class="kw">fn </span>query(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {

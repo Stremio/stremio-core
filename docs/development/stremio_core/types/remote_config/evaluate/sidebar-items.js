@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["ANONYMOUS_ACCOUNT_KEY","DEFAULT_LOCALE"],"fn":["account_hash","account_id","account_key","evaluate","fresh_config","is_within","language_matches","normalize_language","pick_variant","point","primary_subtag","resolve_copy","resolve_notification","set_settings_patches","threshold","truncated_hash","version_matches"],"struct":["Audience"]};

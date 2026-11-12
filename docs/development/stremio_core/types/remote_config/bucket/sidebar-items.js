@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ConfigEventKind"],"fn":["item_id"],"struct":["Assignment","ConfigEvent","Geo","QueuedEvent","RemoteConfigBucket"]};

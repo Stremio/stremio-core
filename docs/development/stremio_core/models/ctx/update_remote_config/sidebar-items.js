@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["bucket_changed_effects","dismiss","evaluate_remote_config","fetch_geo","fetch_remote_config","flush_events","is_newer","is_refresh_due","notification_def","notification_event","notification_rev","push_remote_config_to_storage","queue_experiment_event","queued_effects","update_remote_config"]};

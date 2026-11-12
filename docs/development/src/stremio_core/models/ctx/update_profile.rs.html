@@ -609,7 +609,8 @@
 <a href="#608" id="608">608</a>
 <a href="#609" id="609">609</a>
 <a href="#610" id="610">610</a>
-<a href="#611" id="611">611</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashSet;
+<a href="#611" id="611">611</a>
+<a href="#612" id="612">612</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashSet;
 
 <span class="kw">use </span>enclose::enclose;
 <span class="kw">use </span>futures::{future, FutureExt, TryFutureExt};
@@ -849,7 +850,8 @@
             }))
             .unchanged(),
         },
-        Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(settings))) =&gt; {
+        Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(settings)))
+        | Msg::Internal(Internal::UpdateSettings(settings)) =&gt; {
             <span class="kw">if </span>!<span class="macro">matches!</span>(settings.streaming_server_url.scheme(), <span class="string">"http" </span>| <span class="string">"https"</span>) {
                 Effects::msg(Msg::Event(Event::Error {
                     error: CtxError::from(OtherError::InvalidStreamingServerUrl),

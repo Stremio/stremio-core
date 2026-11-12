@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["DENIED_SETTINGS","MAX_PATCH_DEPTH","MAX_STRING_LENGTH"],"fn":["apply_patch","patch_settings","same_type"]};

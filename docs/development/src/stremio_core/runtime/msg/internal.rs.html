@@ -178,7 +178,10 @@
 <a href="#177" id="177">177</a>
 <a href="#178" id="178">178</a>
 <a href="#179" id="179">179</a>
-<a href="#180" id="180">180</a></pre></div><pre class="rust"><code><span class="kw">use </span>url::Url;
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a></pre></div><pre class="rust"><code><span class="kw">use </span>chrono::{DateTime, Utc};
+<span class="kw">use </span>url::Url;
 
 <span class="kw">use </span><span class="kw">crate</span>::models::common::ResourceLoadable;
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::CtxError;
@@ -188,13 +191,14 @@
 <span class="kw">use </span><span class="kw">crate</span>::runtime::EnvError;
 <span class="kw">use </span><span class="kw">crate</span>::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 <span class="kw">use </span><span class="kw">crate</span>::types::api::{
-    APIRequest, AuthRequest, DataExportResponse, DatastoreRequest, GetModalResponse,
-    GetNotificationResponse, LinkCodeResponse, LinkDataResponse, SeekLogRequest, SkipGapsRequest,
-    SkipGapsResponse, SuccessResponse,
+    APIRequest, AuthRequest, DataExportResponse, DatastoreRequest, GeoResponse, GetModalResponse,
+    LinkCodeResponse, LinkDataResponse, SeekLogRequest, SkipGapsRequest, SkipGapsResponse,
+    SuccessResponse,
 };
 <span class="kw">use </span><span class="kw">crate</span>::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
-<span class="kw">use </span><span class="kw">crate</span>::types::profile::{Auth, AuthKey, Profile, User};
+<span class="kw">use </span><span class="kw">crate</span>::types::profile::{Auth, AuthKey, Profile, Settings, User};
 <span class="kw">use </span><span class="kw">crate</span>::types::rating::{RatingGetStatusResponse, RatingSendResponse};
+<span class="kw">use </span><span class="kw">crate</span>::types::remote_config::RemoteConfigResponse;
 <span class="kw">use </span><span class="kw">crate</span>::types::resource::MetaItemId;
 <span class="kw">use </span><span class="kw">crate</span>::types::streaming_server::{
     DeviceInfo, GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics, StatisticsRequest,
@@ -342,11 +346,11 @@
     </span>LoadLocalSearchResult(Url, <span class="prelude-ty">Result</span>&lt;Vec&lt;Searchable&gt;, EnvError&gt;),
     <span class="doccomment">/// Result for getModal request
     </span>GetModalResult(APIRequest, <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;GetModalResponse&gt;, CtxError&gt;),
-    <span class="doccomment">/// Result for getNotification request
-    </span>GetNotificationResult(
-        APIRequest,
-        <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;GetNotificationResponse&gt;, CtxError&gt;,
-    ),
+    RemoteConfigResult(DateTime&lt;Utc&gt;, <span class="prelude-ty">Result</span>&lt;RemoteConfigResponse, EnvError&gt;),
+    GeoResult(DateTime&lt;Utc&gt;, <span class="prelude-ty">Result</span>&lt;GeoResponse, CtxError&gt;),
+    RemoteConfigEventsResult(DateTime&lt;Utc&gt;, u64, <span class="prelude-ty">Result</span>&lt;SuccessResponse, CtxError&gt;),
+    RemoteConfigBucketChanged,
+    UpdateSettings(Settings),
     <span class="doccomment">/// When dismissed events changed
     </span>DismissedEventsChanged,
     RatingGetStatusResult(MetaItemId, <span class="prelude-ty">Result</span>&lt;RatingGetStatusResponse, EnvError&gt;),

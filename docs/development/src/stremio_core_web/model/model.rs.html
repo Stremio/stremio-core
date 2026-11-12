@@ -207,7 +207,16 @@
 <a href="#206" id="206">206</a>
 <a href="#207" id="207">207</a>
 <a href="#208" id="208">208</a>
-<a href="#209" id="209">209</a></pre></div><pre class="rust"><code><span class="kw">use </span>gloo_utils::format::JsValueSerdeExt;
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a></pre></div><pre class="rust"><code><span class="kw">use </span>gloo_utils::format::JsValueSerdeExt;
 <span class="kw">use </span>wasm_bindgen::JsValue;
 
 <span class="kw">use super</span>::<span class="kw-2">*</span>;
@@ -218,6 +227,7 @@
 <span class="kw">use </span>stremio_core::{
     models::{
         addon_details::AddonDetails,
+        board_catalogs::BoardCatalogs,
         calendar::Calendar,
         catalog_with_filters::CatalogWithFilters,
         catalogs_with_extra::CatalogsWithExtra,
@@ -237,8 +247,9 @@
     runtime::Effects,
     types::{
         addon::Descriptor, api::LinkAuthKey, events::DismissedEventsBucket, library::LibraryBucket,
-        notifications::NotificationsBucket, profile::Profile, resource::MetaItemPreview,
-        search_history::SearchHistoryBucket, server_urls::ServerUrlsBucket, streams::StreamsBucket,
+        notifications::NotificationsBucket, profile::Profile, remote_config::RemoteConfigBucket,
+        resource::MetaItemPreview, search_history::SearchHistoryBucket,
+        server_urls::ServerUrlsBucket, streams::StreamsBucket,
     },
     Model,
 };
@@ -255,6 +266,7 @@
     <span class="kw">pub </span>data_export: DataExport,
     <span class="kw">pub </span>continue_watching_preview: ContinueWatchingPreview,
     <span class="kw">pub </span>board: CatalogsWithExtra,
+    <span class="kw">pub </span>board_catalogs: BoardCatalogs,
     <span class="kw">pub </span>discover: CatalogWithFilters&lt;MetaItemPreview&gt;,
     <span class="kw">pub </span>library: LibraryWithFilters&lt;NotRemovedFilter&gt;,
     <span class="kw">pub </span>continue_watching: LibraryWithFilters&lt;ContinueWatchingFilter&gt;,
@@ -281,6 +293,7 @@
         notifications: NotificationsBucket,
         search_history: SearchHistoryBucket,
         dismissed_events: DismissedEventsBucket,
+        remote_config: <span class="prelude-ty">Option</span>&lt;RemoteConfigBucket&gt;,
     ) -&gt; (WebModel, Effects) {
         <span class="kw">let </span>(continue_watching_preview, continue_watching_preview_effects) =
             ContinueWatchingPreview::new(<span class="kw-2">&amp;</span>library, <span class="kw-2">&amp;</span>notifications);
@@ -304,12 +317,14 @@
                 notifications,
                 search_history,
                 dismissed_events,
-            ),
+            )
+            .with_remote_config::&lt;WebEnv&gt;(remote_config),
             auth_link: Default::default(),
             data_export: Default::default(),
             local_search,
             continue_watching_preview,
             board: Default::default(),
+            board_catalogs: Default::default(),
             discover,
             library: library_,
             continue_watching,
@@ -360,6 +375,9 @@
                 )
                 .serialize_model()
                 .expect(<span class="string">"JsValue from model::CatalogsWithExtra"</span>)
+            }
+            WebModelField::BoardCatalogs =&gt; {
+                serialize_board_catalogs(<span class="kw-2">&amp;</span><span class="self">self</span>.board_catalogs, <span class="kw-2">&amp;</span><span class="self">self</span>.ctx)
             }
             WebModelField::Discover =&gt; {
                 serialize_discover(<span class="kw-2">&amp;</span><span class="self">self</span>.discover, <span class="kw-2">&amp;</span><span class="self">self</span>.ctx, <span class="kw-2">&amp;</span><span class="self">self</span>.streaming_server)

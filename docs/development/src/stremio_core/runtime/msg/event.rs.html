@@ -166,7 +166,8 @@
 <a href="#165" id="165">165</a>
 <a href="#166" id="166">166</a>
 <a href="#167" id="167">167</a>
-<a href="#168" id="168">168</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::ctx::CtxError;
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::ctx::CtxError;
 <span class="kw">use </span><span class="kw">crate</span>::models::player::AnalyticsContext <span class="kw">as </span>PlayerAnalyticsContext;
 <span class="kw">use </span><span class="kw">crate</span>::types::api::AuthRequest;
 <span class="kw">use </span><span class="kw">crate</span>::types::library::LibraryItemId;
@@ -223,6 +224,7 @@
     DismissedEventsPushedToStorage {
         uid: UID,
     },
+    RemoteConfigPushedToStorage,
     UserPulledFromAPI {
         uid: UID,
     },

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["SPOTLIGHT_CATALOGS_COUNT","SPOTLIGHT_DEFAULT_TYPES","SPOTLIGHT_ITEMS_COUNT"],"fn":["board_plan","board_spotlight_requests","default_spotlight_requests","merge_spotlight_items","resource_effect","spotlight_hides_row","spotlight_items","spotlight_page_answered"],"type":["CatalogPage"]};
