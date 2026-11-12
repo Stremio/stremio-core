@@ -29,8 +29,9 @@ use stremio_core::{
     runtime::Effects,
     types::{
         addon::Descriptor, api::LinkAuthKey, events::DismissedEventsBucket, library::LibraryBucket,
-        notifications::NotificationsBucket, profile::Profile, resource::MetaItemPreview,
-        search_history::SearchHistoryBucket, server_urls::ServerUrlsBucket, streams::StreamsBucket,
+        notifications::NotificationsBucket, profile::Profile, remote_config::RemoteConfigBucket,
+        resource::MetaItemPreview, search_history::SearchHistoryBucket,
+        server_urls::ServerUrlsBucket, streams::StreamsBucket,
     },
     Model,
 };
@@ -74,6 +75,7 @@ impl WebModel {
         notifications: NotificationsBucket,
         search_history: SearchHistoryBucket,
         dismissed_events: DismissedEventsBucket,
+        remote_config: Option<RemoteConfigBucket>,
     ) -> (WebModel, Effects) {
         let (continue_watching_preview, continue_watching_preview_effects) =
             ContinueWatchingPreview::new(&library, &notifications);
@@ -97,7 +99,8 @@ impl WebModel {
                 notifications,
                 search_history,
                 dismissed_events,
-            ),
+            )
+            .with_remote_config::<WebEnv>(remote_config),
             auth_link: Default::default(),
             data_export: Default::default(),
             local_search,

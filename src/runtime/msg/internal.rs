@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use url::Url;
 
 use crate::models::common::ResourceLoadable;
@@ -8,13 +9,14 @@ use crate::models::streaming_server::PlaybackDevice;
 use crate::runtime::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 use crate::types::api::{
-    APIRequest, AuthRequest, DataExportResponse, DatastoreRequest, GetModalResponse,
-    GetNotificationResponse, LinkCodeResponse, LinkDataResponse, SeekLogRequest, SkipGapsRequest,
-    SkipGapsResponse, SuccessResponse,
+    APIRequest, AuthRequest, DataExportResponse, DatastoreRequest, GeoResponse, GetModalResponse,
+    LinkCodeResponse, LinkDataResponse, SeekLogRequest, SkipGapsRequest, SkipGapsResponse,
+    SuccessResponse,
 };
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
-use crate::types::profile::{Auth, AuthKey, Profile, User};
+use crate::types::profile::{Auth, AuthKey, Profile, Settings, User};
 use crate::types::rating::{RatingGetStatusResponse, RatingSendResponse};
+use crate::types::remote_config::RemoteConfigResponse;
 use crate::types::resource::MetaItemId;
 use crate::types::streaming_server::{
     DeviceInfo, GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics, StatisticsRequest,
@@ -162,11 +164,11 @@ pub enum Internal {
     LoadLocalSearchResult(Url, Result<Vec<Searchable>, EnvError>),
     /// Result for getModal request
     GetModalResult(APIRequest, Result<Option<GetModalResponse>, CtxError>),
-    /// Result for getNotification request
-    GetNotificationResult(
-        APIRequest,
-        Result<Option<GetNotificationResponse>, CtxError>,
-    ),
+    RemoteConfigResult(DateTime<Utc>, Result<RemoteConfigResponse, EnvError>),
+    GeoResult(DateTime<Utc>, Result<GeoResponse, CtxError>),
+    RemoteConfigEventsResult(DateTime<Utc>, u64, Result<SuccessResponse, CtxError>),
+    RemoteConfigBucketChanged,
+    UpdateSettings(Settings),
     /// When dismissed events changed
     DismissedEventsChanged,
     RatingGetStatusResult(MetaItemId, Result<RatingGetStatusResponse, EnvError>),

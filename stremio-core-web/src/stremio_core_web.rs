@@ -1,7 +1,7 @@
 use std::sync::RwLock;
 
 use enclose::enclose;
-use futures::{future, try_join, FutureExt, StreamExt};
+use futures::{future, try_join, FutureExt, StreamExt, TryFutureExt};
 use gloo_utils::format::JsValueSerdeExt;
 use once_cell::sync::Lazy;
 use serde::Serialize;
@@ -12,8 +12,8 @@ use wasm_bindgen::{prelude::wasm_bindgen, JsValue, UnwrapThrowExt};
 use stremio_core::{
     constants::{
         DISMISSED_EVENTS_STORAGE_KEY, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
-        NOTIFICATIONS_STORAGE_KEY, PROFILE_STORAGE_KEY, SEARCH_HISTORY_STORAGE_KEY,
-        STREAMING_SERVER_URLS_STORAGE_KEY, STREAMS_STORAGE_KEY,
+        NOTIFICATIONS_STORAGE_KEY, PROFILE_STORAGE_KEY, REMOTE_CONFIG_STORAGE_KEY,
+        SEARCH_HISTORY_STORAGE_KEY, STREAMING_SERVER_URLS_STORAGE_KEY, STREAMS_STORAGE_KEY,
     },
     models::common::Loadable,
     runtime::{msg::Action, Env, EnvError, Runtime, RuntimeAction, RuntimeEvent},
@@ -22,6 +22,7 @@ use stremio_core::{
         library::LibraryBucket,
         notifications::NotificationsBucket,
         profile::Profile,
+        remote_config::RemoteConfigBucket,
         resource::{Stream, StreamSource},
         search_history::SearchHistoryBucket,
         server_urls::ServerUrlsBucket,
@@ -119,6 +120,8 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                 WebEnv::get_storage::<NotificationsBucket>(NOTIFICATIONS_STORAGE_KEY),
                 WebEnv::get_storage::<SearchHistoryBucket>(SEARCH_HISTORY_STORAGE_KEY),
                 WebEnv::get_storage::<DismissedEventsBucket>(DISMISSED_EVENTS_STORAGE_KEY),
+                WebEnv::get_storage::<RemoteConfigBucket>(REMOTE_CONFIG_STORAGE_KEY)
+                    .or_else(|_| future::ok(None)),
             );
             match storage_result {
                 Ok((
@@ -130,6 +133,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                     notifications_bucket,
                     search_history_bucket,
                     dismissed_events_bucket,
+                    remote_config_bucket,
                 )) => {
                     let profile = profile.unwrap_or_default();
                     let mut library = LibraryBucket::new(profile.uid(), vec![]);
@@ -158,6 +162,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                         notifications_bucket,
                         search_history_bucket,
                         dismissed_events_bucket,
+                        remote_config_bucket,
                     );
                     let (runtime, rx) = Runtime::<WebEnv, _>::new(
                         model,

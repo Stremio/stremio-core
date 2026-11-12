@@ -51,7 +51,7 @@ serde_bencode = "0.2.*"
 # Keep track of https://github.com/fspmarshall/serde-hex/pull/19
 stremio-serde-hex = "0.1"
 
-serde_with = { version = "3.5", features = ["macros", "chrono_0_4"] }
+serde_with = { version = "3.9", features = ["macros", "chrono_0_4"] }
 
 flate2 = "1"
 futures = "0.3"

@@ -99,7 +99,7 @@ pub enum ActionCtx {
     ///
     /// [`LibraryItem`]: crate::types::library::LibraryItem
     PullNotifications,
-    /// Make request to api to get events modal and notification
+    /// Make request to api to get the events modal
     GetEvents,
     /// Dismiss an event by id, either a Modal or Notification
     DismissEvent(String),
@@ -107,6 +107,18 @@ pub enum ActionCtx {
     AddServerUrl(Url),
     /// Delete a server URL from the list of available streaming servers
     DeleteServerUrl(Url),
+    RemoteConfig(ActionRemoteConfig),
+}
+
+#[derive(Clone, Deserialize, Debug)]
+#[serde(tag = "action", content = "args")]
+pub enum ActionRemoteConfig {
+    Pull,
+    NotificationShown(String),
+    NotificationAction { id: String, button: String },
+    DismissNotification(String),
+    ExperimentExposed(String),
+    ExperimentEvent { id: String, event: String },
 }
 
 #[derive(Clone, Deserialize, Debug)]

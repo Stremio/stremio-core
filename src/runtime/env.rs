@@ -6,6 +6,7 @@ use crate::constants::{
 };
 use crate::models::ctx::Ctx;
 use crate::models::streaming_server::StreamingServer;
+use crate::types::remote_config::ClientInfo;
 use chrono::{DateTime, FixedOffset, Local, Utc};
 use futures::{future, Future, TryFutureExt};
 use http::Request;
@@ -155,6 +156,7 @@ pub trait Env {
         Self::now().with_timezone(&Local).fixed_offset()
     }
     fn flush_analytics() -> EnvFuture<'static, ()>;
+    fn client_info() -> ClientInfo;
     fn analytics_context(
         ctx: &Ctx,
         streaming_server: &StreamingServer,
