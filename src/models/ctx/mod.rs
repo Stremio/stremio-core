@@ -10,6 +10,9 @@ use update_notifications::*;
 mod update_profile;
 use update_profile::*;
 
+mod update_remote_config;
+use update_remote_config::*;
+
 mod update_streams;
 use update_streams::*;
 

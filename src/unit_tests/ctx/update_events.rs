@@ -10,10 +10,16 @@ use crate::{
         Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture,
     },
     types::{
-        api::{APIResult, GetModalResponse, GetNotificationResponse},
+        api::{APIResult, GetModalResponse},
         events::DismissedEventsBucket,
+        library::LibraryBucket,
+        notifications::NotificationsBucket,
+        profile::Profile,
+        search_history::SearchHistoryBucket,
+        server_urls::ServerUrlsBucket,
+        streams::StreamsBucket,
     },
-    unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER},
+    unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS},
 };
 
 fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
@@ -25,15 +31,6 @@ fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
                 message: "message".to_owned(),
                 image_url: "https://image_url".parse().unwrap(),
                 addon: None,
-                external_url: None,
-            }))) as Box<dyn Any + Send>)
-            .boxed_env()
-        }
-        Request { url, .. } if url == "https://api.strem.io/api/getNotification" => {
-            future::ok(Box::new(APIResult::Ok(Some(GetNotificationResponse {
-                id: "notification_id".to_owned(),
-                title: "title".to_owned(),
-                message: "message".to_owned(),
                 external_url: None,
             }))) as Box<dyn Any + Send>)
             .boxed_env()
@@ -56,7 +53,15 @@ fn test_events() {
 
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
-            ctx: Ctx::default(),
+            ctx: Ctx::new(
+                Profile::default(),
+                LibraryBucket::default(),
+                StreamsBucket::default(),
+                ServerUrlsBucket::new::<TestEnv>(None),
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+                SearchHistoryBucket::default(),
+                DismissedEventsBucket::default(),
+            ),
         },
         vec![],
         1000,
@@ -67,15 +72,10 @@ fn test_events() {
         "Modal should be loading"
     );
 
-    assert!(
-        runtime
-            .model()
-            .unwrap()
-            .ctx
-            .events
-            .notification
-            .is_loading(),
-        "Notification should be loading"
+    assert_eq!(
+        runtime.model().unwrap().ctx.events.notification,
+        Loadable::Ready(None),
+        "Notification should be ready and empty"
     );
 
     TestEnv::run(|| {
@@ -90,9 +90,21 @@ fn test_events() {
         "Modal should be ready"
     );
 
-    assert!(
-        runtime.model().unwrap().ctx.events.notification.is_ready(),
-        "Notification should be ready"
+    assert_eq!(
+        runtime.model().unwrap().ctx.events.notification,
+        Loadable::Ready(None),
+        "Notification should stay ready and empty"
+    );
+
+    assert_eq!(
+        REQUESTS
+            .read()
+            .unwrap()
+            .iter()
+            .map(|request| request.url.as_str())
+            .collect::<Vec<_>>(),
+        vec!["https://api.strem.io/api/getModal"],
+        "Only the modal should be requested"
     );
 }
 
@@ -121,17 +133,6 @@ fn test_dismissed_events() {
         "Modal should be loading"
     );
 
-    assert!(
-        runtime
-            .model()
-            .unwrap()
-            .ctx
-            .events
-            .notification
-            .is_loading(),
-        "Notification should be loading"
-    );
-
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
@@ -144,11 +145,6 @@ fn test_dismissed_events() {
         "Modal should be ready"
     );
 
-    assert!(
-        runtime.model().unwrap().ctx.events.notification.is_ready(),
-        "Notification should be ready"
-    );
-
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
@@ -156,23 +152,10 @@ fn test_dismissed_events() {
         })
     });
 
-    TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::DismissEvent("notification_id".to_owned())),
-        })
-    });
-
     assert_eq!(
         runtime.model().unwrap().ctx.events.modal,
         Loadable::Ready(None),
         "Modal should be ready and empty"
-    );
-
-    assert_eq!(
-        runtime.model().unwrap().ctx.events.notification,
-        Loadable::Ready(None),
-        "Notification should be ready and empty"
     );
 }
 
@@ -192,9 +175,6 @@ fn test_stored_dismissed_events() {
     dismissed_events
         .items
         .insert("modal_id".to_owned(), TestEnv::now().into());
-    dismissed_events
-        .items
-        .insert("notification_id".to_owned(), TestEnv::now().into());
 
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
@@ -212,17 +192,6 @@ fn test_stored_dismissed_events() {
         "Modal should be loading"
     );
 
-    assert!(
-        runtime
-            .model()
-            .unwrap()
-            .ctx
-            .events
-            .notification
-            .is_loading(),
-        "Notification should be loading"
-    );
-
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
@@ -234,11 +203,5 @@ fn test_stored_dismissed_events() {
         runtime.model().unwrap().ctx.events.modal,
         Loadable::Ready(None),
         "Modal should be ready and empty"
-    );
-
-    assert_eq!(
-        runtime.model().unwrap().ctx.events.notification,
-        Loadable::Ready(None),
-        "Notification should be ready and empty"
     );
 }

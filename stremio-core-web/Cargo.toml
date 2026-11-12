@@ -1,6 +1,6 @@
  [package]
 name = "stremio-core-web"
-version = "0.66.0"
+version = "0.67.1"
 authors = ["Smart Code OOD"]
 edition = "2021"
 
@@ -19,6 +19,8 @@ env = ["dep:http", "dep:regex", "dep:hex", "dep:getrandom", "dep:serde_path_to_e
 
 # enable TRACE level of logging in the crate using `tracing`.
 log-trace = []
+
+theater = []
 
 [dependencies]
 stremio-core = { version = "0.1", features = ["derive", "analytics"], path = "../" }

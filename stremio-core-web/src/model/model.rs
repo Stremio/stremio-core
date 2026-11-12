@@ -9,6 +9,7 @@ use serde::Serialize;
 use stremio_core::{
     models::{
         addon_details::AddonDetails,
+        board_catalogs::BoardCatalogs,
         calendar::Calendar,
         catalog_with_filters::CatalogWithFilters,
         catalogs_with_extra::CatalogsWithExtra,
@@ -28,8 +29,9 @@ use stremio_core::{
     runtime::Effects,
     types::{
         addon::Descriptor, api::LinkAuthKey, events::DismissedEventsBucket, library::LibraryBucket,
-        notifications::NotificationsBucket, profile::Profile, resource::MetaItemPreview,
-        search_history::SearchHistoryBucket, server_urls::ServerUrlsBucket, streams::StreamsBucket,
+        notifications::NotificationsBucket, profile::Profile, remote_config::RemoteConfigBucket,
+        resource::MetaItemPreview, search_history::SearchHistoryBucket,
+        server_urls::ServerUrlsBucket, streams::StreamsBucket,
     },
     Model,
 };
@@ -46,6 +48,7 @@ pub struct WebModel {
     pub data_export: DataExport,
     pub continue_watching_preview: ContinueWatchingPreview,
     pub board: CatalogsWithExtra,
+    pub board_catalogs: BoardCatalogs,
     pub discover: CatalogWithFilters<MetaItemPreview>,
     pub library: LibraryWithFilters<NotRemovedFilter>,
     pub continue_watching: LibraryWithFilters<ContinueWatchingFilter>,
@@ -72,6 +75,7 @@ impl WebModel {
         notifications: NotificationsBucket,
         search_history: SearchHistoryBucket,
         dismissed_events: DismissedEventsBucket,
+        remote_config: Option<RemoteConfigBucket>,
     ) -> (WebModel, Effects) {
         let (continue_watching_preview, continue_watching_preview_effects) =
             ContinueWatchingPreview::new(&library, &notifications);
@@ -95,12 +99,14 @@ impl WebModel {
                 notifications,
                 search_history,
                 dismissed_events,
-            ),
+            )
+            .with_remote_config::<WebEnv>(remote_config),
             auth_link: Default::default(),
             data_export: Default::default(),
             local_search,
             continue_watching_preview,
             board: Default::default(),
+            board_catalogs: Default::default(),
             discover,
             library: library_,
             continue_watching,
@@ -151,6 +157,9 @@ impl WebModel {
                 )
                 .serialize_model()
                 .expect("JsValue from model::CatalogsWithExtra")
+            }
+            WebModelField::BoardCatalogs => {
+                serialize_board_catalogs(&self.board_catalogs, &self.ctx)
             }
             WebModelField::Discover => {
                 serialize_discover(&self.discover, &self.ctx, &self.streaming_server)

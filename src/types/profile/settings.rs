@@ -1,4 +1,5 @@
 use crate::constants::STREAMING_SERVER_URL;
+use crate::types::addon::ResourceRequest;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -53,6 +54,26 @@ pub struct Settings {
     /// Restrict the subtitle menu without changing automatic track selection.
     #[serde(default)]
     pub subtitles_language_filter_enabled: bool,
+    #[serde(default)]
+    pub board_spotlight: BoardSpotlight,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct BoardSpotlight {
+    pub enabled: bool,
+    pub catalogs: Vec<ResourceRequest>,
+    pub show_catalog_rows: bool,
+}
+
+impl Default for BoardSpotlight {
+    fn default() -> Self {
+        BoardSpotlight {
+            enabled: false,
+            catalogs: vec![],
+            show_catalog_rows: true,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -104,6 +125,7 @@ impl Default for Settings {
             send_crash_reports: true,
             discord_rpc_enabled: false,
             subtitles_language_filter_enabled: false,
+            board_spotlight: BoardSpotlight::default(),
         }
     }
 }

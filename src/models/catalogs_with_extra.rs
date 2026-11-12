@@ -1,6 +1,8 @@
 use crate::constants::SKIP_EXTRA_PROP;
 use crate::models::common::{
-    eq_update, resource_update_with_vector_content, Loadable, ResourceAction, ResourceLoadable,
+    board_plan, board_spotlight_requests, eq_update, resource_effect,
+    resource_update_with_vector_content, spotlight_hides_row, Loadable, ResourceAction,
+    ResourceLoadable,
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCatalogsWithExtra, ActionLoad, Internal, Msg};
@@ -12,6 +14,8 @@ use futures::FutureExt;
 use serde::{Deserialize, Serialize};
 use std::ops::Range;
 
+pub use crate::models::common::CatalogPage;
+
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct Selected {
     pub r#type: Option<String>,
@@ -19,14 +23,13 @@ pub struct Selected {
     pub extra: Vec<ExtraValue>,
 }
 
-pub type CatalogPage<T> = ResourceLoadable<Vec<T>>;
-
 pub type Catalog<T> = Vec<CatalogPage<T>>;
 
 #[derive(Default, Clone, Serialize, Debug)]
 pub struct CatalogsWithExtra {
     pub selected: Option<Selected>,
     pub catalogs: Vec<Catalog<MetaItemPreview>>,
+    pub spotlight: Vec<CatalogPage<MetaItemPreview>>,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
@@ -34,8 +37,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogsWithExtra(selected))) => {
                 let selected_effects = selected_update(&mut self.selected, selected);
-                let catalogs_effects =
-                    catalogs_update::<E>(&mut self.catalogs, &self.selected, None, &ctx.profile);
+                let catalogs_effects = catalogs_update::<E>(
+                    &mut self.catalogs,
+                    &mut self.spotlight,
+                    &self.selected,
+                    None,
+                    &ctx.profile,
+                );
                 let search_effects = match &self.selected {
                     Some(Selected { extra, .. }) => match extra
                         .iter()
@@ -56,11 +64,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);
                 let catalogs_effects = eq_update(&mut self.catalogs, vec![]);
-                selected_effects.join(catalogs_effects)
+                let spotlight_effects = eq_update(&mut self.spotlight, vec![]);
+                selected_effects
+                    .join(catalogs_effects)
+                    .join(spotlight_effects)
             }
             Msg::Action(Action::CatalogsWithExtra(ActionCatalogsWithExtra::LoadRange(range))) => {
                 catalogs_update::<E>(
                     &mut self.catalogs,
+                    &mut self.spotlight,
                     &self.selected,
                     Some(range),
                     &ctx.profile,
@@ -136,20 +148,45 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                 },
                 _ => Effects::none().unchanged(),
             },
-            Msg::Internal(Internal::ResourceRequestResult(request, result)) => self
-                .catalogs
-                .iter_mut()
-                .find_map(|catalog| catalog.last_mut().filter(|page| page.request == *request))
-                .map(|page| {
-                    resource_update_with_vector_content::<E, _>(
+            Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
+                let catalogs_effects = self
+                    .catalogs
+                    .iter_mut()
+                    .find_map(|catalog| catalog.last_mut().filter(|page| page.request == *request))
+                    .map(|page| {
+                        resource_update_with_vector_content::<E, _>(
+                            page,
+                            ResourceAction::ResourceRequestResult { request, result },
+                        )
+                    })
+                    .unwrap_or_else(|| Effects::none().unchanged());
+                let spotlight_effects = match self
+                    .spotlight
+                    .iter_mut()
+                    .find(|page| page.request == *request)
+                {
+                    Some(page) => resource_update_with_vector_content::<E, _>(
                         page,
                         ResourceAction::ResourceRequestResult { request, result },
                     )
-                })
-                .unwrap_or_else(|| Effects::none().unchanged()),
-            Msg::Internal(Internal::ProfileChanged) => {
-                catalogs_update::<E>(&mut self.catalogs, &self.selected, None, &ctx.profile)
+                    .join(catalogs_update::<E>(
+                        &mut self.catalogs,
+                        &mut self.spotlight,
+                        &self.selected,
+                        None,
+                        &ctx.profile,
+                    )),
+                    None => Effects::none().unchanged(),
+                };
+                catalogs_effects.join(spotlight_effects)
             }
+            Msg::Internal(Internal::ProfileChanged) => catalogs_update::<E>(
+                &mut self.catalogs,
+                &mut self.spotlight,
+                &self.selected,
+                None,
+                &ctx.profile,
+            ),
             Msg::Internal(Internal::LibraryChanged(_)) => Effects::none(),
             _ => Effects::none().unchanged(),
         }
@@ -162,22 +199,77 @@ fn selected_update(selected: &mut Option<Selected>, next_selected: &Selected) ->
     eq_update(selected, Some(next_selected))
 }
 
+fn is_board(selected: &Selected) -> bool {
+    selected.r#type.is_none() && selected.extra.is_empty()
+}
+
+fn spotlight_requests(selected: &Option<Selected>, profile: &Profile) -> Vec<ResourceRequest> {
+    match selected {
+        Some(selected) if is_board(selected) && profile.settings.board_spotlight.enabled => {
+            board_spotlight_requests(profile)
+        }
+        _ => vec![],
+    }
+}
+
 fn catalogs_update<E: Env + 'static>(
     catalogs: &mut Vec<Catalog<MetaItemPreview>>,
+    spotlight: &mut Vec<CatalogPage<MetaItemPreview>>,
     selected: &Option<Selected>,
     range: Option<&Range<usize>>,
     profile: &Profile,
 ) -> Effects {
+    let (next_spotlight, spotlight_effects) = spotlight_requests(selected, profile)
+        .into_iter()
+        .map(|request| {
+            spotlight
+                .iter()
+                .find(|page| page.request == request && page.content.is_some())
+                .or_else(|| {
+                    catalogs.iter().find_map(|catalog| {
+                        catalog
+                            .first()
+                            .filter(|page| page.request == request && page.content.is_some())
+                    })
+                })
+                .map(|page| (page.to_owned(), None))
+                .unwrap_or_else(|| {
+                    (
+                        ResourceLoadable {
+                            request: request.to_owned(),
+                            content: Some(Loadable::Loading),
+                        },
+                        Some(resource_effect::<E>(request)),
+                    )
+                })
+        })
+        .unzip::<_, _, Vec<_>, Vec<_>>();
+    let hidden_requests = next_spotlight
+        .iter()
+        .filter(|_| !profile.settings.board_spotlight.show_catalog_rows)
+        .filter(|page| spotlight_hides_row(page, &next_spotlight))
+        .map(|page| &page.request)
+        .collect::<Vec<_>>();
     let (next_catalogs, effects) = match selected {
         Some(selected) => {
-            let request = AggrRequest::AllCatalogs {
-                extra: &selected.extra,
-                r#type: &selected.r#type,
-            };
-            request
+            let requests = if is_board(selected) {
+                board_plan(profile)
+                    .into_iter()
+                    .map(|(_, _, request)| request)
+                    .collect::<Vec<_>>()
+            } else {
+                AggrRequest::AllCatalogs {
+                    extra: &selected.extra,
+                    r#type: &selected.r#type,
+                }
                 .plan(&profile.addons)
                 .into_iter()
                 .map(|(_, request)| request)
+                .collect::<Vec<_>>()
+            };
+            requests
+                .into_iter()
+                .filter(|request| !hidden_requests.contains(&request))
                 .enumerate()
                 .map(|(index, request)| {
                     catalogs
@@ -186,26 +278,19 @@ fn catalogs_update<E: Env + 'static>(
                             matches!(catalog.first(), Some(resource) if resource.request == request && resource.content.is_some())
                         })
                         .map(|catalog| (catalog.to_owned(), None))
+                        .or_else(|| {
+                            next_spotlight
+                                .iter()
+                                .find(|page| page.request == request && page.content.is_some())
+                                .map(|page| (vec![page.to_owned()], None))
+                        })
                         .unwrap_or_else(|| match range {
                             Some(range) if range.start <= index && index <= range.end => (
                                 vec![ResourceLoadable {
                                     request: request.to_owned(),
                                     content: Some(Loadable::Loading),
                                 }],
-                                Some(
-                                    EffectFuture::Concurrent(
-                                        E::addon_transport(&request.base)
-                                            .resource(&request.path)
-                                            .map(|result| {
-                                                Msg::Internal(Internal::ResourceRequestResult(
-                                                    request,
-                                                    Box::new(result),
-                                                ))
-                                            })
-                                            .boxed_env(),
-                                    )
-                                    .into(),
-                                ),
+                                Some(resource_effect::<E>(request)),
                             ),
                             _ => (
                                 vec![ResourceLoadable {
@@ -220,7 +305,14 @@ fn catalogs_update<E: Env + 'static>(
         }
         _ => Default::default(),
     };
-    Effects::many(effects.into_iter().flatten().collect())
-        .unchanged()
-        .join(eq_update(catalogs, next_catalogs))
+    Effects::many(
+        effects
+            .into_iter()
+            .chain(spotlight_effects)
+            .flatten()
+            .collect(),
+    )
+    .unchanged()
+    .join(eq_update(catalogs, next_catalogs))
+    .join(eq_update(spotlight, next_spotlight))
 }

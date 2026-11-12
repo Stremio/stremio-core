@@ -1,4 +1,4 @@
-use crate::types::profile::{FrameRateMatchingStrategy, Settings};
+use crate::types::profile::{BoardSpotlight, FrameRateMatchingStrategy, Settings};
 use chrono::{TimeZone, Utc};
 use serde_test::{assert_de_tokens, assert_tokens, Token};
 use url::Url;
@@ -48,11 +48,12 @@ fn settings() {
             send_crash_reports: true,
             discord_rpc_enabled: false,
             subtitles_language_filter_enabled: true,
+            board_spotlight: BoardSpotlight::default(),
         },
         &[
             Token::Struct {
                 name: "Settings",
-                len: 39,
+                len: 40,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -142,6 +143,19 @@ fn settings() {
             Token::Bool(false),
             Token::Str("subtitlesLanguageFilterEnabled"),
             Token::Bool(true),
+            Token::Str("boardSpotlight"),
+            Token::Struct {
+                name: "BoardSpotlight",
+                len: 3,
+            },
+            Token::Str("enabled"),
+            Token::Bool(false),
+            Token::Str("catalogs"),
+            Token::Seq { len: Some(0) },
+            Token::SeqEnd,
+            Token::Str("showCatalogRows"),
+            Token::Bool(true),
+            Token::StructEnd,
             Token::StructEnd,
         ],
     );

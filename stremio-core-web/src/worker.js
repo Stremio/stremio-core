@@ -2,7 +2,7 @@ const Bridge = require('./bridge');
 
 const bridge = new Bridge(self, self);
 
-self.init = async ({ appVersion, shellVersion }) => {
+self.init = async ({ appVersion, shellVersion, platform, os, notificationTemplates }) => {
     // TODO remove the document shim when this PR is merged
     // https://github.com/cfware/babel-plugin-bundled-import-meta/pull/26
     self.document = {
@@ -10,6 +10,7 @@ self.init = async ({ appVersion, shellVersion }) => {
     };
     self.app_version = appVersion;
     self.shell_version = shellVersion;
+    self.client_info = JSON.stringify({ platform, os, notificationTemplates });
     self.get_location_hash = async () => bridge.call(['location', 'hash'], []);
     self.local_storage_get_item = async (key) => bridge.call(['localStorage', 'getItem'], [key]);
     self.local_storage_set_item = async (key, value) => bridge.call(['localStorage', 'setItem'], [key, value]);

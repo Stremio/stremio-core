@@ -182,6 +182,25 @@ fn stream_deep_links_infuse_callback_returns_to_selected_item() {
         "stremio:///detail/series/tt123/tt123%3A1%3A2"
     );
     assert_eq!(query_param(ios, "filename"), "Example.Series.S01E02.mkv");
+    let settings = Settings {
+        player_type: Some("nativeplayer".into()),
+        ..settings.clone()
+    };
+    assert_eq!(
+        StreamDeepLinks::from((
+            &stream,
+            &stream_request,
+            &meta_request,
+            streaming_server_url.as_ref(),
+            &settings
+        ))
+        .external_player
+        .open_player,
+        Some(crate::deep_links::OpenPlayerLink {
+            tvos: Some("nativeplayer://x-callback-url/play?x-success=stremio%3A%2F%2F%2Fdetail%2Fseries%2Ftt123%2Ftt123%253A1%253A2&x-error=stremio%3A%2F%2F%2Fdetail%2Fseries%2Ftt123%2Ftt123%253A1%253A2&url=http%3A%2F%2Fdomain.root%2Fsome%2Fpath&filename=Example.Series.S01E02.mkv".into()),
+            ..Default::default()
+        })
+    );
 }
 
 #[test]
