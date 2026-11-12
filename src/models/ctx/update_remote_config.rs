@@ -12,7 +12,7 @@ use crate::{
     models::ctx::CtxError,
     runtime::{
         msg::{Action, ActionCtx, ActionRemoteConfig, Event, Internal, Msg},
-        Effect, EffectFuture, Effects, Env, EnvFutureExt,
+        Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt,
     },
     types::{
         api::{fetch_api, APIRequest, APIResult, GeoResponse, SuccessResponse},
@@ -392,7 +392,14 @@ fn fetch_remote_config<E: Env + 'static>(started_at: DateTime<Utc>) -> Effect {
         .expect("request builder failed");
     EffectFuture::Concurrent(
         E::fetch::<_, RemoteConfigResponse>(request)
-            .map(move |result| Msg::Internal(Internal::RemoteConfigResult(started_at, result)))
+            .map(move |result| {
+                let result = result.and_then(|config| {
+                    (config != RemoteConfigResponse::default())
+                        .then_some(config)
+                        .ok_or_else(|| EnvError::Fetch("Empty remote config".to_owned()))
+                });
+                Msg::Internal(Internal::RemoteConfigResult(started_at, result))
+            })
             .boxed_env(),
     )
     .into()
