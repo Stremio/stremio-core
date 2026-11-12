@@ -1867,6 +1867,32 @@ fn an_older_config_arriving_late_is_ignored() {
 }
 
 #[test]
+fn an_empty_config_answer_keeps_the_stored_config() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    set_now(now());
+    set_handler(Some(RemoteConfigResponse::default()), None, true);
+    let (runtime, _rx) = new_runtime(
+        Profile::default(),
+        Some(RemoteConfigBucket {
+            fetched_at: Some(now() - Duration::hours(1)),
+            ..stored_bucket(config(
+                vec![notification("ntf_spotl1ght", json!({}))],
+                vec![],
+            ))
+        }),
+    );
+
+    dispatch(&runtime, ActionRemoteConfig::Pull);
+
+    assert_eq!(requests_to(CONFIG_URL).len(), 1);
+    assert_eq!(
+        shown_ids(&runtime),
+        vec!["ntf_spotl1ght".to_owned()],
+        "An answer without any section counts as a failed fetch"
+    );
+}
+
+#[test]
 fn a_lone_older_config_success_is_applied() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     set_now(now());
