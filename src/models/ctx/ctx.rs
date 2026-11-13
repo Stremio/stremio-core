@@ -1,5 +1,5 @@
 use crate::{
-    constants::LIBRARY_COLLECTION_NAME,
+    constants::{API_ERROR_CODE_NO_ADDON_COLLECTION, LIBRARY_COLLECTION_NAME, OFFICIAL_ADDONS},
     models::{
         common::{DescriptorLoadable, Loadable, ResourceLoadable},
         ctx::{
@@ -14,8 +14,9 @@ use crate::{
     },
     types::{
         api::{
-            fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
-            DatastoreCommand, DatastoreRequest, LibraryItemsResponse, SuccessResponse,
+            fetch_api, APIError, APIRequest, APIResult, AuthRequest, AuthResponse,
+            CollectionResponse, DatastoreCommand, DatastoreRequest, LibraryItemsResponse,
+            SuccessResponse,
         },
         events::{DismissedEventsBucket, Events},
         library::LibraryBucket,
@@ -378,10 +379,14 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                     .await
                     .map_err(CtxError::from)
                     .and_then(|result: APIResult<CollectionResponse>| match result {
-                        APIResult::Ok(result) => Ok(result),
+                        APIResult::Ok(CollectionResponse { addons, .. }) => Ok(addons),
+                        APIResult::Err(APIError { code, .. })
+                            if code == API_ERROR_CODE_NO_ADDON_COLLECTION =>
+                        {
+                            Ok(OFFICIAL_ADDONS.clone())
+                        }
                         APIResult::Err(error) => Err(CtxError::from(error)),
                     })
-                    .map(|CollectionResponse { addons, .. }| addons)
             };
 
             let datastore_library_fut = async {

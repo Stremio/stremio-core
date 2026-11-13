@@ -1,9 +1,9 @@
-use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
+use crate::constants::{API_ERROR_CODE_NO_ADDON_COLLECTION, OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::addon::{Descriptor, Manifest};
-use crate::types::api::{APIResult, CollectionResponse};
+use crate::types::api::{APIError, APIResult, CollectionResponse};
 use crate::types::events::DismissedEventsBucket;
 use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
@@ -195,5 +195,83 @@ fn actionctx_pulladdonsfromapi_with_user() {
         REQUESTS.read().unwrap().first().unwrap().url,
         "https://api.strem.io/api/addonCollectionGet".to_owned(),
         "addonCollectionGet request has been sent"
+    );
+}
+
+#[test]
+fn actionctx_pulladdonsfromapi_with_user_no_addon_collection() {
+    #[derive(Model, Clone, Default)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+    }
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
+        match request {
+            Request {
+                url, method, body, ..
+            } if url == "https://api.strem.io/api/addonCollectionGet"
+                && method == "POST"
+                && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
+            {
+                future::ok(Box::new(APIResult::<CollectionResponse>::Err(APIError {
+                    message: "No AddonDescriptor".to_owned(),
+                    code: API_ERROR_CODE_NO_ADDON_COLLECTION,
+                })) as Box<dyn Any + Send>)
+                .boxed_env()
+            }
+            _ => default_fetch_handler(request),
+        }
+    }
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+        TestModel {
+            ctx: Ctx::new(
+                Profile {
+                    auth: Some(Auth {
+                        key: AuthKey("auth_key".to_owned()),
+                        user: User {
+                            id: "user_id".into(),
+                            email: "user_email".to_owned(),
+                            last_modified: TestEnv::now(),
+                            date_registered: TestEnv::now(),
+                            ..Default::default()
+                        },
+                    }),
+                    addons: vec![],
+                    addons_locked: true,
+                    ..Default::default()
+                },
+                LibraryBucket::default(),
+                StreamsBucket::default(),
+                ServerUrlsBucket::new::<TestEnv>(None),
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+                SearchHistoryBucket::default(),
+                DismissedEventsBucket::default(),
+            ),
+        },
+        vec![],
+        1000,
+    );
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::PullAddonsFromAPI),
+        })
+    });
+    let profile = &runtime.model().unwrap().ctx.profile;
+    assert_eq!(
+        profile.addons,
+        OFFICIAL_ADDONS.to_owned(),
+        "falls back to the official addons when the user has no addon collection"
+    );
+    assert!(
+        !profile.addons_locked,
+        "addons are not locked when the user has no addon collection"
+    );
+    assert_eq!(
+        REQUESTS.read().unwrap().len(),
+        1,
+        "One request has been sent"
     );
 }
