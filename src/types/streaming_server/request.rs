@@ -5,6 +5,7 @@ use percent_encoding::percent_decode_str;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
+use super::{apply_basic_auth, split_basic_auth};
 use crate::types::{resource::ArchiveUrl, streaming_server::PeerSearch, torrent::InfoHash};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -55,14 +56,18 @@ pub struct CreateTorrentBlobRequest {
 
 impl From<CreateTorrentBlobRequest> for Request<CreateTorrentBlobBody> {
     fn from(val: CreateTorrentBlobRequest) -> Self {
-        let endpoint = val.server_url.join("/create").expect("url builder failed");
+        let (server_url, auth) = split_basic_auth(&val.server_url);
+        let endpoint = server_url.join("create").expect("url builder failed");
 
-        Request::post(endpoint.as_str())
-            .header(http::header::CONTENT_TYPE, "application/json")
-            .body(CreateTorrentBlobBody {
-                blob: hex::encode(val.torrent),
-            })
-            .expect("request builder failed")
+        apply_basic_auth(
+            Request::post(endpoint.as_str())
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(CreateTorrentBlobBody {
+                    blob: hex::encode(val.torrent),
+                })
+                .expect("request builder failed"),
+            auth.as_ref(),
+        )
     }
 }
 #[derive(Serialize)]
@@ -114,16 +119,19 @@ impl From<CreateMagnetRequest> for Request<CreateMagnetBody> {
             },
         };
 
+        let (server_url, auth) = split_basic_auth(&val.server_url);
         let info_hash = info_hash.to_owned();
-        let endpoint = val
-            .server_url
+        let endpoint = server_url
             .join(&format!("{info_hash}/create"))
             .expect("url builder failed");
 
-        Request::post(endpoint.as_str())
-            .header(http::header::CONTENT_TYPE, "application/json")
-            .body(body)
-            .expect("request builder should never fail!")
+        apply_basic_auth(
+            Request::post(endpoint.as_str())
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(body)
+                .expect("request builder should never fail!"),
+            auth.as_ref(),
+        )
     }
 }
 
@@ -148,14 +156,15 @@ impl From<TorrentStatisticsRequest> for Request<()> {
             None => format!("{info_hash_encoded}/stats.json"),
         };
 
-        let uri = val
-            .server_url
-            .join(&path)
-            .expect("Should always be valid url!");
+        let (server_url, auth) = split_basic_auth(&val.server_url);
+        let uri = server_url.join(&path).expect("Should always be valid url!");
 
-        Request::get(uri.as_str())
-            .header(http::header::CONTENT_TYPE, "application/json")
-            .body(())
-            .expect("Always valid request!")
+        apply_basic_auth(
+            Request::get(uri.as_str())
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(())
+                .expect("Always valid request!"),
+            auth.as_ref(),
+        )
     }
 }
