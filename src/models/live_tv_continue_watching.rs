@@ -291,6 +291,7 @@ fn fallback_preview(library: &LibraryBucket, request: &ResourceRequest) -> MetaI
         runtime: None,
         released: None,
         links: vec![],
+        imdb_rating_count: None,
         trailer_streams: vec![],
         behavior_hints: Default::default(),
     }

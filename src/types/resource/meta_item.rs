@@ -9,19 +9,23 @@ use itertools::Itertools;
 use percent_encoding::utf8_percent_encode;
 use serde::{Deserialize, Serialize};
 use serde_with::{
-    formats::PreferMany, serde_as, DefaultOnError, DefaultOnNull, DeserializeAs, NoneAsEmptyString,
-    OneOrMany, PickFirst, TimestampMilliSeconds, VecSkipError,
+    formats::PreferMany, serde_as, DefaultOnError, DefaultOnNull, DeserializeAs, DisplayFromStr,
+    NoneAsEmptyString, OneOrMany, PickFirst, TimestampMilliSeconds, VecSkipError,
 };
 use url::Url;
 
-use crate::constants::{
-    CATALOG_RESOURCE_NAME, CINEMETA_TOP_CATALOG_ID, CINEMETA_URL, GENRES_LINK_CATEGORY,
-    IMDB_LINK_CATEGORY, IMDB_TITLE_PATH, IMDB_URL, URI_COMPONENT_ENCODE_SET,
+use crate::{
+    constants::{
+        CATALOG_RESOURCE_NAME, CINEMETA_TOP_CATALOG_ID, CINEMETA_URL, GENRES_LINK_CATEGORY,
+        IMDB_LINK_CATEGORY, IMDB_TITLE_PATH, IMDB_URL, URI_COMPONENT_ENCODE_SET,
+    },
+    deep_links::DiscoverDeepLinks,
+    types::{
+        addon::{ExtraValue, ResourcePath, ResourceRequest},
+        resource::{Stream, StreamSource},
+        NumberAsString, SortedVec, SortedVecAdapter, UniqueVec, UniqueVecAdapter,
+    },
 };
-use crate::deep_links::DiscoverDeepLinks;
-use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest};
-use crate::types::resource::{Stream, StreamSource};
-use crate::types::{NumberAsString, SortedVec, SortedVecAdapter, UniqueVec, UniqueVecAdapter};
 
 /// The [`MetaItem`] Id type to improve the readability of the code.
 ///
@@ -89,6 +93,9 @@ struct MetaItemPreviewLegacy {
     #[serde_as(deserialize_as = "Option<NumberAsString>")]
     imdb_rating: Option<String>,
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError<Option<PickFirst<(_, DisplayFromStr)>>>")]
+    imdb_rating_count: Option<u64>,
+    #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull")]
     genres: Vec<String>,
     #[serde(default)]
@@ -120,6 +127,7 @@ struct MetaItemPreviewLegacy {
 ///     released: None,
 ///     poster_shape: PosterShape::default(),
 ///     links: vec![],
+///     imdb_rating_count: None,
 ///     trailer_streams: vec![],
 ///     behavior_hints: MetaItemBehaviorHints::default(),
 /// };
@@ -162,6 +170,9 @@ pub struct MetaItemPreview {
     pub released: Option<DateTime<Utc>>,
     pub poster_shape: PosterShape,
     pub links: Vec<Link>,
+    /// Number of votes behind an IMDb rating, when supplied by the addon.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub imdb_rating_count: Option<u64>,
     pub trailer_streams: Vec<Stream>,
     pub behavior_hints: MetaItemBehaviorHints,
 }
@@ -235,6 +246,7 @@ impl From<MetaItemPreviewLegacy> for MetaItemPreview {
             released: legacy_item.released,
             poster_shape: legacy_item.poster_shape,
             links,
+            imdb_rating_count: legacy_item.imdb_rating_count,
             trailer_streams,
             behavior_hints: legacy_item.behavior_hints,
         }

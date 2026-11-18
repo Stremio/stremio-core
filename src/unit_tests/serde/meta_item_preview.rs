@@ -24,6 +24,7 @@ fn meta_item_preview_serialize() {
                 released: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
                 poster_shape: PosterShape::default(),
                 links: vec![],
+                imdb_rating_count: None,
                 trailer_streams: vec![],
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
@@ -40,6 +41,7 @@ fn meta_item_preview_serialize() {
                 released: None,
                 poster_shape: PosterShape::default(),
                 links: vec![],
+                imdb_rating_count: None,
                 trailer_streams: vec![],
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
@@ -154,6 +156,7 @@ fn meta_item_preview_de() {
                 released: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
                 poster_shape: PosterShape::default(),
                 links: vec![],
+                imdb_rating_count: None,
                 trailer_streams: vec![],
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
@@ -170,6 +173,7 @@ fn meta_item_preview_de() {
                 released: None,
                 poster_shape: PosterShape::default(),
                 links: vec![],
+                imdb_rating_count: None,
                 trailer_streams: vec![],
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
@@ -278,6 +282,7 @@ fn meta_item_preview_de_minimal() {
             released: None,
             poster_shape: PosterShape::default(),
             links: vec![],
+            imdb_rating_count: None,
             trailer_streams: vec![],
             behavior_hints: MetaItemBehaviorHints::default(),
         }
@@ -312,6 +317,7 @@ fn meta_item_preview_de_null() {
             released: None,
             poster_shape: PosterShape::default(),
             links: vec![],
+            imdb_rating_count: None,
             trailer_streams: vec![],
             behavior_hints: MetaItemBehaviorHints::default(),
         }
@@ -370,6 +376,7 @@ fn meta_item_preview_de_numeric_imdb() {
                 category: "imdb".to_owned(),
                 url: Url::parse("https://imdb.com/title/id").unwrap(),
             }],
+            imdb_rating_count: None,
             trailer_streams: vec![],
             behavior_hints: MetaItemBehaviorHints::default(),
         }
@@ -417,6 +424,7 @@ fn meta_item_preview_de_legacy_links() {
                 url: Url::parse("stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/type/top?genre=Action").unwrap(),
             }
             ],
+            imdb_rating_count: None,
             trailer_streams: vec![
                 Stream {
                     source: StreamSource::YouTube {
@@ -508,6 +516,7 @@ fn meta_item_preview_de_ignore_legacy_when_links() {
                 category: "Genres".to_owned(),
                 url: Url::parse("stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/type/top?genre=Action").unwrap(),
             }],
+            imdb_rating_count: None,
             trailer_streams: vec![Stream {
                 source: StreamSource::YouTube {
                     yt_id: "trailer_stream".to_owned(),
@@ -590,4 +599,45 @@ fn meta_item_preview_de_ignore_legacy_when_links() {
             Token::StructEnd,
         ],
     );
+}
+
+#[test]
+fn imdb_rating_count_survives_addon_responses() {
+    use crate::types::addon::ResourceResponse;
+    use serde_json::{json, Value};
+
+    let movie = json!({
+        "id": "tt1234567",
+        "type": "movie",
+        "name": "Example movie",
+        "imdbRating": "8.5",
+        "imdbRatingCount": 200,
+    });
+    let catalog: ResourceResponse = serde_json::from_value(json!({
+        "metas": [
+            movie,
+            { "id": "tt1234568", "type": "series", "imdbRatingCount": "12000" },
+            { "id": "tt1234569", "type": "movie", "imdbRatingCount": 0 },
+            { "id": "tt1234570", "type": "movie", "imdbRatingCount": -1 },
+            { "id": "tt1234571", "type": "movie", "imdbRatingCount": "unknown" },
+            { "id": "tt1234572", "type": "movie" }
+        ]
+    }))
+    .unwrap();
+    let serialized = serde_json::to_value(catalog).unwrap();
+    let counts: Vec<_> = serialized["metas"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|meta| meta.get("imdbRatingCount").and_then(Value::as_u64))
+        .collect();
+    assert_eq!(counts, [Some(200), Some(12_000), Some(0), None, None, None]);
+    for index in 3..6 {
+        assert!(serialized["metas"][index].get("imdbRatingCount").is_none());
+    }
+
+    let details: ResourceResponse = serde_json::from_value(json!({ "meta": movie })).unwrap();
+    let details = serde_json::to_value(details).unwrap();
+    assert_eq!(details["meta"]["imdbRatingCount"], 200);
+    assert_eq!(details["meta"]["links"][0]["name"], "8.5");
 }
