@@ -1,25 +1,33 @@
-use crate::constants::CATALOG_RESOURCE_NAME;
-use crate::models::board_catalogs::{BoardCatalogs, Selected};
-use crate::models::common::{spotlight_items, CatalogPage};
-use crate::models::common::{Loadable, ResourceLoadable};
-use crate::models::ctx::Ctx;
-use crate::runtime::msg::{Action, ActionCtx, ActionLoad};
-use crate::runtime::{EnvError, EnvFutureExt, Runtime, RuntimeAction, RuntimeEvent, TryEnvFuture};
-use crate::types::addon::{ResourcePath, ResourceRequest, ResourceResponse};
-use crate::types::events::DismissedEventsBucket;
-use crate::types::library::LibraryBucket;
-use crate::types::notifications::NotificationsBucket;
-use crate::types::profile::{BoardSpotlight, Profile, Settings};
-use crate::types::resource::MetaItemPreview;
-use crate::types::search_history::SearchHistoryBucket;
-use crate::types::server_urls::ServerUrlsBucket;
-use crate::types::streams::StreamsBucket;
-use crate::unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS};
 use assert_matches::assert_matches;
 use futures::{channel::mpsc::Receiver, future};
 use std::any::Any;
 use stremio_derive::Model;
 use url::Url;
+
+use crate::{
+    constants::CATALOG_RESOURCE_NAME,
+    models::{
+        board_catalogs::{BoardCatalogs, Selected},
+        common::{spotlight_items, CatalogPage, Loadable, ResourceLoadable},
+        ctx::Ctx,
+    },
+    runtime::{
+        msg::{Action, ActionCtx, ActionLoad},
+        EnvError, EnvFutureExt, Runtime, RuntimeAction, RuntimeEvent, TryEnvFuture,
+    },
+    types::{
+        addon::{ResourcePath, ResourceRequest, ResourceResponse},
+        events::DismissedEventsBucket,
+        library::LibraryBucket,
+        notifications::NotificationsBucket,
+        profile::{BoardSpotlight, Profile, Settings},
+        resource::MetaItemPreview,
+        search_history::SearchHistoryBucket,
+        server_urls::ServerUrlsBucket,
+        streams::StreamsBucket,
+    },
+    unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS},
+};
 
 #[derive(Model, Clone, Default)]
 #[model(TestEnv)]
@@ -74,15 +82,24 @@ fn runtime_with(
     Runtime<TestEnv, TestModel>,
     Receiver<RuntimeEvent<TestEnv, TestModel>>,
 ) {
+    runtime_with_profile(Profile {
+        settings: Settings {
+            board_spotlight,
+            ..Settings::default()
+        },
+        ..Profile::default()
+    })
+}
+
+fn runtime_with_profile(
+    profile: Profile,
+) -> (
+    Runtime<TestEnv, TestModel>,
+    Receiver<RuntimeEvent<TestEnv, TestModel>>,
+) {
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let ctx = Ctx::new(
-        Profile {
-            settings: Settings {
-                board_spotlight,
-                ..Settings::default()
-            },
-            ..Profile::default()
-        },
+        profile,
         LibraryBucket::default(),
         StreamsBucket::default(),
         ServerUrlsBucket::new::<TestEnv>(None),
@@ -156,6 +173,42 @@ fn loads_every_catalog_once() {
             ..
         })
     );
+}
+
+#[test]
+fn duplicate_catalog_requests_do_not_leave_a_loading_row() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    let mut profile = Profile::default();
+    let request = cinemeta_request("movie", "top");
+    let mut duplicate = profile
+        .addons
+        .iter()
+        .find(|addon| addon.transport_url == request.base)
+        .unwrap()
+        .clone();
+    duplicate
+        .manifest
+        .catalogs
+        .retain(|catalog| catalog.r#type == request.path.r#type && catalog.id == request.path.id);
+    profile.addons.push(duplicate);
+
+    let (runtime, _rx) = runtime_with_profile(profile);
+    TestEnv::run(|| runtime.dispatch(load(true)));
+    let model = runtime.model().unwrap();
+    let matching_rows = model
+        .board_catalogs
+        .catalogs
+        .iter()
+        .filter(|page| page.request == request)
+        .collect::<Vec<_>>();
+    assert!(
+        matching_rows
+            .iter()
+            .all(|page| matches!(page.content, Some(Loadable::Ready(_)))),
+        "every row for a successful request should finish loading"
+    );
+    assert_eq!(matching_rows.len(), 1);
+    assert_eq!(requests_to(POPULAR_MOVIES_URL), 1);
 }
 
 #[test]
