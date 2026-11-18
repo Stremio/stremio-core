@@ -4,34 +4,38 @@ use base64::Engine;
 use futures::{future, FutureExt, TryFutureExt};
 use url::Url;
 
-use crate::constants::{
-    BASE64, CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, PLAYER_IGNORE_SEEK_AFTER,
-    STREAM_RESOURCE_NAME, SUBTITLES_RESOURCE_NAME, VIDEO_FILENAME_EXTRA_PROP,
-    VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
-};
-use crate::models::common::{
-    addon_events_effects, eq_update, player_event_path, resource_update,
-    resource_update_with_vector_content, resources_update_with_vector_content,
-    videos_watched_event_paths, Loadable, PlayerEventAction, ResourceAction, ResourceLoadable,
-    ResourcesAction,
-};
-use crate::models::ctx::{Ctx, CtxError};
-use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg};
-use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx};
-use crate::types::addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, ResourceRequest};
-use crate::types::api::{
-    fetch_api, APIRequest, APIResult, SeekLog, SeekLogRequest, SkipGapsRequest, SkipGapsResponse,
-    SuccessResponse,
-};
-use crate::types::library::{LibraryBucket, LibraryItem};
-use crate::types::player::{IntroData, IntroOutro};
-use crate::types::profile::{AuthKey, Profile};
-use crate::types::rating::{Rating, RatingSendRequest, RatingSendResponse};
-use crate::types::resource::{
-    MetaItem, SeriesInfo, Stream, StreamSource, StreamUrls, Subtitles, Video,
-};
-use crate::types::streams::{
-    ConvertedStreamSource, StreamItemState, StreamsBucket, StreamsItemKey,
+use crate::{
+    constants::{
+        BASE64, CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, PLAYER_IGNORE_SEEK_AFTER,
+        STREAM_RESOURCE_NAME, SUBTITLES_RESOURCE_NAME, VIDEO_FILENAME_EXTRA_PROP,
+        VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
+    },
+    models::{
+        common::{
+            addon_events_effects, eq_update, player_event_path, resource_update,
+            resource_update_with_vector_content, resources_update_with_vector_content,
+            videos_watched_event_paths, Loadable, PlayerEventAction, ResourceAction,
+            ResourceLoadable, ResourcesAction,
+        },
+        ctx::{Ctx, CtxError},
+    },
+    runtime::{
+        msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg},
+        Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx,
+    },
+    types::{
+        addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, ResourceRequest},
+        api::{
+            fetch_api, APIRequest, APIResult, SeekLog, SeekLogRequest, SkipGapsRequest,
+            SkipGapsResponse, SuccessResponse,
+        },
+        library::{LibraryBucket, LibraryItem},
+        player::{IntroData, IntroOutro},
+        profile::{AuthKey, Profile},
+        rating::{Rating, RatingSendRequest, RatingSendResponse},
+        resource::{MetaItem, SeriesInfo, Stream, StreamSource, StreamUrls, Subtitles, Video},
+        streams::{ConvertedStreamSource, StreamItemState, StreamsBucket, StreamsItemKey},
+    },
 };
 
 use stremio_watched_bitfield::WatchedBitField;
@@ -128,6 +132,9 @@ pub struct Player {
     pub push_library_item_time: DateTime<Utc>,
     #[serde(skip_serializing)]
     pub loaded: bool,
+    /// Whether playback time has advanced during the current load.
+    #[serde(skip)]
+    pub playback_progressed: bool,
     #[serde(skip_serializing)]
     pub ended: bool,
     /// Whether the selected video has been manually marked as watched
@@ -201,6 +208,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     let effects = item_state_update::<E>(
                         &mut self.library_item,
                         self.next_video.as_ref(),
+                        self.playback_progressed,
                         self.marked_video_as_watched,
                         self.marked_season_as_watched,
                         &self.meta_item,
@@ -354,6 +362,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 });
                 self.load_time = Some(E::now());
                 self.loaded = false;
+                self.playback_progressed = false;
                 self.ended = false;
                 self.paused = None;
                 self.marked_video_as_watched = false;
@@ -419,6 +428,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let item_state_update_effects = item_state_update::<E>(
                     &mut self.library_item,
                     self.next_video.as_ref(),
+                    self.playback_progressed,
                     self.marked_video_as_watched,
                     self.marked_season_as_watched,
                     &self.meta_item,
@@ -446,6 +456,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.analytics_context = None;
                 self.load_time = None;
                 self.loaded = false;
+                self.playback_progressed = false;
                 self.ended = false;
                 self.paused = None;
                 self.marked_video_as_watched = false;
@@ -650,6 +661,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     // send the right actions and update the times accordingly
                     // when the state changes (from seeking to playing and vice versa)
                     if time > &library_item.state.time_offset {
+                        self.playback_progressed |= *duration > 0;
                         time.clone_into(&mut library_item.state.time_offset);
                         duration.clone_into(&mut library_item.state.duration);
                     }
@@ -1236,6 +1248,7 @@ fn push_to_library<E: Env + 'static>(
 fn item_state_update<E: Env>(
     library_item: &mut Option<LibraryItem>,
     next_video: Option<&Video>,
+    playback_progressed: bool,
     marked_video_as_watched: bool,
     marked_season_as_watched: Option<u32>,
     meta_item: &Option<ResourceLoadable<MetaItem>>,
@@ -1260,8 +1273,9 @@ fn item_state_update<E: Env>(
         }
         (Some(library_item), _, _)
             if marked_video_as_watched
-                || library_item.state.time_offset as f64
-                    > library_item.state.duration as f64 * CREDITS_THRESHOLD_COEF =>
+                || (playback_progressed
+                    && library_item.state.time_offset as f64
+                        > library_item.state.duration as f64 * CREDITS_THRESHOLD_COEF) =>
         {
             library_item.state.time_offset = 0;
             if let Some(next_video) = next_video {
