@@ -37,6 +37,15 @@ fn create_stream(binge_group: &str) -> Stream {
     }
 }
 
+fn episode_three_stream() -> Stream {
+    Stream {
+        source: StreamSource::Url {
+            url: "https://source_url/episode-3".parse().unwrap(),
+        },
+        ..create_stream("binge_group")
+    }
+}
+
 fn create_video(season: u32, episode: u32) -> Video {
     Video {
         id: format!("tt123456:{season}:{episode}"),
@@ -70,7 +79,7 @@ fn next_stream() {
                             r#type: "series".to_owned(),
                             ..Default::default()
                         },
-                        videos: vec![create_video(1, 1), create_video(1, 2)],
+                        videos: vec![create_video(1, 1), create_video(1, 2), create_video(1, 3)],
                     },
                 }) as Box<dyn Any + Send>)
                 .boxed_env()
@@ -87,7 +96,7 @@ fn next_stream() {
                 if url == "https://transport_url/stream/series/tt123456%3A1%3A3.json" =>
             {
                 future::ok(Box::new(ResourceResponse::Streams {
-                    streams: vec![create_stream("binge_group"), create_stream("binge_group_1")],
+                    streams: vec![episode_three_stream()],
                 }) as Box<dyn Any + Send>)
                 .boxed_env()
             }
@@ -142,8 +151,8 @@ fn next_stream() {
             field: None,
             action: Action::Load(ActionLoad::Player(Box::new(Selected {
                 stream: stream.clone(),
-                stream_request: Some(stream_request),
-                meta_request: Some(meta_request),
+                stream_request: Some(stream_request.clone()),
+                meta_request: Some(meta_request.clone()),
                 subtitles_path: None,
             }))),
         });
@@ -221,4 +230,47 @@ fn next_stream() {
         1,
         "library item time_offset was reset to 1 to keep it in CW as there's a next video"
     );
+
+    let load_episode = |episode: u32, stream| {
+        let mut request = stream_request.clone();
+        request.path.id = format!("tt123456:1:{episode}");
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Load(ActionLoad::Player(Box::new(Selected {
+                stream,
+                stream_request: Some(request),
+                meta_request: Some(meta_request.clone()),
+                subtitles_path: None,
+            }))),
+        });
+    };
+
+    TestEnv::run(|| {
+        load_episode(2, stream.clone());
+        let model = runtime.model().unwrap();
+        // The third episode's request has been scheduled but its response has not run yet.
+        let next_video = model.player.next_video.as_ref().unwrap();
+        assert_eq!(next_video.id, "tt123456:1:3");
+        assert!(
+            next_video.streams.is_empty(),
+            "episode three must not point to episode two's prefetched stream",
+        );
+    });
+    assert_eq!(
+        runtime
+            .model()
+            .unwrap()
+            .player
+            .next_video
+            .as_ref()
+            .unwrap()
+            .streams,
+        vec![episode_three_stream()],
+    );
+
+    TestEnv::run(|| load_episode(3, episode_three_stream()));
+    let model = runtime.model().unwrap();
+    assert!(model.player.next_video.is_none());
+    assert!(model.player.next_streams.is_none());
+    assert!(model.player.next_stream.is_none());
 }
