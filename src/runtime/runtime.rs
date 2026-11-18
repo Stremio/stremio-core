@@ -69,8 +69,8 @@ where
     ///
     /// # Panics
     ///
-    /// Panics if an event emitted during dispatch cannot be sent because the
-    /// receiver is closed or the event channel is full.
+    /// Panics if dispatch emits an event after the receiver has been closed or
+    /// dropped.
     pub fn dispatch(&self, action: RuntimeAction<E, M>) {
         let (effects, fields) = {
             let mut model = self.model.write().expect("model write failed");
