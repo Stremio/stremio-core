@@ -23,6 +23,7 @@ pub struct RuntimeAction<E: Env, M: Model<E>> {
     pub action: Action,
 }
 
+/// Runs a model and publishes state changes and core events.
 #[derive(Derivative)]
 #[derivative(Clone(bound = ""))]
 pub struct Runtime<E: Env, M: Model<E>> {
@@ -36,6 +37,12 @@ where
     E: Env + Send + 'static,
     M: Model<E> + Send + Sync + 'static,
 {
+    /// Creates a runtime, starts the initial effects, and returns its event receiver.
+    ///
+    /// Keep polling the receiver while the runtime can emit events. The stream
+    /// ends once all runtime handles have been dropped and buffered events have
+    /// been read. Pending effects hold their own runtime clones, so dropping the
+    /// caller's handle does not cancel those effects or immediately end the stream.
     pub fn new(
         model: M,
         effects: Vec<Effect>,
@@ -54,6 +61,16 @@ where
     pub fn model(&self) -> LockResult<RwLockReadGuard<'_, M>> {
         self.model.read()
     }
+    /// Applies the action synchronously and sends any state change notification.
+    ///
+    /// Immediate effects are handled inline. Future effects are scheduled through
+    /// [`Env::exec_sequential`] or [`Env::exec_concurrent`]. This method returns
+    /// `()`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if an event emitted during dispatch cannot be sent because the
+    /// receiver is closed or the event channel is full.
     pub fn dispatch(&self, action: RuntimeAction<E, M>) {
         let (effects, fields) = {
             let mut model = self.model.write().expect("model write failed");
