@@ -111,6 +111,63 @@ fn x_callback_open_player(
     }
 }
 
+fn infuse_resume_filename(
+    item: &LibraryItem,
+    streams_item: &StreamsItem,
+    streaming_url: &str,
+) -> Option<String> {
+    if item.id != streams_item.meta_id || item.r#type != streams_item.r#type {
+        return None;
+    }
+
+    let url = Url::parse(streaming_url).ok()?;
+    let segment = url.path_segments()?.next_back()?;
+    let (stem, extension) = segment
+        .rsplit_once('.')
+        .map_or((segment, None), |(stem, extension)| (stem, Some(extension)));
+    // The streaming server uses -1 to pick a torrent file automatically.
+    if stem != "-1" && (stem.is_empty() || !stem.bytes().all(|byte| byte.is_ascii_digit())) {
+        return None;
+    }
+
+    let title = item.name.replace(
+        |character: char| {
+            character.is_control()
+                || matches!(
+                    character,
+                    '"' | '\\' | '/' | ':' | '|' | '<' | '>' | '*' | '?'
+                )
+        },
+        " ",
+    );
+    let title = title.split_whitespace().collect::<Vec<_>>().join(" ");
+    if title.is_empty() {
+        return None;
+    }
+
+    let mut filename = match item.r#type.as_str() {
+        "movie" => title,
+        "series" => {
+            let (season, episode) = streams_item
+                .video_id
+                .strip_prefix(&item.id)?
+                .strip_prefix(':')?
+                .split_once(':')?;
+            let season = season.parse::<u32>().ok()?;
+            let episode = episode.parse::<u32>().ok()?;
+            format!("{title} S{season:02}E{episode:02}")
+        }
+        _ => return None,
+    };
+    if let Some(extension) = extension.filter(|extension| {
+        !extension.is_empty() && extension.bytes().all(|byte| byte.is_ascii_alphanumeric())
+    }) {
+        filename.push('.');
+        filename.push_str(extension);
+    }
+    Some(filename)
+}
+
 impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
     /// Create an [`ExternalPlayerLink`] using the [`Stream`],
     /// the server url (from [`StreamingServer::base_url`] which indicates a running or not server)
@@ -343,26 +400,37 @@ impl From<(&LibraryItem, Option<&StreamsItem>, Option<&Url>, &Settings)> for Lib
                 Err(error) => ErrorLink::from(error).into(),
             }),
             // We have the streams bucket item so use the same logic as in StreamDeepLinks
-            external_player: streams_item.map(|item| {
-                let mut external_player =
-                    ExternalPlayerLink::from((&item.stream, streaming_server_url, settings));
+            external_player: streams_item.map(|streams_item| {
+                let mut external_player = ExternalPlayerLink::from((
+                    &streams_item.stream,
+                    streaming_server_url,
+                    settings,
+                ));
                 if let Some(player_type @ ("infuse" | "nativeplayer")) =
                     settings.player_type.as_deref()
                 {
                     if let Some(streaming) = external_player.streaming.as_deref() {
                         let callback_url = format!(
                             "stremio:///detail/{}/{}/{}",
-                            utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
-                            utf8_percent_encode(&item.meta_id, URI_COMPONENT_ENCODE_SET),
-                            utf8_percent_encode(&item.video_id, URI_COMPONENT_ENCODE_SET)
+                            utf8_percent_encode(&streams_item.r#type, URI_COMPONENT_ENCODE_SET),
+                            utf8_percent_encode(&streams_item.meta_id, URI_COMPONENT_ENCODE_SET),
+                            utf8_percent_encode(&streams_item.video_id, URI_COMPONENT_ENCODE_SET)
                         );
+                        let filename = streams_item.stream.behavior_hints.filename.as_deref();
+                        let infuse_filename = if player_type == "infuse"
+                            && filename.map_or(true, |filename| filename.trim().is_empty())
+                        {
+                            infuse_resume_filename(item, streams_item, streaming)
+                        } else {
+                            None
+                        };
                         external_player.open_player = Some(x_callback_open_player(
                             player_type,
                             streaming,
                             &callback_url,
                             &callback_url,
                             position,
-                            item.stream.behavior_hints.filename.as_deref(),
+                            infuse_filename.as_deref().or(filename),
                         ));
                     }
                 }
