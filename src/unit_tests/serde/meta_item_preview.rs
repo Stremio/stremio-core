@@ -21,6 +21,7 @@ fn meta_item_preview_serialize() {
                 description: Some("description".to_owned()),
                 release_info: Some("release_info".to_owned()),
                 runtime: Some("runtime".to_owned()),
+                age_rating: None,
                 released: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
                 poster_shape: PosterShape::default(),
                 links: vec![],
@@ -37,6 +38,7 @@ fn meta_item_preview_serialize() {
                 description: None,
                 release_info: None,
                 runtime: None,
+                age_rating: None,
                 released: None,
                 poster_shape: PosterShape::default(),
                 links: vec![],
@@ -151,6 +153,7 @@ fn meta_item_preview_de() {
                 description: Some("description".to_owned()),
                 release_info: Some("release_info".to_owned()),
                 runtime: Some("runtime".to_owned()),
+                age_rating: None,
                 released: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
                 poster_shape: PosterShape::default(),
                 links: vec![],
@@ -167,6 +170,7 @@ fn meta_item_preview_de() {
                 description: None,
                 release_info: None,
                 runtime: None,
+                age_rating: None,
                 released: None,
                 poster_shape: PosterShape::default(),
                 links: vec![],
@@ -275,6 +279,7 @@ fn meta_item_preview_de_minimal() {
             description: None,
             release_info: None,
             runtime: None,
+            age_rating: None,
             released: None,
             poster_shape: PosterShape::default(),
             links: vec![],
@@ -309,6 +314,7 @@ fn meta_item_preview_de_null() {
             description: None,
             release_info: None,
             runtime: None,
+            age_rating: None,
             released: None,
             poster_shape: PosterShape::default(),
             links: vec![],
@@ -363,6 +369,7 @@ fn meta_item_preview_de_numeric_imdb() {
             description: None,
             release_info: None,
             runtime: None,
+            age_rating: None,
             released: None,
             poster_shape: PosterShape::default(),
             links: vec![Link {
@@ -404,6 +411,7 @@ fn meta_item_preview_de_legacy_links() {
             description: None,
             release_info: None,
             runtime: None,
+            age_rating: None,
             released: None,
             poster_shape: PosterShape::default(),
             links: vec![Link {
@@ -496,6 +504,7 @@ fn meta_item_preview_de_ignore_legacy_when_links() {
             description: None,
             release_info: None,
             runtime: None,
+            age_rating: None,
             released: None,
             poster_shape: PosterShape::default(),
             links: vec![Link {
@@ -590,4 +599,47 @@ fn meta_item_preview_de_ignore_legacy_when_links() {
             Token::StructEnd,
         ],
     );
+}
+
+#[test]
+fn age_rating_survives_addon_catalog_and_meta_responses() {
+    use crate::types::addon::ResourceResponse;
+    use serde_json::{json, Value};
+
+    let movie = json!({ "id": "tt1234567", "name": "Example movie", "type": "movie", "ageRating": "PG-13" });
+    let series =
+        json!({ "id": "tt1234568", "name": "Example series", "type": "series", "ageRating": 16 });
+
+    let catalog: ResourceResponse = serde_json::from_value(json!({
+        "metas": [
+            movie,
+            series,
+            { "id": "tt1234569", "name": "Unrated movie", "type": "movie" },
+            { "id": "tt1234570", "name": "Legacy addon movie", "type": "movie", "ageRating": { "label": "PG" } }
+        ]
+    }))
+    .unwrap();
+    let serialized = serde_json::to_value(catalog).unwrap();
+    let ratings: Vec<_> = serialized["metas"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|meta| meta.get("ageRating").and_then(Value::as_str))
+        .collect();
+    assert_eq!(ratings, [Some("PG-13"), Some("16"), None, None]);
+    assert!(serialized["metas"][2].get("ageRating").is_none());
+    assert!(serialized["metas"][3].get("ageRating").is_none());
+
+    for meta in [movie, series] {
+        let rating = if meta["type"] == "movie" {
+            "PG-13"
+        } else {
+            "16"
+        };
+        let details: ResourceResponse = serde_json::from_value(json!({ "meta": meta })).unwrap();
+        assert_eq!(
+            serde_json::to_value(details).unwrap()["meta"]["ageRating"],
+            rating
+        );
+    }
 }

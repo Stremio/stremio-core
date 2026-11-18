@@ -80,6 +80,9 @@ struct MetaItemPreviewLegacy {
     #[serde_as(deserialize_as = "Option<NumberAsString>")]
     runtime: Option<String>,
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError<Option<NumberAsString>>")]
+    age_rating: Option<String>,
+    #[serde(default)]
     #[serde_as(deserialize_as = "PickFirst<(_, Option<TimestampMilliSeconds<i64>>)>")]
     released: Option<DateTime<Utc>>,
     #[serde(default)]
@@ -117,6 +120,7 @@ struct MetaItemPreviewLegacy {
 ///     description: None,
 ///     release_info: None,
 ///     runtime: None,
+///     age_rating: None,
 ///     released: None,
 ///     poster_shape: PosterShape::default(),
 ///     links: vec![],
@@ -159,6 +163,9 @@ pub struct MetaItemPreview {
     pub description: Option<String>,
     pub release_info: Option<String>,
     pub runtime: Option<String>,
+    /// Optional age classification label supplied by the addon.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub age_rating: Option<String>,
     pub released: Option<DateTime<Utc>>,
     pub poster_shape: PosterShape,
     pub links: Vec<Link>,
@@ -232,6 +239,7 @@ impl From<MetaItemPreviewLegacy> for MetaItemPreview {
             description: legacy_item.description,
             release_info: legacy_item.release_info,
             runtime: legacy_item.runtime,
+            age_rating: legacy_item.age_rating,
             released: legacy_item.released,
             poster_shape: legacy_item.poster_shape,
             links,

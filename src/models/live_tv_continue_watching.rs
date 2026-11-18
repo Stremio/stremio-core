@@ -289,6 +289,7 @@ fn fallback_preview(library: &LibraryBucket, request: &ResourceRequest) -> MetaI
         description: None,
         release_info: None,
         runtime: None,
+        age_rating: None,
         released: None,
         links: vec![],
         trailer_streams: vec![],
