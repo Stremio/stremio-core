@@ -847,9 +847,11 @@ fn play_on_device<E: Env + 'static>(url: &Url, args: &PlayOnDeviceArgs) -> Effec
         .expect("request builder failed");
     EffectFuture::Concurrent(
         E::fetch::<_, serde_json::Value>(request)
-            .map_ok(|_| ())
             .map(enclose!(() move |result|
-                Msg::Internal(Internal::StreamingServerPlayOnDeviceResult(device, result))
+                Msg::Internal(Internal::StreamingServerPlayOnDeviceResult(
+                    device,
+                    result.and_then(casting::check_player_response),
+                ))
             ))
             .boxed_env(),
     )
