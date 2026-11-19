@@ -302,6 +302,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         &mut self.library_item,
                         self.next_video.as_ref(),
                         &self.selected,
+                        self.stream.as_ref().is_some_and(Loadable::is_ready),
                     )
                 };
 
@@ -946,6 +947,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &mut self.library_item,
                     self.next_video.as_ref(),
                     &self.selected,
+                    self.stream.as_ref().is_some_and(Loadable::is_ready),
                 );
 
                 let watched_effects =
@@ -1033,6 +1035,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &mut self.library_item,
                     self.next_video.as_ref(),
                     &self.selected,
+                    self.stream.as_ref().is_some_and(Loadable::is_ready),
                 );
 
                 let watched_effects =
@@ -1490,7 +1493,12 @@ fn library_item_state_update(
     library_item: &mut Option<LibraryItem>,
     next_video: Option<&Video>,
     selected: &Option<Selected>,
+    stream_converted: bool,
 ) -> Effects {
+    if !stream_converted {
+        return Effects::none().unchanged();
+    }
+
     match (library_item, selected) {
         (Some(library_item), Some(selected)) => {
             match (&selected.stream_request, &library_item.state.video_id) {
