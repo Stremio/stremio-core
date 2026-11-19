@@ -128,6 +128,9 @@ pub struct Player {
     pub push_library_item_time: DateTime<Utc>,
     #[serde(skip_serializing)]
     pub loaded: bool,
+    /// Whether the player has reported unpaused playback for this load.
+    #[serde(skip_serializing)]
+    pub playback_started: bool,
     #[serde(skip_serializing)]
     pub ended: bool,
     /// Whether the selected video has been manually marked as watched
@@ -176,7 +179,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.profile.addons,
                     self.selected.as_ref(),
                     self.analytics_context.as_ref(),
-                    (self.loaded && !self.ended).then_some(PlayerEventAction::Stop),
+                    (self.playback_started && !self.ended).then_some(PlayerEventAction::Stop),
                 );
                 // make sure we send the correct Trakt event if the model hasn't been unloaded
                 let trakt_event_effects = if self.selected.is_some() {
@@ -354,6 +357,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 });
                 self.load_time = Some(E::now());
                 self.loaded = false;
+                self.playback_started = false;
                 self.ended = false;
                 self.paused = None;
                 self.marked_video_as_watched = false;
@@ -395,7 +399,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.profile.addons,
                     self.selected.as_ref(),
                     self.analytics_context.as_ref(),
-                    (self.loaded && !self.ended).then_some(PlayerEventAction::Stop),
+                    (self.playback_started && !self.ended).then_some(PlayerEventAction::Stop),
                 );
                 let ended_effects = if !self.ended && self.selected.is_some() {
                     Effects::msg(Msg::Event(Event::PlayerStopped {
@@ -446,6 +450,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.analytics_context = None;
                 self.load_time = None;
                 self.loaded = false;
+                self.playback_started = false;
                 self.ended = false;
                 self.paused = None;
                 self.marked_video_as_watched = false;
@@ -569,7 +574,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .unchanged(),
                         _ => Effects::none(),
                     };
-                    let player_event = match (self.loaded, self.paused) {
+                    let player_event = match (self.playback_started, self.paused) {
                         (true, Some(true)) => Some(PlayerEventAction::Pause),
                         (true, Some(false)) => Some(PlayerEventAction::Start),
                         _ => None,
@@ -743,8 +748,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             {
                 self.paused = Some(*paused);
                 let player_event = if !*paused {
+                    self.playback_started = true;
                     Some(PlayerEventAction::Start)
-                } else if self.loaded {
+                } else if self.playback_started {
                     Some(PlayerEventAction::Pause)
                 } else {
                     None
@@ -835,7 +841,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.profile.addons,
                     self.selected.as_ref(),
                     self.analytics_context.as_ref(),
-                    (self.loaded && !self.ended).then_some(PlayerEventAction::Stop),
+                    (self.playback_started && !self.ended).then_some(PlayerEventAction::Stop),
                 );
                 self.ended = true;
                 Effects::msg(Msg::Event(Event::PlayerEnded {
