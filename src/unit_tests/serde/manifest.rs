@@ -1,8 +1,55 @@
-use crate::types::addon::{Manifest, ManifestBehaviorHints};
-use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
+use crate::{
+    types::{
+        addon::{Manifest, ManifestBehaviorHints, ManifestPreview},
+        api::{APIResult, CollectionResponse},
+    },
+    unit_tests::serde::default_tokens_ext::DefaultTokens,
+};
 use semver::Version;
+use serde_json::{from_value, json};
 use serde_test::{assert_de_tokens, assert_ser_tokens, Configure, Token};
 use url::Url;
+
+#[test]
+fn addon_collection_accepts_null_manifest_behavior_hints() {
+    let manifest = json!({
+        "id": "example.subtitles",
+        "version": "1.0.0",
+        "name": "Example Subtitles",
+        "types": ["movie"],
+        "resources": ["subtitles"],
+        "behaviorHints": null,
+    });
+    let mut configured_manifest = manifest.clone();
+    configured_manifest["id"] = json!("example.configured");
+    configured_manifest["behaviorHints"] = json!({ "configurationRequired": true });
+
+    let collection: APIResult<CollectionResponse> = from_value(json!({
+        "result": {
+            "lastModified": "2024-01-01T00:00:00Z",
+            "addons": [
+                { "transportUrl": "https://subtitles.example/manifest.json", "manifest": manifest.clone() },
+                { "transportUrl": "https://configured.example/manifest.json", "manifest": configured_manifest },
+            ],
+        },
+    }))
+    .unwrap();
+    let collection = collection.into_result().unwrap();
+    assert_eq!(collection.addons.len(), 2);
+    assert_eq!(
+        collection.addons[0].manifest.behavior_hints,
+        ManifestBehaviorHints::default()
+    );
+    assert!(
+        collection.addons[1]
+            .manifest
+            .behavior_hints
+            .configuration_required
+    );
+
+    let preview: ManifestPreview = from_value(manifest).unwrap();
+    assert_eq!(preview.behavior_hints, ManifestBehaviorHints::default());
+}
 
 #[test]
 fn manifest() {
@@ -203,6 +250,7 @@ fn manifest() {
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
                 Token::Str("behaviorHints"),
+                Token::Some,
             ],
             ManifestBehaviorHints::default_tokens(),
             vec![
