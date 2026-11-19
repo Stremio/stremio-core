@@ -1,11 +1,16 @@
-use crate::constants::OFFICIAL_ADDONS;
-use crate::runtime::Env;
-use crate::types::addon::Descriptor;
-use crate::types::profile::{Auth, AuthKey, Settings};
-use crate::types::{UniqueVec, UniqueVecAdapter};
 use serde::{Deserialize, Serialize};
-use serde_with::serde_as;
+use serde_with::{serde_as, VecSkipError};
 use url::Url;
+
+use crate::{
+    constants::OFFICIAL_ADDONS,
+    runtime::Env,
+    types::{
+        addon::Descriptor,
+        profile::{Auth, AuthKey, Settings},
+        UniqueVec, UniqueVecAdapter,
+    },
+};
 
 use super::UserId;
 
@@ -20,7 +25,7 @@ pub type UID = Option<UserId>;
 #[serde(rename_all = "camelCase")]
 pub struct Profile {
     pub auth: Option<Auth>,
-    #[serde_as(deserialize_as = "UniqueVec<Vec<_>, DescriptorUniqueVecAdapter>")]
+    #[serde_as(deserialize_as = "UniqueVec<VecSkipError<_>, DescriptorUniqueVecAdapter>")]
     pub addons: Vec<Descriptor>,
     /// This locking flag is raised when the API addon fetch request has failed
     /// in order to avoid overwriting the user's addons in the API
