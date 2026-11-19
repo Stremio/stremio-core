@@ -12,7 +12,7 @@ use crate::{
         ctx::Ctx,
     },
     runtime::{
-        msg::{Action, ActionLoad},
+        msg::{Action, ActionCtx, ActionLoad},
         Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture,
     },
     types::{
@@ -63,7 +63,7 @@ fn meta_item(id: &str, r#type: &str) -> MetaItem {
 }
 
 #[test]
-fn calendar() {
+fn calendar_load_and_library_changes() {
     #[derive(Model, Clone, Debug)]
     #[model(TestEnv)]
     struct TestModel {
@@ -128,12 +128,15 @@ fn calendar() {
         1000,
     );
 
-    TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Load(ActionLoad::Calendar(None)),
+    let dispatch = |action| {
+        TestEnv::run(|| {
+            runtime.dispatch(RuntimeAction {
+                field: None,
+                action,
+            });
         });
-    });
+    };
+    dispatch(Action::Load(ActionLoad::Calendar(None)));
 
     assert_eq!(
         REQUESTS.read().unwrap().len(),
@@ -161,4 +164,20 @@ fn calendar() {
         1,
         "should have a calendar item"
     );
+
+    dispatch(Action::Ctx(ActionCtx::RemoveFromLibrary("tt1".to_owned())));
+    assert!(
+        runtime.model().unwrap().calendar.items[0].items.is_empty(),
+        "removing a show should clear its episodes from the open calendar"
+    );
+    assert_eq!(REQUESTS.read().unwrap().len(), 1);
+
+    dispatch(Action::Ctx(ActionCtx::AddToLibrary(
+        meta_item("tt1", "series").preview,
+    )));
+    assert_eq!(runtime.model().unwrap().calendar.items[0].items.len(), 1);
+    assert_eq!(REQUESTS.read().unwrap().len(), 2);
+
+    dispatch(Action::Load(ActionLoad::Calendar(None)));
+    assert_eq!(REQUESTS.read().unwrap().len(), 2);
 }
