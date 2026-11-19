@@ -510,6 +510,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 }))
                 .unchanged()
             }
+            Msg::Action(Action::Player(
+                ActionPlayer::Seek { .. } | ActionPlayer::TimeChanged { .. },
+            )) if matches!(self.stream, Some(Loadable::Err(_))) => {
+                return Effects::none().unchanged();
+            }
             Msg::Action(Action::Player(ActionPlayer::Seek {
                 time,
                 duration,
