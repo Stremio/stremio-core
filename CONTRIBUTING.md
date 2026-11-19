@@ -26,6 +26,31 @@ When changing code:
 - Bump `SCHEMA_VERSION` in `src/constants.rs` and add a migration when changing types persisted to storage.
 - Add or update unit tests in `src/unit_tests/` for behavior changes.
 
+## Writing models
+
+Keep shared behavior and state changes in Core models. The
+[notification update](src/models/ctx/update_notifications.rs) decides which
+episodes qualify for notifications. Clients use that state to choose where and
+how to show badges. For a group of addon requests, expose each group's
+[`Loadable`](src/models/common/loadable.rs) state so clients can choose where
+to show loading indicators. Use context for shared data that a model can derive
+on demand, and store a copy only when the model needs to track it independently.
+
+Model updates return [`Effects`](src/runtime/effects.rs), which carry follow-up
+work and indicate whether the model changed. Use
+[`eq_update`](src/models/common/eq_update.rs) for fields that only need to change
+when their value differs. Use `Effects::default()` when an update has neither
+work nor a state change. When returning work without changing the model, call
+`.unchanged()` on those effects. Combine results with `.join()`.
+
+Use `Effects::msg(Msg::Internal(...))` to feed an immediate follow-up message
+back into the model. For example, notification updates emit
+`Internal::NotificationsChanged` after changing the notification list, and
+handling that message schedules the storage write. Represent async work with
+`EffectFuture` and return a message when it finishes. The
+[`Runtime`](src/runtime/runtime.rs) feeds `Internal` messages back into model
+updates and publishes `Event` messages to clients.
+
 ## Validation
 
 Run the checks relevant to your change before opening a pull request:
