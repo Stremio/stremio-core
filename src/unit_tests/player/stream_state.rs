@@ -1,14 +1,16 @@
 use chrono::{DateTime, Utc};
+use futures::future;
 
 use crate::{
     constants::{META_RESOURCE_NAME, STREAM_RESOURCE_NAME},
     models::{
+        common::Loadable,
         ctx::Ctx,
         player::{Player, Selected},
     },
     runtime::{
-        msg::{Internal, Msg},
-        UpdateWithCtx,
+        msg::{Action, ActionLoad, Internal, Msg},
+        EnvFutureExt, UpdateWithCtx,
     },
     types::{
         addon::{ResourcePath, ResourceRequest},
@@ -16,7 +18,7 @@ use crate::{
         resource::{Stream, StreamBehaviorHints, StreamSource},
         streams::{StreamItemState, StreamsItem, StreamsItemKey, SubtitleTrack},
     },
-    unit_tests::TestEnv,
+    unit_tests::{TestEnv, FETCH_HANDLER},
 };
 
 fn stream(source_url: &str, binge_group: Option<&str>) -> Stream {
@@ -104,6 +106,58 @@ fn saved_stream_state_seeds_player() {
             .and_then(|state| state.video_scale),
         Some(VideoScale::Cover)
     );
+}
+
+#[test]
+fn saved_subtitle_size_is_available_while_metadata_loads() {
+    let _guard = TestEnv::reset().unwrap();
+    *FETCH_HANDLER.write().unwrap() = Box::new(|_| future::pending().boxed_env());
+    let meta_id = "tt123456";
+    let video_id = "tt123456:1:1";
+    let saved_stream = stream("https://source_url/1", None);
+    let mut ctx = Ctx::default();
+    ctx.streams.items.insert(
+        StreamsItemKey {
+            meta_id: meta_id.to_owned(),
+            video_id: video_id.to_owned(),
+        },
+        streams_item(
+            saved_stream.clone(),
+            StreamItemState {
+                subtitle_size: Some(72.0),
+                ..Default::default()
+            },
+        ),
+    );
+    let mut player = Player::default();
+
+    for (source, expected_size) in [
+        (saved_stream, Some(72.0)),
+        (stream("https://source_url/2", None), None),
+    ] {
+        let load = Msg::Action(Action::Load(ActionLoad::Player(Box::new(Selected {
+            stream: source,
+            stream_request: Some(request(STREAM_RESOURCE_NAME, video_id)),
+            meta_request: Some(request(META_RESOURCE_NAME, meta_id)),
+            subtitles_path: None,
+        }))));
+        <Player as UpdateWithCtx<TestEnv>>::update(&mut player, &load, &ctx);
+
+        assert!(matches!(
+            player
+                .meta_item
+                .as_ref()
+                .and_then(|meta| meta.content.as_ref()),
+            Some(Loadable::Loading)
+        ));
+        assert_eq!(
+            player
+                .stream_state
+                .as_ref()
+                .and_then(|state| state.subtitle_size),
+            expected_size
+        );
+    }
 }
 
 #[test]
