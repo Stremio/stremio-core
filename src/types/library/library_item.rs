@@ -165,26 +165,29 @@ impl LibraryItem {
         meta_item: &MetaItem,
         now: &DateTime<Utc>,
     ) {
-        let Some(mut current_id) = self.state.video_id.clone() else {
+        let Some(current_id) = self.state.video_id.as_ref() else {
             return;
         };
-        if !watched.get_video(&current_id)
-            || !meta_item.videos.iter().any(|video| {
-                video.id == current_id
-                    && video
-                        .series_info
-                        .as_ref()
-                        .is_some_and(|series_info| series_info.season == season)
-            })
-        {
+        if !watched.get_video(current_id) {
+            return;
+        }
+        let Some(mut position) = meta_item.videos.iter().position(|video| {
+            &video.id == current_id
+                && video
+                    .series_info
+                    .as_ref()
+                    .is_some_and(|info| info.season == season)
+        }) else {
+            return;
+        };
+        if meta_item.is_live() {
+            self.state.time_offset = 0;
             return;
         }
 
         loop {
-            match meta_item.next_video(&current_id, now) {
-                Some(next) if watched.get_video(&next.id) => {
-                    current_id = next.id.to_owned();
-                }
+            match meta_item.next_video_at(position, now) {
+                Some(next) if watched.get_video(&next.id) => position += 1,
                 Some(next) => {
                     self.advance_to_video(&next.id);
                     return;
