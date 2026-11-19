@@ -1,4 +1,14 @@
-use crate::types::streaming_server::{Statistics, StatisticsRequest, TorrentStatisticsRequest};
+use futures::future;
+
+use crate::{
+    models::{common::Loadable, ctx::Ctx, streaming_server::StreamingServer},
+    runtime::{
+        msg::{Action, ActionStreamingServer, Internal, Msg},
+        EnvFutureExt, UpdateWithCtx,
+    },
+    types::streaming_server::{Statistics, StatisticsRequest, TorrentStatisticsRequest},
+    unit_tests::{TestEnv, FETCH_HANDLER},
+};
 
 const INFO_HASH: &str = "120c34efc4b29192d7c504344a39a7b0c2c6da21";
 // Recorded from server.js v4.21.1 for a single-file torrent, trimmed to the fields Core reads.
@@ -58,4 +68,57 @@ fn statistics_without_file_index() {
     assert_eq!(statistics.stream_len, None);
     assert_eq!(statistics.stream_name, None);
     assert_eq!(statistics.stream_progress, None);
+}
+
+#[test]
+fn changing_the_statistics_request_clears_the_previous_files_statistics() {
+    let _guard = TestEnv::reset().unwrap();
+    *FETCH_HANDLER.write().unwrap() = Box::new(|_| future::pending().boxed_env());
+    let ctx = Ctx::default();
+    let (mut server, _) = StreamingServer::new::<TestEnv>(&ctx.profile);
+    let url = server.selected.transport_url.clone();
+    let first = StatisticsRequest {
+        info_hash: INFO_HASH.to_owned(),
+        file_idx: Some(0),
+    };
+    let second = StatisticsRequest {
+        file_idx: Some(1),
+        ..first.clone()
+    };
+    let statistics = Statistics {
+        stream_name: Some("episode-1.mp4".to_owned()),
+        ..serde_json::from_str(STATS_WITHOUT_FILE_INDEX).unwrap()
+    };
+    let request = |request: &StatisticsRequest| {
+        Msg::Action(Action::StreamingServer(
+            ActionStreamingServer::GetStatistics(request.clone()),
+        ))
+    };
+    let response = |request: &StatisticsRequest, value| {
+        Msg::Internal(Internal::StreamingServerStatisticsResult(
+            (url.clone(), request.clone()),
+            Ok(Some(value)),
+        ))
+    };
+    let update = |server: &mut StreamingServer, msg| {
+        <StreamingServer as UpdateWithCtx<TestEnv>>::update(server, &msg, &ctx)
+    };
+
+    update(&mut server, request(&first));
+    assert_eq!(server.statistics, Some(Loadable::Loading));
+    update(&mut server, response(&first, statistics.clone()));
+    update(&mut server, request(&first));
+    assert_eq!(server.statistics, Some(Loadable::Ready(statistics.clone())));
+
+    update(&mut server, request(&second));
+    assert_eq!(server.statistics, Some(Loadable::Loading));
+    update(&mut server, response(&first, statistics.clone()));
+    assert_eq!(server.statistics, Some(Loadable::Loading));
+
+    let second_statistics = Statistics {
+        stream_name: Some("episode-2.mp4".to_owned()),
+        ..statistics
+    };
+    update(&mut server, response(&second, second_statistics.clone()));
+    assert_eq!(server.statistics, Some(Loadable::Ready(second_statistics)));
 }

@@ -65,7 +65,7 @@ pub struct StreamingServer {
     pub network_info: Loadable<NetworkInfo, EnvError>,
     pub device_info: Loadable<DeviceInfo, EnvError>,
     pub torrent: Option<(InfoHash, Loadable<ResourcePath, EnvError>)>,
-    /// [`Loadable::Loading`] is used only on the first statistics request.
+    /// [`Loadable::Loading`] is used on the first fetch for each statistics selection.
     pub statistics: Option<Loadable<Statistics, EnvError>>,
 }
 
@@ -244,9 +244,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
             Msg::Action(Action::StreamingServer(ActionStreamingServer::GetStatistics(request))) => {
                 let selected_effects =
                     eq_update(&mut self.selected.statistics, Some(request.to_owned()));
-                let is_different_request = self.selected.statistics.as_ref() != Some(request);
-                //set the Loading state only on the first fetch of the statistics
-                let statistics_effects = match (&self.statistics, is_different_request) {
+                let statistics_effects = match (&self.statistics, selected_effects.has_changed) {
                     (None, _) | (_, true) => {
                         eq_update(&mut self.statistics, Some(Loadable::Loading))
                     }
