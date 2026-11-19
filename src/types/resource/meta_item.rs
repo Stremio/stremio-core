@@ -441,6 +441,13 @@ pub struct Video {
 }
 
 impl Video {
+    pub(crate) fn deduplication_key(&self) -> (String, Option<DateTime<Utc>>) {
+        (
+            self.id.to_owned(),
+            self.epg_info.as_ref().map(|info| info.start_time),
+        )
+    }
+
     pub fn stream(&self) -> Option<Cow<'_, Stream>> {
         self.streams
             .iter()
@@ -461,10 +468,10 @@ struct VideoUniqueVecAdapter;
 
 impl UniqueVecAdapter for VideoUniqueVecAdapter {
     type Input = Video;
-    type Output = String;
+    type Output = (String, Option<DateTime<Utc>>);
 
     fn hash(video: &Self::Input) -> Self::Output {
-        video.id.to_owned()
+        video.deduplication_key()
     }
 }
 
