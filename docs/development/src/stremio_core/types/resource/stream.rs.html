@@ -1330,17 +1330,29 @@
 <a href="#1329" id="1329">1329</a>
 <a href="#1330" id="1330">1330</a>
 <a href="#1331" id="1331">1331</a>
-<a href="#1332" id="1332">1332</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
+<a href="#1332" id="1332">1332</a>
+<a href="#1333" id="1333">1333</a>
+<a href="#1334" id="1334">1334</a>
+<a href="#1335" id="1335">1335</a>
+<a href="#1336" id="1336">1336</a>
+<a href="#1337" id="1337">1337</a>
+<a href="#1338" id="1338">1338</a>
+<a href="#1339" id="1339">1339</a>
+<a href="#1340" id="1340">1340</a>
+<a href="#1341" id="1341">1341</a>
+<a href="#1342" id="1342">1342</a>
+<a href="#1343" id="1343">1343</a>
+<a href="#1344" id="1344">1344</a>
+<a href="#1345" id="1345">1345</a>
+<a href="#1346" id="1346">1346</a>
+<a href="#1347" id="1347">1347</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
 <span class="kw">use </span>std::{collections::HashMap, io::Write};
 
 <span class="kw">use </span>tracing::trace;
 
 <span class="kw">use </span>base64::Engine;
 <span class="kw">use </span>boolinator::Boolinator;
-<span class="kw">use </span>flate2::{
-    write::{ZlibDecoder, ZlibEncoder},
-    Compression,
-};
+<span class="kw">use </span>flate2::write::ZlibDecoder;
 <span class="kw">use </span>magnet_url::Magnet;
 <span class="kw">use </span>percent_encoding::utf8_percent_encode;
 <span class="kw">use </span>serde::{de::Error, Deserialize, Deserializer, Serialize};
@@ -1415,18 +1427,36 @@
     </span><span class="kw">pub </span>behavior_hints: StreamBehaviorHints,
 }
 
+<span class="kw">const </span>STORED_BLOCK_LEN: usize = <span class="number">31_745</span>;
+
 <span class="kw">impl</span>&lt;S&gt; Stream&lt;S&gt;
 <span class="kw">where
     </span>S: StreamSourceTrait + Serialize,
 {
     <span class="kw">pub fn </span>encode(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;String, anyhow::Error&gt; {
-        <span class="kw">let </span><span class="kw-2">mut </span>encoder = ZlibEncoder::new(Vec::new(), Compression::none());
         <span class="kw">let </span>stream = serde_json::to_string(<span class="kw-2">&amp;</span><span class="self">self</span>)<span class="question-mark">?</span>;
-        encoder.write_all(stream.as_bytes())<span class="question-mark">?</span>;
-        <span class="kw">let </span>stream = encoder.finish()<span class="question-mark">?</span>;
-        <span class="kw">let </span>stream = BASE64.encode(stream);
-        <span class="prelude-val">Ok</span>(stream)
+        <span class="kw">let </span>stream = stream.as_bytes();
+        <span class="kw">let </span><span class="kw-2">mut </span>zlib = <span class="macro">vec!</span>[<span class="number">0x78</span>, <span class="number">0x01</span>];
+        <span class="kw">let </span><span class="kw-2">mut </span>blocks = stream.chunks_exact(STORED_BLOCK_LEN);
+        <span class="kw">for </span>block <span class="kw">in </span>blocks.by_ref() {
+            push_stored_block(<span class="kw-2">&amp;mut </span>zlib, block, <span class="bool-val">false</span>);
+        }
+        push_stored_block(<span class="kw-2">&amp;mut </span>zlib, blocks.remainder(), <span class="bool-val">true</span>);
+        <span class="kw">let </span>(a, b) = stream.iter().fold((<span class="number">1u32</span>, <span class="number">0u32</span>), |(a, b), <span class="kw-2">&amp;</span>byte| {
+            <span class="kw">let </span>a = (a + u32::from(byte)) % <span class="number">65_521</span>;
+            (a, (b + a) % <span class="number">65_521</span>)
+        });
+        zlib.extend_from_slice(<span class="kw-2">&amp;</span>((b &lt;&lt; <span class="number">16</span>) | a).to_be_bytes());
+        <span class="prelude-val">Ok</span>(BASE64.encode(zlib))
     }
+}
+
+<span class="kw">fn </span>push_stored_block(zlib: <span class="kw-2">&amp;mut </span>Vec&lt;u8&gt;, block: <span class="kw-2">&amp;</span>[u8], last: bool) {
+    <span class="kw">let </span>len = block.len() <span class="kw">as </span>u16;
+    zlib.push(last <span class="kw">as </span>u8);
+    zlib.extend_from_slice(<span class="kw-2">&amp;</span>len.to_le_bytes());
+    zlib.extend_from_slice(<span class="kw-2">&amp;</span>(!len).to_le_bytes());
+    zlib.extend_from_slice(block);
 }
 
 <span class="kw">impl</span>&lt;S&gt; Stream&lt;S&gt;
@@ -2360,7 +2390,7 @@
             download_url,
             streaming_url,
             m3u_data_uri,
-            stream: converted.to_owned(),
+            stream: converted,
         }
     }
 }

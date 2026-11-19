@@ -131,7 +131,12 @@
 <a href="#130" id="130">130</a>
 <a href="#131" id="131">131</a>
 <a href="#132" id="132">132</a>
-<a href="#133" id="133">133</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
 </span><span class="kw">use </span>{gloo_utils::format::JsValueSerdeExt, wasm_bindgen::JsValue};
 
 <span class="kw">pub use </span>model::<span class="kw-2">*</span>;
@@ -212,11 +217,16 @@
     ctx: <span class="kw-2">&amp;</span>stremio_core::models::ctx::Ctx,
 ) -&gt; JsValue {
     <span class="kw">use </span>stremio_core::models::common::{
-        board_plan, board_spotlight_requests, default_spotlight_requests, spotlight_items, Loadable,
+        board_plan, default_spotlight_requests, spotlight_items, spotlight_requests_from_plan,
+        Loadable,
     };
 
-    <span class="kw">let </span>spotlight_requests = board_spotlight_requests(<span class="kw-2">&amp;</span>ctx.profile);
-    <span class="kw">let </span>catalogs = board_plan(<span class="kw-2">&amp;</span>ctx.profile);
+    <span class="kw">let </span>catalogs = <span class="kw">if </span>board_catalogs.catalogs.is_empty() {
+        Vec::new()
+    } <span class="kw">else </span>{
+        board_plan(<span class="kw-2">&amp;</span>ctx.profile)
+    };
+    <span class="kw">let </span>spotlight_requests = spotlight_requests_from_plan(<span class="kw-2">&amp;</span>ctx.profile, <span class="kw-2">&amp;</span>catalogs);
     <span class="kw">let </span>default_requests = default_spotlight_requests(<span class="kw-2">&amp;</span>catalogs);
     &lt;JsValue <span class="kw">as </span>JsValueSerdeExt&gt;::from_serde(<span class="kw-2">&amp;</span>model::BoardCatalogs {
         selected: <span class="kw-2">&amp;</span>board_catalogs.selected,

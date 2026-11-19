@@ -920,7 +920,9 @@
 <a href="#919" id="919">919</a>
 <a href="#920" id="920">920</a>
 <a href="#921" id="921">921</a>
-<a href="#922" id="922">922</a></pre></div><pre class="rust"><code><span class="kw">use </span>chrono::NaiveDate;
+<a href="#922" id="922">922</a>
+<a href="#923" id="923">923</a></pre></div><pre class="rust"><code><span class="kw">use </span>chrono::NaiveDate;
+<span class="kw">use </span>once_cell::sync::Lazy;
 <span class="kw">use </span>percent_encoding::utf8_percent_encode;
 <span class="kw">use </span>regex::Regex;
 <span class="kw">use </span>serde::Serialize;
@@ -1069,13 +1071,13 @@
             <span class="kw-2">&amp;</span>Settings,
         ),
     ) -&gt; <span class="self">Self </span>{
-        <span class="kw">let </span>http_regex = Regex::new(<span class="string">r"https?://"</span>).unwrap();
+        <span class="kw">static </span>HTTP_SCHEME: Lazy&lt;Regex&gt; = Lazy::new(|| Regex::new(<span class="string">r"https?://"</span>).unwrap());
 
         <span class="kw">let </span>stream_urls = StreamUrls::new(stream.clone(), streaming_server_url);
         <span class="kw">let </span>download = stream_urls.download_url.as_ref().map(ToString::to_string);
         <span class="kw">let </span>magnet = stream_urls.magnet_url.as_ref().map(ToString::to_string);
-        <span class="kw">let </span>streaming = stream_urls.streaming_url.clone();
-        <span class="kw">let </span>playlist = stream_urls.m3u_data_uri.clone();
+        <span class="kw">let </span>streaming = stream_urls.streaming_url;
+        <span class="kw">let </span>playlist = stream_urls.m3u_data_uri;
         <span class="kw">let </span>file_name = playlist.as_ref().map(|<span class="kw">_</span>| <span class="string">"playlist.m3u"</span>.to_owned());
 
         <span class="kw">let </span>open_player = <span class="kw">match </span><span class="kw-2">&amp;</span>streaming {
@@ -1087,7 +1089,7 @@
                     <span class="string">"choose" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
                         android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
                             <span class="string">"{}#Intent;type=video/any;scheme=https;end"</span>,
-                            http_regex.replace(url.as_str(), <span class="string">"intent://"</span>),
+                            HTTP_SCHEME.replace(url.as_str(), <span class="string">"intent://"</span>),
                         )),
                         ..Default::default()
                     }),
@@ -1096,7 +1098,7 @@
                         visionos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"vlc-x-callback://x-callback-url/stream?url={url_encoded}"</span>)),
                         android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
                             <span class="string">"{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end"</span>,
-                            http_regex.replace(url.as_str(), <span class="string">"intent://"</span>),
+                            HTTP_SCHEME.replace(url.as_str(), <span class="string">"intent://"</span>),
                         )),
                         windows: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"vlc://{url}"</span>)),
                         ..Default::default()
@@ -1104,20 +1106,20 @@
                     <span class="string">"mxplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
                         android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
                             <span class="string">"{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end"</span>,
-                            http_regex.replace(url.as_str(), <span class="string">"intent://"</span>),
+                            HTTP_SCHEME.replace(url.as_str(), <span class="string">"intent://"</span>),
                         )),
                         ..Default::default()
                     }),
                     <span class="string">"justplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
                         android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
                             <span class="string">"{}#Intent;package=com.brouken.player;type=video;scheme=https;end"</span>,
-                            http_regex.replace(url.as_str(), <span class="string">"intent://"</span>),
+                            HTTP_SCHEME.replace(url.as_str(), <span class="string">"intent://"</span>),
                         )),
                         ..Default::default()
                     }),
                     <span class="string">"outplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
-                        ios: <span class="prelude-val">Some</span>(http_regex.replace(url.as_str(), <span class="string">"outplayer://"</span>).to_string()),
-                        visionos: <span class="prelude-val">Some</span>(http_regex.replace(url.as_str(), <span class="string">"outplayer://"</span>).to_string()),
+                        ios: <span class="prelude-val">Some</span>(HTTP_SCHEME.replace(url.as_str(), <span class="string">"outplayer://"</span>).to_string()),
+                        visionos: <span class="prelude-val">Some</span>(HTTP_SCHEME.replace(url.as_str(), <span class="string">"outplayer://"</span>).to_string()),
                         ..Default::default()
                     }),
                     <span class="string">"infuse" </span>| <span class="string">"nativeplayer" </span>=&gt; <span class="prelude-val">Some</span>(x_callback_open_player(
@@ -1592,20 +1594,20 @@
             <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>LibraryItem&gt;,
         ),
     ) -&gt; <span class="self">Self </span>{
-        <span class="kw">let </span>position = library_item
-            .filter(|item| item.state.video_id.as_ref() == <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>stream_request.path.id))
-            .and_then(|item| item.state.time_offset.checked_div(<span class="number">1000</span>))
-            .filter(|position| <span class="kw-2">*</span>position &gt; <span class="number">0</span>);
-        <span class="kw">let </span>callback_url = <span class="macro">format!</span>(
-            <span class="string">"stremio:///detail/{}/{}/{}"</span>,
-            utf8_percent_encode(<span class="kw-2">&amp;</span>meta_request.path.r#type, URI_COMPONENT_ENCODE_SET),
-            utf8_percent_encode(<span class="kw-2">&amp;</span>meta_request.path.id, URI_COMPONENT_ENCODE_SET),
-            utf8_percent_encode(<span class="kw-2">&amp;</span>stream_request.path.id, URI_COMPONENT_ENCODE_SET)
-        );
         <span class="kw">let </span><span class="kw-2">mut </span>external_player =
             ExternalPlayerLink::from((stream, streaming_server_url, settings));
         <span class="kw">if let </span><span class="prelude-val">Some</span>(player_type @ (<span class="string">"infuse" </span>| <span class="string">"nativeplayer"</span>)) = settings.player_type.as_deref() {
             <span class="kw">if let </span><span class="prelude-val">Some</span>(streaming) = external_player.streaming.as_deref() {
+                <span class="kw">let </span>position = library_item
+                    .filter(|item| item.state.video_id.as_ref() == <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>stream_request.path.id))
+                    .and_then(|item| item.state.time_offset.checked_div(<span class="number">1000</span>))
+                    .filter(|position| <span class="kw-2">*</span>position &gt; <span class="number">0</span>);
+                <span class="kw">let </span>callback_url = <span class="macro">format!</span>(
+                    <span class="string">"stremio:///detail/{}/{}/{}"</span>,
+                    utf8_percent_encode(<span class="kw-2">&amp;</span>meta_request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(<span class="kw-2">&amp;</span>meta_request.path.id, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(<span class="kw-2">&amp;</span>stream_request.path.id, URI_COMPONENT_ENCODE_SET)
+                );
                 external_player.open_player = <span class="prelude-val">Some</span>(x_callback_open_player(
                     player_type,
                     streaming,

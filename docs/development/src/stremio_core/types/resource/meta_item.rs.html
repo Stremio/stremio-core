@@ -678,7 +678,9 @@
 <a href="#677" id="677">677</a>
 <a href="#678" id="678">678</a>
 <a href="#679" id="679">679</a>
-<a href="#680" id="680">680</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::cmp::Ordering;
+<a href="#680" id="680">680</a>
+<a href="#681" id="681">681</a>
+<a href="#682" id="682">682</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::cmp::Ordering;
 
 <span class="kw">use </span>std::borrow::Cow;
 <span class="kw">use </span>std::collections::HashMap;
@@ -986,10 +988,12 @@
         <span class="kw">if </span><span class="self">self</span>.is_live() {
             <span class="kw">return </span><span class="prelude-val">None</span>;
         }
-        <span class="kw">let </span>(position, current) = <span class="self">self
-            </span>.videos
-            .iter()
-            .find_position(|video| video.id == video_id)<span class="question-mark">?</span>;
+        <span class="kw">let </span>position = <span class="self">self</span>.videos.iter().position(|video| video.id == video_id)<span class="question-mark">?</span>;
+        <span class="self">self</span>.next_video_at(position, now)
+    }
+
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>next_video_at(<span class="kw-2">&amp;</span><span class="self">self</span>, position: usize, now: <span class="kw-2">&amp;</span>DateTime&lt;Utc&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Video&gt; {
+        <span class="kw">let </span>current = <span class="self">self</span>.videos.get(position)<span class="question-mark">?</span>;
         <span class="self">self</span>.videos.get(position + <span class="number">1</span>).filter(|next| {
             <span class="kw">let </span>cur_season = current
                 .series_info

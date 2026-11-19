@@ -153,7 +153,13 @@
 <a href="#152" id="152">152</a>
 <a href="#153" id="153">153</a>
 <a href="#154" id="154">154</a>
-<a href="#155" id="155">155</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashSet;
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashSet;
 
 <span class="kw">use </span>futures::FutureExt;
 
@@ -224,7 +230,13 @@
 }
 
 <span class="kw">pub fn </span>board_spotlight_requests(profile: <span class="kw-2">&amp;</span>Profile) -&gt; Vec&lt;ResourceRequest&gt; {
-    <span class="kw">let </span>plan = board_plan(profile);
+    spotlight_requests_from_plan(profile, <span class="kw-2">&amp;</span>board_plan(profile))
+}
+
+<span class="kw">pub fn </span>spotlight_requests_from_plan(
+    profile: <span class="kw-2">&amp;</span>Profile,
+    plan: <span class="kw-2">&amp;</span>[(<span class="kw-2">&amp;</span>Descriptor, <span class="kw-2">&amp;</span>ManifestCatalog, ResourceRequest)],
+) -&gt; Vec&lt;ResourceRequest&gt; {
     <span class="kw">let </span>picks = profile
         .settings
         .board_spotlight
@@ -235,7 +247,7 @@
         .cloned()
         .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
     <span class="kw">if </span>picks.is_empty() {
-        default_spotlight_requests(<span class="kw-2">&amp;</span>plan)
+        default_spotlight_requests(plan)
     } <span class="kw">else </span>{
         picks
     }

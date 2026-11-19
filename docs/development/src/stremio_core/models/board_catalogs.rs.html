@@ -105,8 +105,8 @@
 <a href="#104" id="104">104</a>
 <a href="#105" id="105">105</a>
 <a href="#106" id="106">106</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::common::{
-    board_plan, board_spotlight_requests, eq_update, resource_effect,
-    resource_update_with_vector_content, CatalogPage, Loadable, ResourceAction, ResourceLoadable,
+    board_plan, eq_update, resource_effect, resource_update_with_vector_content,
+    spotlight_requests_from_plan, CatalogPage, Loadable, ResourceAction, ResourceLoadable,
 };
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::Ctx;
 <span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionLoad, Internal, Msg};
@@ -167,9 +167,9 @@
 ) -&gt; Effects {
     <span class="kw">let </span>(next_catalogs, effects) = <span class="kw">match </span>selected {
         <span class="prelude-val">Some</span>(Selected { all }) =&gt; {
-            <span class="kw">let </span>spotlight_requests = board_spotlight_requests(profile);
-            board_plan(profile)
-                .into_iter()
+            <span class="kw">let </span>plan = board_plan(profile);
+            <span class="kw">let </span>spotlight_requests = spotlight_requests_from_plan(profile, <span class="kw-2">&amp;</span>plan);
+            plan.into_iter()
                 .map(|(<span class="kw">_</span>, <span class="kw">_</span>, request)| {
                     catalogs
                         .iter()

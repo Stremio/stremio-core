@@ -350,7 +350,11 @@
 <a href="#349" id="349">349</a>
 <a href="#350" id="350">350</a>
 <a href="#351" id="351">351</a>
-<a href="#352" id="352">352</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::model::deep_links_ext::DeepLinksExt;
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::model::deep_links_ext::DeepLinksExt;
 
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>url::Url;
@@ -414,7 +418,7 @@
     #[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span><span class="kw">pub struct </span>MetaItem&lt;<span class="lifetime">'a</span>&gt; {
         <span class="attr">#[serde(flatten)]
-        </span><span class="kw">pub </span>meta_item: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>stremio_core::types::resource::MetaItem,
+        </span><span class="kw">pub </span>preview: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>stremio_core::types::resource::MetaItemPreview,
         <span class="kw">pub </span>videos: Vec&lt;Video&lt;<span class="lifetime">'a</span>&gt;&gt;,
         <span class="kw">pub </span>trailer_streams: Vec&lt;Stream&lt;<span class="lifetime">'a</span>&gt;&gt;,
         <span class="kw">pub </span>in_library: bool,
@@ -474,6 +478,7 @@
     } <span class="kw">else </span>{
         meta_details.meta_streams.iter()
     };
+    <span class="kw">let </span>resume_streams = std::cell::OnceCell::new();
     &lt;JsValue <span class="kw">as </span>JsValueSerdeExt&gt;::from_serde(<span class="kw-2">&amp;</span>model::MetaDetails {
         selected: <span class="kw-2">&amp;</span>meta_details.selected,
         meta_item: meta_item
@@ -490,7 +495,7 @@
                         request,
                         content: <span class="prelude-val">Some</span>(Loadable::Ready(meta_item)),
                     } =&gt; Loadable::Ready(model::MetaItem {
-                        meta_item,
+                        preview: <span class="kw-2">&amp;</span>meta_item.preview,
                         videos: meta_item
                             .videos
                             .iter()
@@ -508,7 +513,7 @@
                                     .items
                                     .get(<span class="kw-2">&amp;</span>meta_item.preview.id)
                                     .filter(|library_item| {
-                                        <span class="prelude-val">Some</span>(video.id.to_owned()) == library_item.state.video_id
+                                        <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>video.id) == library_item.state.video_id.as_ref()
                                     })
                                     .map(|library_item| library_item.progress()),
                                 scheduled: meta_item.preview.behavior_hints.has_scheduled_videos,
@@ -592,15 +597,18 @@
                                 stream,
                                 progress: meta_details.library_item.as_ref().and_then(
                                     |library_item| {
-                                        ctx.streams
-                                            .items
-                                            .values()
-                                            .find(|item| {
-                                                item.stream == <span class="kw-2">*</span>stream
-                                                    &amp;&amp; <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>item.video_id)
-                                                        == library_item.state.video_id.as_ref()
-                                            })
-                                            .map(|<span class="kw">_</span>| library_item.progress())
+                                        <span class="kw">let </span>video_id = library_item.state.video_id.as_ref()<span class="question-mark">?</span>;
+                                        <span class="kw">let </span>candidates = resume_streams.get_or_init(|| {
+                                            ctx.streams
+                                                .items
+                                                .values()
+                                                .filter(|item| <span class="kw-2">&amp;</span>item.video_id == video_id)
+                                                .map(|item| <span class="kw-2">&amp;</span>item.stream)
+                                                .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
+                                        });
+                                        candidates
+                                            .contains(<span class="kw-2">&amp;</span>stream)
+                                            .then(|| library_item.progress())
                                     },
                                 ),
                                 deep_links: meta_item
