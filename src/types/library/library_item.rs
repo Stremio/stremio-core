@@ -53,9 +53,16 @@ impl LibraryItem {
     }
     #[inline]
     pub fn is_in_continue_watching(&self) -> bool {
-        // re-added (!self.removed || temp) check
-        // makes sure to add only relevant Library Items to the Continue Watching
-        self.r#type != "other" && (!self.removed || self.temp) && self.state.time_offset > 0
+        // 95% of the duration rounded up to the next whole millisecond.
+        let completion_offset = self.state.duration - self.state.duration / 20;
+        let completed_movie = self.r#type == "movie"
+            && self.state.duration > 0
+            && self.state.time_watched.min(self.state.time_offset) >= completion_offset;
+
+        self.r#type != "other"
+            && (!self.removed || self.temp)
+            && self.state.time_offset > 0
+            && !completed_movie
     }
 
     /// Returns watch progress percentage
