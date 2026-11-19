@@ -112,11 +112,16 @@ pub fn update_notifications<E: Env + 'static>(
                 library,
             );
 
-            // because notifications are getting loaded by forcing new requests
-            // we do not trigger a `NotificationsChanged` as the addons should return results first.
-            notifications_catalog_resource_effects
-                .join(notification_items_effects)
-                .unchanged()
+            // When no fetch is scheduled, no result will arrive to publish changes
+            // such as an episode in the cached catalog reaching its release time.
+            let publish_now = notifications_catalog_resource_effects.is_empty()
+                && notification_items_effects.has_changed;
+            let effects = notifications_catalog_resource_effects.join(notification_items_effects);
+            if publish_now {
+                effects.join(Effects::msg(Msg::Internal(Internal::NotificationsChanged)))
+            } else {
+                effects.unchanged()
+            }
         }
         Msg::Action(Action::Ctx(ActionCtx::DismissNotificationItem(id))) => Effects::msg(
             Msg::Internal(Internal::DismissNotificationItem(id.to_owned())),
