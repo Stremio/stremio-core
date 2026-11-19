@@ -1,6 +1,6 @@
 use crate::models::common::{
-    board_plan, board_spotlight_requests, eq_update, resource_effect,
-    resource_update_with_vector_content, CatalogPage, Loadable, ResourceAction, ResourceLoadable,
+    board_plan, eq_update, resource_effect, resource_update_with_vector_content,
+    spotlight_requests_from_plan, CatalogPage, Loadable, ResourceAction, ResourceLoadable,
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
@@ -61,9 +61,9 @@ fn catalogs_update<E: Env + 'static>(
 ) -> Effects {
     let (next_catalogs, effects) = match selected {
         Some(Selected { all }) => {
-            let spotlight_requests = board_spotlight_requests(profile);
-            board_plan(profile)
-                .into_iter()
+            let plan = board_plan(profile);
+            let spotlight_requests = spotlight_requests_from_plan(profile, &plan);
+            plan.into_iter()
                 .map(|(_, _, request)| {
                     catalogs
                         .iter()
