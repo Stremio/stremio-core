@@ -138,6 +138,8 @@ impl LocalSearch {
         let score_computer = move |searchable: &Searchable| {
             let imdb_rating_boost = searchable
                 .imdb_rating
+                // A zero rating has no boost, even when the feed's maximum is zero.
+                .filter(|rating| rating.to_f64() > 0.0)
                 .map(|imdb_rating| {
                     (imdb_rating.to_f64() / max_imdb_rating.to_f64()
                         * index_options.imdb_rating_weight)
