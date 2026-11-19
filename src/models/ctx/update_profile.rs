@@ -3,16 +3,20 @@ use std::collections::HashSet;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 
-use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY, STREAMING_SERVER_URL};
-use crate::models::ctx::{CtxError, CtxStatus, OtherError};
-use crate::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg};
-use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
-use crate::types::addon::Descriptor;
-use crate::types::api::{
-    fetch_api, APIError, APIRequest, APIResult, CollectionResponse, SuccessResponse,
+use crate::{
+    constants::{CINEMETA_URL, OFFICIAL_ADDONS, PROFILE_STORAGE_KEY, STREAMING_SERVER_URL},
+    models::ctx::{CtxError, CtxStatus, OtherError},
+    runtime::{
+        msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg},
+        Effect, EffectFuture, Effects, Env, EnvFutureExt,
+    },
+    types::{
+        addon::{Descriptor, ResourcePath, ResourceResponse},
+        api::{fetch_api, APIError, APIRequest, APIResult, CollectionResponse, SuccessResponse},
+        profile::{Auth, AuthKey, Password, Profile, Settings, User},
+        streams::StreamsBucket,
+    },
 };
-use crate::types::profile::{Auth, AuthKey, Password, Profile, Settings, User};
-use crate::types::streams::StreamsBucket;
 
 pub fn update_profile<E: Env + 'static>(
     profile: &mut Profile,
@@ -121,16 +125,53 @@ pub fn update_profile<E: Env + 'static>(
                     .into_iter()
                     .chain(removed_transport_urls)
                     .collect();
-                if profile.addons != next_addons {
+                let official_effects = if profile.addons != next_addons {
                     profile.addons = next_addons;
                     Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
                         .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                 } else {
                     Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
                         .unchanged()
-                }
+                };
+                let community_effects = if profile.addons.iter().any(is_community_update_candidate)
+                {
+                    Effects::one(pull_community_addon_catalog::<E>()).unchanged()
+                } else {
+                    Effects::none().unchanged()
+                };
+                official_effects.join(community_effects)
             }
         },
+        Msg::Internal(Internal::GuestAddonCatalogResult(Ok(ResourceResponse::Addons {
+            addons,
+        }))) if profile.auth_key().is_none() => {
+            let mut changed = false;
+            for installed in profile
+                .addons
+                .iter_mut()
+                .filter(|addon| is_community_update_candidate(addon))
+            {
+                // Require the full installed URL so configured installs keep their own manifest.
+                let update = addons
+                    .iter()
+                    .filter(|addon| {
+                        addon.transport_url == installed.transport_url
+                            && addon.manifest.id == installed.manifest.id
+                            && addon.manifest.version > installed.manifest.version
+                            && !addon.manifest.behavior_hints.configuration_required
+                    })
+                    .max_by(|left, right| left.manifest.version.cmp(&right.manifest.version));
+                if let Some(update) = update {
+                    installed.manifest.clone_from(&update.manifest);
+                    changed = true;
+                }
+            }
+            if changed {
+                Effects::msg(Msg::Internal(Internal::ProfileChanged))
+            } else {
+                Effects::none().unchanged()
+            }
+        }
         Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon))) => {
             Effects::msg(Msg::Internal(Internal::InstallAddon(addon.to_owned()))).unchanged()
         }
@@ -535,6 +576,28 @@ fn pull_addons_from_api<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
             })
             .map_ok(|CollectionResponse { addons, .. }| addons)
             .map(move |result| Msg::Internal(Internal::AddonsAPIResult(request, result)))
+            .boxed_env(),
+    )
+    .into()
+}
+
+fn is_community_update_candidate(addon: &Descriptor) -> bool {
+    !addon.flags.official
+        && !addon.flags.protected
+        && !OFFICIAL_ADDONS
+            .iter()
+            .any(|official| official.manifest.id == addon.manifest.id)
+}
+
+fn pull_community_addon_catalog<E: Env + 'static>() -> Effect {
+    EffectFuture::Concurrent(
+        E::addon_transport(&CINEMETA_URL)
+            .resource(&ResourcePath::without_extra(
+                "addon_catalog",
+                "all",
+                "community",
+            ))
+            .map(|result| Msg::Internal(Internal::GuestAddonCatalogResult(result)))
             .boxed_env(),
     )
     .into()

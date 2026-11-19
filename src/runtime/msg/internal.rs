@@ -51,6 +51,8 @@ pub enum Internal {
     CtxAuthResult(AuthRequest, Result<CtxAuthResponse, CtxError>),
     /// Result for pull addons from API.
     AddonsAPIResult(APIRequest, Result<Vec<Descriptor>, CtxError>),
+    /// Result of refreshing the community addon catalog for a guest profile.
+    GuestAddonCatalogResult(Result<ResourceResponse, EnvError>),
     /// Result for pull user from API.
     UserAPIResult {
         request: APIRequest,
