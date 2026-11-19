@@ -1,6 +1,7 @@
 use crate::{
     constants::{META_RESOURCE_NAME, STREAM_RESOURCE_NAME},
     models::{
+        common::Loadable,
         ctx::Ctx,
         player::{Player, Selected},
     },
@@ -193,11 +194,15 @@ fn run_with_library_item(library_item: LibraryItem, run: impl FnOnce(Runtime<Tes
 }
 
 fn load_video(runtime: &Runtime<TestEnv, TestModel>, video_id: &str) {
+    load_video_with_stream(runtime, video_id, create_stream());
+}
+
+fn load_video_with_stream(runtime: &Runtime<TestEnv, TestModel>, video_id: &str, stream: Stream) {
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
             action: Action::Load(ActionLoad::Player(Box::new(Selected {
-                stream: create_stream(),
+                stream,
                 stream_request: Some(make_stream_request(video_id)),
                 meta_request: Some(make_meta_request()),
                 subtitles_path: None,
@@ -665,6 +670,69 @@ fn mark_other_season_as_watched_preserves_resume_progress() {
             .filter(|video| video.series_info.as_ref().unwrap().season == season)
             .all(|video| watched.get_video(&video.id)));
     }
+}
+
+#[test]
+fn rejected_stream_ignores_playback_progress() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler_s1e1_current);
+
+    let video_id = "tt123456:1:1";
+    let mut item = make_library_item(video_id);
+    item.state.duration = 3_600_000;
+    item.state.time_offset = 600_000;
+    item.state.time_watched = 600_000;
+    let saved = item.state.clone();
+    run_with_library_item(item, |runtime| {
+        load_video_with_stream(
+            &runtime,
+            video_id,
+            Stream {
+                source: StreamSource::Rar {
+                    urls: vec![],
+                    file_idx: None,
+                    file_must_include: vec![],
+                },
+                ..create_stream()
+            },
+        );
+        assert!(matches!(
+            runtime.model().unwrap().player.stream,
+            Some(Loadable::Err(_))
+        ));
+
+        for action in [
+            ActionPlayer::TimeChanged {
+                time: 3_300_000,
+                duration: saved.duration,
+                device: "test_device".to_owned(),
+            },
+            ActionPlayer::Seek {
+                time: 3_400_000,
+                duration: saved.duration,
+                device: "test_device".to_owned(),
+            },
+        ] {
+            TestEnv::run(|| {
+                runtime.dispatch(RuntimeAction {
+                    field: None,
+                    action: Action::Player(action),
+                });
+            });
+            let model = runtime.model().unwrap();
+            assert_eq!(model.player.library_item.as_ref().unwrap().state, saved);
+            assert_eq!(model.ctx.library.items["tt123456"].state, saved);
+        }
+
+        load_video(&runtime, video_id);
+        dispatch_time_changed(&runtime, 620_000);
+        let model = runtime.model().unwrap();
+        let state = &model.player.library_item.as_ref().unwrap().state;
+        assert_eq!(state.video_id.as_deref(), Some(video_id));
+        assert_eq!(state.time_offset, 620_000);
+        assert_eq!(state.time_watched, 620_000);
+        assert_eq!(state.times_watched, 0);
+    });
 }
 
 #[test]
