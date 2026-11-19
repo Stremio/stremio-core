@@ -1028,7 +1028,7 @@ impl StreamUrls {
             download_url,
             streaming_url,
             m3u_data_uri,
-            stream: converted.to_owned(),
+            stream: converted,
         }
     }
 }

@@ -1,4 +1,5 @@
 use chrono::NaiveDate;
+use once_cell::sync::Lazy;
 use percent_encoding::utf8_percent_encode;
 use regex::Regex;
 use serde::Serialize;
@@ -147,13 +148,13 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
             &Settings,
         ),
     ) -> Self {
-        let http_regex = Regex::new(r"https?://").unwrap();
+        static HTTP_SCHEME: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://").unwrap());
 
         let stream_urls = StreamUrls::new(stream.clone(), streaming_server_url);
         let download = stream_urls.download_url.as_ref().map(ToString::to_string);
         let magnet = stream_urls.magnet_url.as_ref().map(ToString::to_string);
-        let streaming = stream_urls.streaming_url.clone();
-        let playlist = stream_urls.m3u_data_uri.clone();
+        let streaming = stream_urls.streaming_url;
+        let playlist = stream_urls.m3u_data_uri;
         let file_name = playlist.as_ref().map(|_| "playlist.m3u".to_owned());
 
         let open_player = match &streaming {
@@ -165,7 +166,7 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
                     "choose" => Some(OpenPlayerLink {
                         android: Some(format!(
                             "{}#Intent;type=video/any;scheme=https;end",
-                            http_regex.replace(url.as_str(), "intent://"),
+                            HTTP_SCHEME.replace(url.as_str(), "intent://"),
                         )),
                         ..Default::default()
                     }),
@@ -174,7 +175,7 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
                         visionos: Some(format!("vlc-x-callback://x-callback-url/stream?url={url_encoded}")),
                         android: Some(format!(
                             "{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
-                            http_regex.replace(url.as_str(), "intent://"),
+                            HTTP_SCHEME.replace(url.as_str(), "intent://"),
                         )),
                         windows: Some(format!("vlc://{url}")),
                         ..Default::default()
@@ -182,20 +183,20 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
                     "mxplayer" => Some(OpenPlayerLink {
                         android: Some(format!(
                             "{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end",
-                            http_regex.replace(url.as_str(), "intent://"),
+                            HTTP_SCHEME.replace(url.as_str(), "intent://"),
                         )),
                         ..Default::default()
                     }),
                     "justplayer" => Some(OpenPlayerLink {
                         android: Some(format!(
                             "{}#Intent;package=com.brouken.player;type=video;scheme=https;end",
-                            http_regex.replace(url.as_str(), "intent://"),
+                            HTTP_SCHEME.replace(url.as_str(), "intent://"),
                         )),
                         ..Default::default()
                     }),
                     "outplayer" => Some(OpenPlayerLink {
-                        ios: Some(http_regex.replace(url.as_str(), "outplayer://").to_string()),
-                        visionos: Some(http_regex.replace(url.as_str(), "outplayer://").to_string()),
+                        ios: Some(HTTP_SCHEME.replace(url.as_str(), "outplayer://").to_string()),
+                        visionos: Some(HTTP_SCHEME.replace(url.as_str(), "outplayer://").to_string()),
                         ..Default::default()
                     }),
                     "infuse" | "nativeplayer" => Some(x_callback_open_player(
@@ -670,20 +671,20 @@ impl
             Option<&LibraryItem>,
         ),
     ) -> Self {
-        let position = library_item
-            .filter(|item| item.state.video_id.as_ref() == Some(&stream_request.path.id))
-            .and_then(|item| item.state.time_offset.checked_div(1000))
-            .filter(|position| *position > 0);
-        let callback_url = format!(
-            "stremio:///detail/{}/{}/{}",
-            utf8_percent_encode(&meta_request.path.r#type, URI_COMPONENT_ENCODE_SET),
-            utf8_percent_encode(&meta_request.path.id, URI_COMPONENT_ENCODE_SET),
-            utf8_percent_encode(&stream_request.path.id, URI_COMPONENT_ENCODE_SET)
-        );
         let mut external_player =
             ExternalPlayerLink::from((stream, streaming_server_url, settings));
         if let Some(player_type @ ("infuse" | "nativeplayer")) = settings.player_type.as_deref() {
             if let Some(streaming) = external_player.streaming.as_deref() {
+                let position = library_item
+                    .filter(|item| item.state.video_id.as_ref() == Some(&stream_request.path.id))
+                    .and_then(|item| item.state.time_offset.checked_div(1000))
+                    .filter(|position| *position > 0);
+                let callback_url = format!(
+                    "stremio:///detail/{}/{}/{}",
+                    utf8_percent_encode(&meta_request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&meta_request.path.id, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&stream_request.path.id, URI_COMPONENT_ENCODE_SET)
+                );
                 external_player.open_player = Some(x_callback_open_player(
                     player_type,
                     streaming,
