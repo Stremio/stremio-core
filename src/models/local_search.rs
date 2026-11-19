@@ -185,6 +185,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LocalSearch {
             })) => {
                 let magnet = Magnet::new(search_query).ok();
                 match (&self.searcher, magnet) {
+                    (_, Some(_)) => eq_update(&mut self.search_results, vec![]),
                     // local search can be performed
                     (Some(searcher), None) => {
                         let new_search_results = searcher
@@ -196,8 +197,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LocalSearch {
                         eq_update(&mut self.search_results, new_search_results)
                     }
                     // we first need to load the Searchable records from Cinemeta
-                    // or search query is a magnet link
-                    _ => Effects::none().unchanged(),
+                    (None, None) => Effects::none().unchanged(),
                 }
             }
             Msg::Internal(Internal::LoadLocalSearchResult(_url, result)) => {
