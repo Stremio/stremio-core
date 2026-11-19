@@ -4,7 +4,7 @@ use crate::types::addon::Descriptor;
 use crate::types::profile::{Auth, AuthKey, Settings};
 use crate::types::{UniqueVec, UniqueVecAdapter};
 use serde::{Deserialize, Serialize};
-use serde_with::serde_as;
+use serde_with::{serde_as, DefaultOnNull, IfIsHumanReadable};
 use url::Url;
 
 use super::UserId;
@@ -27,6 +27,8 @@ pub struct Profile {
     /// if they install a new addon locally when we have defaulted to the official ones
     #[serde(default)]
     pub addons_locked: bool,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "IfIsHumanReadable<DefaultOnNull>")]
     pub settings: Settings,
 }
 
