@@ -243,7 +243,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     },
                     _ => eq_update(&mut self.meta_item, None),
                 };
-                let stream_state_effects = eq_update(&mut self.stream_state, None);
+                let stream_state_effects =
+                    stream_state_update(&mut self.stream_state, &self.selected, &ctx.streams);
                 let video_params_effects = eq_update(&mut self.video_params, None);
 
                 let stream_effects = stream_update(
@@ -1280,6 +1281,7 @@ fn stream_state_update(
 ) -> Effects {
     let next_state = match selected {
         Some(Selected {
+            stream,
             stream_request: Some(stream_request),
             meta_request: Some(meta_request),
             ..
@@ -1291,7 +1293,7 @@ fn stream_state_update(
             streams
                 .items
                 .get(&key)
-                .and_then(|stream_item| stream_item.state.to_owned())
+                .and_then(|stream_item| stream_item.adjusted_state(stream))
         }
         _ => None,
     };
