@@ -89,20 +89,17 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                         .profile
                         .addons
                         .iter()
-                        .find(|addon| addon.transport_url == request.base)
-                        .and_then(|addon| {
-                            addon.manifest.catalogs.iter().find(|manifest_catalog| {
-                                manifest_catalog.id == request.path.id
-                                    && manifest_catalog.r#type == request.path.r#type
-                            })
-                        })
-                        .map(|manifest_catalog| {
-                            manifest_catalog
-                                .extra
-                                .iter()
-                                .any(|extra_prop| extra_prop.name == SKIP_EXTRA_PROP.name)
-                        })
-                        .unwrap_or_default() =>
+                        .filter(|addon| addon.transport_url == request.base)
+                        .flat_map(|addon| &addon.manifest.catalogs)
+                        .any(|manifest_catalog| {
+                            manifest_catalog.id == request.path.id
+                                && manifest_catalog.r#type == request.path.r#type
+                                && manifest_catalog.is_extra_supported(&request.path.extra)
+                                && manifest_catalog
+                                    .extra
+                                    .iter()
+                                    .any(|extra_prop| extra_prop.name == SKIP_EXTRA_PROP.name)
+                        }) =>
                     {
                         let skip = request
                             .path
