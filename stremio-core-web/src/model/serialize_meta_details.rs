@@ -62,7 +62,7 @@ mod model {
     #[serde(rename_all = "camelCase")]
     pub struct MetaItem<'a> {
         #[serde(flatten)]
-        pub meta_item: &'a stremio_core::types::resource::MetaItem,
+        pub preview: &'a stremio_core::types::resource::MetaItemPreview,
         pub videos: Vec<Video<'a>>,
         pub trailer_streams: Vec<Stream<'a>>,
         pub in_library: bool,
@@ -139,7 +139,7 @@ pub fn serialize_meta_details<E: Env + 'static>(
                         request,
                         content: Some(Loadable::Ready(meta_item)),
                     } => Loadable::Ready(model::MetaItem {
-                        meta_item,
+                        preview: &meta_item.preview,
                         videos: meta_item
                             .videos
                             .iter()
@@ -157,7 +157,7 @@ pub fn serialize_meta_details<E: Env + 'static>(
                                     .items
                                     .get(&meta_item.preview.id)
                                     .filter(|library_item| {
-                                        Some(video.id.to_owned()) == library_item.state.video_id
+                                        Some(&video.id) == library_item.state.video_id.as_ref()
                                     })
                                     .map(|library_item| library_item.progress()),
                                 scheduled: meta_item.preview.behavior_hints.has_scheduled_videos,
