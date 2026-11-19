@@ -3,6 +3,20 @@ function getId() {
 }
 
 function Bridge(scope, handler) {
+    const pending = new Map();
+
+    handler.addEventListener('message', ({ data: { response } }) => {
+        const callbacks = response && pending.get(response.id);
+        if (!callbacks) return;
+
+        pending.delete(response.id);
+        if ('error' in response.result) {
+            callbacks.reject(response.result.error);
+        } else {
+            callbacks.resolve(response.result.data);
+        }
+    });
+
     handler.addEventListener('message', async ({ data: { request } }) => {
         if (!request) return;
 
@@ -26,17 +40,7 @@ function Bridge(scope, handler) {
     this.call = async (path, args) => {
         const id = getId();
         return new Promise((resolve, reject) => {
-            const onMessage = ({ data: { response } }) => {
-                if (!response || response.id !== id) return;
-
-                handler.removeEventListener('message', onMessage);
-                if ('error' in response.result) {
-                    reject(response.result.error);
-                } else {
-                    resolve(response.result.data);
-                }
-            };
-            handler.addEventListener('message', onMessage);
+            pending.set(id, { resolve, reject });
             handler.postMessage({ request: { id, path, args } });
         });
     };
