@@ -5,10 +5,7 @@ use tracing::trace;
 
 use base64::Engine;
 use boolinator::Boolinator;
-use flate2::{
-    write::{ZlibDecoder, ZlibEncoder},
-    Compression,
-};
+use flate2::write::ZlibDecoder;
 use magnet_url::Magnet;
 use percent_encoding::utf8_percent_encode;
 use serde::{de::Error, Deserialize, Deserializer, Serialize};
@@ -83,18 +80,36 @@ pub struct Stream<S: StreamSourceTrait = StreamSource> {
     pub behavior_hints: StreamBehaviorHints,
 }
 
+const STORED_BLOCK_LEN: usize = 31_745;
+
 impl<S> Stream<S>
 where
     S: StreamSourceTrait + Serialize,
 {
     pub fn encode(&self) -> Result<String, anyhow::Error> {
-        let mut encoder = ZlibEncoder::new(Vec::new(), Compression::none());
         let stream = serde_json::to_string(&self)?;
-        encoder.write_all(stream.as_bytes())?;
-        let stream = encoder.finish()?;
-        let stream = BASE64.encode(stream);
-        Ok(stream)
+        let stream = stream.as_bytes();
+        let mut zlib = vec![0x78, 0x01];
+        let mut blocks = stream.chunks_exact(STORED_BLOCK_LEN);
+        for block in blocks.by_ref() {
+            push_stored_block(&mut zlib, block, false);
+        }
+        push_stored_block(&mut zlib, blocks.remainder(), true);
+        let (a, b) = stream.iter().fold((1u32, 0u32), |(a, b), &byte| {
+            let a = (a + u32::from(byte)) % 65_521;
+            (a, (b + a) % 65_521)
+        });
+        zlib.extend_from_slice(&((b << 16) | a).to_be_bytes());
+        Ok(BASE64.encode(zlib))
     }
+}
+
+fn push_stored_block(zlib: &mut Vec<u8>, block: &[u8], last: bool) {
+    let len = block.len() as u16;
+    zlib.push(last as u8);
+    zlib.extend_from_slice(&len.to_le_bytes());
+    zlib.extend_from_slice(&(!len).to_le_bytes());
+    zlib.extend_from_slice(block);
 }
 
 impl<S> Stream<S>
