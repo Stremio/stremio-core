@@ -122,6 +122,7 @@ pub fn serialize_meta_details<E: Env + 'static>(
     } else {
         meta_details.meta_streams.iter()
     };
+    let resume_streams = std::cell::OnceCell::new();
     <JsValue as JsValueSerdeExt>::from_serde(&model::MetaDetails {
         selected: &meta_details.selected,
         meta_item: meta_item
@@ -240,15 +241,18 @@ pub fn serialize_meta_details<E: Env + 'static>(
                                 stream,
                                 progress: meta_details.library_item.as_ref().and_then(
                                     |library_item| {
-                                        ctx.streams
-                                            .items
-                                            .values()
-                                            .find(|item| {
-                                                item.stream == *stream
-                                                    && Some(&item.video_id)
-                                                        == library_item.state.video_id.as_ref()
-                                            })
-                                            .map(|_| library_item.progress())
+                                        let video_id = library_item.state.video_id.as_ref()?;
+                                        let candidates = resume_streams.get_or_init(|| {
+                                            ctx.streams
+                                                .items
+                                                .values()
+                                                .filter(|item| &item.video_id == video_id)
+                                                .map(|item| &item.stream)
+                                                .collect::<Vec<_>>()
+                                        });
+                                        candidates
+                                            .contains(&stream)
+                                            .then(|| library_item.progress())
                                     },
                                 ),
                                 deep_links: meta_item
