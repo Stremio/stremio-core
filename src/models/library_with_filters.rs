@@ -233,7 +233,7 @@ impl<E: Env + 'static, F: LibraryFilter> UpdateWithCtx<E> for LibraryWithFilters
                     _ => Effects::none().unchanged(),
                 }
             }
-            Msg::Internal(Internal::LibraryChanged(_)) => {
+            Msg::Internal(Internal::LibraryChanged(_) | Internal::NotificationsChanged) => {
                 let selectable_effects = selectable_update::<F>(
                     &mut self.selectable,
                     &self.selected,
