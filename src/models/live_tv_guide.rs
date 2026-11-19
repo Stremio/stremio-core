@@ -537,8 +537,8 @@ fn channels_update(
                 channel_guide.shows = channel_guide
                     .shows
                     .drain(..)
-                    // a show spanning UTC midnight is returned for both dates
-                    .unique_by(|video| video.id.to_owned())
+                    // A listing spanning UTC midnight can occur in both date pages.
+                    .unique_by(Video::deduplication_key)
                     .sorted_by_key(|video| {
                         video.epg_info.as_ref().map(|epg_info| epg_info.start_time)
                     })

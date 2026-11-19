@@ -297,17 +297,15 @@ fn live_tv_guide_with_utc_offset() {
     };
 
     fn channel(shows: Vec<Video>) -> ResourceResponse {
-        ResourceResponse::MetasDetailed {
-            metas_detailed: vec![MetaItem {
-                preview: MetaItemPreview {
-                    id: "pure:axn".to_owned(),
-                    r#type: "tv".to_owned(),
-                    name: "AXN".to_owned(),
-                    ..MetaItemPreview::default()
-                },
-                videos: shows,
+        serde_json::from_value(serde_json::json!({
+            "metasDetailed": [{
+                "id": "pure:axn",
+                "type": "tv",
+                "name": "AXN",
+                "videos": shows,
             }],
-        }
+        }))
+        .unwrap()
     }
 
     fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
@@ -357,6 +355,12 @@ fn live_tv_guide_with_utc_offset() {
                     Video {
                         id: "pure:axn:2".to_owned(),
                         epg_info: Some(epg_info((12, 0), (13, 0))),
+                        ..Video::default()
+                    },
+                    // Same programme ID as the midnight showing, with a different start time.
+                    Video {
+                        id: "pure:axn:1".to_owned(),
+                        epg_info: Some(epg_info((8, 0), (9, 0))),
                         ..Video::default()
                     },
                     // past the local day window end (21:00 UTC) - must be filtered out
@@ -434,10 +438,14 @@ fn live_tv_guide_with_utc_offset() {
         live_tv_guide.channels[0]
             .shows
             .iter()
-            .map(|show| show.id.as_str())
+            .map(|show| (show.id.as_str(), show.epg_info.as_ref().unwrap().start_time))
             .collect::<Vec<_>>(),
-        vec!["pure:axn:1", "pure:axn:2"],
-        "should include only shows overlapping the local day window, deduplicated and ordered by start time"
+        vec![
+            ("pure:axn:1", Utc.with_ymd_and_hms(2026, 7, 1, 23, 0, 0).unwrap()),
+            ("pure:axn:1", epg_info((8, 0), (9, 0)).start_time),
+            ("pure:axn:2", epg_info((12, 0), (13, 0)).start_time),
+        ],
+        "the guide should keep repeat airings, merge duplicate listings, and order shows by start time"
     );
 }
 
