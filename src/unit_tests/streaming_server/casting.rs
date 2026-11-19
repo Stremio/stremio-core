@@ -2,7 +2,7 @@ use std::{
     any::Any,
     sync::{
         atomic::{AtomicBool, Ordering},
-        Arc,
+        Arc, RwLock,
     },
 };
 
@@ -18,10 +18,12 @@ use crate::{
         streaming_server::{CastingStatus, PlaybackDevice, StreamingServer},
     },
     runtime::{
-        msg::{Action, ActionCtx, ActionStreamingServer, CastingSubtitles, PlayOnDeviceArgs},
+        msg::{
+            Action, ActionCtx, ActionStreamingServer, CastingSubtitles, Event, PlayOnDeviceArgs,
+        },
         EnvError, EnvFutureExt, Runtime, RuntimeAction, RuntimeEvent,
     },
-    unit_tests::{default_fetch_handler, TestEnv, FETCH_HANDLER, REQUESTS},
+    unit_tests::{default_fetch_handler, TestEnv, EVENTS, FETCH_HANDLER, REQUESTS},
 };
 
 #[derive(Model, Clone, Debug)]
@@ -287,6 +289,46 @@ fn failed_start_cleans_up_and_external_launches_do_not_create_cast_sessions() {
     TestEnv::run(|| dispatch(&runtime, ActionStreamingServer::PlayOnDevice(play("vlc"))));
     assert!(runtime.model().unwrap().streaming_server.casting.is_none());
     assert_eq!(requests().len(), 3);
+}
+
+#[test]
+fn external_playback_reports_success_only_when_the_server_accepts_it() {
+    let _env = TestEnv::reset().unwrap();
+    let (runtime, rx) = runtime();
+    *FETCH_HANDLER.write().unwrap() = Box::new(|request| {
+        let response = if request.url.ends_with("/casting/a/player") {
+            json!("Receiver rejected the stream")
+        } else if request.url.ends_with("/casting/b/player") {
+            json!({ "error": "Receiver unavailable" })
+        } else if request.url.ends_with("/casting/vlc/player") {
+            json!({})
+        } else {
+            return default_fetch_handler(request);
+        };
+        future::ok(Box::new(response) as Box<dyn Any + Send>).boxed_env()
+    });
+    let runtime = Arc::new(RwLock::new(runtime));
+    TestEnv::run_with_runtime(rx, runtime.clone(), move || {
+        let runtime = runtime.read().unwrap();
+        for device in ["a", "b", "vlc"] {
+            dispatch(&runtime, ActionStreamingServer::PlayOnDevice(play(device)));
+        }
+    });
+
+    let events = EVENTS.read().unwrap();
+    let successes = events
+        .iter()
+        .filter_map(
+            |event| match event.downcast_ref::<RuntimeEvent<TestEnv, CastModel>>() {
+                Some(RuntimeEvent::CoreEvent(Event::PlayingOnDevice { device })) => {
+                    Some(device.as_str())
+                }
+                _ => None,
+            },
+        )
+        .collect::<Vec<_>>();
+    assert_eq!(requests().len(), 3);
+    assert_eq!(successes, ["vlc"]);
 }
 
 #[test]
