@@ -28,6 +28,7 @@ fn meta_preview() -> MetaItemPreview {
         released: None,
         poster_shape: Default::default(),
         links: vec![],
+        imdb_rating_count: None,
         trailer_streams: vec![],
         behavior_hints: Default::default(),
     }

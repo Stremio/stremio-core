@@ -19,6 +19,7 @@ fn meta_item_deep_links() {
         released: None,
         poster_shape: PosterShape::Poster,
         links: vec![],
+        imdb_rating_count: None,
         trailer_streams: vec![],
         behavior_hints: MetaItemBehaviorHints::default(),
     };
@@ -57,6 +58,7 @@ fn meta_item_deep_links_behavior_hints() {
         released: None,
         poster_shape: PosterShape::Poster,
         links: vec![],
+        imdb_rating_count: None,
         trailer_streams: vec![],
         behavior_hints: MetaItemBehaviorHints {
             is_live: false,
@@ -101,6 +103,7 @@ fn meta_item_deep_links_behavior_hints_yt_id() {
         released: None,
         poster_shape: PosterShape::Poster,
         links: vec![],
+        imdb_rating_count: None,
         trailer_streams: vec![],
         behavior_hints: MetaItemBehaviorHints {
             is_live: false,
