@@ -12,7 +12,7 @@ use crate::{
         addon::{
             Descriptor, Manifest, ManifestResource, ResourcePath, ResourceRequest, ResourceResponse,
         },
-        library::{LibraryBucket, LibraryItem},
+        library::{LibraryBucket, LibraryItem, LibraryItemState},
         profile::Profile,
         resource::{MetaItem, MetaItemPreview, SeriesInfo, Stream, StreamSource, Video},
     },
@@ -69,11 +69,8 @@ fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
     }
 }
 
-fn new_runtime() -> (
-    Runtime<TestEnv, TestModel>,
-    Receiver<RuntimeEvent<TestEnv, TestModel>>,
-) {
-    let library_item = LibraryItem {
+fn series_library_item() -> LibraryItem {
+    LibraryItem {
         id: "tt123456".into(),
         name: "Test Series".into(),
         r#type: "series".into(),
@@ -85,10 +82,16 @@ fn new_runtime() -> (
         mtime: Default::default(),
         state: Default::default(),
         behavior_hints: Default::default(),
-    };
+    }
+}
+
+fn new_runtime() -> (
+    Runtime<TestEnv, TestModel>,
+    Receiver<RuntimeEvent<TestEnv, TestModel>>,
+) {
     new_runtime_with_library(LibraryBucket {
         uid: None,
-        items: vec![("tt123456".into(), library_item)]
+        items: vec![("tt123456".into(), series_library_item())]
             .into_iter()
             .collect(),
     })
@@ -246,6 +249,68 @@ fn ended_playback_sends_a_single_stop() {
         ],
         "automatic watched is left to the tracker, no library event is sent"
     );
+}
+
+#[test]
+fn unloading_before_playback_preserves_the_resume_episode() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
+    let library_item = LibraryItem {
+        state: LibraryItemState {
+            video_id: Some(create_video(1).id),
+            time_offset: 3_400_000,
+            duration: 3_600_000,
+            ..Default::default()
+        },
+        ..series_library_item()
+    };
+    let (runtime, _rx) = new_runtime_with_library(LibraryBucket::new(None, vec![library_item]));
+
+    load(&runtime);
+    assert_eq!(
+        runtime
+            .model()
+            .unwrap()
+            .player
+            .next_video
+            .as_ref()
+            .unwrap()
+            .id,
+        create_video(2).id
+    );
+    player_action(&runtime, ActionPlayer::PausedChanged { paused: true });
+    player_action(
+        &runtime,
+        ActionPlayer::TimeChanged {
+            time: 3_400_000,
+            duration: 3_600_000,
+            device: "test".to_owned(),
+        },
+    );
+    dispatch(&runtime, Action::Unload);
+
+    {
+        let model = runtime.model().unwrap();
+        let state = &model.ctx.library.items["tt123456"].state;
+        assert_eq!(state.video_id.as_deref(), Some("tt123456:1:1"));
+        assert_eq!(state.time_offset, 3_400_000);
+    }
+
+    load(&runtime);
+    player_action(
+        &runtime,
+        ActionPlayer::TimeChanged {
+            time: 3_401_000,
+            duration: 3_600_000,
+            device: "test".to_owned(),
+        },
+    );
+    dispatch(&runtime, Action::Unload);
+
+    let model = runtime.model().unwrap();
+    let state = &model.ctx.library.items["tt123456"].state;
+    assert_eq!(state.video_id.as_deref(), Some("tt123456:1:2"));
+    assert_eq!(state.time_offset, 1);
 }
 
 #[test]
