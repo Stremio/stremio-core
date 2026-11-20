@@ -84,9 +84,21 @@ mod model {
     #[serde(rename_all = "camelCase")]
     pub struct LibraryItemState<'a> {
         pub time_offset: &'a u64,
-        #[serde(rename = "video_id")]
         pub video_id: &'a Option<String>,
+        // Keep the old key for web clients that still read it.
+        #[serde(rename = "video_id")]
+        pub legacy_video_id: &'a Option<String>,
     }
+    impl<'a> From<&'a stremio_core::types::library::LibraryItemState> for LibraryItemState<'a> {
+        fn from(state: &'a stremio_core::types::library::LibraryItemState) -> Self {
+            Self {
+                time_offset: &state.time_offset,
+                video_id: &state.video_id,
+                legacy_video_id: &state.video_id,
+            }
+        }
+    }
+
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct LibraryItem<'a> {
@@ -324,10 +336,7 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
             .as_ref()
             .map(|library_item| model::LibraryItem {
                 id: &library_item.id,
-                state: model::LibraryItemState {
-                    time_offset: &library_item.state.time_offset,
-                    video_id: &library_item.state.video_id,
-                },
+                state: model::LibraryItemState::from(&library_item.state),
             }),
         stream_state: player.stream_state.as_ref(),
         intro_outro: player.intro_outro.as_ref(),
@@ -401,4 +410,34 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
             }),
     })
     .expect("JsValue from model::Player")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::model;
+    use serde_json::json;
+    use stremio_core::types::library::LibraryItemState;
+
+    #[test]
+    fn web_player_state_exposes_both_video_id_keys() {
+        for video_id in [Some("tt1234567:1:2".to_owned()), None] {
+            let state = LibraryItemState {
+                time_offset: 25_000,
+                video_id: video_id.clone(),
+                ..Default::default()
+            };
+
+            assert_eq!(
+                serde_json::to_value(model::LibraryItemState::from(&state)).unwrap(),
+                json!({
+                    "timeOffset": 25_000,
+                    "videoId": video_id,
+                    "video_id": video_id,
+                })
+            );
+            let core_json = serde_json::to_value(&state).unwrap();
+            assert_eq!(core_json["video_id"], json!(video_id));
+            assert!(core_json.get("videoId").is_none());
+        }
+    }
 }
