@@ -1,5 +1,5 @@
 use crate::types::addon::ManifestBehaviorHints;
-use serde_test::{assert_de_tokens, assert_tokens, Token};
+use serde_test::{assert_de_tokens, assert_tokens, Configure, Token};
 
 #[test]
 fn manifest_behavior_hints() {
@@ -10,7 +10,8 @@ fn manifest_behavior_hints() {
             configurable: true,
             configuration_required: true,
             epg_provider: true,
-        },
+        }
+        .compact(),
         &[
             Token::Struct {
                 name: "ManifestBehaviorHints",
@@ -36,7 +37,8 @@ fn manifest_behavior_hints() {
             configurable: false,
             configuration_required: false,
             epg_provider: false,
-        },
+        }
+        .compact(),
         &[
             Token::Struct {
                 name: "ManifestBehaviorHints",

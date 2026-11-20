@@ -4,12 +4,19 @@ use derivative::Derivative;
 use derive_more::Deref;
 use either::Either;
 use serde::{Deserialize, Deserializer, Serialize};
-use serde_with::{serde_as, DefaultOnError, DefaultOnNull, DeserializeAs, NoneAsEmptyString};
+use serde_with::{
+    serde_as, DefaultOnError, DefaultOnNull, DeserializeAs, DisplayFromStr, IfIsHumanReadable,
+    NoneAsEmptyString, PickFirst,
+};
 use url::Url;
 
-use crate::constants::{EPG_DATE_EXTRA_PROP, SKIP_EXTRA_PROP};
-use crate::types::addon::{ExtraValue, ResourcePath};
-use crate::types::{UniqueVec, UniqueVecAdapter};
+use crate::{
+    constants::{EPG_DATE_EXTRA_PROP, SKIP_EXTRA_PROP},
+    types::{
+        addon::{ExtraValue, ResourcePath},
+        UniqueVec, UniqueVecAdapter,
+    },
+};
 
 /// Re-export the semver::Version
 pub use semver::Version;
@@ -448,6 +455,7 @@ impl Default for OptionsLimit {
     }
 }
 
+#[serde_as]
 #[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestBehaviorHints {
@@ -456,6 +464,7 @@ pub struct ManifestBehaviorHints {
     #[serde(default)]
     pub p2p: bool,
     #[serde(default)]
+    #[serde_as(deserialize_as = "IfIsHumanReadable<PickFirst<(_, DisplayFromStr)>, _>")]
     pub configurable: bool,
     #[serde(default)]
     pub configuration_required: bool,
