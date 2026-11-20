@@ -81,10 +81,10 @@ pub struct ResourcePath {
     /// - `last-videos/{extra}.json`
     /// - `tt7440726` (`meta/series/tt7440726.json`)
     pub id: String,
-    /// Extra query parameters to be passed to the endpoint
+    /// Extra parameters to pass to the addon endpoint.
     ///
-    /// When calling the endpoint using the [`AddonHTTPTransport`](crate::addon_transport::AddonHTTPTransport),
-    /// they will be encoded using [`query_params_encode()`](crate::types::query_params_encode()).
+    /// For modern HTTP addons, [`AddonHTTPTransport`](crate::addon_transport::AddonHTTPTransport)
+    /// encodes these pairs into the final URL path segment.
     pub extra: Vec<ExtraValue>,
 }
 
