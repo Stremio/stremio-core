@@ -8,6 +8,7 @@ mod mark_meta_item_as_watched;
 mod update_events;
 mod update_remote_config;
 mod notifications {
+    mod toggle_library_item_notifications;
     mod update_notifications;
 }
 mod pull_addons_from_api;
