@@ -1,6 +1,7 @@
 mod addon_events;
 mod mark_video_as_watched;
 mod next_stream;
+mod skip_gaps;
 mod stream_state;
 
 use crate::{
