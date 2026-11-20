@@ -1082,7 +1082,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(watched_effects)
                     .join(skip_gaps_effects)
             }
-            Msg::Internal(Internal::SkipGapsResult(skip_gaps_request, result)) => {
+            Msg::Internal(Internal::SkipGapsResult(skip_gaps_request, result))
+                if matches!(
+                    self.skip_gaps.as_ref(),
+                    Some((request, Loadable::Loading)) if request == skip_gaps_request
+                ) =>
+            {
                 let skip_gaps_next = match result.to_owned() {
                     Ok(response) => Loadable::Ready(response),
                     Err(err) => Loadable::Err(err),
