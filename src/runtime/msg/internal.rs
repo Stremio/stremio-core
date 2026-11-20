@@ -50,7 +50,11 @@ pub enum Internal {
     /// Result for authenticate to API.
     CtxAuthResult(AuthRequest, Result<CtxAuthResponse, CtxError>),
     /// Result for pull addons from API.
-    AddonsAPIResult(APIRequest, Result<Vec<Descriptor>, CtxError>),
+    AddonsAPIResult {
+        auth_key: AuthKey,
+        revision: u64,
+        result: Result<Vec<Descriptor>, CtxError>,
+    },
     /// Result for pull user from API.
     UserAPIResult {
         request: APIRequest,
