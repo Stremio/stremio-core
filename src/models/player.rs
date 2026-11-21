@@ -6,8 +6,10 @@ use url::Url;
 
 use crate::constants::{
     BASE64, CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, PLAYER_IGNORE_SEEK_AFTER,
-    STREAM_RESOURCE_NAME, SUBTITLES_RESOURCE_NAME, VIDEO_FILENAME_EXTRA_PROP,
-    VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
+    STREAM_RESOURCE_NAME, SUBTITLES_RESOURCE_NAME, VIDEO_DURATION_MS_EXTRA_PROP,
+    VIDEO_EMBEDDED_SUBTITLE_SIGNATURE_EXTRA_PROP, VIDEO_FILENAME_EXTRA_PROP,
+    VIDEO_FPS_MILLI_EXTRA_PROP, VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP,
+    WATCHED_THRESHOLD_COEF,
 };
 use crate::models::common::{
     addon_events_effects, eq_update, player_event_path, resource_update,
@@ -77,6 +79,9 @@ pub struct VideoParams {
     pub hash: Option<String>,
     pub size: Option<u64>,
     pub filename: Option<String>,
+    pub fps_milli: Option<u64>,
+    pub duration_ms: Option<u64>,
+    pub embedded_subtitle_signature: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
@@ -1572,6 +1577,16 @@ fn subtitles_update<E: Env + 'static>(
                             .and_then(|video_params| video_params.filename.clone())
                     });
 
+            let video_fps_milli = video_params
+                .as_ref()
+                .and_then(|video_params| video_params.fps_milli);
+            let video_duration_ms = video_params
+                .as_ref()
+                .and_then(|video_params| video_params.duration_ms);
+            let embedded_subtitle_signature = video_params
+                .as_ref()
+                .and_then(|video_params| video_params.embedded_subtitle_signature.clone());
+
             if video_hash.is_none()
                 && video_size.is_none()
                 && video_filename.is_none()
@@ -1592,7 +1607,19 @@ fn subtitles_update<E: Env + 'static>(
                                 &VIDEO_SIZE_EXTRA_PROP,
                                 video_size.map(|size| size.to_string()),
                             )
-                            .extend_one(&VIDEO_FILENAME_EXTRA_PROP, video_filename),
+                            .extend_one(&VIDEO_FILENAME_EXTRA_PROP, video_filename)
+                            .extend_one(
+                                &VIDEO_FPS_MILLI_EXTRA_PROP,
+                                video_fps_milli.map(|fps_milli| fps_milli.to_string()),
+                            )
+                            .extend_one(
+                                &VIDEO_DURATION_MS_EXTRA_PROP,
+                                video_duration_ms.map(|duration_ms| duration_ms.to_string()),
+                            )
+                            .extend_one(
+                                &VIDEO_EMBEDDED_SUBTITLE_SIGNATURE_EXTRA_PROP,
+                                embedded_subtitle_signature,
+                            ),
                         ..subtitles_path.to_owned()
                     }),
                     addons,

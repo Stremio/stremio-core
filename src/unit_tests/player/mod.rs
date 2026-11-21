@@ -2,6 +2,7 @@ mod addon_events;
 mod mark_video_as_watched;
 mod next_stream;
 mod stream_state;
+mod subtitles_extra;
 
 use crate::{
     models::{

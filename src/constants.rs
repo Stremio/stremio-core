@@ -142,6 +142,25 @@ pub static VIDEO_FILENAME_EXTRA_PROP: Lazy<ExtraProp> = Lazy::new(|| ExtraProp {
     options: vec![],
     options_limit: OptionsLimit::default(),
 });
+pub static VIDEO_FPS_MILLI_EXTRA_PROP: Lazy<ExtraProp> = Lazy::new(|| ExtraProp {
+    name: "fpsMilli".to_owned(),
+    is_required: false,
+    options: vec![],
+    options_limit: OptionsLimit::default(),
+});
+pub static VIDEO_DURATION_MS_EXTRA_PROP: Lazy<ExtraProp> = Lazy::new(|| ExtraProp {
+    name: "durationMs".to_owned(),
+    is_required: false,
+    options: vec![],
+    options_limit: OptionsLimit::default(),
+});
+pub static VIDEO_EMBEDDED_SUBTITLE_SIGNATURE_EXTRA_PROP: Lazy<ExtraProp> =
+    Lazy::new(|| ExtraProp {
+        name: "embeddedSubtitleSignature".to_owned(),
+        is_required: false,
+        options: vec![],
+        options_limit: OptionsLimit::default(),
+    });
 pub static LAST_VIDEOS_IDS_EXTRA_PROP: Lazy<ExtraProp> = Lazy::new(|| ExtraProp {
     name: "lastVideosIds".to_owned(),
     is_required: false,
