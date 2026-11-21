@@ -497,18 +497,21 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(skip_gaps_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::StreamStateChanged { state })) => {
-                Effects::msg(Msg::Internal(Internal::StreamStateChanged {
-                    state: state.to_owned(),
-                    stream_request: self
-                        .selected
-                        .as_ref()
-                        .and_then(|selected| selected.stream_request.to_owned()),
-                    meta_request: self
-                        .selected
-                        .as_ref()
-                        .and_then(|selected| selected.meta_request.to_owned()),
-                }))
-                .unchanged()
+                match self.selected.as_ref() {
+                    Some(Selected {
+                        stream,
+                        stream_request: Some(stream_request),
+                        meta_request: Some(meta_request),
+                        ..
+                    }) => Effects::msg(Msg::Internal(Internal::StreamStateChanged {
+                        state: state.to_owned(),
+                        stream: stream.to_owned(),
+                        stream_request: stream_request.to_owned(),
+                        meta_request: meta_request.to_owned(),
+                    }))
+                    .unchanged(),
+                    _ => Effects::none().unchanged(),
+                }
             }
             Msg::Action(Action::Player(ActionPlayer::Seek {
                 time,
