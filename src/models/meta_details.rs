@@ -103,7 +103,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &ctx.library,
                 );
                 let watched_effects =
-                    watched_update(&mut self.watched, &self.meta_items, &self.library_item);
+                    watched_update(&mut self.watched, &self.meta_items, &self.library_item).join(
+                        all_episodes_watched_effects::<E>(
+                            &self.library_item,
+                            &self.watched,
+                            &self.meta_items,
+                            &ctx.library,
+                        ),
+                    );
                 let library_item_sync_effects = library_item_sync(&self.library_item, &ctx.profile);
 
                 let rating_info_effects =
@@ -166,13 +173,23 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 (Some(library_item), Some(watched)) => {
                     let mut library_item = library_item.to_owned();
                     library_item.mark_video_as_watched::<E>(watched, video, *is_watched);
+                    let meta_item = self
+                        .meta_items
+                        .iter()
+                        .find_map(|item| item.content.as_ref().and_then(|c| c.ready()));
+                    if let Some(meta_item) = meta_item {
+                        let mut next_watched = watched.to_owned();
+                        next_watched.set_video(&video.id, *is_watched);
+                        library_item.update_all_episodes_watched(
+                            meta_item,
+                            &next_watched,
+                            &E::now(),
+                        );
+                    }
                     if *is_watched
                         && library_item.state.video_id.as_deref() == Some(video.id.as_str())
                     {
-                        let next_video_id = self
-                            .meta_items
-                            .iter()
-                            .find_map(|item| item.content.as_ref().and_then(|c| c.ready()))
+                        let next_video_id = meta_item
                             .and_then(|meta_item| meta_item.next_video(&video.id, &E::now()))
                             .map(|video| video.id.to_owned());
                         if let Some(next_video_id) = next_video_id {
@@ -221,6 +238,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                                 watched,
                                 videos,
                                 *is_watched,
+                            );
+                            library_item.update_all_episodes_watched(
+                                meta_item,
+                                &watched,
+                                &E::now(),
                             );
                             if *is_watched {
                                 library_item.reconcile_series_resume_after_watched_change(
@@ -330,7 +352,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &ctx.library,
                 );
                 let watched_effects =
-                    watched_update(&mut self.watched, &self.meta_items, &self.library_item);
+                    watched_update(&mut self.watched, &self.meta_items, &self.library_item).join(
+                        all_episodes_watched_effects::<E>(
+                            &self.library_item,
+                            &self.watched,
+                            &self.meta_items,
+                            &ctx.library,
+                        ),
+                    );
                 selected_override_effects
                     .join(live_schedule_effects)
                     .join(meta_items_effects)
@@ -426,7 +455,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &ctx.library,
                 );
                 let watched_effects =
-                    watched_update(&mut self.watched, &self.meta_items, &self.library_item);
+                    watched_update(&mut self.watched, &self.meta_items, &self.library_item).join(
+                        all_episodes_watched_effects::<E>(
+                            &self.library_item,
+                            &self.watched,
+                            &self.meta_items,
+                            &ctx.library,
+                        ),
+                    );
                 library_item_effects.join(watched_effects)
             }
             Msg::Internal(Internal::ProfileChanged) => {
@@ -451,7 +487,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &ctx.library,
                 );
                 let watched_effects =
-                    watched_update(&mut self.watched, &self.meta_items, &self.library_item);
+                    watched_update(&mut self.watched, &self.meta_items, &self.library_item).join(
+                        all_episodes_watched_effects::<E>(
+                            &self.library_item,
+                            &self.watched,
+                            &self.meta_items,
+                            &ctx.library,
+                        ),
+                    );
                 let rating_info_effects =
                     rating_info_update::<E>(&mut self.rating_info, &self.selected, &ctx.profile);
 
@@ -1040,4 +1083,43 @@ fn watched_update(
         })
         .map(|(meta_item, library_item)| library_item.state.watched_bitfield(&meta_item.videos));
     eq_update(watched, next_watched)
+}
+
+/// Lazy migration of the series watched marker (`all_episodes_watched`).
+///
+/// Library items saved before the marker existed have it unset (`None`).
+/// The first time such a series is opened and its episode list loads,
+/// the marker is computed from the watched episodes and the item is saved.
+///
+/// Does nothing when:
+/// - the marker is already set. It then only changes when the series is marked/unmarked
+///   or episodes get watched, so a series the user unmarked is not turned back into watched here.
+/// - the item is not in the user's library yet (a temporary item built from the loaded meta).
+/// - the episode list or the decoded watched episodes are not loaded yet.
+fn all_episodes_watched_effects<E: Env + 'static>(
+    library_item: &Option<LibraryItem>,
+    watched: &Option<WatchedBitField>,
+    meta_items: &[ResourceLoadable<MetaItem>],
+    library: &LibraryBucket,
+) -> Effects {
+    let meta_item = meta_items
+        .iter()
+        .find_map(|meta_item| match &meta_item.content {
+            Some(Loadable::Ready(meta_item)) => Some(meta_item),
+            _ => None,
+        });
+    match (library_item, watched, meta_item) {
+        (Some(library_item), Some(watched), Some(meta_item))
+            if library_item.state.all_episodes_watched.is_none()
+                && library.items.contains_key(&library_item.id) =>
+        {
+            let mut library_item = library_item.to_owned();
+            if library_item.update_all_episodes_watched(meta_item, watched, &E::now()) {
+                Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item))).unchanged()
+            } else {
+                Effects::none().unchanged()
+            }
+        }
+        _ => Effects::none().unchanged(),
+    }
 }

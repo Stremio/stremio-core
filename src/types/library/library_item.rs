@@ -69,9 +69,20 @@ impl LibraryItem {
     }
 
     /// Returns whether the item has been watched
+    ///
+    /// For `series` it's the series watched marker, falling back to `times_watched`
+    /// when the marker has not been computed yet.
     #[inline]
     pub fn watched(&self) -> bool {
-        self.state.times_watched > 0
+        match self.state.all_episodes_watched {
+            Some(all_episodes_watched) if self.is_series() => all_episodes_watched,
+            _ => self.state.times_watched > 0,
+        }
+    }
+
+    #[inline]
+    pub fn is_series(&self) -> bool {
+        self.r#type == "series"
     }
 
     /// Pulling notifications relies on a few key things:
@@ -115,6 +126,58 @@ impl LibraryItem {
         } else {
             self.state.times_watched = 0;
         }
+
+        // The episodes bitfield is left as is, only the series marker is set
+        if self.is_series() {
+            self.state.all_episodes_watched = Some(is_watched);
+        }
+    }
+
+    /// Updates the series watched marker from the watched episodes.
+    ///
+    /// Standard episodes are the released ones (no release date counts as released)
+    /// outside of season 0 (specials). When the marker is unknown, it gets computed
+    /// from the bitfield. Otherwise it can only flip from `false` to `true`,
+    /// so unwatching an episode never unwatches a series marked as watched.
+    ///
+    /// Returns `true` if the marker changed.
+    pub fn update_all_episodes_watched(
+        &mut self,
+        meta_item: &MetaItem,
+        watched: &WatchedBitField,
+        now: &DateTime<Utc>,
+    ) -> bool {
+        if !self.is_series() || self.state.all_episodes_watched == Some(true) {
+            return false;
+        }
+
+        let mut standard_episodes = meta_item
+            .videos
+            .iter()
+            .filter(|video| {
+                video
+                    .series_info
+                    .as_ref()
+                    .is_some_and(|series_info| series_info.season != 0)
+                    && video
+                        .released
+                        .as_ref()
+                        .map_or(true, |released| released <= now)
+            })
+            .peekable();
+        // Never compute the marker from an empty episode list
+        if standard_episodes.peek().is_none() {
+            return false;
+        }
+
+        let all_episodes_watched = standard_episodes.all(|video| watched.get_video(&video.id));
+        let next = Some(all_episodes_watched);
+        if self.state.all_episodes_watched == next {
+            return false;
+        }
+
+        self.state.all_episodes_watched = next;
+        true
     }
 
     /// Sets the video as watched/not watched.
@@ -322,6 +385,16 @@ pub struct LibraryItemState {
     /// Default: receive notifications
     #[serde(default)]
     pub no_notif: bool,
+    /// Series watched marker, stored separately from the `watched` episode bitfield.
+    ///
+    /// - [`None`] - unknown (items saved before this field existed), [`LibraryItem::watched`]
+    /// falls back to `times_watched > 0` until an episode list is loaded and it gets computed.
+    /// - Manually marking the series as watched/unwatched sets it directly.
+    /// - Watching episodes can only flip it from `false` to `true`
+    ///
+    /// Only used for `series`, other types use `times_watched`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub all_episodes_watched: Option<bool>,
 }
 
 impl LibraryItemState {

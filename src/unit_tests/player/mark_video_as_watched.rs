@@ -786,3 +786,160 @@ fn mark_video_as_unwatched_does_not_advance_video_id() {
         "video_id must not change when the video is marked as unwatched before unload",
     );
 }
+
+fn make_series_library_item(
+    all_episodes_watched: Option<bool>,
+    watched_ids: &[&str],
+) -> LibraryItem {
+    let mut watched =
+        LibraryItemState::default().watched_bitfield(&[create_video(1, 1), create_video(1, 2)]);
+    for id in watched_ids {
+        watched.set_video(id, true);
+    }
+    let mut library_item = make_library_item("tt123456:1:1");
+    library_item.state.all_episodes_watched = all_episodes_watched;
+    library_item.state.watched = Some(watched.into());
+    library_item
+}
+
+#[test]
+fn time_changed_past_threshold_does_not_watch_series_with_unwatched_episodes() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler_s1e1_current);
+
+    run_with_library_item(make_series_library_item(Some(false), &[]), |runtime| {
+        load_video(&runtime, "tt123456:1:1");
+        // past 70% of the 1h duration
+        dispatch_time_changed(&runtime, 2_600_000);
+
+        let model = runtime.model().unwrap();
+        let library_item = model.player.library_item.as_ref().unwrap();
+        assert_eq!(
+            library_item.state.flagged_watched, 1,
+            "episode crossed the threshold"
+        );
+        assert_eq!(library_item.state.times_watched, 1);
+        assert_eq!(
+            library_item.state.all_episodes_watched,
+            Some(false),
+            "S1E2 is still unwatched",
+        );
+        assert!(
+            !library_item.watched(),
+            "one watched episode must not watch the whole series",
+        );
+    });
+}
+
+#[test]
+fn time_changed_past_threshold_on_last_unwatched_episode_watches_series() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler_s1e1_current);
+
+    run_with_library_item(
+        make_series_library_item(Some(false), &["tt123456:1:2"]),
+        |runtime| {
+            load_video(&runtime, "tt123456:1:1");
+            dispatch_time_changed(&runtime, 2_600_000);
+
+            let model = runtime.model().unwrap();
+            let library_item = model.player.library_item.as_ref().unwrap();
+            assert_eq!(library_item.state.all_episodes_watched, Some(true));
+            assert!(library_item.watched());
+        },
+    );
+}
+
+#[test]
+fn time_changed_below_threshold_does_not_update_series_marker() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler_s1e1_current);
+
+    run_with_library_item(
+        make_series_library_item(Some(false), &["tt123456:1:2"]),
+        |runtime| {
+            load_video(&runtime, "tt123456:1:1");
+            dispatch_time_changed(&runtime, 1_000_000);
+
+            let model = runtime.model().unwrap();
+            let library_item = model.player.library_item.as_ref().unwrap();
+            assert_eq!(library_item.state.flagged_watched, 0);
+            assert_eq!(library_item.state.all_episodes_watched, Some(false));
+        },
+    );
+}
+
+fn dispatch_player_action(runtime: &Runtime<TestEnv, TestModel>, action: ActionPlayer) {
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Player(action),
+        });
+    });
+}
+
+fn stored_series(runtime: &Runtime<TestEnv, TestModel>) -> LibraryItem {
+    runtime
+        .model()
+        .unwrap()
+        .ctx
+        .library
+        .items
+        .get("tt123456")
+        .unwrap()
+        .to_owned()
+}
+
+#[test]
+fn side_drawer_marking_last_episode_watches_series_and_unmarking_keeps_it() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler_s1e1_current);
+
+    run_with_library_item(make_series_library_item(Some(false), &[]), |runtime| {
+        load_video(&runtime, "tt123456:1:1");
+
+        dispatch_player_action(
+            &runtime,
+            ActionPlayer::MarkVideoAsWatched(create_video(1, 2), true),
+        );
+        assert_eq!(
+            stored_series(&runtime).state.all_episodes_watched,
+            Some(false)
+        );
+
+        dispatch_player_action(
+            &runtime,
+            ActionPlayer::MarkVideoAsWatched(create_video(1, 1), true),
+        );
+        assert_eq!(
+            stored_series(&runtime).state.all_episodes_watched,
+            Some(true)
+        );
+
+        dispatch_player_action(
+            &runtime,
+            ActionPlayer::MarkVideoAsWatched(create_video(1, 2), false),
+        );
+        assert_eq!(
+            stored_series(&runtime).state.all_episodes_watched,
+            Some(true),
+            "unwatching an episode doesn't unwatch the series",
+        );
+    });
+}
+
+#[test]
+fn side_drawer_marking_season_watches_series() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler_s1e1_current);
+
+    run_with_library_item(make_series_library_item(Some(false), &[]), |runtime| {
+        load_video(&runtime, "tt123456:1:1");
+
+        dispatch_player_action(&runtime, ActionPlayer::MarkSeasonAsWatched(1, true));
+        assert_eq!(
+            stored_series(&runtime).state.all_episodes_watched,
+            Some(true)
+        );
+    });
+}

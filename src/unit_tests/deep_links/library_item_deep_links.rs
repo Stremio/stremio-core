@@ -87,6 +87,7 @@ fn library_item_deep_links_no_video() {
             video_id: None,
             watched: None,
             no_notif: true,
+            all_episodes_watched: None,
         },
         behavior_hints: Default::default(),
     };
@@ -135,6 +136,7 @@ fn library_item_deep_links_state_video_id_no_time_offset_infuse_player() {
             video_id: Some("tt13622776:1:5".to_string()),
             watched: None,
             no_notif: true,
+            all_episodes_watched: None,
         },
         behavior_hints: Default::default(),
     };
@@ -188,6 +190,7 @@ fn library_item_deep_links_state_video_id() {
             video_id: Some("tt13622776:1:5".to_string()),
             watched: None,
             no_notif: true,
+            all_episodes_watched: None,
         },
         behavior_hints: Default::default(),
     };
@@ -239,6 +242,7 @@ fn library_item_deep_links_behavior_hints_default_video_id() {
             video_id: None,
             watched: None,
             no_notif: true,
+            all_episodes_watched: None,
         },
         behavior_hints: MetaItemBehaviorHints {
             is_live: false,
@@ -296,6 +300,7 @@ fn library_item_deep_links_infuse_position() {
             video_id: Some("tt13622776:1:5".to_string()),
             watched: None,
             no_notif: true,
+            all_episodes_watched: None,
         },
         behavior_hints: Default::default(),
     };
@@ -364,6 +369,7 @@ fn library_item_deep_links_state_and_behavior_hints_default_video_id() {
             video_id: Some("video_id".to_string()),
             watched: None,
             no_notif: true,
+            all_episodes_watched: None,
         },
         behavior_hints: MetaItemBehaviorHints {
             is_live: false,
@@ -421,6 +427,7 @@ fn library_item_deep_links_state_no_time_offset_and_behavior_hints_default_video
             video_id: Some("video_id".to_string()),
             watched: None,
             no_notif: true,
+            all_episodes_watched: None,
         },
         behavior_hints: MetaItemBehaviorHints {
             is_live: false,

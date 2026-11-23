@@ -130,6 +130,10 @@ pub enum Event {
         id: LibraryItemId,
     },
     /// The LibraryItem with the given id has been marked as watched or unwatched (Overrides the previous watched state)
+    ///
+    /// Stale: no longer emitted since the `LibraryItemMarkAsWatched` handler
+    /// stopped sending it (8abe024db, 2024-02-12) and no client reacts to it.
+    /// Kept only because client bindings (e.g. the protobuf `Event` in stremio-unity) still map it.
     LibraryItemMarkedAsWatched {
         id: LibraryItemId,
         is_watched: bool,

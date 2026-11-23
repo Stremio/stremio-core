@@ -1,3 +1,4 @@
+mod all_episodes_watched;
 mod external_player_stream_opened;
 mod live_tv;
 mod mark_video_as_watched;

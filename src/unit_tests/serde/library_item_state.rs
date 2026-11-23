@@ -17,6 +17,7 @@ fn library_item_state() {
                 video_id: Some("tt2934286:1:5".to_owned()),
                 watched: Some("tt2934286:1:5:5:eJyTZwAAAEAAIA==".parse().unwrap()),
                 no_notif: true,
+                all_episodes_watched: Some(true),
             },
             LibraryItemState {
                 last_watched: None,
@@ -29,13 +30,14 @@ fn library_item_state() {
                 video_id: None,
                 watched: None,
                 no_notif: false,
+                all_episodes_watched: None,
             },
         ],
         &[
             Token::Seq { len: Some(2) },
             Token::Struct {
                 name: "LibraryItemState",
-                len: 10,
+                len: 11,
             },
             Token::Str("lastWatched"),
             Token::Some,
@@ -59,6 +61,9 @@ fn library_item_state() {
             Token::Some,
             Token::Str("tt2934286:1:5:5:eJyTZwAAAEAAIA=="),
             Token::Str("noNotif"),
+            Token::Bool(true),
+            Token::Str("allEpisodesWatched"),
+            Token::Some,
             Token::Bool(true),
             Token::StructEnd,
             Token::Struct {
@@ -102,6 +107,7 @@ fn library_item_state() {
                 video_id: None,
                 watched: None,
                 no_notif: false,
+                all_episodes_watched: None,
             },
             LibraryItemState {
                 last_watched: None,
@@ -114,6 +120,7 @@ fn library_item_state() {
                 video_id: None,
                 watched: None,
                 no_notif: false,
+                all_episodes_watched: None,
             },
         ],
         &[
