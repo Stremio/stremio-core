@@ -314,13 +314,28 @@
 <a href="#313" id="313">313</a>
 <a href="#314" id="314">314</a>
 <a href="#315" id="315">315</a>
-<a href="#316" id="316">316</a></pre></div><pre class="rust"><code><span class="kw">use </span>chrono::{DateTime, Datelike, Months, NaiveDate, Utc};
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a></pre></div><pre class="rust"><code><span class="kw">use </span>chrono::{DateTime, Datelike, Months, NaiveDate, Utc};
 <span class="kw">use </span>derivative::Derivative;
 <span class="kw">use </span>itertools::Itertools;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 
 <span class="kw">use crate</span>::{
     constants::{CALENDAR_IDS_EXTRA_PROP, CALENDAR_ITEMS_COUNT},
+    models::{
+        common::{
+            eq_update, resources_update_with_vector_content, Loadable, ResourceLoadable,
+            ResourcesAction,
+        },
+        ctx::Ctx,
+    },
     runtime::{
         msg::{Action, ActionLoad, Internal, Msg},
         Effects, Env, UpdateWithCtx,
@@ -330,14 +345,6 @@
         library::LibraryBucket,
         resource::{MetaItem, Video},
     },
-};
-
-<span class="kw">use </span><span class="kw">crate</span>::models::{
-    common::{
-        eq_update, resources_update_with_vector_content, Loadable, ResourceLoadable,
-        ResourcesAction,
-    },
-    ctx::Ctx,
 };
 
 <span class="kw">pub type </span>Day = u32;
@@ -464,6 +471,19 @@
                     .join(month_info_effects)
                     .join(selectable_effects)
                     .join(items_effects)
+            }
+            Msg::Internal(Internal::LibraryChanged(<span class="kw">_</span>)) <span class="kw">if </span><span class="self">self</span>.selected.is_some() =&gt; {
+                <span class="kw">let </span>effects =
+                    meta_items_update::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.meta_items, <span class="kw-2">&amp;</span>ctx.library, <span class="kw-2">&amp;</span>ctx.profile.addons);
+                <span class="kw">if </span>!effects.has_changed {
+                    <span class="kw">return </span>effects;
+                }
+                effects.join(items_update(
+                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.items,
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.month_info,
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.meta_items,
+                ))
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) =&gt; {
                 <span class="kw">let </span>meta_items_effects = resources_update_with_vector_content::&lt;E, <span class="kw">_</span>&gt;(
@@ -606,28 +626,24 @@
     library: <span class="kw-2">&amp;</span>LibraryBucket,
     addons: <span class="kw-2">&amp;</span>[Descriptor],
 ) -&gt; Effects {
-    <span class="kw">if </span>meta_items.is_empty() {
-        <span class="kw">let </span>id_types = library
-            .items
-            .values()
-            .filter(|library_item| !library_item.removed &amp;&amp; !library_item.temp)
-            .sorted_by(|a, b| b.mtime.cmp(<span class="kw-2">&amp;</span>a.mtime))
-            .map(|library_item| (library_item.id.to_owned(), library_item.r#type.to_owned()))
-            .collect_vec();
+    <span class="kw">let </span>id_types = library
+        .items
+        .values()
+        .filter(|library_item| !library_item.removed &amp;&amp; !library_item.temp)
+        .sorted_by(|a, b| b.mtime.cmp(<span class="kw-2">&amp;</span>a.mtime))
+        .map(|library_item| (library_item.id.to_owned(), library_item.r#type.to_owned()))
+        .collect_vec();
 
-        resources_update_with_vector_content::&lt;E, <span class="kw">_</span>&gt;(
-            meta_items,
-            ResourcesAction::force_request(
-                <span class="kw-2">&amp;</span>AggrRequest::CatalogsFiltered(<span class="macro">vec!</span>[ExtraType::Ids {
-                    extra_name: CALENDAR_IDS_EXTRA_PROP.name.to_owned(),
-                    id_types,
-                    limit: <span class="prelude-val">Some</span>(CALENDAR_ITEMS_COUNT),
-                }]),
-                addons,
-            ),
-        )
-    } <span class="kw">else </span>{
-        Effects::none().unchanged()
-    }
+    resources_update_with_vector_content::&lt;E, <span class="kw">_</span>&gt;(
+        meta_items,
+        ResourcesAction::request(
+            <span class="kw-2">&amp;</span>AggrRequest::CatalogsFiltered(<span class="macro">vec!</span>[ExtraType::Ids {
+                extra_name: CALENDAR_IDS_EXTRA_PROP.name.to_owned(),
+                id_types,
+                limit: <span class="prelude-val">Some</span>(CALENDAR_ITEMS_COUNT),
+            }]),
+            addons,
+        ),
+    )
 }
 </code></pre></div></section></main></body></html>
