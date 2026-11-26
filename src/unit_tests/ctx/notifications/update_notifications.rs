@@ -5,7 +5,7 @@ use std::{
 };
 
 use assert_matches::assert_matches;
-use chrono::{TimeZone, Utc};
+use chrono::{Duration, TimeZone, Utc};
 use enclose::enclose;
 use futures::future;
 use once_cell::sync::Lazy;
@@ -16,8 +16,9 @@ use url::Url;
 use stremio_derive::Model;
 
 use crate::{
-    constants::{CATALOG_RESOURCE_NAME, LAST_VIDEOS_IDS_EXTRA_PROP},
+    constants::{CATALOG_RESOURCE_NAME, LAST_VIDEOS_IDS_EXTRA_PROP, NOTIFICATIONS_STORAGE_KEY},
     models::{
+        common::{Loadable, ResourceLoadable},
         ctx::Ctx,
         player::{Player, Selected as PlayerSelected},
     },
@@ -44,6 +45,7 @@ use crate::{
     },
     unit_tests::{
         default_fetch_handler, Request, TestEnv, EVENTS, FETCH_HANDLER, NOW, REQUESTS, STATES,
+        STORAGE,
     },
 };
 
@@ -56,6 +58,83 @@ struct TestData {
     library_items: Vec<LibraryItem>,
     notification_items: Vec<NotificationItem>,
     result: HashMap<MetaItemId, HashMap<VideoId, NotificationItem>>,
+}
+
+#[test]
+fn pulling_cached_notifications_publishes_newly_released_episodes() {
+    #[derive(Model, Clone)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+    }
+
+    let _guard = TestEnv::reset().unwrap();
+    let now = TestEnv::now();
+    let meta: MetaItem = serde_json::from_value(serde_json::json!({
+        "id": "tt1",
+        "type": "series",
+        "name": "Example Series",
+        "videos": [
+            { "id": "tt1:1:2", "season": 1, "episode": 2, "released": now - Duration::minutes(1) },
+            { "id": "tt1:1:3", "season": 1, "episode": 3, "released": now + Duration::minutes(1) },
+        ],
+    }))
+    .unwrap();
+    let item = LibraryItem {
+        id: "tt1".to_owned(),
+        name: "Example Series".to_owned(),
+        r#type: "series".to_owned(),
+        poster: None,
+        poster_shape: PosterShape::default(),
+        removed: false,
+        temp: false,
+        ctime: None,
+        mtime: now,
+        state: LibraryItemState {
+            last_watched: Some(now - Duration::days(1)),
+            ..Default::default()
+        },
+        behavior_hints: Default::default(),
+    };
+    let mut notifications = NotificationsBucket::new::<TestEnv>(None, vec![]);
+    notifications.last_updated = Some(now - Duration::minutes(2));
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+        TestModel {
+            ctx: Ctx {
+                library: LibraryBucket::new(None, vec![item]),
+                notifications,
+                notification_catalogs: vec![ResourceLoadable {
+                    request: ResourceRequest::new(
+                        "https://addon.example/manifest.json".parse().unwrap(),
+                        ResourcePath::without_extra(CATALOG_RESOURCE_NAME, "series", "recent"),
+                    ),
+                    content: Some(Loadable::Ready(vec![meta])),
+                }],
+                ..Default::default()
+            },
+        },
+        vec![],
+        1000,
+    );
+
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::PullNotifications),
+        });
+    });
+
+    let model = runtime.model().unwrap();
+    let episodes = &model.ctx.notifications.items["tt1"];
+    assert_eq!(episodes.len(), 1);
+    assert!(episodes.contains_key("tt1:1:2"));
+    let storage = STORAGE.read().unwrap();
+    let persisted = storage
+        .get(NOTIFICATIONS_STORAGE_KEY)
+        .expect("cached notification changes should be saved");
+    let persisted: NotificationsBucket = serde_json::from_str(persisted).unwrap();
+    assert_eq!(persisted.items, model.ctx.notifications.items);
+    assert!(REQUESTS.read().unwrap().is_empty());
 }
 
 #[test]
