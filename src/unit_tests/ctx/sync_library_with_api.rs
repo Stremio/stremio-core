@@ -1,20 +1,29 @@
-use std::any::Any;
+use std::{
+    any::Any,
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
-use crate::constants::LIBRARY_RECENT_STORAGE_KEY;
-use crate::models::ctx::Ctx;
-use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
-use crate::types::api::{APIResult, LibraryItemModified, LibraryItemsResponse, SuccessResponse};
-use crate::types::events::DismissedEventsBucket;
-use crate::types::library::{LibraryBucket, LibraryItem};
-use crate::types::notifications::NotificationsBucket;
-use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
-use crate::types::search_history::SearchHistoryBucket;
-use crate::types::server_urls::ServerUrlsBucket;
-use crate::types::streams::StreamsBucket;
-use crate::types::True;
-use crate::unit_tests::{
-    default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
+use crate::{
+    constants::{LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_STORAGE_KEY},
+    models::ctx::Ctx,
+    runtime::{
+        msg::{Action, ActionCtx},
+        Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture,
+    },
+    types::{
+        api::{APIResult, LibraryItemModified, LibraryItemsResponse, SuccessResponse},
+        events::DismissedEventsBucket,
+        library::{LibraryBucket, LibraryItem},
+        notifications::NotificationsBucket,
+        profile::{Auth, AuthKey, GDPRConsent, Profile, User},
+        resource::MetaItemPreview,
+        search_history::SearchHistoryBucket,
+        server_urls::ServerUrlsBucket,
+        streams::StreamsBucket,
+        True,
+    },
+    unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE},
 };
 
 use chrono::prelude::TimeZone;
@@ -22,6 +31,7 @@ use chrono::{Duration, Utc};
 use futures::future;
 use once_cell::sync::Lazy;
 use serde::Deserialize;
+use serde_json::Value;
 use stremio_derive::Model;
 
 #[test]
@@ -459,5 +469,106 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
         REQUESTS.read().unwrap().first().unwrap().url,
         "https://api.strem.io/api/datastoreMeta".to_owned(),
         "datastoreMeta request has been sent"
+    );
+}
+
+#[test]
+fn library_addition_syncs_between_runtimes() {
+    #[derive(Model, Clone)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+    }
+
+    const ITEM_ID: &str = "tt1234567";
+
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    let server_items = Arc::new(Mutex::new(HashMap::<String, LibraryItem>::new()));
+    *FETCH_HANDLER.write().unwrap() = Box::new(move |request: Request| {
+        let server_items = Arc::clone(&server_items);
+        future::lazy(move |_| {
+            let body: Value = serde_json::from_str(&request.body).unwrap();
+            assert_eq!(request.method, "POST");
+            assert_eq!(body["collection"], LIBRARY_COLLECTION_NAME);
+
+            let mut items = server_items.lock().unwrap();
+            let response: Box<dyn Any + Send> = match request.url.as_str() {
+                "https://api.strem.io/api/datastorePut" => {
+                    assert_eq!(body["authKey"], "source_key");
+                    let changes: Vec<LibraryItem> =
+                        serde_json::from_value(body["changes"].to_owned()).unwrap();
+                    items.extend(changes.into_iter().map(|item| (item.id.to_owned(), item)));
+                    Box::new(APIResult::Ok(SuccessResponse { success: True }))
+                }
+                "https://api.strem.io/api/datastoreMeta" => {
+                    assert_eq!(body["authKey"], "destination_key");
+                    let metadata: Vec<_> = items
+                        .values()
+                        .map(|item| LibraryItemModified(item.id.to_owned(), item.mtime))
+                        .collect();
+                    Box::new(APIResult::Ok(metadata))
+                }
+                "https://api.strem.io/api/datastoreGet" => {
+                    assert_eq!(body["authKey"], "destination_key");
+                    assert_eq!(body["all"], false);
+                    let ids: Vec<String> = serde_json::from_value(body["ids"].to_owned()).unwrap();
+                    assert_eq!(ids, [ITEM_ID]);
+                    let requested = ids.iter().map(|id| items[id].to_owned()).collect();
+                    Box::new(APIResult::Ok(LibraryItemsResponse(requested)))
+                }
+                url => panic!("Unexpected datastore endpoint: {url}"),
+            };
+            Ok(response)
+        })
+        .boxed_env()
+    });
+
+    let new_runtime = |auth_key: &str| {
+        let profile = Profile {
+            auth: Some(Auth {
+                key: AuthKey(auth_key.to_owned()),
+                user: User {
+                    id: "user_id".into(),
+                    ..Default::default()
+                },
+            }),
+            addons: vec![],
+            ..Default::default()
+        };
+        let ctx = Ctx {
+            library: LibraryBucket::new(profile.uid(), vec![]),
+            profile,
+            ..Default::default()
+        };
+        Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000)
+    };
+    let (source, _source_events) = new_runtime("source_key");
+    let (destination, _destination_events) = new_runtime("destination_key");
+    let meta = MetaItemPreview {
+        id: ITEM_ID.into(),
+        r#type: "movie".into(),
+        name: "Example movie".into(),
+        ..Default::default()
+    };
+
+    TestEnv::run(|| {
+        source.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::AddToLibrary(meta)),
+        });
+    });
+    let source_item = source.model().unwrap().ctx.library.items[ITEM_ID].to_owned();
+    assert!(destination.model().unwrap().ctx.library.items.is_empty());
+
+    TestEnv::run(|| {
+        destination.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::SyncLibraryWithAPI),
+        });
+    });
+    assert_eq!(
+        destination.model().unwrap().ctx.library.items,
+        HashMap::from([(ITEM_ID.to_owned(), source_item)]),
+        "The destination should sync the item uploaded by the source runtime"
     );
 }
