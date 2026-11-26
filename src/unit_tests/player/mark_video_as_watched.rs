@@ -224,6 +224,74 @@ fn dispatch_time_changed_with_duration(
 }
 
 #[test]
+fn finished_movie_is_marked_watched_after_seeking() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(|request| match request {
+        Request { url, .. } if url == "https://transport_url/meta/movie/tt123456.json" => {
+            future::ok(Box::new(ResourceResponse::Meta {
+                meta: MetaItem {
+                    preview: MetaItemPreview {
+                        id: "tt123456".to_owned(),
+                        r#type: "movie".to_owned(),
+                        ..Default::default()
+                    },
+                    videos: vec![],
+                },
+            }) as Box<dyn Any + Send>)
+            .boxed_env()
+        }
+        _ => default_fetch_handler(request),
+    });
+
+    let mut library_item = make_library_item("tt123456");
+    library_item.r#type = "movie".to_owned();
+    run_with_library_item(library_item, |runtime| {
+        let dispatch = |action| {
+            TestEnv::run(|| {
+                runtime.dispatch(RuntimeAction {
+                    field: None,
+                    action,
+                })
+            });
+        };
+        let mut meta_request = make_meta_request();
+        meta_request.path.r#type = "movie".to_owned();
+        let mut stream_request = make_stream_request("tt123456");
+        stream_request.path.r#type = "movie".to_owned();
+        dispatch(Action::Load(ActionLoad::Player(Box::new(Selected {
+            stream: create_stream(),
+            stream_request: Some(stream_request),
+            meta_request: Some(meta_request),
+            subtitles_path: None,
+        }))));
+        dispatch(Action::Player(ActionPlayer::PausedChanged {
+            paused: false,
+        }));
+        dispatch_time_changed(&runtime, 360_000);
+        dispatch(Action::Player(ActionPlayer::Seek {
+            time: 3_200_000,
+            duration: 3_600_000,
+            device: "test_device".to_owned(),
+        }));
+        dispatch_time_changed(&runtime, 3_599_000);
+        assert_eq!(
+            runtime.model().unwrap().ctx.library.items["tt123456"]
+                .state
+                .times_watched,
+            0
+        );
+
+        dispatch(Action::Player(ActionPlayer::Ended));
+        dispatch(Action::Player(ActionPlayer::Ended));
+        let model = runtime.model().unwrap();
+        let state = &model.ctx.library.items["tt123456"].state;
+        assert_eq!(state.times_watched, 1);
+        assert_eq!(state.flagged_watched, 1);
+        assert_eq!(state.time_watched, 759_000, "seeks do not add watch time");
+    });
+}
+
+#[test]
 fn mark_video_as_watched_advances_video_id_on_unload() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler_s1e1_current);

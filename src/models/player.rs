@@ -613,11 +613,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             })) => match (&self.selected, &mut self.library_item) {
                 (
                     Some(Selected {
-                        stream_request:
-                            Some(ResourceRequest {
-                                path: ResourcePath { id: video_id, .. },
-                                ..
-                            }),
+                        stream_request: Some(stream_request),
+                        meta_request,
                         ..
                     }),
                     Some(library_item),
@@ -626,7 +623,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     let video_id = if library_item.is_live() {
                         &channel_id
                     } else {
-                        video_id
+                        &stream_request.path.id
                     };
                     // if we've selected a new video (like the next episode)
                     library_item.state.last_watched = Some(E::now());
@@ -662,46 +659,21 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     // Watched threshold for marking an episode/movie as watched;
                     // live streams report no duration - without the guard any
                     // time watched would instantly cross the threshold
-                    let should_send_watched = if !library_item.is_live()
+                    let send_watched_effects = if !library_item.is_live()
                         && library_item.state.flagged_watched == 0
                         && library_item.state.duration > 0
                         && library_item.state.time_watched as f64
                             > library_item.state.duration as f64 * WATCHED_THRESHOLD_COEF
                     {
-                        library_item.state.flagged_watched = 1;
-                        library_item.state.times_watched =
-                            library_item.state.times_watched.saturating_add(1);
-                        if let Some(watched_bit_field) = &self.watched {
-                            let mut watched_bit_field = watched_bit_field.to_owned();
-                            watched_bit_field.set_video(video_id, true);
-                            library_item.state.watched = Some(watched_bit_field.into());
-                        }
-
-                        true
+                        mark_playback_watched::<E>(
+                            library_item,
+                            video_id,
+                            self.watched.as_ref(),
+                            meta_request.as_ref(),
+                            &ctx.profile,
+                        )
                     } else {
-                        false
-                    };
-
-                    // send Watched for MetaDetail id
-                    // single episode should mark the item as watched.
-                    let send_watched_effects = match (
-                        should_send_watched,
-                        ctx.profile.auth_key(),
-                        self.selected.as_ref(),
-                    ) {
-                        (
-                            true,
-                            Some(auth_key),
-                            Some(Selected {
-                                meta_request:
-                                    Some(ResourceRequest {
-                                        path: meta_path, ..
-                                    }),
-                                ..
-                            }),
-                        ) => Effects::one(send_watched::<E>(auth_key.to_owned(), meta_path))
-                            .unchanged(),
-                        _ => Effects::none().unchanged(),
+                        Effects::none().unchanged()
                     };
 
                     if library_item.temp && library_item.state.times_watched == 0 {
@@ -837,6 +809,37 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(library_item_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::Ended)) if self.selected.is_some() => {
+                // A movie can reach the end below the watch-time threshold after seeking.
+                let watched_effects = match (&self.selected, &mut self.library_item) {
+                    (
+                        Some(Selected {
+                            stream_request: Some(stream_request),
+                            meta_request,
+                            ..
+                        }),
+                        Some(library_item),
+                    ) if self.loaded
+                        && !self.ended
+                        && library_item.r#type == "movie"
+                        && !library_item.is_live()
+                        && library_item.state.video_id.as_ref()
+                            == Some(&stream_request.path.id)
+                        && library_item.state.duration > 0
+                        && library_item.state.flagged_watched == 0 =>
+                    {
+                        mark_playback_watched::<E>(
+                            library_item,
+                            &stream_request.path.id,
+                            self.watched.as_ref(),
+                            meta_request.as_ref(),
+                            &ctx.profile,
+                        )
+                        .join(Effects::msg(Msg::Internal(
+                            Internal::UpdateLibraryItem(library_item.to_owned()),
+                        )))
+                    }
+                    _ => Effects::none().unchanged(),
+                };
                 let stop_event_effects = player_event_effects::<E>(
                     &ctx.profile.addons,
                     self.selected.as_ref(),
@@ -851,6 +854,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 }))
                 .unchanged()
                 .join(stop_event_effects)
+                .join(watched_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::MarkVideoAsWatched(video, is_watched))) => {
                 match (&self.library_item, &self.watched) {
@@ -1242,6 +1246,29 @@ fn push_to_library<E: Env + 'static>(
         .unchanged()
     } else {
         Effects::none().unchanged()
+    }
+}
+
+fn mark_playback_watched<E: Env + 'static>(
+    library_item: &mut LibraryItem,
+    video_id: &str,
+    watched: Option<&WatchedBitField>,
+    meta_request: Option<&ResourceRequest>,
+    profile: &Profile,
+) -> Effects {
+    library_item.state.flagged_watched = 1;
+    library_item.state.times_watched = library_item.state.times_watched.saturating_add(1);
+    if let Some(watched) = watched {
+        let mut watched = watched.to_owned();
+        watched.set_video(video_id, true);
+        library_item.state.watched = Some(watched.into());
+    }
+
+    match (profile.auth_key(), meta_request) {
+        (Some(auth_key), Some(meta_request)) => {
+            Effects::one(send_watched::<E>(auth_key.to_owned(), &meta_request.path)).unchanged()
+        }
+        _ => Effects::none().unchanged(),
     }
 }
 
