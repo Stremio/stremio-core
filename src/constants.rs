@@ -19,6 +19,9 @@ pub const CALENDAR_STORAGE_KEY: &str = "calendar";
 pub const DISMISSED_EVENTS_STORAGE_KEY: &str = "dismissed_events";
 pub const REMOTE_CONFIG_STORAGE_KEY: &str = "remote_config";
 pub const LIBRARY_COLLECTION_NAME: &str = "libraryItem";
+/// API error code returned by `addonCollectionGet` when the user has no addon collection stored
+/// ("No AddonDescriptor"). The user should get the official addons, not a locked profile.
+pub const API_ERROR_CODE_NO_ADDON_COLLECTION: u64 = 20002;
 pub const SEARCH_EXTRA_NAME: &str = "search";
 /// `https://{ADDON_UR}/meta/...` resource
 pub const META_RESOURCE_NAME: &str = "meta";

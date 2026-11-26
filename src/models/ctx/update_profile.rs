@@ -3,7 +3,9 @@ use std::collections::HashSet;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 
-use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY, STREAMING_SERVER_URL};
+use crate::constants::{
+    API_ERROR_CODE_NO_ADDON_COLLECTION, OFFICIAL_ADDONS, PROFILE_STORAGE_KEY, STREAMING_SERVER_URL,
+};
 use crate::models::ctx::{CtxError, CtxStatus, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
@@ -530,10 +532,14 @@ fn pull_addons_from_api<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
         fetch_api::<E, _, _, _>(&request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
-                APIResult::Ok(result) => future::ok(result),
+                APIResult::Ok(CollectionResponse { addons, .. }) => future::ok(addons),
+                APIResult::Err(APIError { code, .. })
+                    if code == API_ERROR_CODE_NO_ADDON_COLLECTION =>
+                {
+                    future::ok(OFFICIAL_ADDONS.clone())
+                }
                 APIResult::Err(error) => future::err(CtxError::from(error)),
             })
-            .map_ok(|CollectionResponse { addons, .. }| addons)
             .map(move |result| Msg::Internal(Internal::AddonsAPIResult(request, result)))
             .boxed_env(),
     )
