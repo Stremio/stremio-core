@@ -299,7 +299,10 @@ async fn send<E: Env + 'static>(endpoint: &Url, body: Value) -> Result<(), EnvEr
         .header(http::header::CONTENT_TYPE, "application/json")
         .body(body)
         .expect("request builder failed");
-    let response = E::fetch::<_, Value>(request).await?;
+    check_player_response(E::fetch::<_, Value>(request).await?)
+}
+
+pub(super) fn check_player_response(response: Value) -> Result<(), EnvError> {
     // Older servers return cast failures as HTTP 200 strings or error objects.
     match response
         .as_str()
