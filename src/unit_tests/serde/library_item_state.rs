@@ -1,5 +1,6 @@
 use crate::types::library::LibraryItemState;
 use chrono::{TimeZone, Utc};
+use serde_json::{from_value, json, to_value};
 use serde_test::{assert_de_tokens, assert_tokens, Token};
 
 #[test]
@@ -168,4 +169,25 @@ fn library_item_state() {
             Token::SeqEnd,
         ],
     );
+}
+
+#[test]
+fn library_item_state_reads_camel_case_video_id() {
+    let expected = LibraryItemState {
+        video_id: Some("tt2934286:1:5".to_owned()),
+        time_offset: 36_000,
+        ..Default::default()
+    };
+    let saved = to_value(&expected).unwrap();
+    assert_eq!(saved["video_id"], json!("tt2934286:1:5"));
+    assert!(saved.get("videoId").is_none());
+
+    let mut incoming = saved.clone();
+    let fields = incoming.as_object_mut().unwrap();
+    let video_id = fields.remove("video_id").unwrap();
+    fields.insert("videoId".to_owned(), video_id);
+    let restored: LibraryItemState = from_value(incoming).unwrap();
+
+    assert_eq!(restored, expected);
+    assert_eq!(to_value(restored).unwrap(), saved);
 }
