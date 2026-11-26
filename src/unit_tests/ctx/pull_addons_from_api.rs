@@ -2,7 +2,7 @@ use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
-use crate::types::addon::{Descriptor, Manifest};
+use crate::types::addon::{Descriptor, Manifest, ResourceResponse};
 use crate::types::api::{APIResult, CollectionResponse};
 use crate::types::events::DismissedEventsBucket;
 use crate::types::library::LibraryBucket;
@@ -80,6 +80,84 @@ fn actionctx_pulladdonsfromapi() {
         REQUESTS.read().unwrap().is_empty(),
         "No requests have been sent"
     );
+}
+
+#[test]
+fn guest_refresh_updates_installed_community_addons() {
+    #[derive(Model, Clone, Default)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+    }
+
+    const COMMUNITY_CATALOG_URL: &str =
+        "https://v3-cinemeta.strem.io/addon_catalog/all/community.json";
+
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    let installed = Descriptor {
+        transport_url: "https://addon.example/manifest.json".parse().unwrap(),
+        manifest: serde_json::from_value(serde_json::json!({
+            "id": "community.addon",
+            "name": "Community addon",
+            "version": "1.0.0",
+            "types": ["movie"],
+            "resources": ["catalog"],
+        }))
+        .unwrap(),
+        flags: Default::default(),
+    };
+    let mut configured = installed.clone();
+    configured.transport_url.set_query(Some("config=custom"));
+    let mut update = installed.clone();
+    update.manifest.version = Version::new(2, 0, 0);
+    let mut different_url = update.clone();
+    different_url.manifest.version = Version::new(3, 0, 0);
+    different_url.transport_url = "https://other.example/manifest.json".parse().unwrap();
+    let mut different_id = update.clone();
+    different_id.manifest.version = Version::new(3, 0, 0);
+    different_id.manifest.id = "other.addon".into();
+
+    *FETCH_HANDLER.write().unwrap() = Box::new({
+        let update = update.clone();
+        move |request| {
+            if request.url == COMMUNITY_CATALOG_URL && request.method == "GET" {
+                future::ok(Box::new(ResourceResponse::Addons {
+                    addons: vec![different_url.clone(), different_id.clone(), update.clone()],
+                }) as Box<dyn Any + Send>)
+                .boxed_env()
+            } else {
+                default_fetch_handler(request)
+            }
+        }
+    });
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+        TestModel {
+            ctx: Ctx {
+                profile: Profile {
+                    addons: vec![installed, configured.clone()],
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        },
+        vec![],
+        1000,
+    );
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::PullAddonsFromAPI),
+        });
+    });
+
+    let expected = vec![update, configured];
+    assert_eq!(runtime.model().unwrap().ctx.profile.addons, expected);
+    let storage = STORAGE.read().unwrap();
+    let saved_profile: Profile = serde_json::from_str(&storage[PROFILE_STORAGE_KEY]).unwrap();
+    assert_eq!(saved_profile.addons, expected);
+    let requests = REQUESTS.read().unwrap();
+    assert_eq!(requests.len(), 1);
+    assert_eq!(requests[0].url, COMMUNITY_CATALOG_URL);
 }
 
 #[test]
