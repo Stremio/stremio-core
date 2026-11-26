@@ -3,12 +3,13 @@ use chrono::{DateTime, Utc};
 use crate::{
     constants::{META_RESOURCE_NAME, STREAM_RESOURCE_NAME},
     models::{
+        common::{Loadable, ResourceLoadable},
         ctx::Ctx,
         player::{Player, Selected},
     },
     runtime::{
         msg::{Internal, Msg},
-        UpdateWithCtx,
+        Update, UpdateWithCtx,
     },
     types::{
         addon::{ResourcePath, ResourceRequest},
@@ -104,6 +105,52 @@ fn saved_stream_state_seeds_player() {
             .and_then(|state| state.video_scale),
         Some(VideoScale::Cover)
     );
+}
+
+#[test]
+fn stream_loaded_preserves_subtitles_when_metadata_omits_the_episode() {
+    let _guard = TestEnv::reset().unwrap();
+    let meta_id = "tt123456";
+    let video_id = "tt123456:1:1";
+    let stream = stream("https://source_url/1", None);
+    let state = StreamItemState {
+        subtitle_track: Some(SubtitleTrack {
+            id: "https://subtitles_url/1.srt".to_owned(),
+            embedded: false,
+            language: Some("por".to_owned()),
+        }),
+        subtitles_enabled: Some(true),
+        ..Default::default()
+    };
+    let key = StreamsItemKey {
+        meta_id: meta_id.to_owned(),
+        video_id: video_id.to_owned(),
+    };
+    let mut ctx = Ctx::default();
+    ctx.streams
+        .items
+        .insert(key.clone(), streams_item(stream.clone(), state.clone()));
+
+    let meta = serde_json::from_value(serde_json::json!({
+        "id": meta_id,
+        "type": "series",
+        "name": "Test Series",
+        "videos": [{ "id": "tt123456:1:2", "season": 1, "episode": 2 }],
+    }))
+    .unwrap();
+    <Ctx as Update<TestEnv>>::update(
+        &mut ctx,
+        &Msg::Internal(Internal::StreamLoaded {
+            stream,
+            stream_request: Some(request(STREAM_RESOURCE_NAME, video_id)),
+            meta_item: ResourceLoadable {
+                request: request(META_RESOURCE_NAME, meta_id),
+                content: Some(Loadable::Ready(meta)),
+            },
+        }),
+    );
+
+    assert_eq!(ctx.streams.items[&key].state, Some(state));
 }
 
 #[test]
