@@ -454,3 +454,73 @@ fn library_item_deep_links_state_no_time_offset_and_behavior_hints_default_video
             }) if ios.starts_with("infuse://")
     ));
 }
+
+#[test]
+fn infuse_resume_supplies_a_filename_for_numbered_streams() {
+    let mut streams_item = TORRENT_STREAMS_ITEM.clone();
+    let mut lib_item = LibraryItem {
+        id: streams_item.meta_id.clone(),
+        name: "Andor & Friends".to_owned(),
+        r#type: streams_item.r#type.clone(),
+        poster: None,
+        poster_shape: PosterShape::Poster,
+        removed: false,
+        temp: false,
+        ctime: None,
+        mtime: streams_item.mtime,
+        state: LibraryItemState {
+            video_id: Some(streams_item.video_id.clone()),
+            time_offset: 61_000,
+            ..Default::default()
+        },
+        behavior_hints: Default::default(),
+    };
+    let infuse_url = |item: &LibraryItem, streams_item: &StreamsItem| {
+        Url::parse(
+            &LibraryItemDeepLinks::from((
+                item,
+                Some(streams_item),
+                Some(&*STREAMING_SERVER_URL),
+                &*INFUSE_PLAYER_SETTINGS,
+            ))
+            .external_player
+            .unwrap()
+            .open_player
+            .unwrap()
+            .ios
+            .unwrap(),
+        )
+        .unwrap()
+    };
+    let filename = |url: &Url| {
+        url.query_pairs()
+            .find(|(key, _)| key == "filename")
+            .map(|(_, value)| value.into_owned())
+    };
+
+    let url = infuse_url(&lib_item, &streams_item);
+    assert_eq!(filename(&url).as_deref(), Some("Andor & Friends S01E05"));
+    assert_eq!(query_param(url.as_str(), "position"), "61");
+
+    streams_item.video_id = "custom-episode-id".to_owned();
+    assert_eq!(filename(&infuse_url(&lib_item, &streams_item)), None);
+
+    lib_item.name = "Movie: Part Two".to_owned();
+    lib_item.r#type = "movie".to_owned();
+    streams_item.r#type = "movie".to_owned();
+    streams_item.video_id = lib_item.id.clone();
+    streams_item.stream.source = StreamSource::Url {
+        url: "https://media.example/0.mkv?token=example".parse().unwrap(),
+    };
+    let url = infuse_url(&lib_item, &streams_item);
+    assert_eq!(filename(&url).as_deref(), Some("Movie Part Two.mkv"));
+    assert_eq!(
+        query_param(url.as_str(), "url"),
+        "https://media.example/0.mkv?token=example"
+    );
+
+    streams_item.stream.source = StreamSource::Url {
+        url: "https://media.example/Named.Movie.mkv".parse().unwrap(),
+    };
+    assert_eq!(filename(&infuse_url(&lib_item, &streams_item)), None);
+}
