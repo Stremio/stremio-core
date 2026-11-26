@@ -1,14 +1,21 @@
-use crate::addon_transport::AddonTransport;
-use crate::runtime::{ConditionalSend, EnvError, EnvFutureExt, TryEnvFuture};
-use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
 use futures::future;
 use url::Url;
 
+use crate::{
+    addon_transport::AddonTransport,
+    runtime::{ConditionalSend, EnvError, EnvFutureExt, TryEnvFuture},
+    types::addon::{Manifest, ResourcePath, ResourceResponse},
+};
+
+/// Reports an unsupported URL scheme for both manifest and resource requests.
+///
+/// Both requests resolve to [`EnvError::AddonTransport`] without fetching data.
 pub struct UnsupportedTransport {
     transport_url: Url,
 }
 
 impl UnsupportedTransport {
+    /// Creates an error transport for the given URL.
     pub fn new(transport_url: Url) -> Self {
         UnsupportedTransport { transport_url }
     }
