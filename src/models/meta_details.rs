@@ -432,6 +432,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
             Msg::Internal(Internal::ProfileChanged) => {
                 let meta_items_effects =
                     meta_items_update::<E>(&mut self.meta_items, &self.selected, &ctx.profile);
+                let selected_override_effects =
+                    selected_guess_stream_update(&mut self.selected, &self.meta_items);
                 let meta_streams_effects =
                     meta_streams_update(&mut self.meta_streams, &self.selected, &self.meta_items);
                 let streams_effects =
@@ -456,6 +458,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     rating_info_update::<E>(&mut self.rating_info, &self.selected, &ctx.profile);
 
                 meta_items_effects
+                    .join(selected_override_effects)
                     .join(meta_streams_effects)
                     .join(streams_effects)
                     .join(last_used_stream_effects)
