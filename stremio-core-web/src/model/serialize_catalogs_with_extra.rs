@@ -1,5 +1,6 @@
 use itertools::Itertools;
 use serde::Serialize;
+use url::Url;
 
 #[cfg(feature = "wasm")]
 use {gloo_utils::format::JsValueSerdeExt, wasm_bindgen::JsValue};
@@ -83,7 +84,7 @@ fn serialize_item<'a>(
     poster_shape: &'a PosterShape,
     request: &ResourceRequest,
     ctx: &'a Ctx,
-    streaming_server: &StreamingServer,
+    streaming_server_url: Option<&Url>,
 ) -> MetaItemPreview<'a> {
     MetaItemPreview {
         meta_item,
@@ -96,7 +97,7 @@ fn serialize_item<'a>(
                 stream,
                 deep_links: StreamDeepLinks::from((
                     stream,
-                    streaming_server.base_url.as_ref(),
+                    streaming_server_url,
                     &ctx.profile.settings,
                 ))
                 .into_web_deep_links(),
@@ -121,13 +122,13 @@ fn serialize_item<'a>(
 fn serialize_page<'a>(
     catalog: &'a CatalogPage<stremio_core::types::resource::MetaItemPreview>,
     ctx: &'a Ctx,
-    streaming_server: &StreamingServer,
+    streaming_server_url: Option<&Url>,
 ) -> Option<ResourceLoadable<'a>> {
     ctx.profile
         .addons
         .iter()
-        .find(|addon| addon.transport_url == catalog.request.base)
-        .and_then(|addon| {
+        .filter(|addon| addon.transport_url == catalog.request.base)
+        .find_map(|addon| {
             addon
                 .manifest
                 .catalogs
@@ -164,7 +165,7 @@ fn serialize_page<'a>(
                                     poster_shape.unwrap_or(&meta_item.poster_shape),
                                     &catalog.request,
                                     ctx,
-                                    streaming_server,
+                                    streaming_server_url,
                                 )
                             })
                             .collect::<Vec<_>>(),
@@ -181,7 +182,7 @@ fn serialize_page<'a>(
 fn serialize_spotlight<'a>(
     pages: &'a [CatalogPage<stremio_core::types::resource::MetaItemPreview>],
     ctx: &'a Ctx,
-    streaming_server: &StreamingServer,
+    streaming_server_url: Option<&Url>,
 ) -> Option<Loadable<Vec<MetaItemPreview<'a>>, String>> {
     if pages.is_empty() {
         return None;
@@ -201,7 +202,7 @@ fn serialize_spotlight<'a>(
                     &meta_item.poster_shape,
                     request,
                     ctx,
-                    streaming_server,
+                    streaming_server_url,
                 )
             })
             .collect::<Vec<_>>(),
@@ -214,15 +215,31 @@ impl<'a> CatalogsWithExtra<'a> {
         ctx: &'a Ctx,
         streaming_server: &StreamingServer,
     ) -> Self {
+        Self::with_streaming_server_url(
+            catalogs_with_extra,
+            ctx,
+            streaming_server.base_url.as_ref(),
+        )
+    }
+
+    fn with_streaming_server_url(
+        catalogs_with_extra: &'a stremio_core::models::catalogs_with_extra::CatalogsWithExtra,
+        ctx: &'a Ctx,
+        streaming_server_url: Option<&Url>,
+    ) -> Self {
         Self {
             selected: &catalogs_with_extra.selected,
             catalogs: catalogs_with_extra
                 .catalogs
                 .iter()
                 .filter_map(|catalog| catalog.first())
-                .filter_map(|catalog| serialize_page(catalog, ctx, streaming_server))
+                .filter_map(|catalog| serialize_page(catalog, ctx, streaming_server_url))
                 .collect::<Vec<_>>(),
-            spotlight: serialize_spotlight(&catalogs_with_extra.spotlight, ctx, streaming_server),
+            spotlight: serialize_spotlight(
+                &catalogs_with_extra.spotlight,
+                ctx,
+                streaming_server_url,
+            ),
         }
     }
 }
@@ -242,5 +259,88 @@ impl<'a> TryFrom<&CatalogsWithExtra<'a>> for JsValue {
 
     fn try_from(catalogs: &CatalogsWithExtra<'a>) -> Result<Self, Self::Error> {
         <JsValue as JsValueSerdeExt>::from_serde(&catalogs)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::{json, to_value};
+    use stremio_core::{
+        models::{catalogs_with_extra, common},
+        types::{notifications::NotificationsBucket, profile::Profile},
+    };
+
+    use super::{CatalogsWithExtra, Ctx};
+
+    #[test]
+    fn board_rows_keep_core_indexes_when_addons_share_a_url() {
+        let addon = |id, transport_url, catalogs: &[&str]| {
+            let catalogs = catalogs
+                .iter()
+                .map(|id| json!({ "id": id, "type": "movie" }))
+                .collect::<Vec<_>>();
+            serde_json::from_value(json!({
+                "transportUrl": transport_url,
+                "manifest": {
+                    "id": id,
+                    "name": id,
+                    "version": "1.0.0",
+                    "types": ["movie"],
+                    "resources": ["catalog"],
+                    "catalogs": catalogs,
+                },
+            }))
+            .unwrap()
+        };
+        let shared_url = "https://shared.example/manifest.json";
+        let ctx = Ctx::new(
+            Profile {
+                addons: vec![
+                    addon("first", shared_url, &["first-row"]),
+                    addon("second", shared_url, &["second-row"]),
+                    addon("last", "https://other.example/manifest.json", &["last-row"]),
+                ],
+                ..Default::default()
+            },
+            Default::default(),
+            Default::default(),
+            Default::default(),
+            NotificationsBucket {
+                uid: None,
+                items: Default::default(),
+                last_updated: None,
+                created: Default::default(),
+            },
+            Default::default(),
+            Default::default(),
+        );
+        let board = catalogs_with_extra::CatalogsWithExtra {
+            selected: Some(catalogs_with_extra::Selected {
+                r#type: None,
+                extra: vec![],
+            }),
+            catalogs: common::board_plan(&ctx.profile)
+                .into_iter()
+                .map(|(_, _, request)| {
+                    vec![common::ResourceLoadable {
+                        request,
+                        content: None,
+                    }]
+                })
+                .collect(),
+            spotlight: vec![],
+        };
+
+        let state = to_value(CatalogsWithExtra::with_streaming_server_url(
+            &board, &ctx, None,
+        ))
+        .unwrap();
+        let rows = state["catalogs"].as_array().unwrap();
+        let row_ids = rows
+            .iter()
+            .map(|row| row["id"].as_str().unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(row_ids, ["first-row", "second-row", "last-row"]);
+        assert_eq!(rows[1]["addon"]["manifest"]["id"], "second");
     }
 }
