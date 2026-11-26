@@ -10,13 +10,15 @@ use stremio_core::models::ctx::Ctx;
 use stremio_core::models::player::Player;
 use stremio_core::models::streaming_server::StreamingServer;
 use stremio_core::types::{
-    addon::{ResourcePath, ResourceRequest},
+    addon::{Descriptor, ResourcePath, ResourceRequest},
     streams::StreamItemState,
 };
 
 use crate::model::deep_links_ext::DeepLinksExt;
 
 mod model {
+    use std::borrow::Cow;
+
     use stremio_core::{
         runtime::EnvError,
         types::{
@@ -73,11 +75,33 @@ mod model {
     pub struct Subtitles<'a> {
         #[serde(flatten)]
         pub subtitles: &'a stremio_core::types::resource::Subtitles,
+        #[serde(rename = "label", skip_serializing_if = "Option::is_none")]
+        pub filename_label: Option<Cow<'a, str>>,
         // overrides the id of the subtitles in a format that avoids
         // conflicts with other subtitle ids
         pub id: String,
         pub addon_subtitle_id: &'a String,
         pub origin: &'a String,
+    }
+
+    impl<'a> Subtitles<'a> {
+        pub fn new(
+            subtitles: &'a stremio_core::types::resource::Subtitles,
+            addon: &'a Descriptor,
+            position: usize,
+        ) -> Self {
+            Self {
+                subtitles,
+                filename_label: if subtitles.label.is_none() {
+                    subtitles.filename()
+                } else {
+                    None
+                },
+                id: format!("{}_{}", addon.transport_url, position),
+                addon_subtitle_id: &subtitles.id,
+                origin: &addon.manifest.name,
+            }
+        }
     }
 
     #[derive(Serialize)]
@@ -234,11 +258,8 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
                     .iter()
                     .enumerate()
                     // renames the subtitle id to avoid conflicts
-                    .map(move |(position, subtitles)| model::Subtitles {
-                        subtitles,
-                        id: format!("{}_{}", addon.transport_url, position),
-                        addon_subtitle_id: &subtitles.id,
-                        origin: &addon.manifest.name,
+                    .map(move |(position, subtitles)| {
+                        model::Subtitles::new(subtitles, addon, position)
                     })
             })
             .collect(),
@@ -401,4 +422,58 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
             }),
     })
     .expect("JsValue from model::Player")
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::{from_value, json, to_value};
+    use stremio_core::types::{addon::Descriptor, resource::Subtitles};
+
+    use super::model;
+
+    #[test]
+    fn web_subtitle_labels_fall_back_to_a_filename() {
+        let addon: Descriptor = from_value(json!({
+            "transportUrl": "https://addon.example/manifest.json",
+            "manifest": {
+                "id": "example.subtitles",
+                "version": "1.0.0",
+                "name": "Example Subtitles",
+                "types": ["movie"],
+                "resources": ["subtitles"],
+            },
+        }))
+        .unwrap();
+        let cases = [
+            (
+                "https://addon.example/subs/Movie%20WEB-DL.SRT?token=test",
+                None,
+                Some("Movie WEB-DL.SRT"),
+            ),
+            (
+                "https://addon.example/subs/Movie%20WEB-DL.SRT",
+                Some("Corrected timing"),
+                Some("Corrected timing"),
+            ),
+            (
+                "https://addon.example/download?filename=Movie.srt",
+                None,
+                None,
+            ),
+        ];
+        for (url, label, expected_label) in cases {
+            let subtitle: Subtitles = from_value(json!({
+                "id": "subtitle-1", "lang": "eng", "url": url, "label": label,
+            }))
+            .unwrap();
+            let value = to_value(model::Subtitles::new(&subtitle, &addon, 3)).unwrap();
+            assert_eq!(
+                value.get("label").and_then(|label| label.as_str()),
+                expected_label
+            );
+            assert_eq!(value["lang"], "eng");
+            assert_eq!(value["id"], "https://addon.example/manifest.json_3");
+            assert_eq!(value["addonSubtitleId"], "subtitle-1");
+        }
+    }
 }
