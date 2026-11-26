@@ -49,6 +49,8 @@ pub struct StreamingServer {
     pub selected: Selected,
     pub settings: Loadable<Settings, EnvError>,
     pub settings_options: Vec<SettingsOption>,
+    #[serde(skip)]
+    settings_update_generation: u64,
     pub cache_root_update: Option<Loadable<String, EnvError>>,
     #[serde(skip)]
     pub cache_root_update_generation: u64,
@@ -65,7 +67,7 @@ pub struct StreamingServer {
     pub network_info: Loadable<NetworkInfo, EnvError>,
     pub device_info: Loadable<DeviceInfo, EnvError>,
     pub torrent: Option<(InfoHash, Loadable<ResourcePath, EnvError>)>,
-    /// [`Loadable::Loading`] is used only on the first statistics request.
+    /// [`Loadable::Loading`] is used on the first fetch for each statistics selection.
     pub statistics: Option<Loadable<Statistics, EnvError>>,
 }
 
@@ -85,6 +87,7 @@ impl StreamingServer {
                 },
                 settings: Loadable::Loading,
                 settings_options: vec![],
+                settings_update_generation: 0,
                 cache_root_update: None,
                 cache_root_update_generation: 0,
                 base_url: None,
@@ -108,6 +111,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::StreamingServer(ActionStreamingServer::Reload)) => {
+                self.settings_update_generation += 1;
                 self.cache_root_update_generation += 1;
                 self.cache_root_update = None;
                 let settings_effects = eq_update(&mut self.settings, Loadable::Loading);
@@ -153,10 +157,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     eq_update(&mut self.settings, Loadable::Ready(settings.to_owned()));
                 let remote_url_effects =
                     update_remote_url::<E>(&mut self.remote_url, &self.selected, settings, ctx);
+                self.settings_update_generation += 1;
                 Effects::one(set_settings::<E>(
                     &self.selected.transport_url,
                     settings,
                     cache_root_changed,
+                    self.settings_update_generation,
                 ))
                 .unchanged()
                 .join(settings_effects)
@@ -244,9 +250,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
             Msg::Action(Action::StreamingServer(ActionStreamingServer::GetStatistics(request))) => {
                 let selected_effects =
                     eq_update(&mut self.selected.statistics, Some(request.to_owned()));
-                let is_different_request = self.selected.statistics.as_ref() != Some(request);
-                //set the Loading state only on the first fetch of the statistics
-                let statistics_effects = match (&self.statistics, is_different_request) {
+                let statistics_effects = match (&self.statistics, selected_effects.has_changed) {
                     (None, _) | (_, true) => {
                         eq_update(&mut self.statistics, Some(Loadable::Loading))
                     }
@@ -303,6 +307,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 };
                 self.settings = Loadable::Loading;
                 self.settings_options = vec![];
+                self.settings_update_generation += 1;
                 self.cache_root_update_generation += 1;
                 self.cache_root_update = None;
                 self.network_info = Loadable::Loading;
@@ -436,8 +441,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     ),
                 }
             }
-            Msg::Internal(Internal::StreamingServerUpdateSettingsResult(url, result))
-                if self.selected.transport_url == *url =>
+            Msg::Internal(Internal::StreamingServerUpdateSettingsResult(
+                url,
+                generation,
+                result,
+            )) if self.selected.transport_url == *url
+                && self.settings_update_generation == *generation =>
             {
                 match result {
                     Ok(_) => Effects::none().unchanged(),
@@ -623,6 +632,7 @@ fn set_settings<E: Env + 'static>(
     url: &Url,
     settings: &Settings,
     cache_root_changed: bool,
+    generation: u64,
 ) -> Effect {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -664,7 +674,7 @@ fn set_settings<E: Env + 'static>(
             .map_ok(|_| ())
             .map(enclose!((url) move |result| {
                 Msg::Internal(Internal::StreamingServerUpdateSettingsResult(
-                    url, result,
+                    url, generation, result,
                 ))
             }))
             .boxed_env(),

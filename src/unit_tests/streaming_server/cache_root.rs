@@ -151,6 +151,54 @@ fn stale_cache_root_results_are_ignored_after_reload_or_server_change() {
 }
 
 #[test]
+fn late_settings_failure_does_not_override_a_newer_save() {
+    let _guard = TestEnv::reset().unwrap();
+    let ctx = Ctx::default();
+    let mut server = ready_server(&ctx);
+    server.playback_devices = Loadable::Ready(vec![]);
+    *FETCH_HANDLER.write().unwrap() = Box::new(|request| {
+        let body: serde_json::Value = serde_json::from_str(&request.body).unwrap();
+        if body["cacheSize"] == 4096.0 {
+            future::ok(Box::new(SuccessResponse { success: True }) as Box<dyn Any + Send>)
+                .boxed_env()
+        } else {
+            future::err(EnvError::Fetch("Settings rejected".to_owned())).boxed_env()
+        }
+    });
+
+    let submit = |server: &mut StreamingServer, cache_size| {
+        let mut settings = server.settings.ready().unwrap().clone();
+        settings.cache_size = Some(cache_size);
+        let effects = update(
+            server,
+            &Msg::Action(Action::StreamingServer(
+                ActionStreamingServer::UpdateSettings(settings),
+            )),
+            &ctx,
+        );
+        let Effect::Future(EffectFuture::Concurrent(future)) = effects.into_iter().next().unwrap()
+        else {
+            panic!("Expected settings request");
+        };
+        future
+    };
+    let older = submit(&mut server, 2048.0);
+    let newer = submit(&mut server, 4096.0);
+    update(&mut server, &block_on(newer), &ctx);
+    let late_result = update(&mut server, &block_on(older), &ctx);
+    assert!(!late_result.has_changed);
+    assert_eq!(server.settings.ready().unwrap().cache_size, Some(4096.0));
+    assert!(server.playback_devices.is_ready());
+
+    let current = submit(&mut server, 8192.0);
+    update(&mut server, &block_on(current), &ctx);
+    assert_eq!(
+        server.settings,
+        Loadable::Err(EnvError::Fetch("Settings rejected".to_owned()))
+    );
+}
+
+#[test]
 fn general_settings_updates_only_send_cache_root_when_it_changes() {
     let _env_mutex = TestEnv::reset().unwrap();
     let ctx = Ctx::default();
