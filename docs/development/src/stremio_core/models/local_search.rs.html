@@ -591,6 +591,7 @@
             })) =&gt; {
                 <span class="kw">let </span>magnet = Magnet::new(search_query).ok();
                 <span class="kw">match </span>(<span class="kw-2">&amp;</span><span class="self">self</span>.searcher, magnet) {
+                    (<span class="kw">_</span>, <span class="prelude-val">Some</span>(<span class="kw">_</span>)) =&gt; eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.search_results, <span class="macro">vec!</span>[]),
                     <span class="comment">// local search can be performed
                     </span>(<span class="prelude-val">Some</span>(searcher), <span class="prelude-val">None</span>) =&gt; {
                         <span class="kw">let </span>new_search_results = searcher
@@ -602,8 +603,7 @@
                         eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.search_results, new_search_results)
                     }
                     <span class="comment">// we first need to load the Searchable records from Cinemeta
-                    // or search query is a magnet link
-                    </span><span class="kw">_ </span>=&gt; Effects::none().unchanged(),
+                    </span>(<span class="prelude-val">None</span>, <span class="prelude-val">None</span>) =&gt; Effects::none().unchanged(),
                 }
             }
             Msg::Internal(Internal::LoadLocalSearchResult(_url, result)) =&gt; {
