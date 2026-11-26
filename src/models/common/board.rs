@@ -24,6 +24,7 @@ pub type CatalogPage<T> = ResourceLoadable<Vec<T>>;
 
 pub fn board_plan(profile: &Profile) -> Vec<(&Descriptor, &ManifestCatalog, ResourceRequest)> {
     let extra = vec![];
+    let mut seen = HashSet::new();
     AggrRequest::AllCatalogs {
         extra: &extra,
         r#type: &None,
@@ -44,6 +45,8 @@ pub fn board_plan(profile: &Profile) -> Vec<(&Descriptor, &ManifestCatalog, Reso
                 || extra_prop.name == CALENDAR_IDS_EXTRA_PROP.name
         })
     })
+    // Board requests all use the catalog resource with no extra values.
+    .filter(|(addon, catalog, _)| seen.insert((&addon.transport_url, &catalog.r#type, &catalog.id)))
     .collect()
 }
 
