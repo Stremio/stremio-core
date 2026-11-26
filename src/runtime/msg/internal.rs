@@ -85,8 +85,9 @@ pub enum Internal {
     /// Dispatched when stream item's state has changed
     StreamStateChanged {
         state: StreamItemState,
-        stream_request: Option<ResourceRequest>,
-        meta_request: Option<ResourceRequest>,
+        stream: Stream,
+        stream_request: ResourceRequest,
+        meta_request: ResourceRequest,
     },
     /// Dispatched when requesting search on catalogs.
     CatalogsWithExtraSearch {

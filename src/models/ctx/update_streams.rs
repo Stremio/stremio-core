@@ -1,13 +1,22 @@
 use enclose::enclose;
 use futures::FutureExt;
-use std::collections::hash_map::Entry;
 
-use crate::constants::STREAMS_STORAGE_KEY;
-use crate::models::common::{Loadable, ResourceLoadable};
-use crate::models::ctx::{CtxError, CtxStatus};
-use crate::runtime::msg::{CtxAuthResponse, Event, Internal, Msg};
-use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
-use crate::types::streams::{StreamsBucket, StreamsItem, StreamsItemKey};
+use crate::{
+    constants::STREAMS_STORAGE_KEY,
+    models::{
+        common::{Loadable, ResourceLoadable},
+        ctx::{CtxError, CtxStatus},
+    },
+    runtime::{
+        msg::{CtxAuthResponse, Event, Internal, Msg},
+        Effect, EffectFuture, Effects, Env, EnvFutureExt,
+    },
+    types::{
+        addon::ResourceRequest,
+        resource::Stream,
+        streams::{StreamItemState, StreamsBucket, StreamsItem, StreamsItemKey},
+    },
+};
 
 pub fn update_streams<E: Env + 'static>(
     streams: &mut StreamsBucket,
@@ -40,30 +49,26 @@ pub fn update_streams<E: Env + 'static>(
                 meta_id: meta_id.to_owned(),
                 video_id: video_id.to_owned(),
             };
+            let exact_item = streams.items.get(&key);
             let last_stream_item = match meta_content {
-                Loadable::Ready(meta_item) => streams.last_stream_item(video_id, meta_item),
-                _ => streams.items.get(&key),
+                Loadable::Ready(meta_item) => exact_item
+                    .filter(|item| item.stream.is_source_match(stream))
+                    .or_else(|| streams.last_stream_item(video_id, meta_item)),
+                _ => exact_item,
             };
             let last_stream_state = last_stream_item.and_then(|item| item.adjusted_state(stream));
 
-            let streams_item = StreamsItem {
-                stream: stream.to_owned(),
-                r#type: meta_request.path.r#type.to_owned(),
-                meta_id: meta_id.to_owned(),
-                video_id: video_id.to_owned(),
-                meta_transport_url: meta_request.base.to_owned(),
-                stream_transport_url: stream_request.base.to_owned(),
-                state: last_stream_state,
-                mtime: E::now(),
-            };
-
-            streams.items.insert(key, streams_item);
+            streams.items.insert(
+                key,
+                streams_item::<E>(stream, stream_request, meta_request, last_stream_state),
+            );
             Effects::msg(Msg::Internal(Internal::StreamsChanged(false)))
         }
         Msg::Internal(Internal::StreamStateChanged {
             state,
-            stream_request: Some(stream_request),
-            meta_request: Some(meta_request),
+            stream,
+            stream_request,
+            meta_request,
         }) => {
             let meta_id = &meta_request.path.id;
             let video_id = &stream_request.path.id;
@@ -72,14 +77,23 @@ pub fn update_streams<E: Env + 'static>(
                 meta_id: meta_id.to_owned(),
                 video_id: video_id.to_owned(),
             };
-            let entry = streams
-                .items
-                .entry(key)
-                .and_modify(|item| item.state = Some(state.to_owned()));
-            match entry {
-                Entry::Occupied(_) => Effects::msg(Msg::Internal(Internal::StreamsChanged(false))),
-                _ => Effects::none().unchanged(),
+            match streams.items.get_mut(&key) {
+                Some(item) if item.stream.is_source_match(stream) => {
+                    item.state = Some(state.to_owned());
+                }
+                _ => {
+                    streams.items.insert(
+                        key,
+                        streams_item::<E>(
+                            stream,
+                            stream_request,
+                            meta_request,
+                            Some(state.to_owned()),
+                        ),
+                    );
+                }
             }
+            Effects::msg(Msg::Internal(Internal::StreamsChanged(false)))
         }
         Msg::Internal(Internal::StreamsChanged(persisted)) if !persisted => {
             Effects::one(push_streams_to_storage::<E>(streams)).unchanged()
@@ -99,6 +113,24 @@ pub fn update_streams<E: Env + 'static>(
             _ => Effects::none().unchanged(),
         },
         _ => Effects::none().unchanged(),
+    }
+}
+
+fn streams_item<E: Env>(
+    stream: &Stream,
+    stream_request: &ResourceRequest,
+    meta_request: &ResourceRequest,
+    state: Option<StreamItemState>,
+) -> StreamsItem {
+    StreamsItem {
+        stream: stream.to_owned(),
+        r#type: meta_request.path.r#type.to_owned(),
+        meta_id: meta_request.path.id.to_owned(),
+        video_id: stream_request.path.id.to_owned(),
+        meta_transport_url: meta_request.base.to_owned(),
+        stream_transport_url: stream_request.base.to_owned(),
+        state,
+        mtime: E::now(),
     }
 }
 
