@@ -1,6 +1,12 @@
-use crate::types::addon::{Manifest, ManifestBehaviorHints};
-use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
+use crate::{
+    types::{
+        addon::{Manifest, ManifestBehaviorHints},
+        api::{APIResult, CollectionResponse},
+    },
+    unit_tests::serde::default_tokens_ext::DefaultTokens,
+};
 use semver::Version;
+use serde_json::json;
 use serde_test::{assert_de_tokens, assert_ser_tokens, Configure, Token};
 use url::Url;
 
@@ -229,4 +235,57 @@ fn manifest() {
         ]
         .concat(),
     );
+}
+
+#[test]
+fn addon_collection_accepts_quoted_configurable_flags() {
+    let addon = |id: &str, configurable| {
+        json!({
+            "transportUrl": format!("https://{id}.example/manifest.json"),
+            "manifest": {
+                "id": id,
+                "version": "1.0.0",
+                "name": "Example addon",
+                "types": ["movie"],
+                "resources": ["subtitles"],
+                "behaviorHints": { "configurable": configurable }
+            }
+        })
+    };
+    let response: APIResult<CollectionResponse> = serde_json::from_value(json!({
+        "result": {
+            "addons": [
+                addon("standard", json!(true)),
+                addon("legacy-on", json!("true")),
+                addon("legacy-off", json!("false"))
+            ],
+            "lastModified": "2020-01-01T00:00:00Z"
+        }
+    }))
+    .unwrap();
+    let collection = response.into_result().unwrap();
+    let flags: Vec<_> = collection
+        .addons
+        .iter()
+        .map(|addon| addon.manifest.behavior_hints.configurable)
+        .collect();
+    assert_eq!(flags, [true, true, false]);
+
+    for (addon, expected) in collection.addons.iter().zip(flags) {
+        let serialized = serde_json::to_value(addon).unwrap();
+        assert_eq!(
+            serialized["manifest"]["behaviorHints"]["configurable"],
+            json!(expected)
+        );
+    }
+}
+
+#[test]
+fn configurable_rejects_unrecognized_values() {
+    for value in [json!("yes"), json!(1), json!(null)] {
+        assert!(
+            serde_json::from_value::<ManifestBehaviorHints>(json!({ "configurable": value }))
+                .is_err()
+        );
+    }
 }
