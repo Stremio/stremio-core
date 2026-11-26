@@ -310,7 +310,7 @@
     <span class="comment">// Result for device info.
     </span>StreamingServerDeviceInfoResult(Url, <span class="prelude-ty">Result</span>&lt;DeviceInfo, EnvError&gt;),
     <span class="doccomment">/// Result for updating streaming server settings.
-    </span>StreamingServerUpdateSettingsResult(Url, <span class="prelude-ty">Result</span>&lt;(), EnvError&gt;),
+    </span>StreamingServerUpdateSettingsResult(Url, u64, <span class="prelude-ty">Result</span>&lt;(), EnvError&gt;),
     <span class="doccomment">/// Result for a confirmed cache directory change.
     </span>StreamingServerUpdateCacheRootResult(Url, u64, <span class="prelude-ty">Result</span>&lt;String, EnvError&gt;),
     <span class="doccomment">/// Result for creating a torrent.

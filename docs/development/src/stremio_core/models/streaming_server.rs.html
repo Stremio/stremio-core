@@ -921,7 +921,19 @@
 <a href="#920" id="920">920</a>
 <a href="#921" id="921">921</a>
 <a href="#922" id="922">922</a>
-<a href="#923" id="923">923</a></pre></div><pre class="rust"><code><span class="kw">use </span>enclose::enclose;
+<a href="#923" id="923">923</a>
+<a href="#924" id="924">924</a>
+<a href="#925" id="925">925</a>
+<a href="#926" id="926">926</a>
+<a href="#927" id="927">927</a>
+<a href="#928" id="928">928</a>
+<a href="#929" id="929">929</a>
+<a href="#930" id="930">930</a>
+<a href="#931" id="931">931</a>
+<a href="#932" id="932">932</a>
+<a href="#933" id="933">933</a>
+<a href="#934" id="934">934</a>
+<a href="#935" id="935">935</a></pre></div><pre class="rust"><code><span class="kw">use </span>enclose::enclose;
 <span class="kw">use </span>futures::{FutureExt, TryFutureExt};
 <span class="kw">use </span>http::request::Request;
 <span class="kw">use </span>magnet_url::{Magnet, MagnetError};
@@ -972,6 +984,8 @@
     <span class="kw">pub </span>selected: Selected,
     <span class="kw">pub </span>settings: Loadable&lt;Settings, EnvError&gt;,
     <span class="kw">pub </span>settings_options: Vec&lt;SettingsOption&gt;,
+    <span class="attr">#[serde(skip)]
+    </span>settings_update_generation: u64,
     <span class="kw">pub </span>cache_root_update: <span class="prelude-ty">Option</span>&lt;Loadable&lt;String, EnvError&gt;&gt;,
     <span class="attr">#[serde(skip)]
     </span><span class="kw">pub </span>cache_root_update_generation: u64,
@@ -1008,6 +1022,7 @@
                 },
                 settings: Loadable::Loading,
                 settings_options: <span class="macro">vec!</span>[],
+                settings_update_generation: <span class="number">0</span>,
                 cache_root_update: <span class="prelude-val">None</span>,
                 cache_root_update_generation: <span class="number">0</span>,
                 base_url: <span class="prelude-val">None</span>,
@@ -1031,6 +1046,7 @@
     <span class="kw">fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, msg: <span class="kw-2">&amp;</span>Msg, ctx: <span class="kw-2">&amp;</span>Ctx) -&gt; Effects {
         <span class="kw">match </span>msg {
             Msg::Action(Action::StreamingServer(ActionStreamingServer::Reload)) =&gt; {
+                <span class="self">self</span>.settings_update_generation += <span class="number">1</span>;
                 <span class="self">self</span>.cache_root_update_generation += <span class="number">1</span>;
                 <span class="self">self</span>.cache_root_update = <span class="prelude-val">None</span>;
                 <span class="kw">let </span>settings_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.settings, Loadable::Loading);
@@ -1076,10 +1092,12 @@
                     eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.settings, Loadable::Ready(settings.to_owned()));
                 <span class="kw">let </span>remote_url_effects =
                     update_remote_url::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.remote_url, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, settings, ctx);
+                <span class="self">self</span>.settings_update_generation += <span class="number">1</span>;
                 Effects::one(set_settings::&lt;E&gt;(
                     <span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url,
                     settings,
                     cache_root_changed,
+                    <span class="self">self</span>.settings_update_generation,
                 ))
                 .unchanged()
                 .join(settings_effects)
@@ -1224,6 +1242,7 @@
                 };
                 <span class="self">self</span>.settings = Loadable::Loading;
                 <span class="self">self</span>.settings_options = <span class="macro">vec!</span>[];
+                <span class="self">self</span>.settings_update_generation += <span class="number">1</span>;
                 <span class="self">self</span>.cache_root_update_generation += <span class="number">1</span>;
                 <span class="self">self</span>.cache_root_update = <span class="prelude-val">None</span>;
                 <span class="self">self</span>.network_info = Loadable::Loading;
@@ -1357,8 +1376,12 @@
                     ),
                 }
             }
-            Msg::Internal(Internal::StreamingServerUpdateSettingsResult(url, result))
-                <span class="kw">if </span><span class="self">self</span>.selected.transport_url == <span class="kw-2">*</span>url =&gt;
+            Msg::Internal(Internal::StreamingServerUpdateSettingsResult(
+                url,
+                generation,
+                result,
+            )) <span class="kw">if </span><span class="self">self</span>.selected.transport_url == <span class="kw-2">*</span>url
+                &amp;&amp; <span class="self">self</span>.settings_update_generation == <span class="kw-2">*</span>generation =&gt;
             {
                 <span class="kw">match </span>result {
                     <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; Effects::none().unchanged(),
@@ -1544,6 +1567,7 @@
     url: <span class="kw-2">&amp;</span>Url,
     settings: <span class="kw-2">&amp;</span>Settings,
     cache_root_changed: bool,
+    generation: u64,
 ) -&gt; Effect {
     <span class="attr">#[derive(Serialize)]
     #[serde(rename_all = <span class="string">"camelCase"</span>)]
@@ -1585,7 +1609,7 @@
             .map_ok(|<span class="kw">_</span>| ())
             .map(<span class="macro">enclose!</span>((url) <span class="kw">move </span>|result| {
                 Msg::Internal(Internal::StreamingServerUpdateSettingsResult(
-                    url, result,
+                    url, generation, result,
                 ))
             }))
             .boxed_env(),
