@@ -4,7 +4,9 @@ use derivative::Derivative;
 use derive_more::Deref;
 use either::Either;
 use serde::{Deserialize, Deserializer, Serialize};
-use serde_with::{serde_as, DefaultOnError, DefaultOnNull, DeserializeAs, NoneAsEmptyString};
+use serde_with::{
+    serde_as, DefaultOnError, DefaultOnNull, DeserializeAs, IfIsHumanReadable, NoneAsEmptyString,
+};
 use url::Url;
 
 use crate::constants::{EPG_DATE_EXTRA_PROP, SKIP_EXTRA_PROP};
@@ -101,6 +103,7 @@ pub struct Manifest {
     #[serde_as(deserialize_as = "UniqueVec<Vec<_>, ManifestCatalogUniqueVecAdapter>")]
     pub addon_catalogs: Vec<ManifestCatalog>,
     #[serde(default)]
+    #[serde_as(deserialize_as = "IfIsHumanReadable<DefaultOnNull>")]
     pub behavior_hints: ManifestBehaviorHints,
 }
 
@@ -167,6 +170,7 @@ pub struct ManifestPreview {
     pub background: Option<Url>,
     pub types: Vec<String>,
     #[serde(default)]
+    #[serde_as(deserialize_as = "IfIsHumanReadable<DefaultOnNull>")]
     pub behavior_hints: ManifestBehaviorHints,
 }
 
