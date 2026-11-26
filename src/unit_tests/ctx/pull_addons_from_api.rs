@@ -1,18 +1,23 @@
-use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
-use crate::models::ctx::Ctx;
-use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
-use crate::types::addon::{Descriptor, Manifest};
-use crate::types::api::{APIResult, CollectionResponse};
-use crate::types::events::DismissedEventsBucket;
-use crate::types::library::LibraryBucket;
-use crate::types::notifications::NotificationsBucket;
-use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
-use crate::types::search_history::SearchHistoryBucket;
-use crate::types::server_urls::ServerUrlsBucket;
-use crate::types::streams::StreamsBucket;
-use crate::unit_tests::{
-    default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
+use crate::{
+    constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY},
+    models::ctx::Ctx,
+    runtime::{
+        msg::{Action, ActionCtx},
+        Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture,
+    },
+    types::{
+        addon::{Descriptor, Manifest},
+        api::{APIResult, CollectionResponse, SuccessResponse},
+        events::DismissedEventsBucket,
+        library::LibraryBucket,
+        notifications::NotificationsBucket,
+        profile::{Auth, AuthKey, GDPRConsent, Profile, User},
+        search_history::SearchHistoryBucket,
+        server_urls::ServerUrlsBucket,
+        streams::StreamsBucket,
+        True,
+    },
+    unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE},
 };
 use futures::future;
 use semver::Version;
@@ -196,4 +201,74 @@ fn actionctx_pulladdonsfromapi_with_user() {
         "https://api.strem.io/api/addonCollectionGet".to_owned(),
         "addonCollectionGet request has been sent"
     );
+}
+
+#[test]
+fn delayed_pull_preserves_a_local_addon_install() {
+    #[derive(Model, Clone)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+    }
+
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(|request: Request| match request.url.as_str() {
+        "https://api.strem.io/api/addonCollectionGet" => {
+            // The runtime polls this response after both actions have been dispatched.
+            future::lazy(|_| {
+                Ok(Box::new(APIResult::Ok(CollectionResponse {
+                    addons: vec![],
+                    last_modified: TestEnv::now(),
+                })) as Box<dyn Any + Send>)
+            })
+            .boxed_env()
+        }
+        "https://api.strem.io/api/addonCollectionSet" => future::ok(Box::new(APIResult::Ok(
+            SuccessResponse { success: True },
+        ))
+            as Box<dyn Any + Send>)
+        .boxed_env(),
+        _ => default_fetch_handler(request),
+    });
+
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+        TestModel {
+            ctx: Ctx {
+                profile: Profile {
+                    auth: Some(Auth {
+                        key: AuthKey("auth_key".to_owned()),
+                        user: User::default(),
+                    }),
+                    addons: vec![],
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        },
+        vec![],
+        1000,
+    );
+    let addon = Descriptor {
+        transport_url: Url::parse("https://addon.example/manifest.json").unwrap(),
+        flags: Default::default(),
+        ..OFFICIAL_ADDONS.first().unwrap().to_owned()
+    };
+
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::PullAddonsFromAPI),
+        });
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::InstallAddon(addon.to_owned())),
+        });
+    });
+
+    let expected_addons = vec![addon];
+    assert_eq!(runtime.model().unwrap().ctx.profile.addons, expected_addons);
+    let storage = STORAGE.read().unwrap();
+    let stored_profile: Profile =
+        serde_json::from_str(storage.get(PROFILE_STORAGE_KEY).unwrap()).unwrap();
+    assert_eq!(stored_profile.addons, expected_addons);
 }

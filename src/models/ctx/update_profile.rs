@@ -3,25 +3,31 @@ use std::collections::HashSet;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 
-use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY, STREAMING_SERVER_URL};
-use crate::models::ctx::{CtxError, CtxStatus, OtherError};
-use crate::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg};
-use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
-use crate::types::addon::Descriptor;
-use crate::types::api::{
-    fetch_api, APIError, APIRequest, APIResult, CollectionResponse, SuccessResponse,
+use crate::{
+    constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY, STREAMING_SERVER_URL},
+    models::ctx::{CtxError, CtxStatus, OtherError},
+    runtime::{
+        msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg},
+        Effect, EffectFuture, Effects, Env, EnvFutureExt,
+    },
+    types::{
+        addon::Descriptor,
+        api::{fetch_api, APIError, APIRequest, APIResult, CollectionResponse, SuccessResponse},
+        profile::{Auth, AuthKey, Password, Profile, Settings, User},
+        streams::StreamsBucket,
+    },
 };
-use crate::types::profile::{Auth, AuthKey, Password, Profile, Settings, User};
-use crate::types::streams::StreamsBucket;
 
 pub fn update_profile<E: Env + 'static>(
     profile: &mut Profile,
     streams: &mut StreamsBucket,
+    addons_revision: &mut u64,
     status: &CtxStatus,
     msg: &Msg,
 ) -> Effects {
     match msg {
         Msg::Internal(Internal::Logout(_)) => {
+            *addons_revision += 1;
             let next_profile = Profile::default();
             if *profile != next_profile {
                 *profile = next_profile;
@@ -84,7 +90,10 @@ pub fn update_profile<E: Env + 'static>(
             .unchanged(),
         },
         Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI)) => match profile.auth_key() {
-            Some(auth_key) => Effects::one(pull_addons_from_api::<E>(auth_key)).unchanged(),
+            Some(auth_key) => {
+                *addons_revision += 1;
+                Effects::one(pull_addons_from_api::<E>(auth_key, *addons_revision)).unchanged()
+            }
             _ => {
                 let next_addons = profile
                     .addons
@@ -161,6 +170,7 @@ pub fn update_profile<E: Env + 'static>(
                 return addon_upgrade_error_effects(addon, OtherError::AddonIsProtected);
             }
             addon.clone_into(&mut profile.addons[addon_position]);
+            *addons_revision += 1;
             let push_to_api_effects = match profile.auth_key() {
                 Some(auth_key) => {
                     Effects::one(push_addons_to_api::<E>(profile.addons.to_owned(), auth_key))
@@ -188,6 +198,7 @@ pub fn update_profile<E: Env + 'static>(
             if let Some(addon_position) = addon_position {
                 if !profile.addons[addon_position].flags.protected && !addon.flags.protected {
                     profile.addons.remove(addon_position);
+                    *addons_revision += 1;
 
                     // Remove stream related to this addon from the streams bucket
                     streams
@@ -290,6 +301,7 @@ pub fn update_profile<E: Env + 'static>(
                     } else {
                         profile.addons.push(addon.to_owned());
                     };
+                    *addons_revision += 1;
                     let push_to_api_effects = match profile.auth_key() {
                         Some(auth_key) => Effects::one(push_addons_to_api::<E>(
                             profile.addons.to_owned(),
@@ -320,6 +332,7 @@ pub fn update_profile<E: Env + 'static>(
                     ..
                 }),
             ) if loading_auth_request == auth_request => {
+                *addons_revision += 1;
                 let next_profile = Profile {
                     auth: Some(auth.to_owned()),
                     addons: addons_result.to_owned().unwrap_or(OFFICIAL_ADDONS.clone()),
@@ -335,10 +348,11 @@ pub fn update_profile<E: Env + 'static>(
             }
             _ => Effects::none().unchanged(),
         },
-        Msg::Internal(Internal::AddonsAPIResult(
-            APIRequest::AddonCollectionGet { auth_key, .. },
+        Msg::Internal(Internal::AddonsAPIResult {
+            auth_key,
+            revision,
             result,
-        )) if profile.auth_key() == Some(auth_key) => {
+        }) if profile.auth_key() == Some(auth_key) && *revision == *addons_revision => {
             let profile_effects = match result {
                 Ok(addons) => {
                     let prev_transport_urls = profile
@@ -521,9 +535,10 @@ fn push_user_to_api<E: Env + 'static>(user: User, auth_key: &AuthKey) -> Effect 
     .into()
 }
 
-fn pull_addons_from_api<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
+fn pull_addons_from_api<E: Env + 'static>(auth_key: &AuthKey, revision: u64) -> Effect {
+    let auth_key = auth_key.to_owned();
     let request = APIRequest::AddonCollectionGet {
-        auth_key: auth_key.to_owned(),
+        auth_key: auth_key.clone(),
         update: true,
     };
     EffectFuture::Concurrent(
@@ -534,7 +549,13 @@ fn pull_addons_from_api<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
                 APIResult::Err(error) => future::err(CtxError::from(error)),
             })
             .map_ok(|CollectionResponse { addons, .. }| addons)
-            .map(move |result| Msg::Internal(Internal::AddonsAPIResult(request, result)))
+            .map(move |result| {
+                Msg::Internal(Internal::AddonsAPIResult {
+                    auth_key,
+                    revision,
+                    result,
+                })
+            })
             .boxed_env(),
     )
     .into()

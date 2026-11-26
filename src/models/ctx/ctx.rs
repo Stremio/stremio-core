@@ -49,6 +49,9 @@ pub enum CtxStatus {
 #[cfg_attr(test, derivative(Default))]
 pub struct Ctx {
     pub profile: Profile,
+    // Identifies the latest pull that no local change has superseded.
+    #[serde(skip)]
+    pub(crate) addons_revision: u64,
     // TODO SubtitlesBucket
     // TODO SearchesBucket
     #[serde(skip)]
@@ -94,6 +97,7 @@ impl Ctx {
     ) -> Self {
         Self {
             profile,
+            addons_revision: 0,
             library,
             streams,
             streaming_server_urls,
@@ -144,8 +148,13 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     }
                     _ => Effects::none().unchanged(),
                 };
-                let profile_effects =
-                    update_profile::<E>(&mut self.profile, &mut self.streams, &self.status, msg);
+                let profile_effects = update_profile::<E>(
+                    &mut self.profile,
+                    &mut self.streams,
+                    &mut self.addons_revision,
+                    &self.status,
+                    msg,
+                );
                 let remote_config_effects = update_remote_config::<E>(
                     &mut self.remote_config,
                     &mut self.remote_config_bucket,
@@ -193,8 +202,13 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(notifications_effects)
             }
             Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => {
-                let profile_effects =
-                    update_profile::<E>(&mut self.profile, &mut self.streams, &self.status, msg);
+                let profile_effects = update_profile::<E>(
+                    &mut self.profile,
+                    &mut self.streams,
+                    &mut self.addons_revision,
+                    &self.status,
+                    msg,
+                );
                 let remote_config_effects = update_remote_config::<E>(
                     &mut self.remote_config,
                     &mut self.remote_config_bucket,
@@ -300,8 +314,13 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(ctx_effects)
             }
             _ => {
-                let profile_effects =
-                    update_profile::<E>(&mut self.profile, &mut self.streams, &self.status, msg);
+                let profile_effects = update_profile::<E>(
+                    &mut self.profile,
+                    &mut self.streams,
+                    &mut self.addons_revision,
+                    &self.status,
+                    msg,
+                );
                 let remote_config_effects = update_remote_config::<E>(
                     &mut self.remote_config,
                     &mut self.remote_config_bucket,
