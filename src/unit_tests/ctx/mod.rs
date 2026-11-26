@@ -9,6 +9,7 @@ mod update_events;
 mod update_remote_config;
 mod notifications {
     mod continue_watching;
+    mod toggle_library_item_notifications;
     mod update_notifications;
 }
 mod pull_addons_from_api;
