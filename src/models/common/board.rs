@@ -69,7 +69,13 @@ pub fn default_spotlight_requests(
 }
 
 pub fn board_spotlight_requests(profile: &Profile) -> Vec<ResourceRequest> {
-    let plan = board_plan(profile);
+    spotlight_requests_from_plan(profile, &board_plan(profile))
+}
+
+pub fn spotlight_requests_from_plan(
+    profile: &Profile,
+    plan: &[(&Descriptor, &ManifestCatalog, ResourceRequest)],
+) -> Vec<ResourceRequest> {
     let picks = profile
         .settings
         .board_spotlight
@@ -80,7 +86,7 @@ pub fn board_spotlight_requests(profile: &Profile) -> Vec<ResourceRequest> {
         .cloned()
         .collect::<Vec<_>>();
     if picks.is_empty() {
-        default_spotlight_requests(&plan)
+        default_spotlight_requests(plan)
     } else {
         picks
     }

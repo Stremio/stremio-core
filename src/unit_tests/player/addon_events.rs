@@ -183,6 +183,36 @@ fn tracker_urls() -> Vec<String> {
 }
 
 #[test]
+fn opening_paused_does_not_send_addon_events_before_playback() {
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
+    let (runtime, _rx) = new_runtime();
+
+    load(&runtime);
+    player_action(&runtime, ActionPlayer::PausedChanged { paused: true });
+    player_action(
+        &runtime,
+        ActionPlayer::Seek {
+            time: 30_000,
+            duration: 3_600_000,
+            device: "test".to_owned(),
+        },
+    );
+    dispatch(&runtime, Action::Unload);
+    assert!(tracker_urls().is_empty());
+
+    load(&runtime);
+    player_action(&runtime, ActionPlayer::PausedChanged { paused: true });
+    player_action(&runtime, ActionPlayer::PausedChanged { paused: false });
+    dispatch(&runtime, Action::Unload);
+
+    let urls = tracker_urls();
+    assert_eq!(urls.len(), 2);
+    assert!(urls[0].contains("/action=start&"));
+    assert!(urls[1].contains("/action=stop&"));
+}
+
+#[test]
 fn playback_sends_start_pause_and_stop() {
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);

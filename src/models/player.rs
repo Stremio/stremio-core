@@ -4,38 +4,34 @@ use base64::Engine;
 use futures::{future, FutureExt, TryFutureExt};
 use url::Url;
 
-use crate::{
-    constants::{
-        BASE64, CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, PLAYER_IGNORE_SEEK_AFTER,
-        STREAM_RESOURCE_NAME, SUBTITLES_RESOURCE_NAME, VIDEO_FILENAME_EXTRA_PROP,
-        VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
-    },
-    models::{
-        common::{
-            addon_events_effects, eq_update, player_event_path, resource_update,
-            resource_update_with_vector_content, resources_update_with_vector_content,
-            videos_watched_event_paths, Loadable, PlayerEventAction, ResourceAction,
-            ResourceLoadable, ResourcesAction,
-        },
-        ctx::{Ctx, CtxError},
-    },
-    runtime::{
-        msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg},
-        Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx,
-    },
-    types::{
-        addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, ResourceRequest},
-        api::{
-            fetch_api, APIRequest, APIResult, SeekLog, SeekLogRequest, SkipGapsRequest,
-            SkipGapsResponse, SuccessResponse,
-        },
-        library::{LibraryBucket, LibraryItem},
-        player::{IntroData, IntroOutro},
-        profile::{AuthKey, Profile},
-        rating::{Rating, RatingSendRequest, RatingSendResponse},
-        resource::{MetaItem, SeriesInfo, Stream, StreamSource, StreamUrls, Subtitles, Video},
-        streams::{ConvertedStreamSource, StreamItemState, StreamsBucket, StreamsItemKey},
-    },
+use crate::constants::{
+    BASE64, CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, PLAYER_IGNORE_SEEK_AFTER,
+    STREAM_RESOURCE_NAME, SUBTITLES_RESOURCE_NAME, VIDEO_FILENAME_EXTRA_PROP,
+    VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
+};
+use crate::models::common::{
+    addon_events_effects, eq_update, player_event_path, resource_update,
+    resource_update_with_vector_content, resources_update_with_vector_content,
+    videos_watched_event_paths, Loadable, PlayerEventAction, ResourceAction, ResourceLoadable,
+    ResourcesAction,
+};
+use crate::models::ctx::{Ctx, CtxError};
+use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg};
+use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx};
+use crate::types::addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, ResourceRequest};
+use crate::types::api::{
+    fetch_api, APIRequest, APIResult, SeekLog, SeekLogRequest, SkipGapsRequest, SkipGapsResponse,
+    SuccessResponse,
+};
+use crate::types::library::{LibraryBucket, LibraryItem};
+use crate::types::player::{IntroData, IntroOutro};
+use crate::types::profile::{AuthKey, Profile};
+use crate::types::rating::{Rating, RatingSendRequest, RatingSendResponse};
+use crate::types::resource::{
+    MetaItem, SeriesInfo, Stream, StreamSource, StreamUrls, Subtitles, Video,
+};
+use crate::types::streams::{
+    ConvertedStreamSource, StreamItemState, StreamsBucket, StreamsItemKey,
 };
 
 use stremio_watched_bitfield::WatchedBitField;
@@ -132,6 +128,9 @@ pub struct Player {
     pub push_library_item_time: DateTime<Utc>,
     #[serde(skip_serializing)]
     pub loaded: bool,
+    /// Whether the player has reported unpaused playback for this load.
+    #[serde(skip_serializing)]
+    pub playback_started: bool,
     /// Whether playback time has advanced during the current load.
     #[serde(skip)]
     pub playback_progressed: bool,
@@ -183,7 +182,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.profile.addons,
                     self.selected.as_ref(),
                     self.analytics_context.as_ref(),
-                    (self.loaded && !self.ended).then_some(PlayerEventAction::Stop),
+                    (self.playback_started && !self.ended).then_some(PlayerEventAction::Stop),
                 );
                 // make sure we send the correct Trakt event if the model hasn't been unloaded
                 let trakt_event_effects = if self.selected.is_some() {
@@ -251,7 +250,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     },
                     _ => eq_update(&mut self.meta_item, None),
                 };
-                let stream_state_effects = eq_update(&mut self.stream_state, None);
+                let stream_state_effects =
+                    stream_state_update(&mut self.stream_state, &self.selected, &ctx.streams);
                 let video_params_effects = eq_update(&mut self.video_params, None);
 
                 let stream_effects = stream_update(
@@ -362,6 +362,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 });
                 self.load_time = Some(E::now());
                 self.loaded = false;
+                self.playback_started = false;
                 self.playback_progressed = false;
                 self.ended = false;
                 self.paused = None;
@@ -404,7 +405,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.profile.addons,
                     self.selected.as_ref(),
                     self.analytics_context.as_ref(),
-                    (self.loaded && !self.ended).then_some(PlayerEventAction::Stop),
+                    (self.playback_started && !self.ended).then_some(PlayerEventAction::Stop),
                 );
                 let ended_effects = if !self.ended && self.selected.is_some() {
                     Effects::msg(Msg::Event(Event::PlayerStopped {
@@ -456,6 +457,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.analytics_context = None;
                 self.load_time = None;
                 self.loaded = false;
+                self.playback_started = false;
                 self.playback_progressed = false;
                 self.ended = false;
                 self.paused = None;
@@ -580,7 +582,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .unchanged(),
                         _ => Effects::none(),
                     };
-                    let player_event = match (self.loaded, self.paused) {
+                    let player_event = match (self.playback_started, self.paused) {
                         (true, Some(true)) => Some(PlayerEventAction::Pause),
                         (true, Some(false)) => Some(PlayerEventAction::Start),
                         _ => None,
@@ -755,8 +757,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             {
                 self.paused = Some(*paused);
                 let player_event = if !*paused {
+                    self.playback_started = true;
                     Some(PlayerEventAction::Start)
-                } else if self.loaded {
+                } else if self.playback_started {
                     Some(PlayerEventAction::Pause)
                 } else {
                     None
@@ -847,7 +850,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.profile.addons,
                     self.selected.as_ref(),
                     self.analytics_context.as_ref(),
-                    (self.loaded && !self.ended).then_some(PlayerEventAction::Stop),
+                    (self.playback_started && !self.ended).then_some(PlayerEventAction::Stop),
                 );
                 self.ended = true;
                 Effects::msg(Msg::Event(Event::PlayerEnded {
@@ -1094,7 +1097,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(watched_effects)
                     .join(skip_gaps_effects)
             }
-            Msg::Internal(Internal::SkipGapsResult(skip_gaps_request, result)) => {
+            Msg::Internal(Internal::SkipGapsResult(skip_gaps_request, result))
+                if matches!(
+                    self.skip_gaps.as_ref(),
+                    Some((request, Loadable::Loading)) if request == skip_gaps_request
+                ) =>
+            {
                 let skip_gaps_next = match result.to_owned() {
                     Ok(response) => Loadable::Ready(response),
                     Err(err) => Loadable::Err(err),
@@ -1122,7 +1130,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 if let Some(analytics_context) = &mut self.analytics_context {
                     analytics_context.has_trakt = ctx.profile.has_trakt::<E>();
                 };
-                Effects::none().unchanged()
+                subtitles_update::<E>(
+                    &mut self.subtitles,
+                    &self.selected,
+                    &self.video_params,
+                    self.stream.as_ref(),
+                    &ctx.profile.addons,
+                )
             }
             _ => Effects::none().unchanged(),
         };
@@ -1294,6 +1308,7 @@ fn stream_state_update(
 ) -> Effects {
     let next_state = match selected {
         Some(Selected {
+            stream,
             stream_request: Some(stream_request),
             meta_request: Some(meta_request),
             ..
@@ -1305,7 +1320,7 @@ fn stream_state_update(
             streams
                 .items
                 .get(&key)
-                .and_then(|stream_item| stream_item.state.to_owned())
+                .and_then(|stream_item| stream_item.adjusted_state(stream))
         }
         _ => None,
     };

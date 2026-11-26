@@ -5,6 +5,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     constants::{CALENDAR_IDS_EXTRA_PROP, CALENDAR_ITEMS_COUNT},
+    models::{
+        common::{
+            eq_update, resources_update_with_vector_content, Loadable, ResourceLoadable,
+            ResourcesAction,
+        },
+        ctx::Ctx,
+    },
     runtime::{
         msg::{Action, ActionLoad, Internal, Msg},
         Effects, Env, UpdateWithCtx,
@@ -14,14 +21,6 @@ use crate::{
         library::LibraryBucket,
         resource::{MetaItem, Video},
     },
-};
-
-use crate::models::{
-    common::{
-        eq_update, resources_update_with_vector_content, Loadable, ResourceLoadable,
-        ResourcesAction,
-    },
-    ctx::Ctx,
 };
 
 pub type Day = u32;
@@ -148,6 +147,19 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Calendar {
                     .join(month_info_effects)
                     .join(selectable_effects)
                     .join(items_effects)
+            }
+            Msg::Internal(Internal::LibraryChanged(_)) if self.selected.is_some() => {
+                let effects =
+                    meta_items_update::<E>(&mut self.meta_items, &ctx.library, &ctx.profile.addons);
+                if !effects.has_changed {
+                    return effects;
+                }
+                effects.join(items_update(
+                    &mut self.items,
+                    &self.selected,
+                    &self.month_info,
+                    &self.meta_items,
+                ))
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
                 let meta_items_effects = resources_update_with_vector_content::<E, _>(
@@ -290,27 +302,23 @@ fn meta_items_update<E: Env + 'static>(
     library: &LibraryBucket,
     addons: &[Descriptor],
 ) -> Effects {
-    if meta_items.is_empty() {
-        let id_types = library
-            .items
-            .values()
-            .filter(|library_item| !library_item.removed && !library_item.temp)
-            .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
-            .map(|library_item| (library_item.id.to_owned(), library_item.r#type.to_owned()))
-            .collect_vec();
+    let id_types = library
+        .items
+        .values()
+        .filter(|library_item| !library_item.removed && !library_item.temp)
+        .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
+        .map(|library_item| (library_item.id.to_owned(), library_item.r#type.to_owned()))
+        .collect_vec();
 
-        resources_update_with_vector_content::<E, _>(
-            meta_items,
-            ResourcesAction::force_request(
-                &AggrRequest::CatalogsFiltered(vec![ExtraType::Ids {
-                    extra_name: CALENDAR_IDS_EXTRA_PROP.name.to_owned(),
-                    id_types,
-                    limit: Some(CALENDAR_ITEMS_COUNT),
-                }]),
-                addons,
-            ),
-        )
-    } else {
-        Effects::none().unchanged()
-    }
+    resources_update_with_vector_content::<E, _>(
+        meta_items,
+        ResourcesAction::request(
+            &AggrRequest::CatalogsFiltered(vec![ExtraType::Ids {
+                extra_name: CALENDAR_IDS_EXTRA_PROP.name.to_owned(),
+                id_types,
+                limit: Some(CALENDAR_ITEMS_COUNT),
+            }]),
+            addons,
+        ),
+    )
 }
