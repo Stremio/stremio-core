@@ -52,9 +52,7 @@
 <a href="#51" id="51">51</a>
 <a href="#52" id="52">52</a>
 <a href="#53" id="53">53</a>
-<a href="#54" id="54">54</a>
-<a href="#55" id="55">55</a>
-<a href="#56" id="56">56</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
+<a href="#54" id="54">54</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
 
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>serde_with::serde_as;
@@ -87,25 +85,23 @@
     }
 
     <span class="kw">pub fn </span>last_stream_item(<span class="kw-2">&amp;</span><span class="self">self</span>, video_id: <span class="kw-2">&amp;</span>str, meta_item: <span class="kw-2">&amp;</span>MetaItem) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>StreamsItem&gt; {
-        <span class="kw">match </span>meta_item.videos.len() {
-            <span class="number">0 </span>=&gt; <span class="self">self</span>.items.get(<span class="kw-2">&amp;</span>StreamsItemKey {
+        <span class="kw">match </span>meta_item
+            .videos
+            .iter()
+            .position(|video| video.id == video_id)
+        {
+            <span class="prelude-val">None </span>=&gt; <span class="self">self</span>.items.get(<span class="kw-2">&amp;</span>StreamsItemKey {
                 meta_id: meta_item.preview.id.to_string(),
                 video_id: video_id.to_owned(),
             }),
-            <span class="kw">_ </span>=&gt; meta_item
-                .videos
+            <span class="prelude-val">Some</span>(max_index) =&gt; meta_item.videos[max_index.saturating_sub(<span class="number">30</span>)..=max_index]
                 .iter()
-                .position(|video| video.id == video_id)
-                .and_then(|max_index| {
-                    meta_item.videos[max_index.saturating_sub(<span class="number">30</span>)..=max_index]
-                        .iter()
-                        .rev()
-                        .find_map(|video| {
-                            <span class="self">self</span>.items.get(<span class="kw-2">&amp;</span>StreamsItemKey {
-                                meta_id: meta_item.preview.id.to_string(),
-                                video_id: video.id.to_string(),
-                            })
-                        })
+                .rev()
+                .find_map(|video| {
+                    <span class="self">self</span>.items.get(<span class="kw-2">&amp;</span>StreamsItemKey {
+                        meta_id: meta_item.preview.id.to_string(),
+                        video_id: video.id.to_string(),
+                    })
                 }),
         }
     }
