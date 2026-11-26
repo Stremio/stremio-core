@@ -940,11 +940,23 @@ fn last_used_stream_update(
                 Some(Loadable::Ready(meta_item)) => stream_bucket
                     .last_stream_item(&stream_path.id, meta_item)
                     .and_then(|stream_item| {
-                        all_streams
-                            .iter()
+                        let mut addon_streams = all_streams.iter().filter(|resource| {
+                            resource.request.base == stream_item.stream_transport_url
+                        });
+                        addon_streams
+                            .clone()
                             .find(|resource| {
-                                resource.request.base == stream_item.stream_transport_url
+                                resource
+                                    .content
+                                    .as_ref()
+                                    .and_then(Loadable::ready)
+                                    .is_some_and(|streams| {
+                                        streams.iter().any(|stream| {
+                                            stream.is_source_match(&stream_item.stream)
+                                        })
+                                    })
                             })
+                            .or_else(|| addon_streams.next())
                             .and_then(|resource| match &resource.content {
                                 Some(Loadable::Ready(streams)) => Some(ResourceLoadable {
                                     request: resource.request.clone(),
