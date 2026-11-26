@@ -131,6 +131,9 @@ pub struct Player {
     /// Whether the player has reported unpaused playback for this load.
     #[serde(skip_serializing)]
     pub playback_started: bool,
+    /// Whether playback time has advanced during the current load.
+    #[serde(skip)]
+    pub playback_progressed: bool,
     #[serde(skip_serializing)]
     pub ended: bool,
     /// Whether the selected video has been manually marked as watched
@@ -204,6 +207,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     let effects = item_state_update::<E>(
                         &mut self.library_item,
                         self.next_video.as_ref(),
+                        self.playback_progressed,
                         self.marked_video_as_watched,
                         self.marked_season_as_watched,
                         &self.meta_item,
@@ -359,6 +363,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.load_time = Some(E::now());
                 self.loaded = false;
                 self.playback_started = false;
+                self.playback_progressed = false;
                 self.ended = false;
                 self.paused = None;
                 self.marked_video_as_watched = false;
@@ -424,6 +429,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let item_state_update_effects = item_state_update::<E>(
                     &mut self.library_item,
                     self.next_video.as_ref(),
+                    self.playback_progressed,
                     self.marked_video_as_watched,
                     self.marked_season_as_watched,
                     &self.meta_item,
@@ -452,6 +458,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.load_time = None;
                 self.loaded = false;
                 self.playback_started = false;
+                self.playback_progressed = false;
                 self.ended = false;
                 self.paused = None;
                 self.marked_video_as_watched = false;
@@ -656,6 +663,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     // send the right actions and update the times accordingly
                     // when the state changes (from seeking to playing and vice versa)
                     if time > &library_item.state.time_offset {
+                        self.playback_progressed |= *duration > 0;
                         time.clone_into(&mut library_item.state.time_offset);
                         duration.clone_into(&mut library_item.state.duration);
                     }
@@ -1254,6 +1262,7 @@ fn push_to_library<E: Env + 'static>(
 fn item_state_update<E: Env>(
     library_item: &mut Option<LibraryItem>,
     next_video: Option<&Video>,
+    playback_progressed: bool,
     marked_video_as_watched: bool,
     marked_season_as_watched: Option<u32>,
     meta_item: &Option<ResourceLoadable<MetaItem>>,
@@ -1278,8 +1287,9 @@ fn item_state_update<E: Env>(
         }
         (Some(library_item), _, _)
             if marked_video_as_watched
-                || library_item.state.time_offset as f64
-                    > library_item.state.duration as f64 * CREDITS_THRESHOLD_COEF =>
+                || (playback_progressed
+                    && library_item.state.time_offset as f64
+                        > library_item.state.duration as f64 * CREDITS_THRESHOLD_COEF) =>
         {
             library_item.state.time_offset = 0;
             if let Some(next_video) = next_video {
