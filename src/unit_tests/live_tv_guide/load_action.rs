@@ -7,9 +7,12 @@ use url::Url;
 
 use crate::{
     constants::CATALOG_RESOURCE_NAME,
-    models::{ctx::Ctx, live_tv_guide::LiveTvGuide},
+    models::{
+        ctx::Ctx,
+        live_tv_guide::{LiveTvGuide, Selected},
+    },
     runtime::{
-        msg::{Action, ActionLiveTvGuide, ActionLoad},
+        msg::{Action, ActionCtx, ActionLiveTvGuide, ActionLoad},
         EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture,
     },
     types::{
@@ -75,6 +78,102 @@ fn channel_meta_item() -> MetaItem {
             },
         ],
     }
+}
+
+#[test]
+fn live_tv_guide_switches_to_an_installed_provider_after_uninstall() {
+    #[derive(Model, Clone, Debug)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+        live_tv_guide: LiveTvGuide,
+    }
+
+    let _guard = TestEnv::reset().unwrap();
+    let provider = |host: &str| -> Descriptor {
+        serde_json::from_value(serde_json::json!({
+            "transportUrl": format!("https://{host}/manifest.json"),
+            "manifest": {
+                "id": host, "name": host, "version": "1.0.0",
+                "types": ["tv"], "resources": ["catalog"],
+                "behaviorHints": {"epgProvider": true},
+                "catalogs": [{"id": "guide", "type": "tv", "extra": [{"name": "date"}]}]
+            }
+        }))
+        .unwrap()
+    };
+    let primary = provider("primary.example");
+    let fallback = provider("fallback.example");
+    *FETCH_HANDLER.write().unwrap() = Box::new(|request| {
+        let channel_id = match request.url.as_str() {
+            "https://primary.example/catalog/tv/guide/date=2026-07-02.json" => "primary",
+            "https://fallback.example/catalog/tv/guide/date=2026-07-02.json" => "fallback",
+            _ => return default_fetch_handler(request),
+        };
+        let mut channel = channel_meta_item();
+        channel.preview.id = channel_id.to_owned();
+        future::ok(Box::new(ResourceResponse::MetasDetailed {
+            metas_detailed: vec![channel],
+        }) as Box<dyn Any + Send>)
+        .boxed_env()
+    });
+
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+        TestModel {
+            ctx: Ctx {
+                profile: Profile {
+                    addons: vec![primary.clone(), fallback.clone()],
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            live_tv_guide: LiveTvGuide::default(),
+        },
+        vec![],
+        1000,
+    );
+    let dispatch = |action| {
+        TestEnv::run(|| {
+            runtime.dispatch(RuntimeAction {
+                field: None,
+                action,
+            })
+        })
+    };
+    let date = chrono::NaiveDate::from_ymd_opt(2026, 7, 2);
+    dispatch(Action::Load(ActionLoad::LiveTvGuide(Some(Selected {
+        date,
+        ..Default::default()
+    }))));
+    assert_eq!(
+        runtime.model().unwrap().live_tv_guide.channels[0]
+            .channel
+            .id,
+        "primary"
+    );
+
+    dispatch(Action::Ctx(ActionCtx::UninstallAddon(primary)));
+    {
+        let model = runtime.model().unwrap();
+        let guide = &model.live_tv_guide;
+        let selected = guide.selected.as_ref().unwrap();
+        assert_eq!(selected.date, date);
+        assert_eq!(
+            selected.request.as_ref().unwrap().base,
+            fallback.transport_url
+        );
+        assert_eq!(guide.channels.len(), 1);
+        assert_eq!(guide.channels[0].channel.id, "fallback");
+    }
+
+    dispatch(Action::Ctx(ActionCtx::UninstallAddon(fallback)));
+    let model = runtime.model().unwrap();
+    let guide = &model.live_tv_guide;
+    assert!(guide.selected.as_ref().unwrap().request.is_none());
+    assert!(guide.channels.is_empty());
+    assert!(guide.catalog.is_empty());
+    assert!(guide.selectable.catalogs.is_empty());
+    assert_eq!(REQUESTS.read().unwrap().len(), 2);
 }
 
 #[test]

@@ -126,49 +126,54 @@ pub struct LiveTvGuide {
     pub last_loaded: Option<DateTime<Utc>>,
 }
 
+impl LiveTvGuide {
+    fn load<E: Env + 'static>(
+        &mut self,
+        selected: &Option<Selected>,
+        profile: &Profile,
+    ) -> Effects {
+        let previous_selected = self.selected.clone();
+        let selected_effects = selected_update::<E>(&mut self.selected, selected, profile);
+        let selection_changed = previous_selected != self.selected;
+        let catalog_effects = if selection_changed || self.catalog.is_empty() {
+            self.last_loaded = Some(E::now());
+            let requests = self
+                .selected
+                .as_ref()
+                .and_then(|selected| {
+                    let request = selected.request.as_ref()?;
+                    Some(
+                        overlapping_utc_dates(&selected.day_window()?)
+                            .iter()
+                            .map(|date| with_date_extra(request, date))
+                            .collect::<Vec<_>>(),
+                    )
+                })
+                .unwrap_or_default();
+            catalog_update::<E>(&mut self.catalog, CatalogPageRequest::First, &requests)
+        } else {
+            Effects::none().unchanged()
+        };
+        let selectable_effects =
+            selectable_update::<E>(&mut self.selectable, &self.selected, &self.catalog, profile);
+        let channels_effects = if selection_changed {
+            eq_update(&mut self.channels, vec![])
+        } else {
+            channels_update(&mut self.channels, &self.selected, &self.catalog)
+        };
+
+        selected_effects
+            .join(catalog_effects)
+            .join(selectable_effects)
+            .join(channels_effects)
+    }
+}
+
 impl<E: Env + 'static> UpdateWithCtx<E> for LiveTvGuide {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::LiveTvGuide(selected))) => {
-                let previous_selected = self.selected.clone();
-                let selected_effects =
-                    selected_update::<E>(&mut self.selected, selected, &ctx.profile);
-                let selection_changed = previous_selected != self.selected;
-                let catalog_effects = if selection_changed || self.catalog.is_empty() {
-                    self.last_loaded = Some(E::now());
-                    let requests = self
-                        .selected
-                        .as_ref()
-                        .and_then(|selected| {
-                            let request = selected.request.as_ref()?;
-                            Some(
-                                overlapping_utc_dates(&selected.day_window()?)
-                                    .iter()
-                                    .map(|date| with_date_extra(request, date))
-                                    .collect::<Vec<_>>(),
-                            )
-                        })
-                        .unwrap_or_default();
-                    catalog_update::<E>(&mut self.catalog, CatalogPageRequest::First, &requests)
-                } else {
-                    Effects::none().unchanged()
-                };
-                let selectable_effects = selectable_update::<E>(
-                    &mut self.selectable,
-                    &self.selected,
-                    &self.catalog,
-                    &ctx.profile,
-                );
-                let channels_effects = if selection_changed {
-                    eq_update(&mut self.channels, vec![])
-                } else {
-                    channels_update(&mut self.channels, &self.selected, &self.catalog)
-                };
-
-                selected_effects
-                    .join(catalog_effects)
-                    .join(selectable_effects)
-                    .join(channels_effects)
+                self.load::<E>(selected, &ctx.profile)
             }
             Msg::Action(Action::Unload) => {
                 self.last_loaded = None;
@@ -296,12 +301,27 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LiveTvGuide {
                         .join(channels_effects)
                 })
                 .unwrap_or_else(|| Effects::none().unchanged()),
-            Msg::Internal(Internal::ProfileChanged) => selectable_update::<E>(
-                &mut self.selectable,
-                &self.selected,
-                &self.catalog,
-                &ctx.profile,
-            ),
+            Msg::Internal(Internal::ProfileChanged) => {
+                if let Some(selected) = &self.selected {
+                    let is_available = selected.request.as_ref().is_some_and(|current| {
+                        guide_catalogs(&ctx.profile)
+                            .any(|(_, _, request)| current.eq_no_extra(&request))
+                    });
+                    if !is_available {
+                        let selection = Some(Selected {
+                            request: None,
+                            ..selected.clone()
+                        });
+                        return self.load::<E>(&selection, &ctx.profile);
+                    }
+                }
+                selectable_update::<E>(
+                    &mut self.selectable,
+                    &self.selected,
+                    &self.catalog,
+                    &ctx.profile,
+                )
+            }
             _ => Effects::none().unchanged(),
         }
     }
