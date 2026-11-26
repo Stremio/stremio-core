@@ -107,6 +107,7 @@ fn test_pull_notifications_and_play_in_player() {
             description: None,
             release_info: None,
             runtime: None,
+            age_rating: None,
             released: None,
             poster_shape: PosterShape::default(),
             links: vec![],

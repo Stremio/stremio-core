@@ -25,6 +25,7 @@ fn meta_preview() -> MetaItemPreview {
         description: None,
         release_info: None,
         runtime: None,
+        age_rating: None,
         released: None,
         poster_shape: Default::default(),
         links: vec![],
