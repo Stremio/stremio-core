@@ -1881,7 +1881,13 @@
 <a href="#1880" id="1880">1880</a>
 <a href="#1881" id="1881">1881</a>
 <a href="#1882" id="1882">1882</a>
-<a href="#1883" id="1883">1883</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#1883" id="1883">1883</a>
+<a href="#1884" id="1884">1884</a>
+<a href="#1885" id="1885">1885</a>
+<a href="#1886" id="1886">1886</a>
+<a href="#1887" id="1887">1887</a>
+<a href="#1888" id="1888">1888</a>
+<a href="#1889" id="1889">1889</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 
 <span class="kw">use </span>base64::Engine;
 <span class="kw">use </span>futures::{future, FutureExt, TryFutureExt};
@@ -2993,7 +2999,13 @@
                 <span class="kw">if let </span><span class="prelude-val">Some</span>(analytics_context) = <span class="kw-2">&amp;mut </span><span class="self">self</span>.analytics_context {
                     analytics_context.has_trakt = ctx.profile.has_trakt::&lt;E&gt;();
                 };
-                Effects::none().unchanged()
+                subtitles_update::&lt;E&gt;(
+                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.subtitles,
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.video_params,
+                    <span class="self">self</span>.stream.as_ref(),
+                    <span class="kw-2">&amp;</span>ctx.profile.addons,
+                )
             }
             <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
         };
