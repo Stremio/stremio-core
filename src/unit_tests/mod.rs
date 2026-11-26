@@ -12,6 +12,7 @@ mod deep_links;
 mod link;
 mod live_tv_continue_watching;
 mod live_tv_guide;
+mod local_search;
 mod meta_details;
 mod player;
 mod search_suggestions;
