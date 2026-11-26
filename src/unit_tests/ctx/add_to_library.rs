@@ -55,6 +55,7 @@ fn actionctx_addtolibrary() {
         released: None,
         poster_shape: Default::default(),
         links: vec![],
+        imdb_rating_count: None,
         trailer_streams: vec![],
         behavior_hints: Default::default(),
     };
@@ -187,6 +188,7 @@ fn actionctx_addtolibrary_already_added() {
         runtime: None,
         released: None,
         links: vec![],
+        imdb_rating_count: None,
         trailer_streams: vec![],
         behavior_hints: MetaItemBehaviorHints {
             is_live: false,

@@ -110,6 +110,7 @@ fn test_pull_notifications_and_play_in_player() {
             released: None,
             poster_shape: PosterShape::default(),
             links: vec![],
+            imdb_rating_count: None,
             trailer_streams: vec![],
             behavior_hints: Default::default(),
         },
