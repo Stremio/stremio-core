@@ -128,6 +128,9 @@ pub struct Player {
     pub push_library_item_time: DateTime<Utc>,
     #[serde(skip_serializing)]
     pub loaded: bool,
+    /// Whether the player has reported unpaused playback for this load.
+    #[serde(skip_serializing)]
+    pub playback_started: bool,
     #[serde(skip_serializing)]
     pub ended: bool,
     /// Whether the selected video has been manually marked as watched
@@ -176,7 +179,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.profile.addons,
                     self.selected.as_ref(),
                     self.analytics_context.as_ref(),
-                    (self.loaded && !self.ended).then_some(PlayerEventAction::Stop),
+                    (self.playback_started && !self.ended).then_some(PlayerEventAction::Stop),
                 );
                 // make sure we send the correct Trakt event if the model hasn't been unloaded
                 let trakt_event_effects = if self.selected.is_some() {
@@ -243,7 +246,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     },
                     _ => eq_update(&mut self.meta_item, None),
                 };
-                let stream_state_effects = eq_update(&mut self.stream_state, None);
+                let stream_state_effects =
+                    stream_state_update(&mut self.stream_state, &self.selected, &ctx.streams);
                 let video_params_effects = eq_update(&mut self.video_params, None);
 
                 let stream_effects = stream_update(
@@ -354,6 +358,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 });
                 self.load_time = Some(E::now());
                 self.loaded = false;
+                self.playback_started = false;
                 self.ended = false;
                 self.paused = None;
                 self.marked_video_as_watched = false;
@@ -395,7 +400,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.profile.addons,
                     self.selected.as_ref(),
                     self.analytics_context.as_ref(),
-                    (self.loaded && !self.ended).then_some(PlayerEventAction::Stop),
+                    (self.playback_started && !self.ended).then_some(PlayerEventAction::Stop),
                 );
                 let ended_effects = if !self.ended && self.selected.is_some() {
                     Effects::msg(Msg::Event(Event::PlayerStopped {
@@ -446,6 +451,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.analytics_context = None;
                 self.load_time = None;
                 self.loaded = false;
+                self.playback_started = false;
                 self.ended = false;
                 self.paused = None;
                 self.marked_video_as_watched = false;
@@ -569,7 +575,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .unchanged(),
                         _ => Effects::none(),
                     };
-                    let player_event = match (self.loaded, self.paused) {
+                    let player_event = match (self.playback_started, self.paused) {
                         (true, Some(true)) => Some(PlayerEventAction::Pause),
                         (true, Some(false)) => Some(PlayerEventAction::Start),
                         _ => None,
@@ -743,8 +749,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             {
                 self.paused = Some(*paused);
                 let player_event = if !*paused {
+                    self.playback_started = true;
                     Some(PlayerEventAction::Start)
-                } else if self.loaded {
+                } else if self.playback_started {
                     Some(PlayerEventAction::Pause)
                 } else {
                     None
@@ -835,7 +842,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.profile.addons,
                     self.selected.as_ref(),
                     self.analytics_context.as_ref(),
-                    (self.loaded && !self.ended).then_some(PlayerEventAction::Stop),
+                    (self.playback_started && !self.ended).then_some(PlayerEventAction::Stop),
                 );
                 self.ended = true;
                 Effects::msg(Msg::Event(Event::PlayerEnded {
@@ -1082,7 +1089,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(watched_effects)
                     .join(skip_gaps_effects)
             }
-            Msg::Internal(Internal::SkipGapsResult(skip_gaps_request, result)) => {
+            Msg::Internal(Internal::SkipGapsResult(skip_gaps_request, result))
+                if matches!(
+                    self.skip_gaps.as_ref(),
+                    Some((request, Loadable::Loading)) if request == skip_gaps_request
+                ) =>
+            {
                 let skip_gaps_next = match result.to_owned() {
                     Ok(response) => Loadable::Ready(response),
                     Err(err) => Loadable::Err(err),
@@ -1110,7 +1122,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 if let Some(analytics_context) = &mut self.analytics_context {
                     analytics_context.has_trakt = ctx.profile.has_trakt::<E>();
                 };
-                Effects::none().unchanged()
+                subtitles_update::<E>(
+                    &mut self.subtitles,
+                    &self.selected,
+                    &self.video_params,
+                    self.stream.as_ref(),
+                    &ctx.profile.addons,
+                )
             }
             _ => Effects::none().unchanged(),
         };
@@ -1280,6 +1298,7 @@ fn stream_state_update(
 ) -> Effects {
     let next_state = match selected {
         Some(Selected {
+            stream,
             stream_request: Some(stream_request),
             meta_request: Some(meta_request),
             ..
@@ -1291,7 +1310,7 @@ fn stream_state_update(
             streams
                 .items
                 .get(&key)
-                .and_then(|stream_item| stream_item.state.to_owned())
+                .and_then(|stream_item| stream_item.adjusted_state(stream))
         }
         _ => None,
     };

@@ -2,6 +2,7 @@ use crate::{BitField8, Error};
 use std::{
     fmt::{self, Display},
     str::FromStr,
+    sync::Arc,
 };
 
 /// (De)Serializable field that tracks which videos have been watched
@@ -101,7 +102,8 @@ impl FromStr for WatchedField {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WatchedBitField {
     bitfield: BitField8,
-    video_ids: Vec<String>,
+    video_ids: Arc<[String]>,
+    indices_by_id: Arc<[usize]>,
 }
 
 impl WatchedBitField {
@@ -111,16 +113,16 @@ impl WatchedBitField {
             bitfield.set(i, *val);
         }
 
-        WatchedBitField {
-            bitfield,
-            video_ids,
-        }
+        Self::new(bitfield, video_ids)
     }
 
     pub fn new(bitfield: BitField8, video_ids: Vec<String>) -> WatchedBitField {
+        let mut indices_by_id: Vec<_> = (0..video_ids.len()).collect();
+        indices_by_id.sort_by(|&a, &b| video_ids[a].cmp(&video_ids[b]));
         Self {
             bitfield,
-            video_ids,
+            video_ids: video_ids.into(),
+            indices_by_id: indices_by_id.into(),
         }
     }
 
@@ -141,13 +143,11 @@ impl WatchedBitField {
             // in case of an previous empty array, this will be 0
             if offset != 0 {
                 // Resize the buffer
-                let mut resized_wbf = WatchedBitField {
-                    bitfield: BitField8::new(video_ids.len()),
-                    video_ids: video_ids.clone(),
-                };
+                let len = video_ids.len();
+                let mut resized_wbf = Self::new(BitField8::new(len), video_ids);
 
                 // rewrite the old buf into the new one, applying the offset
-                for i in 0..video_ids.len() {
+                for i in 0..len {
                     // TODO: Check what will happen if we change it to `usize`
                     let id_in_prev = i as i32 + offset;
                     if id_in_prev >= 0 && (id_in_prev as usize) < bitfield.length {
@@ -156,17 +156,11 @@ impl WatchedBitField {
                 }
                 Ok(resized_wbf)
             } else {
-                Ok(WatchedBitField {
-                    bitfield,
-                    video_ids,
-                })
+                Ok(Self::new(bitfield, video_ids))
             }
         } else {
             // videoId could not be found, return a totally blank buf
-            Ok(WatchedBitField {
-                bitfield: BitField8::new(video_ids.len()),
-                video_ids,
-            })
+            Ok(Self::new(BitField8::new(video_ids.len()), video_ids))
         }
     }
 
@@ -187,8 +181,18 @@ impl WatchedBitField {
         self.bitfield.get(idx)
     }
 
+    fn video_position(&self, video_id: &str) -> Option<usize> {
+        let at = self
+            .indices_by_id
+            .partition_point(|&index| self.video_ids[index].as_str() < video_id);
+        self.indices_by_id
+            .get(at)
+            .copied()
+            .filter(|&index| self.video_ids[index] == video_id)
+    }
+
     pub fn get_video(&self, video_id: &str) -> bool {
-        if let Some(pos) = self.video_ids.iter().position(|s| *s == video_id) {
+        if let Some(pos) = self.video_position(video_id) {
             self.bitfield.get(pos)
         } else {
             false
@@ -204,7 +208,7 @@ impl WatchedBitField {
     }
 
     pub fn set_video(&mut self, video_id: &str, v: bool) {
-        if let Some(pos) = self.video_ids.iter().position(|s| *s == video_id) {
+        if let Some(pos) = self.video_position(video_id) {
             self.bitfield.set(pos, v);
         }
     }
@@ -356,13 +360,23 @@ mod tests {
     #[test]
     fn deserialize_empty() {
         let watched = WatchedBitField::construct_and_resize("undefined:1:eJwDAAAAAAE=", vec![]);
-        assert_eq!(
-            watched,
-            Ok(WatchedBitField {
-                bitfield: BitField8::new(0),
-                video_ids: vec![]
-            })
+        assert_eq!(watched, Ok(WatchedBitField::new(BitField8::new(0), vec![])));
+    }
+
+    #[test]
+    fn repeated_video_ids_use_the_first_position() {
+        let original = WatchedBitField::construct_from_array(
+            vec![false, false, true],
+            vec!["z".into(), "a".into(), "z".into()],
         );
+        let mut updated = original.clone();
+        assert!(!original.get_video("z"));
+        updated.set_video("z", true);
+        assert!(updated.get(0));
+        assert!(!original.get(0));
+        updated.set_video("z", false);
+        assert!(updated.get(2));
+        assert!(!updated.get_video("missing"));
     }
 
     #[test]

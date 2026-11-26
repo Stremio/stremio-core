@@ -306,10 +306,12 @@ impl MetaItem {
         if self.is_live() {
             return None;
         }
-        let (position, current) = self
-            .videos
-            .iter()
-            .find_position(|video| video.id == video_id)?;
+        let position = self.videos.iter().position(|video| video.id == video_id)?;
+        self.next_video_at(position, now)
+    }
+
+    pub(crate) fn next_video_at(&self, position: usize, now: &DateTime<Utc>) -> Option<&Video> {
+        let current = self.videos.get(position)?;
         self.videos.get(position + 1).filter(|next| {
             let cur_season = current
                 .series_info
