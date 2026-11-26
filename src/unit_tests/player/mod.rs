@@ -1,4 +1,5 @@
 mod addon_events;
+mod failed_stream_resume;
 mod mark_video_as_watched;
 mod next_stream;
 mod stream_state;
