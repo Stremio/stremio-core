@@ -36,11 +36,10 @@ pub fn descriptor_update<E: Env + 'static>(
 ) -> Effects {
     match action {
         DescriptorAction::DescriptorRequested { transport_url } => {
-            if descriptor
-                .as_ref()
-                .map(|descriptor| &descriptor.transport_url)
-                != Some(transport_url)
-            {
+            let can_reuse = descriptor.as_ref().is_some_and(|descriptor| {
+                &descriptor.transport_url == transport_url && !descriptor.content.is_err()
+            });
+            if !can_reuse {
                 let transport_url = transport_url.to_owned();
                 *descriptor = Some(DescriptorLoadable {
                     transport_url: transport_url.to_owned(),
