@@ -1032,7 +1032,10 @@
 <a href="#1031" id="1031">1031</a>
 <a href="#1032" id="1032">1032</a>
 <a href="#1033" id="1033">1033</a>
-<a href="#1034" id="1034">1034</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{borrow::Cow, marker::PhantomData};
+<a href="#1034" id="1034">1034</a>
+<a href="#1035" id="1035">1035</a>
+<a href="#1036" id="1036">1036</a>
+<a href="#1037" id="1037">1037</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{borrow::Cow, marker::PhantomData};
 
 <span class="kw">use </span>chrono::{DateTime, Duration, Utc};
 <span class="kw">use </span>enclose::enclose;
@@ -1466,6 +1469,8 @@
             Msg::Internal(Internal::ProfileChanged) =&gt; {
                 <span class="kw">let </span>meta_items_effects =
                     meta_items_update::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.meta_items, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span>ctx.profile);
+                <span class="kw">let </span>selected_override_effects =
+                    selected_guess_stream_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_items);
                 <span class="kw">let </span>meta_streams_effects =
                     meta_streams_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.meta_streams, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_items);
                 <span class="kw">let </span>streams_effects =
@@ -1490,6 +1495,7 @@
                     rating_info_update::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.rating_info, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span>ctx.profile);
 
                 meta_items_effects
+                    .join(selected_override_effects)
                     .join(meta_streams_effects)
                     .join(streams_effects)
                     .join(last_used_stream_effects)
