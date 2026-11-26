@@ -605,7 +605,8 @@ fn library_item_sync(library_item: &Option<LibraryItem>, profile: &Profile) -> E
 ///
 /// How we override the stream:
 ///
-/// 1. We find the first `MetaItem` that's successfully loaded from the addons.
+/// 1. In addon order, skip failed requests and wait for the first remaining
+///    request to load. Lower-priority requests can finish independently.
 /// 2. Selecting the video id for the stream request:
 ///    2.1 If there's a `MetaItem.preview.behavior_hints.default_video_id`
 ///    we use it for the request
@@ -627,21 +628,11 @@ fn selected_guess_stream_update(
         _ => return Effects::default(),
     };
 
-    // Wait for all requests to finish before retrieving the meta_item
-    let meta_item = if meta_items.iter().all(|meta_item| {
-        matches!(meta_item.content, Some(Loadable::Ready(..)))
-            || matches!(meta_item.content, Some(Loadable::Err(..)))
-    }) {
-        match meta_items
-            .iter()
-            .find_map(|meta_item| match &meta_item.content {
-                Some(Loadable::Ready(meta_item)) => Some(meta_item),
-                _ => None,
-            }) {
-            Some(meta_item) => meta_item,
-            _ => return Effects::default(),
-        }
-    } else {
+    let Some(meta_item) = meta_items
+        .iter()
+        .find(|item| !matches!(item.content, Some(Loadable::Err(_))))
+        .and_then(|item| item.content.as_ref().and_then(Loadable::ready))
+    else {
         return Effects::default();
     };
 
