@@ -1110,7 +1110,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 if let Some(analytics_context) = &mut self.analytics_context {
                     analytics_context.has_trakt = ctx.profile.has_trakt::<E>();
                 };
-                Effects::none().unchanged()
+                subtitles_update::<E>(
+                    &mut self.subtitles,
+                    &self.selected,
+                    &self.video_params,
+                    self.stream.as_ref(),
+                    &ctx.profile.addons,
+                )
             }
             _ => Effects::none().unchanged(),
         };
