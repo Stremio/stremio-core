@@ -1893,7 +1893,12 @@
 <a href="#1892" id="1892">1892</a>
 <a href="#1893" id="1893">1893</a>
 <a href="#1894" id="1894">1894</a>
-<a href="#1895" id="1895">1895</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#1895" id="1895">1895</a>
+<a href="#1896" id="1896">1896</a>
+<a href="#1897" id="1897">1897</a>
+<a href="#1898" id="1898">1898</a>
+<a href="#1899" id="1899">1899</a>
+<a href="#1900" id="1900">1900</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 
 <span class="kw">use </span>base64::Engine;
 <span class="kw">use </span>futures::{future, FutureExt, TryFutureExt};
@@ -2983,7 +2988,12 @@
                     .join(watched_effects)
                     .join(skip_gaps_effects)
             }
-            Msg::Internal(Internal::SkipGapsResult(skip_gaps_request, result)) =&gt; {
+            Msg::Internal(Internal::SkipGapsResult(skip_gaps_request, result))
+                <span class="kw">if </span><span class="macro">matches!</span>(
+                    <span class="self">self</span>.skip_gaps.as_ref(),
+                    <span class="prelude-val">Some</span>((request, Loadable::Loading)) <span class="kw">if </span>request == skip_gaps_request
+                ) =&gt;
+            {
                 <span class="kw">let </span>skip_gaps_next = <span class="kw">match </span>result.to_owned() {
                     <span class="prelude-val">Ok</span>(response) =&gt; Loadable::Ready(response),
                     <span class="prelude-val">Err</span>(err) =&gt; Loadable::Err(err),
