@@ -261,6 +261,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.video_params,
                     self.stream.as_ref(),
                     &ctx.profile.addons,
+                    false,
                 );
                 let next_video_effects = next_video_update::<E>(
                     &mut self.next_video,
@@ -486,6 +487,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.video_params,
                     self.stream.as_ref(),
                     &ctx.profile.addons,
+                    false,
                 );
                 let skip_gaps_effects = skip_gaps_update::<E>(
                     &ctx.profile,
@@ -746,6 +748,19 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             Msg::Action(Action::Player(ActionPlayer::PausedChanged { paused }))
                 if self.selected.is_some() =>
             {
+                // Give the client until the first playback state report to supply video params.
+                let subtitles_effects = if !self.loaded && self.video_params.is_none() {
+                    subtitles_update::<E>(
+                        &mut self.subtitles,
+                        &self.selected,
+                        &self.video_params,
+                        self.stream.as_ref(),
+                        &ctx.profile.addons,
+                        true,
+                    )
+                } else {
+                    Effects::none().unchanged()
+                };
                 self.paused = Some(*paused);
                 let player_event = if !*paused {
                     self.playback_started = true;
@@ -794,6 +809,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 trakt_event_effects
                     .join(player_event_effects)
                     .join(update_library_item_effects)
+                    .join(subtitles_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::NextVideo)) => {
                 let seek_history_effects = seek_update::<E>(
@@ -1550,6 +1566,7 @@ fn subtitles_update<E: Env + 'static>(
     video_params: &Option<VideoParams>,
     stream: Option<&Loadable<(StreamUrls, Stream<ConvertedStreamSource>), EnvError>>,
     addons: &[Descriptor],
+    allow_id_only: bool,
 ) -> Effects {
     match (selected, stream) {
         (
@@ -1584,7 +1601,8 @@ fn subtitles_update<E: Env + 'static>(
                             .and_then(|video_params| video_params.filename.clone())
                     });
 
-            if video_hash.is_none()
+            if !allow_id_only
+                && video_hash.is_none()
                 && video_size.is_none()
                 && video_filename.is_none()
                 && video_params.is_none()
