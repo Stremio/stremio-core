@@ -262,19 +262,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     self.stream.as_ref(),
                     &ctx.profile.addons,
                 );
-                let next_video_effects = next_video_update::<E>(
-                    &mut self.next_video,
-                    &self.next_stream,
-                    &self.selected,
-                    &self.meta_item,
-                );
-                let next_streams_effects = next_streams_update::<E>(
-                    &mut self.next_streams,
-                    &self.next_video,
-                    &self.selected,
-                );
-                let next_stream_effects =
-                    next_stream_update(&mut self.next_stream, &self.next_streams, &self.selected);
+                let next_video_effects = next_video_update::<E>(self);
                 // Make sure to update the steams and in term the StreamsBucket
                 // once the player loads the newly selected item
                 let update_streams_effects = match (&self.selected, &self.meta_item) {
@@ -374,8 +362,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(stream_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
-                    .join(next_streams_effects)
-                    .join(next_stream_effects)
                     .join(update_streams_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
@@ -1010,21 +996,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     _ => Effects::none().unchanged(),
                 };
 
-                let next_stream_effects =
-                    next_stream_update(&mut self.next_stream, &self.next_streams, &self.selected);
-
-                let next_video_effects = next_video_update::<E>(
-                    &mut self.next_video,
-                    &self.next_stream,
-                    &self.selected,
-                    &self.meta_item,
-                );
-
-                let next_streams_effects = next_streams_effects.join(next_streams_update::<E>(
-                    &mut self.next_streams,
-                    &self.next_video,
-                    &self.selected,
-                ));
+                let next_video_effects = next_streams_effects.join(next_video_update::<E>(self));
 
                 let series_info_effects =
                     series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
@@ -1080,8 +1052,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(update_streams_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
-                    .join(next_streams_effects)
-                    .join(next_stream_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(library_item_state_effects)
@@ -1310,106 +1280,56 @@ fn stream_state_update(
     eq_update(state, next_state)
 }
 
-fn next_video_update<E: Env>(
-    video: &mut Option<Video>,
-    stream: &Option<Stream>,
-    selected: &Option<Selected>,
-    meta_item: &Option<ResourceLoadable<MetaItem>>,
-) -> Effects {
-    let next_video = match (selected, meta_item) {
+fn next_video_update<E: Env + 'static>(player: &mut Player) -> Effects {
+    let upcoming = match (&player.selected, &player.meta_item) {
         (
             Some(Selected {
-                stream_request:
-                    Some(ResourceRequest {
-                        path: ResourcePath { id: video_id, .. },
-                        ..
-                    }),
+                stream_request: Some(request),
+                stream,
                 ..
             }),
             Some(ResourceLoadable {
                 content: Some(Loadable::Ready(meta_item)),
                 ..
             }),
-        ) => meta_item.next_video(video_id, &E::now()).map(|next_video| {
-            let mut next_video = next_video.clone();
-            if let Some(stream) = stream {
-                next_video.streams = vec![stream.clone()];
-            }
-            next_video
-        }),
+        ) => meta_item
+            .next_video(&request.path.id, &E::now())
+            .map(|video| (video, request, stream)),
         _ => None,
     };
-    eq_update(video, next_video)
-}
-
-fn next_streams_update<E>(
-    next_streams: &mut Option<ResourceLoadable<Vec<Stream>>>,
-    next_video: &Option<Video>,
-    selected: &Option<Selected>,
-) -> Effects
-where
-    E: Env + 'static,
-{
-    let mut stream_request = match selected
-        .as_ref()
-        .and_then(|selected| selected.stream_request.as_ref())
-    {
-        Some(stream_request) => stream_request.clone(),
-        None => return Effects::none().unchanged(),
+    let Some((video, request, current_stream)) = upcoming else {
+        return eq_update(&mut player.next_streams, None)
+            .join(eq_update(&mut player.next_stream, None))
+            .join(eq_update(&mut player.next_video, None));
     };
 
-    match next_video {
-        Some(next_video) => {
-            stream_request.path.id.clone_from(&next_video.id);
-
-            match next_streams.as_mut() {
-                Some(next_streams) => resource_update_with_vector_content::<E, _>(
-                    next_streams,
-                    ResourceAction::ResourceRequested {
-                        request: &stream_request,
-                    },
-                ),
-                None => {
-                    let mut new_next_streams = ResourceLoadable {
-                        request: stream_request.to_owned(),
-                        content: None,
-                    };
-                    let next_streams_effects = resource_update_with_vector_content::<E, _>(
-                        &mut new_next_streams,
-                        ResourceAction::ResourceRequested {
-                            request: &stream_request,
-                        },
-                    );
-
-                    *next_streams = Some(new_next_streams);
-                    next_streams_effects
-                }
-            }
-        }
-        None => Effects::none().unchanged(),
-    }
-}
-
-fn next_stream_update(
-    stream: &mut Option<Stream>,
-    next_streams: &Option<ResourceLoadable<Vec<Stream>>>,
-    selected: &Option<Selected>,
-) -> Effects {
-    let next_stream = match (selected, next_streams) {
-        (
-            Some(Selected { stream, .. }),
-            Some(ResourceLoadable {
-                content: Some(Loadable::Ready(streams)),
-                ..
-            }),
-        ) => streams
+    let mut request = request.to_owned();
+    request.path.id.clone_from(&video.id);
+    let next_streams = player.next_streams.get_or_insert_with(|| ResourceLoadable {
+        request: request.to_owned(),
+        content: None,
+    });
+    // Reconcile the request before inspecting cached streams so that a previous
+    // episode or addon cannot supply the stream for this video.
+    let next_streams_effects = resource_update_with_vector_content::<E, _>(
+        next_streams,
+        ResourceAction::ResourceRequested { request: &request },
+    );
+    let next_stream = match &next_streams.content {
+        Some(Loadable::Ready(streams)) => streams
             .iter()
-            .find(|next_stream| next_stream.is_binge_match(stream))
+            .find(|stream| stream.is_binge_match(current_stream))
             .cloned(),
         _ => None,
     };
+    let mut video = video.to_owned();
+    if let Some(stream) = &next_stream {
+        video.streams = vec![stream.to_owned()];
+    }
 
-    eq_update(stream, next_stream)
+    next_streams_effects
+        .join(eq_update(&mut player.next_stream, next_stream))
+        .join(eq_update(&mut player.next_video, Some(video)))
 }
 
 fn series_info_update(
