@@ -1887,7 +1887,13 @@
 <a href="#1886" id="1886">1886</a>
 <a href="#1887" id="1887">1887</a>
 <a href="#1888" id="1888">1888</a>
-<a href="#1889" id="1889">1889</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#1889" id="1889">1889</a>
+<a href="#1890" id="1890">1890</a>
+<a href="#1891" id="1891">1891</a>
+<a href="#1892" id="1892">1892</a>
+<a href="#1893" id="1893">1893</a>
+<a href="#1894" id="1894">1894</a>
+<a href="#1895" id="1895">1895</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 
 <span class="kw">use </span>base64::Engine;
 <span class="kw">use </span>futures::{future, FutureExt, TryFutureExt};
@@ -2017,6 +2023,9 @@
     </span><span class="kw">pub </span>push_library_item_time: DateTime&lt;Utc&gt;,
     <span class="attr">#[serde(skip_serializing)]
     </span><span class="kw">pub </span>loaded: bool,
+    <span class="doccomment">/// Whether the player has reported unpaused playback for this load.
+    </span><span class="attr">#[serde(skip_serializing)]
+    </span><span class="kw">pub </span>playback_started: bool,
     <span class="attr">#[serde(skip_serializing)]
     </span><span class="kw">pub </span>ended: bool,
     <span class="doccomment">/// Whether the selected video has been manually marked as watched
@@ -2065,7 +2074,7 @@
                     <span class="kw-2">&amp;</span>ctx.profile.addons,
                     <span class="self">self</span>.selected.as_ref(),
                     <span class="self">self</span>.analytics_context.as_ref(),
-                    (<span class="self">self</span>.loaded &amp;&amp; !<span class="self">self</span>.ended).then_some(PlayerEventAction::Stop),
+                    (<span class="self">self</span>.playback_started &amp;&amp; !<span class="self">self</span>.ended).then_some(PlayerEventAction::Stop),
                 );
                 <span class="comment">// make sure we send the correct Trakt event if the model hasn't been unloaded
                 </span><span class="kw">let </span>trakt_event_effects = <span class="kw">if </span><span class="self">self</span>.selected.is_some() {
@@ -2243,6 +2252,7 @@
                 });
                 <span class="self">self</span>.load_time = <span class="prelude-val">Some</span>(E::now());
                 <span class="self">self</span>.loaded = <span class="bool-val">false</span>;
+                <span class="self">self</span>.playback_started = <span class="bool-val">false</span>;
                 <span class="self">self</span>.ended = <span class="bool-val">false</span>;
                 <span class="self">self</span>.paused = <span class="prelude-val">None</span>;
                 <span class="self">self</span>.marked_video_as_watched = <span class="bool-val">false</span>;
@@ -2284,7 +2294,7 @@
                     <span class="kw-2">&amp;</span>ctx.profile.addons,
                     <span class="self">self</span>.selected.as_ref(),
                     <span class="self">self</span>.analytics_context.as_ref(),
-                    (<span class="self">self</span>.loaded &amp;&amp; !<span class="self">self</span>.ended).then_some(PlayerEventAction::Stop),
+                    (<span class="self">self</span>.playback_started &amp;&amp; !<span class="self">self</span>.ended).then_some(PlayerEventAction::Stop),
                 );
                 <span class="kw">let </span>ended_effects = <span class="kw">if </span>!<span class="self">self</span>.ended &amp;&amp; <span class="self">self</span>.selected.is_some() {
                     Effects::msg(Msg::Event(Event::PlayerStopped {
@@ -2335,6 +2345,7 @@
                 <span class="self">self</span>.analytics_context = <span class="prelude-val">None</span>;
                 <span class="self">self</span>.load_time = <span class="prelude-val">None</span>;
                 <span class="self">self</span>.loaded = <span class="bool-val">false</span>;
+                <span class="self">self</span>.playback_started = <span class="bool-val">false</span>;
                 <span class="self">self</span>.ended = <span class="bool-val">false</span>;
                 <span class="self">self</span>.paused = <span class="prelude-val">None</span>;
                 <span class="self">self</span>.marked_video_as_watched = <span class="bool-val">false</span>;
@@ -2458,7 +2469,7 @@
                         .unchanged(),
                         <span class="kw">_ </span>=&gt; Effects::none(),
                     };
-                    <span class="kw">let </span>player_event = <span class="kw">match </span>(<span class="self">self</span>.loaded, <span class="self">self</span>.paused) {
+                    <span class="kw">let </span>player_event = <span class="kw">match </span>(<span class="self">self</span>.playback_started, <span class="self">self</span>.paused) {
                         (<span class="bool-val">true</span>, <span class="prelude-val">Some</span>(<span class="bool-val">true</span>)) =&gt; <span class="prelude-val">Some</span>(PlayerEventAction::Pause),
                         (<span class="bool-val">true</span>, <span class="prelude-val">Some</span>(<span class="bool-val">false</span>)) =&gt; <span class="prelude-val">Some</span>(PlayerEventAction::Start),
                         <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
@@ -2632,8 +2643,9 @@
             {
                 <span class="self">self</span>.paused = <span class="prelude-val">Some</span>(<span class="kw-2">*</span>paused);
                 <span class="kw">let </span>player_event = <span class="kw">if </span>!<span class="kw-2">*</span>paused {
+                    <span class="self">self</span>.playback_started = <span class="bool-val">true</span>;
                     <span class="prelude-val">Some</span>(PlayerEventAction::Start)
-                } <span class="kw">else if </span><span class="self">self</span>.loaded {
+                } <span class="kw">else if </span><span class="self">self</span>.playback_started {
                     <span class="prelude-val">Some</span>(PlayerEventAction::Pause)
                 } <span class="kw">else </span>{
                     <span class="prelude-val">None
@@ -2724,7 +2736,7 @@
                     <span class="kw-2">&amp;</span>ctx.profile.addons,
                     <span class="self">self</span>.selected.as_ref(),
                     <span class="self">self</span>.analytics_context.as_ref(),
-                    (<span class="self">self</span>.loaded &amp;&amp; !<span class="self">self</span>.ended).then_some(PlayerEventAction::Stop),
+                    (<span class="self">self</span>.playback_started &amp;&amp; !<span class="self">self</span>.ended).then_some(PlayerEventAction::Stop),
                 );
                 <span class="self">self</span>.ended = <span class="bool-val">true</span>;
                 Effects::msg(Msg::Event(Event::PlayerEnded {
