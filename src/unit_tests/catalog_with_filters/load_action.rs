@@ -360,3 +360,87 @@ fn load_epg_guide_delegation_is_explicit() {
         );
     }
 }
+
+#[test]
+fn switching_type_keeps_catalog_and_extras() {
+    #[derive(Model, Clone, Debug)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+        discover: CatalogWithFilters<MetaItemPreview>,
+    }
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
+        match request {
+            Request { url, .. } if url.starts_with("https://v3-cinemeta.strem.io/catalog/") => {
+                future::ok(Box::new(ResourceResponse::Metas {
+                    metas: vec![MetaItemPreview::default(); 10],
+                }) as Box<dyn Any + Send>)
+                .boxed_env()
+            }
+            _ => default_fetch_handler(request),
+        }
+    }
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
+    let ctx = Ctx::new(
+        Profile::default(),
+        LibraryBucket::default(),
+        StreamsBucket::default(),
+        ServerUrlsBucket::new::<TestEnv>(None),
+        NotificationsBucket::new::<TestEnv>(None, vec![]),
+        SearchHistoryBucket::default(),
+        DismissedEventsBucket::default(),
+    );
+    let base = Url::parse("https://v3-cinemeta.strem.io/manifest.json").unwrap();
+    let (discover, effects) = CatalogWithFilters::<MetaItemPreview>::new(&ctx.profile);
+    let (runtime, rx) = Runtime::<TestEnv, _>::new(
+        TestModel { ctx, discover },
+        effects.into_iter().collect::<Vec<_>>(),
+        1000,
+    );
+    let runtime = Arc::new(RwLock::new(runtime));
+    TestEnv::run_with_runtime(
+        rx,
+        runtime.clone(),
+        enclose!((runtime, base) move || {
+            let runtime = runtime.read().unwrap();
+            runtime.dispatch(RuntimeAction {
+                field: None,
+                action: Action::Load(ActionLoad::CatalogWithFilters(Some(Selected {
+                    request: ResourceRequest {
+                        base,
+                        path: ResourcePath {
+                            resource: "catalog".to_owned(),
+                            r#type: "movie".to_owned(),
+                            id: "top".to_owned(),
+                            extra: vec![ExtraValue { name: "genre".to_owned(), value: "Comedy".to_owned() }],
+                        },
+                    },
+                }))),
+            });
+        }),
+    );
+    let states = STATES.read().unwrap();
+    let state = states.last().unwrap().downcast_ref::<TestModel>().unwrap();
+    let series = state
+        .discover
+        .selectable
+        .types
+        .iter()
+        .find(|t| t.r#type == "series")
+        .expect("a series type to switch to");
+    // the same catalog of the same add-on, with the genre still picked
+    assert_eq!(series.request.base, base_url());
+    assert_eq!(series.request.path.id, "top");
+    assert_eq!(
+        series.request.path.extra,
+        vec![ExtraValue {
+            name: "genre".to_owned(),
+            value: "Comedy".to_owned()
+        }]
+    );
+}
+
+fn base_url() -> Url {
+    Url::parse("https://v3-cinemeta.strem.io/manifest.json").unwrap()
+}
