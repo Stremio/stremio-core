@@ -213,6 +213,47 @@ fn external_player_link_with_vlc_player() {
 }
 
 #[test]
+fn vlc_callback_preserves_stream_urls_with_equals_signs() {
+    let settings = Settings {
+        player_type: Some("vlc".to_owned()),
+        ..Default::default()
+    };
+    let urls = [
+        "https://example.com/streaming_provider/padded==/stream",
+        "https://example.com/stream?info_hash=abc",
+        "https://example.com/streaming_provider/padded==/stream?info_hash=abc&token=a%2Bb",
+    ];
+
+    for url in urls {
+        let stream = Stream {
+            source: StreamSource::Url {
+                url: Url::parse(url).unwrap(),
+            },
+            name: None,
+            description: None,
+            thumbnail: None,
+            subtitles: vec![],
+            behavior_hints: Default::default(),
+        };
+        let links = ExternalPlayerLink::from((&stream, None, &settings));
+        let open_player = links.open_player.unwrap();
+
+        for href in [open_player.ios, open_player.visionos] {
+            let href = Url::parse(&href.unwrap()).unwrap();
+            assert_eq!(href.scheme(), "vlc-x-callback");
+            assert_eq!(href.host_str(), Some("x-callback-url"));
+            assert_eq!(href.path(), "/stream");
+            // VLC 3.7.4 splits the encoded query on '=' before decoding the value.
+            let query = href.query().unwrap();
+            assert_eq!(query.matches('=').count(), 1);
+            assert_eq!(query.split('&').count(), 1);
+            let parameters: Vec<_> = href.query_pairs().collect();
+            assert_eq!(parameters, vec![("url".into(), url.into())]);
+        }
+    }
+}
+
+#[test]
 fn external_player_link_with_mxplayer() {
     let stream = Stream {
         source: StreamSource::Url {
