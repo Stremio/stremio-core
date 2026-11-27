@@ -425,6 +425,7 @@ fn meta_item_preview_de_legacy_links() {
                     name: None,
                     description: None,
                     thumbnail: None,
+                    tags: vec![],
                     subtitles: vec![],
                     behavior_hints: StreamBehaviorHints::default(),
                 },
@@ -435,6 +436,7 @@ fn meta_item_preview_de_legacy_links() {
                     name: None,
                     description: None,
                     thumbnail: None,
+                    tags: vec![],
                     subtitles: vec![],
                     behavior_hints: StreamBehaviorHints::default(),
                 }
@@ -515,6 +517,7 @@ fn meta_item_preview_de_ignore_legacy_when_links() {
                 name: None,
                 description: None,
                 thumbnail: None,
+                tags: vec![],
                 subtitles: vec![],
                 behavior_hints: StreamBehaviorHints::default(),
             }],
