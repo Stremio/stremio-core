@@ -47,12 +47,13 @@ fn settings() {
             server_in_foreground: false,
             send_crash_reports: true,
             discord_rpc_enabled: false,
+            show_clock_in_player: true,
             board_spotlight: BoardSpotlight::default(),
         },
         &[
             Token::Struct {
                 name: "Settings",
-                len: 39,
+                len: 40,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -140,6 +141,8 @@ fn settings() {
             Token::Bool(true),
             Token::Str("discordRpcEnabled"),
             Token::Bool(false),
+            Token::Str("showClockInPlayer"),
+            Token::Bool(true),
             Token::Str("boardSpotlight"),
             Token::Struct {
                 name: "BoardSpotlight",
@@ -246,5 +249,15 @@ fn settings_de() {
             Token::Bool(false),
             Token::StructEnd,
         ],
+    );
+}
+
+#[test]
+fn old_settings_default_to_hidden_clock() {
+    let mut stored = serde_json::to_value(Settings::default()).unwrap();
+    stored.as_object_mut().unwrap().remove("showClockInPlayer");
+    assert_eq!(
+        serde_json::from_value::<Settings>(stored).unwrap(),
+        Settings::default()
     );
 }
