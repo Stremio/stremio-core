@@ -47,12 +47,13 @@ fn settings() {
             server_in_foreground: false,
             send_crash_reports: true,
             discord_rpc_enabled: false,
+            subtitles_language_filter_enabled: true,
             board_spotlight: BoardSpotlight::default(),
         },
         &[
             Token::Struct {
                 name: "Settings",
-                len: 39,
+                len: 40,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -140,6 +141,8 @@ fn settings() {
             Token::Bool(true),
             Token::Str("discordRpcEnabled"),
             Token::Bool(false),
+            Token::Str("subtitlesLanguageFilterEnabled"),
+            Token::Bool(true),
             Token::Str("boardSpotlight"),
             Token::Struct {
                 name: "BoardSpotlight",
@@ -246,5 +249,16 @@ fn settings_de() {
             Token::Bool(false),
             Token::StructEnd,
         ],
+    );
+}
+
+#[test]
+fn old_settings_default_to_an_unfiltered_subtitle_menu() {
+    let mut stored = serde_json::to_value(Settings::default()).unwrap();
+    let settings = stored.as_object_mut().unwrap();
+    settings.remove("subtitlesLanguageFilterEnabled");
+    assert_eq!(
+        serde_json::from_value::<Settings>(stored).unwrap(),
+        Settings::default()
     );
 }
