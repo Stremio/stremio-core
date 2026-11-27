@@ -55,7 +55,7 @@ pub struct CreateTorrentBlobRequest {
 
 impl From<CreateTorrentBlobRequest> for Request<CreateTorrentBlobBody> {
     fn from(val: CreateTorrentBlobRequest) -> Self {
-        let endpoint = val.server_url.join("/create").expect("url builder failed");
+        let endpoint = val.server_url.join("create").expect("url builder failed");
 
         Request::post(endpoint.as_str())
             .header(http::header::CONTENT_TYPE, "application/json")
