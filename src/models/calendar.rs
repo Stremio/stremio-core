@@ -166,6 +166,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Calendar {
                     &mut self.meta_items,
                     ResourcesAction::ResourceRequestResult { request, result },
                 );
+                if !meta_items_effects.has_changed {
+                    return meta_items_effects;
+                }
 
                 let items_effects = items_update(
                     &mut self.items,
@@ -257,38 +260,34 @@ fn items_update(
     let updated_items = selected
         .as_ref()
         .map(|Selected { month, year, .. }| {
+            let mut days_items = vec![Vec::new(); month_info.days as usize];
+            let content_items = meta_items
+                .iter()
+                .filter_map(|ResourceLoadable { content, .. }| match content {
+                    Some(Loadable::Ready(content)) => Some(content),
+                    _ => None,
+                })
+                .flatten()
+                .flat_map(|meta_item| meta_item.videos.iter().map(move |video| (meta_item, video)));
+            for (meta_item, video) in content_items {
+                let Some(released) = video
+                    .released
+                    .filter(|released| released.month() == *month && released.year() == *year)
+                else {
+                    continue;
+                };
+                if let Some(day_items) = days_items.get_mut(released.day() as usize - 1) {
+                    day_items.push(ContentItem {
+                        meta_item: meta_item.clone(),
+                        video: video.clone(),
+                    });
+                }
+            }
             (1..=month_info.days)
-                .map(|day| Item {
+                .zip(days_items)
+                .map(|(day, items)| Item {
                     date: FullDate::new(*year, *month, day),
-                    items: meta_items
-                        .iter()
-                        .flat_map(|ResourceLoadable { content, .. }| match content {
-                            Some(Loadable::Ready(content)) => content
-                                .iter()
-                                .flat_map(|meta_item| {
-                                    meta_item
-                                        .videos
-                                        .iter()
-                                        .filter(|video| {
-                                            video
-                                                .released
-                                                .map(|released| {
-                                                    released.day() == day
-                                                        && released.month() == *month
-                                                        && released.year() == *year
-                                                })
-                                                .unwrap_or(false)
-                                        })
-                                        .map(|video| ContentItem {
-                                            meta_item: meta_item.clone(),
-                                            video: video.clone(),
-                                        })
-                                        .collect_vec()
-                                })
-                                .collect_vec(),
-                            _ => vec![],
-                        })
-                        .collect_vec(),
+                    items,
                 })
                 .collect_vec()
         })

@@ -326,59 +326,56 @@ pub struct LibraryItemState {
 
 impl LibraryItemState {
     pub fn watched_bitfield(&self, videos: &[Video]) -> WatchedBitField {
-        let video_ids = videos
-            .iter()
-            .sorted_by(|a, b| {
-                a.series_info
-                    .as_ref()
-                    .map(|info| info.season as i64)
-                    .unwrap_or(i64::MIN)
-                    .cmp(
-                        &b.series_info
-                            .as_ref()
-                            .map(|info| info.season as i64)
-                            .unwrap_or(i64::MIN),
-                    )
-                    .then(
-                        a.series_info
-                            .as_ref()
-                            .map(|info| info.episode as i64)
-                            .unwrap_or(i64::MIN)
-                            .cmp(
-                                &b.series_info
-                                    .as_ref()
-                                    .map(|info| info.episode as i64)
-                                    .unwrap_or(i64::MIN),
-                            ),
-                    )
-                    .then(
-                        a.released
-                            .as_ref()
-                            .map(|released| released.timestamp_millis())
-                            .unwrap_or(i64::MIN)
-                            .cmp(
-                                &b.released
-                                    .as_ref()
-                                    .map(|released| released.timestamp_millis())
-                                    .unwrap_or(i64::MIN),
-                            ),
-                    )
-            })
-            .map(|video| &video.id)
-            .cloned()
-            .collect::<Vec<_>>();
+        let video_ids = || {
+            videos
+                .iter()
+                .sorted_by(|a, b| {
+                    a.series_info
+                        .as_ref()
+                        .map(|info| info.season as i64)
+                        .unwrap_or(i64::MIN)
+                        .cmp(
+                            &b.series_info
+                                .as_ref()
+                                .map(|info| info.season as i64)
+                                .unwrap_or(i64::MIN),
+                        )
+                        .then(
+                            a.series_info
+                                .as_ref()
+                                .map(|info| info.episode as i64)
+                                .unwrap_or(i64::MIN)
+                                .cmp(
+                                    &b.series_info
+                                        .as_ref()
+                                        .map(|info| info.episode as i64)
+                                        .unwrap_or(i64::MIN),
+                                ),
+                        )
+                        .then(
+                            a.released
+                                .as_ref()
+                                .map(|released| released.timestamp_millis())
+                                .unwrap_or(i64::MIN)
+                                .cmp(
+                                    &b.released
+                                        .as_ref()
+                                        .map(|released| released.timestamp_millis())
+                                        .unwrap_or(i64::MIN),
+                                ),
+                        )
+                })
+                .map(|video| &video.id)
+                .cloned()
+                .collect::<Vec<_>>()
+        };
         match &self.watched {
             Some(watched_field) => {
                 // TODO: Construct WatchedBitField from `BitField8`
-                match WatchedBitField::construct_with_videos(
-                    watched_field.to_owned(),
-                    video_ids.to_owned(),
-                ) {
-                    Ok(watched) => watched,
-                    Err(_) => WatchedBitField::construct_from_array(vec![], video_ids),
-                }
+                WatchedBitField::construct_with_videos(watched_field.clone(), video_ids())
+                    .unwrap_or_else(|_| WatchedBitField::construct_from_array(vec![], video_ids()))
             }
-            _ => WatchedBitField::construct_from_array(vec![], video_ids),
+            _ => WatchedBitField::construct_from_array(vec![], video_ids()),
         }
     }
 }

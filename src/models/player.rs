@@ -623,15 +623,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     }),
                     Some(library_item),
                 ) => {
-                    let channel_id = library_item.id.clone();
                     let video_id = if library_item.is_live() {
-                        &channel_id
+                        library_item.id.as_str()
                     } else {
-                        video_id
+                        video_id.as_str()
                     };
                     // if we've selected a new video (like the next episode)
                     library_item.state.last_watched = Some(E::now());
-                    if library_item.state.video_id != Some(video_id.to_owned()) {
+                    if library_item.state.video_id.as_deref() != Some(video_id) {
                         library_item.state.video_id = Some(video_id.to_owned());
                         library_item.state.overall_time_watched = library_item
                             .state
@@ -720,8 +719,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                             .clone_into(&mut analytics_context.video_id);
                         analytics_context.time = Some(library_item.state.time_offset);
                         analytics_context.duration = Some(library_item.state.duration);
-                        analytics_context.device_type = Some(device.to_owned());
-                        analytics_context.device_name = Some(device.to_owned());
+                        analytics_context
+                            .device_type
+                            .get_or_insert_with(String::new)
+                            .clone_from(device);
+                        analytics_context
+                            .device_name
+                            .get_or_insert_with(String::new)
+                            .clone_from(device);
                         analytics_context.player_duration = Some(duration.to_owned());
                     };
 
@@ -1603,16 +1608,18 @@ fn subtitles_update<E: Env + 'static>(
                 subtitles,
                 ResourcesAction::request(
                     &AggrRequest::AllOfResource(ResourcePath {
+                        resource: subtitles_path.resource.clone(),
+                        r#type: subtitles_path.r#type.clone(),
+                        id: subtitles_path.id.clone(),
                         extra: subtitles_path
                             .extra
-                            .to_owned()
+                            .clone()
                             .extend_one(&VIDEO_HASH_EXTRA_PROP, video_hash)
                             .extend_one(
                                 &VIDEO_SIZE_EXTRA_PROP,
                                 video_size.map(|size| size.to_string()),
                             )
                             .extend_one(&VIDEO_FILENAME_EXTRA_PROP, video_filename),
-                        ..subtitles_path.to_owned()
                     }),
                     addons,
                 ),
@@ -1751,22 +1758,22 @@ fn skip_gaps_update<E: Env + 'static>(
     analytics_context: Option<&AnalyticsContext>,
     skip_gaps: &mut Option<(SkipGapsRequest, Loadable<SkipGapsResponse, CtxError>)>,
 ) -> Effects {
-    let active_premium = profile.auth.as_ref().and_then(|auth| {
+    let active_premium_auth_key = profile.auth.as_ref().and_then(|auth| {
         auth.user
             .premium_expire
             .filter(|premium_expire| premium_expire > &E::now())
-            .map(|premium_expire| (premium_expire, auth.key.clone()))
+            .map(|_| &auth.key)
     });
 
     let skip_gaps_request_effects = match (
-        active_premium,
+        active_premium_auth_key,
         selected,
         video_params,
         series_info,
         library_item,
     ) {
         (
-            Some((_expires, auth_key)),
+            Some(auth_key),
             Some(selected),
             Some(video_params),
             Some(series_info),
@@ -1784,7 +1791,7 @@ fn skip_gaps_update<E: Env + 'static>(
             match (
                 stream_source_supported,
                 selected.stream.name.as_ref(),
-                video_params.hash.clone(),
+                video_params.hash.as_ref(),
                 duration,
             ) {
                 (true, Some(stream_name), Some(os_hash), Some(duration)) if duration > 0 => {
@@ -1797,31 +1804,41 @@ fn skip_gaps_update<E: Env + 'static>(
                         BASE64.encode(sha256_encoded)
                     };
 
+                    let is_same_request = matches!(
+                        skip_gaps,
+                        Some((SkipGapsRequest {
+                            auth_key: request_auth_key,
+                            os_hash: request_os_hash,
+                            item_id: request_item_id,
+                            series_info: request_series_info,
+                            stream_name_hash: request_stream_name_hash,
+                            duration: request_duration,
+                        }, _)) if request_auth_key == auth_key
+                            && request_os_hash == os_hash
+                            && *request_item_id == library_item.id
+                            && request_series_info == series_info
+                            && *request_stream_name_hash == stream_name_hash
+                            && *request_duration == duration
+                    );
+                    if is_same_request {
+                        return Effects::none().unchanged();
+                    }
+
                     let skip_gaps_request = SkipGapsRequest {
-                        auth_key,
-                        os_hash,
-                        item_id: library_item.id.to_owned(),
-                        series_info: series_info.to_owned(),
+                        auth_key: auth_key.clone(),
+                        os_hash: os_hash.clone(),
+                        item_id: library_item.id.clone(),
+                        series_info: series_info.clone(),
                         stream_name_hash,
                         duration,
                     };
+                    let skip_gaps_request_effects = get_skip_gaps::<E>(skip_gaps_request.clone());
+                    let skip_gaps_effects =
+                        eq_update(skip_gaps, Some((skip_gaps_request, Loadable::Loading)));
 
-                    // no previous request, error, or different request
-                    if skip_gaps.is_none()
-                        || matches!(skip_gaps, Some((request, Loadable::Err(_))) | Some((request, _)) if request != &skip_gaps_request)
-                    {
-                        let skip_gaps_request_effects =
-                            get_skip_gaps::<E>(skip_gaps_request.clone());
-
-                        let skip_gaps_effects =
-                            eq_update(skip_gaps, Some((skip_gaps_request, Loadable::Loading)));
-
-                        Effects::one(skip_gaps_request_effects)
-                            .unchanged()
-                            .join(skip_gaps_effects)
-                    } else {
-                        Effects::none().unchanged()
-                    }
+                    Effects::one(skip_gaps_request_effects)
+                        .unchanged()
+                        .join(skip_gaps_effects)
                 }
                 _ => Effects::none().unchanged(),
             }
