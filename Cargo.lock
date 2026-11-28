@@ -113,12 +113,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "boolinator"
-version = "2.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfa8873f51c92e232f9bac4065cddef41b714152812bfc5f7672ba16d6ef8cd9"
-
-[[package]]
 name = "bumpalo"
 version = "3.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1149,7 +1143,6 @@ dependencies = [
  "anyhow",
  "assert_matches",
  "base64 0.22.1",
- "boolinator",
  "chrono",
  "data-encoding",
  "derivative",
@@ -1196,7 +1189,6 @@ dependencies = [
 name = "stremio-core-web"
 version = "0.67.3"
 dependencies = [
- "boolinator",
  "chrono",
  "console_error_panic_hook",
  "either",
