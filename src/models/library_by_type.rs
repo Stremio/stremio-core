@@ -187,7 +187,7 @@ fn catalogs_update<F: LibraryFilter>(
                     .take(take)
                     .collect::<Vec<_>>()
                     .chunks(CATALOG_PAGE_SIZE)
-                    .map(|page| page.iter().map(|item| (*item).to_owned()).collect())
+                    .map(|page| page.iter().map(|item| (*item).clone()).collect())
                     .collect::<Vec<_>>()
             })
             .collect::<Vec<_>>(),
