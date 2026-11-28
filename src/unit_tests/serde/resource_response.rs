@@ -130,6 +130,14 @@ fn resource_response_streaming_de() {
             .to_string()
             .contains("Object response contained more than 1 of the unique keys"));
     }
+    assert_eq!(
+        serde_path_to_error::deserialize::<_, ResourceResponse>(
+            &mut serde_json::Deserializer::from_str(r#"{"metas":{"object_key":"value"}}"#)
+        )
+        .expect_err("Should be an error")
+        .to_string(),
+        "invalid type: map, expected a sequence"
+    );
     assert!(
         serde_json::from_str::<ResourceResponse>(r#"{"streams": "x"}"#)
             .expect_err("Should be an error")

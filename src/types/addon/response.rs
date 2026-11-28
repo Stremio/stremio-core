@@ -308,7 +308,7 @@ impl<'de, T: Deserialize<'de>> Visitor<'de> for NullableVecSkipError<T> {
 struct ResourceResponseVisitor;
 
 impl<'de> Visitor<'de> for ResourceResponseVisitor {
-    type Value = ResourceResponse;
+    type Value = Result<ResourceResponse, String>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("an Object response")
@@ -355,13 +355,13 @@ impl<'de> Visitor<'de> for ResourceResponseVisitor {
             };
             response = Some((key, value));
         }
-        match response {
-            Some((_, response)) => response.map_err(de::Error::custom),
-            None => Err(de::Error::custom(format!(
+        Ok(match response {
+            Some((_, response)) => response,
+            None => Err(format!(
                 "Cannot deserialize as ResourceResponse, the expected Object response didn't contain any of the required keys: {}",
                 RESPONSE_KEYS.join(", ")
-            ))),
-        }
+            )),
+        })
     }
 }
 
@@ -377,7 +377,8 @@ impl<'de> Deserialize<'de> for ResourceResponse {
             .deserialize_map(ResourceResponseVisitor)
             .map_err(|error| {
                 de::Error::custom(serde_path_to_error::Error::new(track.path(), error))
-            })
+            })?
+            .map_err(de::Error::custom)
     }
 }
 
