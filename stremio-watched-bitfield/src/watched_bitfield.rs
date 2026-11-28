@@ -2,7 +2,7 @@ use crate::{BitField8, Error};
 use std::{
     fmt::{self, Display},
     str::FromStr,
-    sync::Arc,
+    sync::{Arc, OnceLock},
 };
 
 /// (De)Serializable field that tracks which videos have been watched
@@ -26,7 +26,7 @@ use std::{
 ///     .parse::<WatchedField>()
 ///     .expect("Should parse");
 /// ```
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone)]
 pub struct WatchedField {
     /// The anchor video id
     ///
@@ -36,15 +36,43 @@ pub struct WatchedField {
     /// watched video.
     anchor_length: usize,
     bitfield: BitField8,
+    serialized: Arc<OnceLock<String>>,
 }
+
+impl WatchedField {
+    fn serialized(&self) -> Result<&str, std::io::Error> {
+        if let Some(serialized) = self.serialized.get() {
+            return Ok(serialized);
+        }
+        let bitfield = String::try_from(&self.bitfield)?;
+        let serialized = format!("{}:{}:{}", self.anchor_video, self.anchor_length, bitfield);
+        Ok(self.serialized.get_or_init(|| serialized))
+    }
+}
+
+impl fmt::Debug for WatchedField {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("WatchedField")
+            .field("anchor_video", &self.anchor_video)
+            .field("anchor_length", &self.anchor_length)
+            .field("bitfield", &self.bitfield)
+            .finish()
+    }
+}
+
+impl PartialEq for WatchedField {
+    fn eq(&self, other: &Self) -> bool {
+        self.anchor_video == other.anchor_video
+            && self.anchor_length == other.anchor_length
+            && self.bitfield == other.bitfield
+    }
+}
+
+impl Eq for WatchedField {}
 
 impl Display for WatchedField {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}:{}:{}",
-            self.anchor_video, self.anchor_length, self.bitfield
-        )
+        f.write_str(self.serialized().map_err(|_| fmt::Error)?)
     }
 }
 
@@ -60,6 +88,7 @@ impl From<WatchedBitField> for WatchedField {
             anchor_video: last_video_id,
             anchor_length: last_id + 1,
             bitfield: watched_bit_field.bitfield,
+            serialized: Arc::default(),
         }
     }
 }
@@ -91,6 +120,7 @@ impl FromStr for WatchedField {
             bitfield,
             anchor_video: anchor_video_id,
             anchor_length,
+            serialized: Arc::new(OnceLock::from(string.to_owned())),
         })
     }
 }
@@ -238,7 +268,7 @@ impl From<WatchedBitField> for BitField8 {
 mod serde {
     use std::str::FromStr;
 
-    use serde::{de, Serialize};
+    use serde::{de, ser, Serialize};
 
     use super::WatchedField;
 
@@ -258,7 +288,7 @@ mod serde {
         where
             S: serde::Serializer,
         {
-            serializer.serialize_str(&self.to_string())
+            serializer.serialize_str(self.serialized().map_err(ser::Error::custom)?)
         }
     }
 }
@@ -392,5 +422,41 @@ mod tests {
             "anchor should point to the last watched video, got: {}",
             serialized
         );
+    }
+
+    fn watched_bit_field(serialized: &str) -> WatchedBitField {
+        let video_ids = (1..=16).map(|i| format!("tt2934286:1:{}", i)).collect();
+        WatchedBitField::construct_and_resize(serialized, video_ids).unwrap()
+    }
+
+    #[test]
+    fn watched_field_from_bitfield_serializes_in_storage_format() {
+        let serialized = "tt2934286:1:5:5:eJyTZwAAAEAAIA==";
+        let field = WatchedField::from(watched_bit_field(serialized));
+
+        assert_eq!(field.to_string(), serialized);
+        assert_eq!(field.to_string(), serialized);
+        #[cfg(feature = "serde")]
+        assert_eq!(
+            serde_json::to_value(&field).unwrap(),
+            serde_json::json!(serialized)
+        );
+    }
+
+    #[test]
+    fn watched_field_equality_ignores_serialization_state() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<WatchedField>();
+
+        let serialized = "tt2934286:1:5:5:eJyTZwAAAEAAIA==";
+        let parsed = serialized.parse::<WatchedField>().unwrap();
+        let built = WatchedField::from(watched_bit_field(serialized));
+        let built_clone = built.clone();
+
+        assert_eq!(parsed, built);
+        assert_eq!(built.to_string(), parsed.to_string());
+        assert_eq!(parsed, built);
+        assert_eq!(built_clone, parsed);
+        assert_eq!(built_clone.to_string(), serialized);
     }
 }
