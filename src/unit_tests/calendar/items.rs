@@ -64,7 +64,7 @@ fn calendar_items_group_videos_by_release_day() {
             first_weekday: 0,
         },
         meta_items: vec![ResourceLoadable {
-            request: request.to_owned(),
+            request: request.clone(),
             content: Some(Loadable::Loading),
         }],
         ..Default::default()

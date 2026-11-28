@@ -1608,12 +1608,12 @@ fn subtitles_update<E: Env + 'static>(
                 subtitles,
                 ResourcesAction::request(
                     &AggrRequest::AllOfResource(ResourcePath {
-                        resource: subtitles_path.resource.to_owned(),
-                        r#type: subtitles_path.r#type.to_owned(),
-                        id: subtitles_path.id.to_owned(),
+                        resource: subtitles_path.resource.clone(),
+                        r#type: subtitles_path.r#type.clone(),
+                        id: subtitles_path.id.clone(),
                         extra: subtitles_path
                             .extra
-                            .to_owned()
+                            .clone()
                             .extend_one(&VIDEO_HASH_EXTRA_PROP, video_hash)
                             .extend_one(
                                 &VIDEO_SIZE_EXTRA_PROP,
@@ -1825,10 +1825,10 @@ fn skip_gaps_update<E: Env + 'static>(
                     }
 
                     let skip_gaps_request = SkipGapsRequest {
-                        auth_key: auth_key.to_owned(),
-                        os_hash: os_hash.to_owned(),
-                        item_id: library_item.id.to_owned(),
-                        series_info: series_info.to_owned(),
+                        auth_key: auth_key.clone(),
+                        os_hash: os_hash.clone(),
+                        item_id: library_item.id.clone(),
+                        series_info: series_info.clone(),
                         stream_name_hash,
                         duration,
                     };

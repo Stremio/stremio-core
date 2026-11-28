@@ -372,7 +372,7 @@ impl LibraryItemState {
         match &self.watched {
             Some(watched_field) => {
                 // TODO: Construct WatchedBitField from `BitField8`
-                WatchedBitField::construct_with_videos(watched_field.to_owned(), video_ids())
+                WatchedBitField::construct_with_videos(watched_field.clone(), video_ids())
                     .unwrap_or_else(|_| WatchedBitField::construct_from_array(vec![], video_ids()))
             }
             _ => WatchedBitField::construct_from_array(vec![], video_ids()),
