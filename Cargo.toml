@@ -10,6 +10,7 @@ rust-version = "1.77"
 [profile.release]
 lto = true
 opt-level = 's'
+codegen-units = 1
 
 [workspace]
 resolver = "2"

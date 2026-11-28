@@ -1,4 +1,8 @@
-use std::{collections::HashMap, sync::RwLock, time::Duration};
+use std::{
+    collections::HashMap,
+    sync::{OnceLock, RwLock},
+    time::Duration,
+};
 
 use chrono::{offset::TimeZone, DateTime, Utc};
 use futures::{future, Future, FutureExt, TryFutureExt};
@@ -26,10 +30,7 @@ use stremio_core::{
     types::{api::AuthRequest, remote_config::ClientInfo, resource::StreamSource},
 };
 
-use crate::{
-    event::{UIEvent, WebEvent},
-    model::WebModel,
-};
+use crate::{event::UIEvent, model::WebModel};
 
 const UNKNOWN_ERROR: &str = "Unknown Error";
 const INSTALLATION_ID_STORAGE_KEY: &str = "installation_id";
@@ -67,6 +68,8 @@ struct HostClientInfo {
     os: Option<String>,
     notification_templates: Option<Vec<String>>,
 }
+
+static HOST_CLIENT_INFO: OnceLock<HostClientInfo> = OnceLock::new();
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -124,23 +127,21 @@ impl WebEnv {
             })
             .boxed_env()
     }
-    pub fn emit_to_analytics(event: &WebEvent, model: &WebModel, path: &str) {
-        let (name, data) = match event {
-            WebEvent::UIEvent(UIEvent::LocationPathChanged { prev_path }) => (
+    pub fn ui_event_analytics(event: &UIEvent) -> (String, serde_json::Value) {
+        match event {
+            UIEvent::LocationPathChanged { prev_path } => (
                 "stateChange".to_owned(),
                 json!({ "previousURL": sanitize_location_path(prev_path) }),
             ),
-            WebEvent::UIEvent(UIEvent::Search {
+            UIEvent::Search {
                 query,
                 responses_count,
-            }) => (
+            } => (
                 "search".to_owned(),
                 json!({ "query": query, "rows": responses_count }),
             ),
-            WebEvent::UIEvent(UIEvent::Share { url }) => {
-                ("share".to_owned(), json!({ "url": url }))
-            }
-            WebEvent::UIEvent(UIEvent::StreamClicked { stream }) => (
+            UIEvent::Share { url } => ("share".to_owned(), json!({ "url": url })),
+            UIEvent::StreamClicked { stream } => (
                 "streamClicked".to_owned(),
                 json!({
                     "type": match &stream.source {
@@ -158,95 +159,106 @@ impl WebEnv {
                     }
                 }),
             ),
-            WebEvent::CoreEvent(core_event) => match core_event.as_ref() {
-                Event::UserAuthenticated { auth_request } => (
-                    "login".to_owned(),
-                    json!({
-                        "type": match auth_request {
-                            AuthRequest::Login { facebook, .. } if *facebook => "facebook",
-                            AuthRequest::Login { .. } => "login",
-                            AuthRequest::Facebook { .. } => "authWithFacebook",
-                            AuthRequest::Apple { .. } => "authWithApple",
-                            AuthRequest::LoginWithToken { .. } => "loginWithToken",
-                            AuthRequest::Register { .. } => "register",
-                        },
-                    }),
-                ),
-                Event::AddonInstalled { transport_url, id } => (
-                    "installAddon".to_owned(),
-                    json!({
-                        "addonTransportUrl": transport_url,
-                        "addonID": id
-                    }),
-                ),
-                Event::AddonUninstalled { transport_url, id } => (
-                    "removeAddon".to_owned(),
-                    json!({
-                        "addonTransportUrl": transport_url,
-                        "addonID": id
-                    }),
-                ),
-                Event::PlayerPlaying { load_time, context } => (
-                    "playerPlaying".to_owned(),
-                    json!({
-                        "loadTime": load_time,
-                        "player": context
-                    }),
-                ),
-                Event::PlayerStopped { context } => {
-                    ("playerStopped".to_owned(), json!({ "player": context }))
-                }
-                Event::PlayerEnded {
-                    context,
-                    is_binge_enabled,
-                    is_playing_next_video,
-                } => (
-                    "playerEnded".to_owned(),
-                    json!({
-                       "player": context,
-                       "isBingeEnabled": is_binge_enabled,
-                       "isPlayingNextVideo": is_playing_next_video
-                    }),
-                ),
-                Event::TraktPlaying { context } => {
-                    ("traktPlaying".to_owned(), json!({ "player": context }))
-                }
-                Event::TraktPaused { context } => {
-                    ("traktPaused".to_owned(), json!({ "player": context }))
-                }
-                _ => return,
-            },
-            WebEvent::CoreAction(core_action) => match core_action.as_ref() {
-                Action::Ctx(ActionCtx::AddToLibrary(meta_preview)) => {
-                    let library_item = model.ctx.library.items.get(&meta_preview.id);
-                    (
-                        "addToLib".to_owned(),
-                        json!({
-                            "libItemID":  &meta_preview.id,
-                            "libItemType": &meta_preview.r#type,
-                            "libItemName": &meta_preview.name,
-                            "wasTemp": library_item.map(|library_item| library_item.temp).unwrap_or_default(),
-                            "isReadded": library_item.map(|library_item| library_item.removed).unwrap_or_default(),
-                        }),
-                    )
-                }
-                Action::Ctx(ActionCtx::RemoveFromLibrary(id)) => {
-                    match model.ctx.library.items.get(id) {
-                        Some(library_item) => (
-                            "removeFromLib".to_owned(),
-                            json!({
-                                "libItemID":  &library_item.id,
-                                "libItemType": &library_item.r#type,
-                                "libItemName": &library_item.name,
-                            }),
-                        ),
-                        _ => return,
-                    }
-                }
-                Action::Ctx(ActionCtx::Logout) => ("logout".to_owned(), serde_json::Value::Null),
-                _ => return,
-            },
+        }
+    }
+    pub fn core_event_analytics(event: &Event) -> Option<(String, serde_json::Value)> {
+        let analytics = match event {
+            Event::UserAuthenticated { auth_request } => (
+                "login".to_owned(),
+                json!({
+                    "type": match auth_request {
+                        AuthRequest::Login { facebook, .. } if *facebook => "facebook",
+                        AuthRequest::Login { .. } => "login",
+                        AuthRequest::Facebook { .. } => "authWithFacebook",
+                        AuthRequest::Apple { .. } => "authWithApple",
+                        AuthRequest::LoginWithToken { .. } => "loginWithToken",
+                        AuthRequest::Register { .. } => "register",
+                    },
+                }),
+            ),
+            Event::AddonInstalled { transport_url, id } => (
+                "installAddon".to_owned(),
+                json!({
+                    "addonTransportUrl": transport_url,
+                    "addonID": id
+                }),
+            ),
+            Event::AddonUninstalled { transport_url, id } => (
+                "removeAddon".to_owned(),
+                json!({
+                    "addonTransportUrl": transport_url,
+                    "addonID": id
+                }),
+            ),
+            Event::PlayerPlaying { load_time, context } => (
+                "playerPlaying".to_owned(),
+                json!({
+                    "loadTime": load_time,
+                    "player": context
+                }),
+            ),
+            Event::PlayerStopped { context } => {
+                ("playerStopped".to_owned(), json!({ "player": context }))
+            }
+            Event::PlayerEnded {
+                context,
+                is_binge_enabled,
+                is_playing_next_video,
+            } => (
+                "playerEnded".to_owned(),
+                json!({
+                   "player": context,
+                   "isBingeEnabled": is_binge_enabled,
+                   "isPlayingNextVideo": is_playing_next_video
+                }),
+            ),
+            Event::TraktPlaying { context } => {
+                ("traktPlaying".to_owned(), json!({ "player": context }))
+            }
+            Event::TraktPaused { context } => {
+                ("traktPaused".to_owned(), json!({ "player": context }))
+            }
+            _ => return None,
         };
+        Some(analytics)
+    }
+    pub fn core_action_analytics(
+        action: &Action,
+        model: &WebModel,
+    ) -> Option<(String, serde_json::Value)> {
+        let analytics = match action {
+            Action::Ctx(ActionCtx::AddToLibrary(meta_preview)) => {
+                let library_item = model.ctx.library.items.get(&meta_preview.id);
+                (
+                    "addToLib".to_owned(),
+                    json!({
+                        "libItemID":  &meta_preview.id,
+                        "libItemType": &meta_preview.r#type,
+                        "libItemName": &meta_preview.name,
+                        "wasTemp": library_item.map(|library_item| library_item.temp).unwrap_or_default(),
+                        "isReadded": library_item.map(|library_item| library_item.removed).unwrap_or_default(),
+                    }),
+                )
+            }
+            Action::Ctx(ActionCtx::RemoveFromLibrary(id)) => {
+                match model.ctx.library.items.get(id) {
+                    Some(library_item) => (
+                        "removeFromLib".to_owned(),
+                        json!({
+                            "libItemID":  &library_item.id,
+                            "libItemType": &library_item.r#type,
+                            "libItemName": &library_item.name,
+                        }),
+                    ),
+                    _ => return None,
+                }
+            }
+            Action::Ctx(ActionCtx::Logout) => ("logout".to_owned(), serde_json::Value::Null),
+            _ => return None,
+        };
+        Some(analytics)
+    }
+    pub fn emit_to_analytics(name: String, data: serde_json::Value, model: &WebModel, path: &str) {
         ANALYTICS.emit(name, data, &model.ctx, &model.streaming_server, path);
     }
     pub fn send_next_analytics_batch() -> impl Future<Output = ()> {
@@ -294,17 +306,6 @@ impl Env for WebEnv {
         let (parts, body) = request.into_parts();
         let url = parts.uri.to_string();
         let method = parts.method.as_str();
-        let headers = {
-            let mut headers = HashMap::new();
-            for (key, value) in parts.headers.iter() {
-                let key = key.as_str().to_owned();
-                let value = String::from_utf8_lossy(value.as_bytes()).into_owned();
-                headers.entry(key).or_insert_with(Vec::new).push(value);
-            }
-            <JsValue as JsValueSerdeExt>::from_serde(&headers)
-                .expect("WebEnv::fetch: JsValue from Headers failed to be built")
-        };
-
         let body = match serde_json::to_string(&body) {
             Ok(ref body) if body != "null" && parts.method != Method::GET => {
                 let js_value = JsValue::from_str(body);
@@ -313,10 +314,18 @@ impl Env for WebEnv {
             _ => None,
         };
         let mut request_options = web_sys::RequestInit::new();
-        request_options
-            .method(method)
-            .headers(&headers)
-            .body(body.as_ref());
+        request_options.method(method).body(body.as_ref());
+        if !parts.headers.is_empty() {
+            let mut headers = HashMap::new();
+            for (key, value) in parts.headers.iter() {
+                let key = key.as_str().to_owned();
+                let value = String::from_utf8_lossy(value.as_bytes()).into_owned();
+                headers.entry(key).or_insert_with(Vec::new).push(value);
+            }
+            let headers = <JsValue as JsValueSerdeExt>::from_serde(&headers)
+                .expect("WebEnv::fetch: JsValue from Headers failed to be built");
+            request_options.headers(&headers);
+        }
 
         let request = web_sys::Request::new_with_str_and_init(&url, &request_options)
             .expect("request builder failed");
@@ -480,10 +489,12 @@ impl Env for WebEnv {
     }
 
     fn client_info() -> ClientInfo {
-        let host = CLIENT_INFO
-            .as_deref()
-            .and_then(|client_info| serde_json::from_str::<HostClientInfo>(client_info).ok())
-            .unwrap_or_default();
+        let host = HOST_CLIENT_INFO.get_or_init(|| {
+            CLIENT_INFO
+                .as_deref()
+                .and_then(|client_info| serde_json::from_str::<HostClientInfo>(client_info).ok())
+                .unwrap_or_default()
+        });
         let platform = if cfg!(feature = "theater") {
             "theater"
         } else {
@@ -495,7 +506,7 @@ impl Env for WebEnv {
         };
         ClientInfo {
             platform: platform.to_owned(),
-            os: host.os.map(|os| os.to_lowercase()),
+            os: host.os.as_deref().map(str::to_lowercase),
             app_version: Some(APP_VERSION.to_owned()),
             shell_version: SHELL_VERSION.to_owned(),
             installation_id: INSTALLATION_ID
@@ -504,7 +515,7 @@ impl Env for WebEnv {
                 .to_owned(),
             notification_templates: match platform {
                 "unknown" => vec![],
-                _ => host.notification_templates.unwrap_or_default(),
+                _ => host.notification_templates.clone().unwrap_or_default(),
             },
         }
     }

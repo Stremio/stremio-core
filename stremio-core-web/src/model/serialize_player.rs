@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use semver::Version;
 use serde::Serialize;
 use url::Url;
@@ -28,9 +30,9 @@ mod model {
     use super::*;
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
-    pub struct Stream<S: StreamSourceTrait = StreamSource> {
+    pub struct Stream<'a, S: StreamSourceTrait + Clone = StreamSource> {
         #[serde(flatten)]
-        pub stream: stremio_core::types::resource::Stream<S>,
+        pub stream: Cow<'a, stremio_core::types::resource::Stream<S>>,
         pub deep_links: StreamDeepLinks,
     }
     #[derive(Serialize)]
@@ -65,7 +67,7 @@ mod model {
     #[serde(rename_all = "camelCase")]
     pub struct MetaItem<'a> {
         #[serde(flatten)]
-        pub meta_item: &'a stremio_core::types::resource::MetaItem,
+        pub preview: &'a stremio_core::types::resource::MetaItemPreview,
         pub videos: Vec<Video<'a>>,
     }
     #[derive(Serialize)]
@@ -97,7 +99,7 @@ mod model {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct Selected<'a> {
-        pub stream: Stream,
+        pub stream: Stream<'a>,
         pub stream_request: &'a Option<ResourceRequest>,
         pub meta_request: &'a Option<ResourceRequest>,
         pub subtitles_path: &'a Option<ResourcePath>,
@@ -106,7 +108,7 @@ mod model {
     #[serde(rename_all = "camelCase")]
     pub struct Player<'a> {
         pub selected: Option<Selected<'a>>,
-        pub stream: Option<Loadable<Stream<ConvertedStreamSource>, &'a EnvError>>,
+        pub stream: Option<Loadable<Stream<'a, ConvertedStreamSource>, &'a EnvError>>,
         pub meta_item: Option<Loadable<model::MetaItem<'a>, &'a ResourceError>>,
         pub subtitles: Vec<model::Subtitles<'a>>,
         pub next_video: Option<Video<'a>>,
@@ -127,11 +129,17 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
     ctx: &Ctx,
     streaming_server: &StreamingServer,
 ) -> JsValue {
+    let now = E::now();
+    let selected_video_id = player
+        .selected
+        .as_ref()
+        .and_then(|selected| selected.stream_request.as_ref())
+        .map(|stream_request| &stream_request.path.id);
     <JsValue as JsValueSerdeExt>::from_serde(&model::Player {
         live: &player.live,
         selected: player.selected.as_ref().map(|selected| model::Selected {
             stream: model::Stream {
-                stream: selected.stream.clone(),
+                stream: Cow::Borrowed(&selected.stream),
                 deep_links: StreamDeepLinks::from((
                     &selected.stream,
                     streaming_server.base_url.as_ref(),
@@ -151,7 +159,7 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
                 url_stream.behavior_hints.proxy_headers = None;
 
                 model::Stream {
-                    stream: url_stream,
+                    stream: Cow::Owned(url_stream),
                     deep_links: StreamDeepLinks::from((
                         stream,
                         streaming_server.base_url.as_ref(),
@@ -167,50 +175,38 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
             .map(|ResourceLoadable { request, content }| match &content {
                 Some(Loadable::Loading) | None => Loadable::Loading,
                 Some(Loadable::Err(error)) => Loadable::Err(error),
-                Some(Loadable::Ready(meta_item)) => Loadable::Ready(model::MetaItem {
-                    meta_item,
-                    videos: meta_item
-                        .videos
-                        .iter()
-                        .map(|video| model::Video {
-                            video,
-                            upcoming: meta_item.preview.behavior_hints.has_scheduled_videos
-                                && video.released > Some(E::now()),
-                            watched: player
-                                .watched
-                                .as_ref()
-                                .map(|watched| watched.get_video(&video.id))
-                                .unwrap_or_default(),
-                            // only the currently playing video can have the progress
-                            // as we keep that information in the LibraryItem
-                            progress: ctx.library.items.get(&meta_item.preview.id).and_then(
-                                |library_item| {
-                                    // only set up the progress for the current video
-                                    // for series, the selected stream path ID should be the video id!
-                                    if player
-                                        .selected
-                                        .as_ref()
-                                        .and_then(|selected| selected.stream_request.as_ref())
-                                        .map(|stream_request| stream_request.path.id == video.id)
-                                        .unwrap_or_default()
-                                    {
-                                        Some(library_item.progress())
-                                    } else {
-                                        None
-                                    }
-                                },
-                            ),
-                            scheduled: meta_item.preview.behavior_hints.has_scheduled_videos,
-                            deep_links: VideoDeepLinks::from((
+                Some(Loadable::Ready(meta_item)) => {
+                    let has_scheduled_videos =
+                        meta_item.preview.behavior_hints.has_scheduled_videos;
+                    let library_item = ctx.library.items.get(&meta_item.preview.id);
+                    Loadable::Ready(model::MetaItem {
+                        preview: &meta_item.preview,
+                        videos: meta_item
+                            .videos
+                            .iter()
+                            .map(|video| model::Video {
                                 video,
-                                request,
-                                &streaming_server.base_url,
-                                &ctx.profile.settings,
-                            ))
-                            .into_web_deep_links(),
-                        })
-                        .collect(),
-                }),
+                                upcoming: has_scheduled_videos && video.released > Some(now),
+                                watched: player
+                                    .watched
+                                    .as_ref()
+                                    .map(|watched| watched.get_video(&video.id))
+                                    .unwrap_or_default(),
+                                progress: library_item
+                                    .filter(|_| selected_video_id == Some(&video.id))
+                                    .map(|library_item| library_item.progress()),
+                                scheduled: has_scheduled_videos,
+                                deep_links: VideoDeepLinks::from((
+                                    video,
+                                    request,
+                                    &streaming_server.base_url,
+                                    &ctx.profile.settings,
+                                ))
+                                .into_web_deep_links(),
+                            })
+                            .collect(),
+                    })
+                }
             }),
         subtitles: player
             .subtitles
@@ -266,7 +262,7 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
                     })
                     .map(|meta_item| {
                         meta_item.preview.behavior_hints.has_scheduled_videos
-                            && video.released > Some(E::now())
+                            && video.released > Some(now)
                     })
                     .unwrap_or_default(),
                 watched: player

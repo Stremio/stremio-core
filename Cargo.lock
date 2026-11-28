@@ -1200,7 +1200,6 @@ dependencies = [
  "chrono",
  "console_error_panic_hook",
  "either",
- "enclose",
  "futures",
  "getrandom",
  "gloo-utils",

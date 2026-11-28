@@ -1,6 +1,5 @@
 use std::sync::RwLock;
 
-use enclose::enclose;
 use futures::{future, try_join, FutureExt, StreamExt, TryFutureExt};
 use gloo_utils::format::JsValueSerdeExt;
 use once_cell::sync::Lazy;
@@ -32,7 +31,6 @@ use stremio_core::{
 
 use crate::{
     env::WebEnv,
-    event::WebEvent,
     model::{WebModel, WebModelField},
 };
 
@@ -170,9 +168,12 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                         1000,
                     );
                     WebEnv::exec_concurrent(rx.for_each(move |event| {
-                        if let RuntimeEvent::CoreEvent(event) = &event {
-                            WebEnv::exec_concurrent(WebEnv::get_location_hash().then(
-                                enclose!((event) move |location_hash| async move {
+                        if let Some((name, data)) = match &event {
+                            RuntimeEvent::CoreEvent(event) => WebEnv::core_event_analytics(event),
+                            _ => None,
+                        } {
+                            WebEnv::exec_concurrent(WebEnv::get_location_hash().map(
+                                move |location_hash| {
                                     let runtime = RUNTIME.read().expect("runtime read failed");
                                     let runtime = runtime
                                         .as_ref()
@@ -180,17 +181,21 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                                         .as_ref()
                                         .expect("runtime is not ready");
                                     let model = runtime.model().expect("model read failed");
-                                    let path = location_hash.split('#').last().map(|path| path.to_owned()).unwrap_or_default();
-                                    WebEnv::emit_to_analytics(
-                                        &WebEvent::CoreEvent(Box::new(event.to_owned())),
-                                        &model,
-                                        &path
-                                    );
-                                }),
+                                    let path = location_hash
+                                        .split('#')
+                                        .last()
+                                        .map(|path| path.to_owned())
+                                        .unwrap_or_default();
+                                    WebEnv::emit_to_analytics(name, data, &model, &path);
+                                },
                             ));
                         };
                         emit_to_ui
-                            .call1(&JsValue::NULL, &<JsValue as JsValueSerdeExt>::from_serde(&event).expect("Event handler: JsValue from Event"))
+                            .call1(
+                                &JsValue::NULL,
+                                &<JsValue as JsValueSerdeExt>::from_serde(&event)
+                                    .expect("Event handler: JsValue from Event"),
+                            )
                             .expect("emit event failed");
                         future::ready(())
                     }));
@@ -228,12 +233,10 @@ pub fn get_debug_state() -> JsValue {
 
 #[wasm_bindgen]
 pub fn get_state(field: JsValue) -> Result<JsValue, JsValue> {
-    let field_json = stringify(&field);
-
     let field: WebModelField =
         JsValueSerdeExt::into_serde(&field).map_err(|err| GetStateError::Field {
             error: err.to_string(),
-            json: field_json,
+            json: stringify(&field),
         })?;
     let runtime = RUNTIME.read().expect("runtime read failed");
     let runtime = runtime
@@ -250,19 +253,15 @@ pub fn get_state(field: JsValue) -> Result<JsValue, JsValue> {
 
 #[wasm_bindgen]
 pub fn dispatch(action: JsValue, field: JsValue, location_hash: JsValue) -> Result<(), JsValue> {
-    let action_json = stringify(&action).unwrap_or_default();
-
-    let field_json = stringify(&field);
-
     let action: Action =
         JsValueSerdeExt::into_serde(&action).map_err(|err| DispatchError::Action {
             error: err.to_string(),
-            json: action_json,
+            json: stringify(&action).unwrap_or_default(),
         })?;
     let field: Option<WebModelField> =
         JsValueSerdeExt::into_serde(&field).map_err(|err| DispatchError::Field {
             error: err.to_string(),
-            json: field_json,
+            json: stringify(&field),
         })?;
 
     let runtime_action: RuntimeAction<WebEnv, WebModel> = RuntimeAction { action, field };
@@ -287,14 +286,14 @@ fn dispatch_internal(
 
     {
         let model = runtime.model().map_err(|_| State::ModelReadFailed)?;
-        let path = location_hash
-            .and_then(|location_hash| location_hash.split('#').last().map(|path| path.to_owned()))
-            .unwrap_or_default();
-        WebEnv::emit_to_analytics(
-            &WebEvent::CoreAction(Box::new(runtime_action.action.to_owned())),
-            &model,
-            &path,
-        );
+        if let Some((name, data)) = WebEnv::core_action_analytics(&runtime_action.action, &model) {
+            let path = location_hash
+                .and_then(|location_hash| {
+                    location_hash.split('#').last().map(|path| path.to_owned())
+                })
+                .unwrap_or_default();
+            WebEnv::emit_to_analytics(name, data, &model, &path);
+        }
     }
 
     // if you need to add the tracing (as it's a bit verbose)
@@ -323,7 +322,8 @@ pub fn analytics(event: JsValue, location_hash: JsValue) {
         .as_string()
         .and_then(|location_hash| location_hash.split('#').last().map(|path| path.to_owned()))
         .unwrap_or_default();
-    WebEnv::emit_to_analytics(&WebEvent::UIEvent(event), &model, &path);
+    let (name, data) = WebEnv::ui_event_analytics(&event);
+    WebEnv::emit_to_analytics(name, data, &model, &path);
 }
 
 #[wasm_bindgen]
