@@ -180,7 +180,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                                         .as_ref()
                                         .expect("runtime is not ready");
                                     let model = runtime.model().expect("model read failed");
-                                    let path = location_hash.split('#').last().map(|path| path.to_owned()).unwrap_or_default();
+                                    let path = location_hash.split('#').next_back().map(|path| path.to_owned()).unwrap_or_default();
                                     WebEnv::emit_to_analytics(
                                         &WebEvent::CoreEvent(Box::new(event.to_owned())),
                                         &model,
@@ -288,7 +288,12 @@ fn dispatch_internal(
     {
         let model = runtime.model().map_err(|_| State::ModelReadFailed)?;
         let path = location_hash
-            .and_then(|location_hash| location_hash.split('#').last().map(|path| path.to_owned()))
+            .and_then(|location_hash| {
+                location_hash
+                    .split('#')
+                    .next_back()
+                    .map(|path| path.to_owned())
+            })
             .unwrap_or_default();
         WebEnv::emit_to_analytics(
             &WebEvent::CoreAction(Box::new(runtime_action.action.to_owned())),
@@ -321,7 +326,12 @@ pub fn analytics(event: JsValue, location_hash: JsValue) {
     let model = runtime.model().expect("model read failed");
     let path = location_hash
         .as_string()
-        .and_then(|location_hash| location_hash.split('#').last().map(|path| path.to_owned()))
+        .and_then(|location_hash| {
+            location_hash
+                .split('#')
+                .next_back()
+                .map(|path| path.to_owned())
+        })
         .unwrap_or_default();
     WebEnv::emit_to_analytics(&WebEvent::UIEvent(event), &model, &path);
 }

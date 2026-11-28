@@ -19,7 +19,7 @@ use crate::model::DeepLinksExt;
 pub mod model {
     use super::*;
 
-    /// A slimmed down [`Video`] - no `streams`/`trailerStreams` (the guide
+    /// A slimmed down [`Video`](stremio_core::types::resource::Video) - no `streams`/`trailerStreams` (the guide
     /// payload is large and playback goes through the deep links) and no
     /// snapshot state like "is live" that goes stale without a re-render
     /// (the frontend derives it from `startTime`/`endTime`)
@@ -98,7 +98,7 @@ pub fn serialize_live_tv_guide(
     .expect("JsValue from model::LiveTvGuide")
 }
 
-/// Builds the serializable web state of the [`LiveTvGuide`] model,
+/// Builds the serializable web state of the [`LiveTvGuide`](stremio_core::models::live_tv_guide::LiveTvGuide) model,
 /// platform-agnostic so that it is testable natively
 pub fn live_tv_guide_model<'a>(
     live_tv_guide: &'a stremio_core::models::live_tv_guide::LiveTvGuide,
@@ -300,7 +300,12 @@ mod tests {
         };
         let page_request = ResourceRequest {
             base: base.clone(),
-            path: ResourcePath::with_extra("catalog", "tv", "puretv-guide", &[date_extra.clone()]),
+            path: ResourcePath::with_extra(
+                "catalog",
+                "tv",
+                "puretv-guide",
+                std::slice::from_ref(&date_extra),
+            ),
         };
         let next_page_request = ResourceRequest {
             base: base.clone(),

@@ -183,7 +183,7 @@ impl Stream {
     /// ```
     pub fn ftp_filename(url: &Url) -> Result<String, EnvError> {
         url.path_segments()
-            .and_then(|segments| segments.last())
+            .and_then(|mut segments| segments.next_back())
             .map(|s| s.to_string())
             .ok_or(EnvError::Other(
                 "Ftp(s) filepath is missing in the url".into(),
