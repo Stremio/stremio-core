@@ -1,6 +1,14 @@
+use std::{fmt, marker::PhantomData};
+
 use derive_more::TryInto;
-use serde::{de::Deserializer, Deserialize, Serialize};
-use serde_with::{serde_as, VecSkipError};
+use serde::{
+    de::{
+        self, value::SeqAccessDeserializer, DeserializeSeed, Deserializer, IgnoredAny, MapAccess,
+        SeqAccess, Unexpected, Visitor,
+    },
+    Deserialize, Serialize,
+};
+use serde_with::{serde_as, DeserializeAs, Same, VecSkipError};
 
 use crate::types::{
     addon::Descriptor,
@@ -122,12 +130,240 @@ pub enum ResourceResponse {
     },
 }
 
-#[serde_as]
-#[derive(Clone, Serialize, Deserialize, Debug)]
-#[serde(transparent)]
-struct SkipError<T: for<'a> Deserialize<'a> + Serialize>(
-    #[serde_as(as = "VecSkipError<_>")] Vec<T>,
-);
+const RESPONSE_KEYS: [&str; 6] = [
+    "metas",
+    "metasDetailed",
+    "meta",
+    "streams",
+    "subtitles",
+    "addons",
+];
+
+#[derive(PartialEq, Eq)]
+enum ResponseKey {
+    Metas,
+    MetasDetailed,
+    Meta,
+    Streams,
+    Subtitles,
+    Addons,
+}
+
+struct ResponseKeySeed;
+
+impl<'de> DeserializeSeed<'de> for ResponseKeySeed {
+    type Value = Option<ResponseKey>;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_str(self)
+    }
+}
+
+impl<'de> Visitor<'de> for ResponseKeySeed {
+    type Value = Option<ResponseKey>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a string key")
+    }
+
+    fn visit_str<E>(self, key: &str) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        Ok(match key {
+            "metas" => Some(ResponseKey::Metas),
+            "metasDetailed" => Some(ResponseKey::MetasDetailed),
+            "meta" => Some(ResponseKey::Meta),
+            "streams" => Some(ResponseKey::Streams),
+            "subtitles" => Some(ResponseKey::Subtitles),
+            "addons" => Some(ResponseKey::Addons),
+            _ => None,
+        })
+    }
+}
+
+struct IgnoredValue;
+
+impl<'de> DeserializeSeed<'de> for IgnoredValue {
+    type Value = ();
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_any(IgnoredAny).map(drop)
+    }
+}
+
+struct NullableVecSkipError<T>(PhantomData<T>);
+
+impl<T> NullableVecSkipError<T> {
+    const EXPECTING: &'static str = "a sequence";
+
+    fn invalid(unexpected: Unexpected) -> Result<Vec<T>, String> {
+        Err(<de::value::Error as de::Error>::invalid_type(unexpected, &Self::EXPECTING).to_string())
+    }
+}
+
+impl<'de, T: Deserialize<'de>> DeserializeSeed<'de> for NullableVecSkipError<T> {
+    type Value = Result<Vec<T>, String>;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_any(self)
+    }
+}
+
+impl<'de, T: Deserialize<'de>> Visitor<'de> for NullableVecSkipError<T> {
+    type Value = Result<Vec<T>, String>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str(Self::EXPECTING)
+    }
+
+    fn visit_bool<E>(self, value: bool) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        Ok(Self::invalid(Unexpected::Bool(value)))
+    }
+
+    fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        Ok(Self::invalid(Unexpected::Signed(value)))
+    }
+
+    fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        Ok(Self::invalid(Unexpected::Unsigned(value)))
+    }
+
+    fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        Ok(Self::invalid(Unexpected::Float(value)))
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        Ok(Self::invalid(Unexpected::Str(value)))
+    }
+
+    fn visit_bytes<E>(self, value: &[u8]) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        Ok(Self::invalid(Unexpected::Bytes(value)))
+    }
+
+    fn visit_unit<E>(self) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        Ok(Ok(vec![]))
+    }
+
+    fn visit_none<E>(self) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        Ok(Ok(vec![]))
+    }
+
+    fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_any(self)
+    }
+
+    fn visit_seq<A>(self, seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: SeqAccess<'de>,
+    {
+        VecSkipError::<Same>::deserialize_as(SeqAccessDeserializer::new(seq)).map(Ok)
+    }
+
+    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+    where
+        A: MapAccess<'de>,
+    {
+        while map.next_entry_seed(IgnoredValue, IgnoredValue)?.is_some() {}
+        Ok(Self::invalid(Unexpected::Map))
+    }
+}
+
+struct ResourceResponseVisitor;
+
+impl<'de> Visitor<'de> for ResourceResponseVisitor {
+    type Value = Result<ResourceResponse, String>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("an Object response")
+    }
+
+    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+    where
+        A: MapAccess<'de>,
+    {
+        let mut response: Option<(ResponseKey, Result<ResourceResponse, String>)> = None;
+        while let Some(key) = map.next_key_seed(ResponseKeySeed)? {
+            let Some(key) = key else {
+                map.next_value_seed(IgnoredValue)?;
+                continue;
+            };
+            if response
+                .as_ref()
+                .is_some_and(|(current, _)| *current != key)
+            {
+                return Err(de::Error::custom(format!(
+                    "Cannot deserialize as ResourceResponse, the expected Object response contained more than 1 of the unique keys: {}",
+                    RESPONSE_KEYS.join(", ")
+                )));
+            }
+            let value = match key {
+                ResponseKey::Metas => map
+                    .next_value_seed(NullableVecSkipError(PhantomData))?
+                    .map(|metas| ResourceResponse::Metas { metas }),
+                ResponseKey::MetasDetailed => map
+                    .next_value_seed(NullableVecSkipError(PhantomData))?
+                    .map(|metas_detailed| ResourceResponse::MetasDetailed { metas_detailed }),
+                ResponseKey::Meta => Ok(ResourceResponse::Meta {
+                    meta: map.next_value()?,
+                }),
+                ResponseKey::Streams => map
+                    .next_value_seed(NullableVecSkipError(PhantomData))?
+                    .map(|streams| ResourceResponse::Streams { streams }),
+                ResponseKey::Subtitles => map
+                    .next_value_seed(NullableVecSkipError(PhantomData))?
+                    .map(|subtitles| ResourceResponse::Subtitles { subtitles }),
+                ResponseKey::Addons => map
+                    .next_value_seed(NullableVecSkipError(PhantomData))?
+                    .map(|addons| ResourceResponse::Addons { addons }),
+            };
+            response = Some((key, value));
+        }
+        Ok(match response {
+            Some((_, response)) => response,
+            None => Err(format!(
+                "Cannot deserialize as ResourceResponse, the expected Object response didn't contain any of the required keys: {}",
+                RESPONSE_KEYS.join(", ")
+            )),
+        })
+    }
+}
 
 impl<'de> Deserialize<'de> for ResourceResponse {
     /// Custom deserialize for ResourceResponse which expects only 1 of the required fields
@@ -136,94 +372,13 @@ impl<'de> Deserialize<'de> for ResourceResponse {
     where
         D: Deserializer<'de>,
     {
-        let keys = [
-            "metas",
-            "metasDetailed",
-            "meta",
-            "streams",
-            "subtitles",
-            "addons",
-        ];
-
-        let value =
-            serde_path_to_error::deserialize(deserializer).map_err(serde::de::Error::custom)?;
-        let mut value = match value {
-            serde_json::Value::Object(value) => value,
-            _ => {
-                return Err(serde::de::Error::custom(
-                    "Cannot deserialize as ResourceResponse, expected an Object response",
-                ))
-            }
-        };
-
-        // check whether we have one of the expected keys or if we have more than 1 which is not allowed!
-        let unique_keys_count = keys.iter().filter(|key| value.contains_key(**key)).count();
-        if unique_keys_count == 0 {
-            return Err(serde::de::Error::custom(
-                format!("Cannot deserialize as ResourceResponse, the expected Object response didn't contain any of the required keys: {}",
-                keys.join(", ")),
-            ));
-        }
-        if unique_keys_count > 1 {
-            return Err(serde::de::Error::custom(
-                format!("Cannot deserialize as ResourceResponse, the expected Object response contained more than 1 of the unique keys: {}",
-                keys.join(", ")),
-            ));
-        }
-
-        if let Some(value) = value.get_mut("metas") {
-            Ok(ResourceResponse::Metas {
-                metas: match value.take() {
-                    serde_json::Value::Null => Ok(vec![]),
-                    value => serde_json::from_value::<SkipError<_>>(value).map(|skip| skip.0),
-                }
-                .map_err(serde::de::Error::custom)?,
-            })
-        } else if let Some(value) = value.get_mut("metasDetailed") {
-            Ok(ResourceResponse::MetasDetailed {
-                metas_detailed: match value.take() {
-                    serde_json::Value::Null => Ok(vec![]),
-                    value => serde_json::from_value::<SkipError<_>>(value).map(|skip| skip.0),
-                }
-                .map_err(serde::de::Error::custom)?,
-            })
-        } else if let Some(value) = value.get_mut("meta") {
-            Ok(ResourceResponse::Meta {
-                meta: serde_json::from_value(value.take()).map_err(serde::de::Error::custom)?,
-            })
-        } else if let Some(value) = value.get_mut("streams") {
-            Ok(ResourceResponse::Streams {
-                streams: match value.take() {
-                    serde_json::Value::Null => Ok(vec![]),
-                    value => serde_json::from_value::<SkipError<_>>(value).map(|skip| skip.0),
-                }
-                .map_err(serde::de::Error::custom)?,
-            })
-        } else if let Some(value) = value.get_mut("subtitles") {
-            Ok(ResourceResponse::Subtitles {
-                subtitles: match value.take() {
-                    serde_json::Value::Null => Ok(vec![]),
-                    value => serde_json::from_value::<SkipError<_>>(value).map(|skip| skip.0),
-                }
-                .map_err(serde::de::Error::custom)?,
-            })
-        } else if let Some(value) = value.get_mut("addons") {
-            Ok(ResourceResponse::Addons {
-                addons: match value.take() {
-                    serde_json::Value::Null => Ok(vec![]),
-                    value => serde_json::from_value::<SkipError<_>>(value).map(|skip| skip.0),
-                }
-                .map_err(serde::de::Error::custom)?,
-            })
-        } else {
-            // we should never get to this else, as we already check for missing required key
-            // but we're leaving it to remove the danger of a developer forgetting to add a new key to the list.
-            Err(serde::de::Error::custom(
-                format!("Cannot deserialize as ResourceResponse, the expected Object response didn't contain any of the required keys: {}",
-                keys.join(", ")
-            )
-            ))
-        }
+        let mut track = serde_path_to_error::Track::new();
+        serde_path_to_error::Deserializer::new(deserializer, &mut track)
+            .deserialize_map(ResourceResponseVisitor)
+            .map_err(|error| {
+                de::Error::custom(serde_path_to_error::Error::new(track.path(), error))
+            })?
+            .map_err(de::Error::custom)
     }
 }
 

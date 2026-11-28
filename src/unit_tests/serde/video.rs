@@ -884,3 +884,42 @@ fn video_epg_content_ratings() {
     let parsed = serde_json::from_value::<Video>(json).unwrap();
     assert_eq!(parsed.epg_info.unwrap().ratings, expected);
 }
+
+#[test]
+fn videos_ser_sorted_unique() {
+    let video = |id: &str, title: &str, season: u32, episode: u32| Video {
+        id: id.to_owned(),
+        title: title.to_owned(),
+        series_info: Some(SeriesInfo { season, episode }),
+        ..Default::default()
+    };
+    let meta_item = MetaItem {
+        preview: MetaItemPreview {
+            id: "id".to_owned(),
+            r#type: "series".to_owned(),
+            ..Default::default()
+        },
+        videos: vec![
+            video("0:1", "special", 0, 1),
+            video("1:2", "second", 1, 2),
+            video("1:1", "first", 1, 1),
+            video("1:1", "duplicate", 1, 1),
+        ],
+    };
+
+    let value = serde_json::to_value(&meta_item).expect("Should serialize");
+    let videos = value["videos"]
+        .as_array()
+        .expect("Should be an array")
+        .iter()
+        .map(|video| (video["id"].as_str(), video["title"].as_str()))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        videos,
+        vec![
+            (Some("1:1"), Some("first")),
+            (Some("1:2"), Some("second")),
+            (Some("0:1"), Some("special")),
+        ]
+    );
+}

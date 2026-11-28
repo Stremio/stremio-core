@@ -1,9 +1,9 @@
 use core::{cmp::Ordering, marker::PhantomData};
 
-use std::hash::Hash;
+use std::{borrow::Borrow, hash::Hash};
 
 use itertools::Itertools;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Deserializer, Serializer};
 use serde_with::{de::DeserializeAsWrap, DeserializeAs, Same, SerializeAs};
 
 pub trait SortedVecAdapter {
@@ -38,8 +38,7 @@ where
 
 impl<T, V, A> SerializeAs<Vec<T>> for SortedVec<V, A>
 where
-    T: Clone + Serialize,
-    V: SerializeAs<Vec<T>>,
+    V: for<'a> SerializeAs<Vec<&'a T>>,
     A: SortedVecAdapter<Input = T>,
 {
     fn serialize_as<S>(source: &Vec<T>, serializer: S) -> Result<S::Ok, S::Error>
@@ -51,7 +50,6 @@ where
         let source = source
             .iter()
             .sorted_by(|a, b| A::cmp(a, b, &args))
-            .cloned()
             .collect::<Vec<_>>();
         V::serialize_as(&source, serializer)
     }
@@ -85,10 +83,10 @@ where
 
 impl<T, U, V, A> SerializeAs<Vec<T>> for UniqueVec<V, A>
 where
-    T: Clone + Serialize,
+    T: Borrow<A::Input>,
     U: Eq + Hash,
-    V: SerializeAs<Vec<T>>,
-    A: UniqueVecAdapter<Input = T, Output = U>,
+    V: for<'a> SerializeAs<Vec<&'a T>>,
+    A: UniqueVecAdapter<Output = U>,
 {
     fn serialize_as<S>(source: &Vec<T>, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -96,8 +94,7 @@ where
     {
         let source = source
             .iter()
-            .unique_by(|item| A::hash(item))
-            .cloned()
+            .unique_by(|item| A::hash((*item).borrow()))
             .collect::<Vec<_>>();
         V::serialize_as(&source, serializer)
     }
