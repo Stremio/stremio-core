@@ -1,7 +1,5 @@
 use chrono::NaiveDate;
-use once_cell::sync::Lazy;
 use percent_encoding::utf8_percent_encode;
-use regex::Regex;
 use serde::Serialize;
 use url::Url;
 
@@ -17,7 +15,8 @@ use crate::{
         profile::Settings,
         query_params_encode,
         resource::{
-            build_magnet_uri, MetaItem, MetaItemPreview, Stream, StreamSource, StreamUrls, Video,
+            build_magnet_uri, get_download_url, get_m3u_data_uri, get_magnet_url,
+            get_streaming_url, MetaItem, MetaItemPreview, Stream, StreamSource, Video,
         },
         streams::{ConvertedStreamSource, StreamsItem},
     },
@@ -77,6 +76,17 @@ fn magnet_url_from_raw(stream: &Stream) -> Option<String> {
         } => Some(build_magnet_uri(info_hash, announce, stream.name.as_ref())),
         _ => None,
     }
+}
+
+fn replace_http_scheme(url: &str, scheme: &str) -> String {
+    url.match_indices("http")
+        .find_map(|(start, _)| {
+            let rest = &url[start + 4..];
+            let rest = rest.strip_prefix('s').unwrap_or(rest);
+            rest.strip_prefix("://").map(|rest| (start, rest))
+        })
+        .map(|(start, rest)| format!("{}{scheme}{rest}", &url[..start]))
+        .unwrap_or_else(|| url.to_owned())
 }
 
 fn x_callback_open_player(
@@ -148,13 +158,10 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
             &Settings,
         ),
     ) -> Self {
-        static HTTP_SCHEME: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://").unwrap());
-
-        let stream_urls = StreamUrls::new(stream.clone(), streaming_server_url);
-        let download = stream_urls.download_url.as_ref().map(ToString::to_string);
-        let magnet = stream_urls.magnet_url.as_ref().map(ToString::to_string);
-        let streaming = stream_urls.streaming_url;
-        let playlist = stream_urls.m3u_data_uri;
+        let download = get_download_url(stream, streaming_server_url).map(String::from);
+        let magnet = get_magnet_url(stream).map(String::from);
+        let streaming = get_streaming_url(stream);
+        let playlist = streaming.as_ref().map(get_m3u_data_uri);
         let file_name = playlist.as_ref().map(|_| "playlist.m3u".to_owned());
 
         let open_player = match &streaming {
@@ -166,7 +173,7 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
                     "choose" => Some(OpenPlayerLink {
                         android: Some(format!(
                             "{}#Intent;type=video/any;scheme=https;end",
-                            HTTP_SCHEME.replace(url.as_str(), "intent://"),
+                            replace_http_scheme(url.as_str(), "intent://"),
                         )),
                         ..Default::default()
                     }),
@@ -175,7 +182,7 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
                         visionos: Some(format!("vlc-x-callback://x-callback-url/stream?url={url_encoded}")),
                         android: Some(format!(
                             "{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
-                            HTTP_SCHEME.replace(url.as_str(), "intent://"),
+                            replace_http_scheme(url.as_str(), "intent://"),
                         )),
                         windows: Some(format!("vlc://{url}")),
                         ..Default::default()
@@ -183,20 +190,20 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
                     "mxplayer" => Some(OpenPlayerLink {
                         android: Some(format!(
                             "{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end",
-                            HTTP_SCHEME.replace(url.as_str(), "intent://"),
+                            replace_http_scheme(url.as_str(), "intent://"),
                         )),
                         ..Default::default()
                     }),
                     "justplayer" => Some(OpenPlayerLink {
                         android: Some(format!(
                             "{}#Intent;package=com.brouken.player;type=video;scheme=https;end",
-                            HTTP_SCHEME.replace(url.as_str(), "intent://"),
+                            replace_http_scheme(url.as_str(), "intent://"),
                         )),
                         ..Default::default()
                     }),
                     "outplayer" => Some(OpenPlayerLink {
-                        ios: Some(HTTP_SCHEME.replace(url.as_str(), "outplayer://").to_string()),
-                        visionos: Some(HTTP_SCHEME.replace(url.as_str(), "outplayer://").to_string()),
+                        ios: Some(replace_http_scheme(url.as_str(), "outplayer://")),
+                        visionos: Some(replace_http_scheme(url.as_str(), "outplayer://")),
                         ..Default::default()
                     }),
                     "infuse" | "nativeplayer" => Some(x_callback_open_player(
@@ -261,7 +268,7 @@ impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for Externa
         ExternalPlayerLink {
             download,
             magnet,
-            streaming: streaming.as_ref().map(ToString::to_string),
+            streaming: streaming.map(String::from),
             playlist,
             file_name,
             open_player,
@@ -297,16 +304,13 @@ impl From<(&LibraryItem, Option<&StreamsItem>, Option<&Url>, &Settings)> for Lib
             .checked_div(1000)
             .filter(|position| *position > 0);
         LibraryItemDeepLinks {
-            meta_details_videos: item
-                .behavior_hints
-                .default_video_id
-                .as_ref()
-                .cloned()
-                .xor(Some(format!(
+            meta_details_videos: item.behavior_hints.default_video_id.is_none().then(|| {
+                format!(
                     "stremio:///detail/{}/{}",
                     utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
-                ))),
+                )
+            }),
             meta_details_streams: item
                 .state
                 .video_id
@@ -409,11 +413,13 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
             item.behavior_hints.default_video_id.as_ref()
         };
         MetaItemDeepLinks {
-            meta_details_videos: default_video_id.cloned().xor(Some(format!(
-                "stremio:///detail/{}/{}",
-                utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
-            ))),
+            meta_details_videos: default_video_id.is_none().then(|| {
+                format!(
+                    "stremio:///detail/{}/{}",
+                    utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
+                )
+            }),
             meta_details_streams: default_video_id.map(|video_id| {
                 format!(
                     "stremio:///detail/{}/{}/{}",

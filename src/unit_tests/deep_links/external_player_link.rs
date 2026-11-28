@@ -1,8 +1,9 @@
 use crate::constants::{BASE64, URI_COMPONENT_ENCODE_SET};
 use crate::deep_links::ExternalPlayerLink;
 use crate::types::profile::Settings;
-use crate::types::resource::{Stream, StreamBehaviorHints, StreamSource};
+use crate::types::resource::{build_magnet_uri, Stream, StreamBehaviorHints, StreamSource};
 use base64::Engine;
+use magnet_url::Magnet;
 use percent_encoding::utf8_percent_encode;
 use std::str::FromStr;
 use url::Url;
@@ -439,4 +440,101 @@ fn external_player_link_and_callback_with_cineultra() {
                 .to_string()
         )
     );
+}
+
+#[test]
+fn external_player_link_torrent_magnet_matches_magnet_serialization() {
+    let info_hash = [
+        0xdd, 0x82, 0x55, 0xec, 0xdc, 0x7c, 0xa5, 0x5f, 0xb0, 0xbb, 0xf8, 0x13, 0x23, 0xd8, 0x70,
+        0x62, 0xdb, 0x1f, 0x6d, 0x1c,
+    ];
+    let announce = vec![
+        "tracker:udp://tracker.example.com:80/announce".to_owned(),
+        "dht:dd8255ecdc7ca55fb0bbf81323d87062db1f6d1c".to_owned(),
+        "http://bt1.archive.org:6969/announce?a=1&b=2".to_owned(),
+    ];
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
+    let settings = Settings::default();
+    for (name, announce) in [
+        (None, vec![]),
+        (Some(String::new()), announce.clone()),
+        (
+            Some("Movie & Show = 1080p/ünïcode %20".to_owned()),
+            announce,
+        ),
+    ] {
+        let stream = Stream {
+            source: StreamSource::Torrent {
+                info_hash,
+                file_idx: None,
+                announce: announce.clone(),
+                file_must_include: vec![],
+            },
+            name: name.clone(),
+            description: None,
+            thumbnail: None,
+            subtitles: vec![],
+            behavior_hints: Default::default(),
+        };
+        let expected = Magnet::new(&build_magnet_uri(&info_hash, &announce, name.as_ref()))
+            .unwrap()
+            .to_string()
+            .parse::<Url>()
+            .unwrap()
+            .to_string();
+        let epl = ExternalPlayerLink::from((&stream, streaming_server_url.as_ref(), &settings));
+        assert_eq!(epl.magnet, Some(expected));
+    }
+}
+
+#[test]
+fn external_player_link_replaces_first_http_scheme() {
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
+    for (url, player_type, expected) in [
+        (
+            "https://example.com/stream?source=http://other.com",
+            "outplayer",
+            "outplayer://example.com/stream?source=http://other.com",
+        ),
+        (
+            "rtmp://example.com/live?a=HTTP://upper.com&b=https://lower.com",
+            "outplayer",
+            "rtmp://example.com/live?a=HTTP://upper.com&b=outplayer://lower.com",
+        ),
+        (
+            "rtmp://example.com/live?a=https:/x&b=httpss://y",
+            "outplayer",
+            "rtmp://example.com/live?a=https:/x&b=httpss://y",
+        ),
+        (
+            "https://example.com/stream",
+            "choose",
+            "intent://example.com/stream#Intent;type=video/any;scheme=https;end",
+        ),
+    ] {
+        let stream = Stream {
+            source: StreamSource::Url {
+                url: Url::from_str(url).unwrap(),
+            },
+            name: None,
+            description: None,
+            thumbnail: None,
+            subtitles: vec![],
+            behavior_hints: Default::default(),
+        };
+        let settings = Settings {
+            player_type: Some(player_type.to_owned()),
+            streaming_server_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
+            ..Default::default()
+        };
+        let open_player =
+            ExternalPlayerLink::from((&stream, streaming_server_url.as_ref(), &settings))
+                .open_player
+                .unwrap();
+        let actual = match player_type {
+            "choose" => open_player.android,
+            _ => open_player.ios,
+        };
+        assert_eq!(actual.as_deref(), Some(expected), "{url}");
+    }
 }
