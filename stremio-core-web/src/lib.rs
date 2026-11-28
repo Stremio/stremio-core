@@ -1,6 +1,4 @@
-#![allow(clippy::module_inception)]
 #![allow(deprecated)]
-#![allow(clippy::all)]
 
 pub mod model {
     #[cfg(feature = "wasm")]

@@ -1,11 +1,10 @@
 [package]
 name = "stremio-watched-bitfield"
 version = "0.1.0"
-edition = "2021"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
 publish = false
-
-# because of `dep:serde` supported after 1.60
-rust-version = "1.60"
 
 [lib]
 doctest = false
@@ -17,10 +16,13 @@ serde = ["dep:serde"]
 
 [dependencies]
 base64 = "0.13.0"
-flate2 = "1.0.*"
+flate2.workspace = true
 # (de)serialization of WatchedBitField
-serde = { version = "1", default-features = false, optional = true }
+serde = { workspace = true, optional = true }
 
 [dev-dependencies]
-serde_json = "1"
-serde = { version = "1", default-features = false }
+serde_json.workspace = true
+serde.workspace = true
+
+[lints]
+workspace = true

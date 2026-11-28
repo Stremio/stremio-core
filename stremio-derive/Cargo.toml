@@ -1,7 +1,9 @@
 [package]
 name = "stremio-derive"
 version = "0.1.0"
-edition = "2021"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
 publish = false
 
 [lib]
@@ -14,3 +16,6 @@ proc-macro2 = "1"
 proc-macro-crate = "1"
 proc_macro_roids = "0.8"
 case = "1"
+
+[lints]
+workspace = true
