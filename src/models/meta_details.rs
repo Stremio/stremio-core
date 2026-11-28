@@ -306,6 +306,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &mut self.meta_items,
                     ResourcesAction::ResourceRequestResult { request, result },
                 );
+                let meta_items_changed =
+                    live_schedule_effects.has_changed || meta_items_effects.has_changed;
                 let selected_override_effects =
                     selected_guess_stream_update(&mut self.selected, &self.meta_items);
                 let streams_effects = if selected_override_effects.has_changed {
@@ -313,8 +315,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 } else {
                     Effects::default()
                 };
-                let meta_streams_effects =
-                    meta_streams_update(&mut self.meta_streams, &self.selected, &self.meta_items);
+                let meta_streams_effects = if meta_items_changed
+                    || selected_override_effects.has_changed
+                {
+                    meta_streams_update(&mut self.meta_streams, &self.selected, &self.meta_items)
+                } else {
+                    Effects::default()
+                };
                 let last_used_stream_effects = last_used_stream_update(
                     &mut self.last_used_stream,
                     &self.selected,
@@ -329,8 +336,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &self.meta_items,
                     &ctx.library,
                 );
-                let watched_effects =
-                    watched_update(&mut self.watched, &self.meta_items, &self.library_item);
+                let watched_effects = if meta_items_changed || library_item_effects.has_changed {
+                    watched_update(&mut self.watched, &self.meta_items, &self.library_item)
+                } else {
+                    Effects::default()
+                };
                 selected_override_effects
                     .join(live_schedule_effects)
                     .join(meta_items_effects)
@@ -425,8 +435,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &self.meta_items,
                     &ctx.library,
                 );
-                let watched_effects =
-                    watched_update(&mut self.watched, &self.meta_items, &self.library_item);
+                let watched_effects = if library_item_effects.has_changed {
+                    watched_update(&mut self.watched, &self.meta_items, &self.library_item)
+                } else {
+                    Effects::default()
+                };
                 library_item_effects.join(watched_effects)
             }
             Msg::Internal(Internal::ProfileChanged) => {
@@ -928,20 +941,21 @@ fn last_used_stream_update(
     streams: &[ResourceLoadable<Vec<Stream>>],
     stream_bucket: &StreamsBucket,
 ) -> Effects {
-    let all_streams = [meta_streams, streams].concat();
+    let has_streams = !meta_streams.is_empty() || !streams.is_empty();
     let next_last_used_stream = match selected {
         Some(Selected {
             stream_path: Some(stream_path),
             ..
         }) => meta_items
             .iter()
-            .filter(|_| !all_streams.is_empty())
+            .filter(|_| has_streams)
             .find_map(|meta_item_res| match &meta_item_res.content {
                 Some(Loadable::Ready(meta_item)) => stream_bucket
                     .last_stream_item(&stream_path.id, meta_item)
                     .and_then(|stream_item| {
-                        all_streams
+                        meta_streams
                             .iter()
+                            .chain(streams)
                             .find(|resource| {
                                 resource.request.base == stream_item.stream_transport_url
                             })
