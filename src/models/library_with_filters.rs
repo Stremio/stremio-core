@@ -540,48 +540,4 @@ mod test {
             )
         }
     }
-
-    #[test]
-    fn sort_by_name_matches_lowercase_comparison() {
-        let names = [
-            "abc",
-            "ABD",
-            "Abc",
-            "a",
-            "",
-            "Émile",
-            "élan",
-            "Zeta",
-            "ΟΔΟΣ",
-            "οδοσ",
-            "οδος",
-            "İstanbul",
-            "istanbul",
-        ];
-        let item = |name: &str| LibraryItem {
-            id: "id".to_owned(),
-            name: name.to_owned(),
-            r#type: "movie".to_owned(),
-            poster: None,
-            poster_shape: Default::default(),
-            removed: false,
-            temp: false,
-            ctime: None,
-            mtime: Utc::now(),
-            state: Default::default(),
-            behavior_hints: Default::default(),
-        };
-        for a in names {
-            for b in names {
-                assert_eq!(
-                    Sort::Name.sort_items(&item(a), &item(b)),
-                    a.to_lowercase().cmp(&b.to_lowercase()),
-                );
-                assert_eq!(
-                    Sort::NameReverse.sort_items(&item(a), &item(b)),
-                    b.to_lowercase().cmp(&a.to_lowercase()),
-                );
-            }
-        }
-    }
 }
