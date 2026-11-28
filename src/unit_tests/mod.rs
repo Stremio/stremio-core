@@ -9,6 +9,7 @@ mod continue_watching_preview;
 mod ctx;
 mod data_export;
 mod deep_links;
+mod library;
 mod link;
 mod live_tv_continue_watching;
 mod live_tv_guide;

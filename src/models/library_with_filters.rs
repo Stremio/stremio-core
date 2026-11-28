@@ -87,9 +87,19 @@ impl Sort {
                 // when a new item is added to the library, `last_watched` is always set to now
                 // same as `ctime`
                 .then(a.ctime.cmp(&b.ctime)),
-            Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
-            Sort::NameReverse => b.name.to_lowercase().cmp(&a.name.to_lowercase()),
+            Sort::Name => cmp_lowercase(&a.name, &b.name),
+            Sort::NameReverse => cmp_lowercase(&b.name, &a.name),
         }
+    }
+}
+
+fn cmp_lowercase(a: &str, b: &str) -> Ordering {
+    if a.is_ascii() && b.is_ascii() {
+        a.bytes()
+            .map(|byte| byte.to_ascii_lowercase())
+            .cmp(b.bytes().map(|byte| byte.to_ascii_lowercase()))
+    } else {
+        a.to_lowercase().cmp(&b.to_lowercase())
     }
 }
 

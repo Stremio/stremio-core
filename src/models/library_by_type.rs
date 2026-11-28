@@ -159,12 +159,12 @@ fn catalogs_update<F: LibraryFilter>(
             .values()
             .filter(|library_item| F::predicate(library_item, notifications))
             .fold(
-                HashMap::<&str, Vec<LibraryItem>>::new(),
+                HashMap::<&str, Vec<&LibraryItem>>::new(),
                 |mut result, library_item| {
                     result
                         .entry(&library_item.r#type)
                         .or_default()
-                        .push(library_item.to_owned());
+                        .push(library_item);
                     result
                 },
             )
@@ -187,7 +187,7 @@ fn catalogs_update<F: LibraryFilter>(
                     .take(take)
                     .collect::<Vec<_>>()
                     .chunks(CATALOG_PAGE_SIZE)
-                    .map(|page| page.into())
+                    .map(|page| page.iter().map(|item| (*item).clone()).collect())
                     .collect::<Vec<_>>()
             })
             .collect::<Vec<_>>(),

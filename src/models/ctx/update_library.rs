@@ -1,4 +1,7 @@
-use std::{collections::HashMap, marker::PhantomData};
+use std::{
+    collections::{HashMap, HashSet},
+    marker::PhantomData,
+};
 
 use futures::{
     future::{self, Either},
@@ -25,7 +28,7 @@ use crate::{
             fetch_api, APIResult, DatastoreCommand, DatastoreRequest, LibraryItemModified,
             LibraryItemsResponse, SuccessResponse,
         },
-        library::{LibraryBucket, LibraryBucketRef, LibraryItem},
+        library::{LibraryBucket, LibraryBucketSliceRef, LibraryItem},
         profile::{AuthKey, Profile},
     },
 };
@@ -272,11 +275,11 @@ pub fn update_library<E: Env + 'static>(
             result,
         )) if Some(loading_auth_key) == auth_key => match result {
             Ok((pull_ids, push_ids)) => {
-                let push_items = library
-                    .items
+                let mut seen_push_ids = HashSet::<&str>::new();
+                let push_items = push_ids
                     .iter()
-                    .filter(move |(id, _)| push_ids.iter().any(|push_id| push_id == *id))
-                    .map(|(_, item)| item)
+                    .filter(|push_id| seen_push_ids.insert(push_id.as_str()))
+                    .filter_map(|push_id| library.items.get(push_id))
                     .cloned()
                     .collect::<Vec<_>>();
                 let push_items_to_api_effects = if push_items.is_empty() {
@@ -382,22 +385,31 @@ fn update_and_push_items_to_storage<E: Env + 'static>(
             .map_ok(|_| ()),
         )
     } else {
-        let (recent_items, other_items) = library.split_items_by_recent();
         if are_items_in_recent {
             Either::Right(Either::Left(E::set_storage(
                 LIBRARY_RECENT_STORAGE_KEY,
-                Some(&LibraryBucketRef::new(&library.uid, &recent_items)),
+                Some(&LibraryBucketSliceRef {
+                    uid: &library.uid,
+                    items: &library.recent_items(),
+                }),
             )))
         } else {
+            let (recent_items, other_items) = library.split_items_by_recent();
             Either::Right(Either::Right(
                 future::try_join_all(vec![
                     E::set_storage(
                         LIBRARY_RECENT_STORAGE_KEY,
-                        Some(&LibraryBucketRef::new(&library.uid, &recent_items)),
+                        Some(&LibraryBucketSliceRef {
+                            uid: &library.uid,
+                            items: &recent_items,
+                        }),
                     ),
                     E::set_storage(
                         LIBRARY_STORAGE_KEY,
-                        Some(&LibraryBucketRef::new(&library.uid, &other_items)),
+                        Some(&LibraryBucketSliceRef {
+                            uid: &library.uid,
+                            items: &other_items,
+                        }),
                     ),
                 ])
                 .map_ok(|_| ()),
@@ -425,11 +437,17 @@ fn push_library_to_storage<E: Env + 'static>(library: &LibraryBucket) -> Effect 
         future::try_join_all(vec![
             E::set_storage(
                 LIBRARY_RECENT_STORAGE_KEY,
-                Some(&LibraryBucketRef::new(&library.uid, &recent_items)),
+                Some(&LibraryBucketSliceRef {
+                    uid: &library.uid,
+                    items: &recent_items,
+                }),
             ),
             E::set_storage(
                 LIBRARY_STORAGE_KEY,
-                Some(&LibraryBucketRef::new(&library.uid, &other_items)),
+                Some(&LibraryBucketSliceRef {
+                    uid: &library.uid,
+                    items: &other_items,
+                }),
             ),
         ])
         .map(move |result| match result {

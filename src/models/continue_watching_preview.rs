@@ -1,4 +1,3 @@
-use lazysort::SortedBy;
 use serde::Serialize;
 
 use crate::{
@@ -58,7 +57,7 @@ fn library_items_update(
     library: &LibraryBucket,
     notifications: &NotificationsBucket,
 ) -> Effects {
-    let next_cw_items = library
+    let mut candidates = library
         .items
         .values()
         .filter(|item| !item.is_live())
@@ -73,50 +72,35 @@ fn library_items_update(
             // or there's a new notification for it
                 || library_notification.is_some()
             {
+                // either take the newest video released date or the modification date of the LibraryItem
+                let sort_time = library_notification
+                    .and_then(|notifs| {
+                        notifs
+                            .values()
+                            .map(|notification| notification.video_released)
+                            .max()
+                    })
+                    .unwrap_or(library_item.mtime);
                 Some((
                     library_item,
                     library_notification
                         .map(|notifs| notifs.len())
                         .unwrap_or_default(),
+                    sort_time,
                 ))
             } else {
                 None
             }
         })
-        // either take the oldest video released date or the modification date of the LibraryItem
-        .sorted_by(|(item_a, _), (item_b, _)| {
-            let a_time = notifications
-                .items
-                .get(&item_a.id)
-                .and_then(|notifs| {
-                    notifs
-                        .values()
-                        // take the video released date of the notification
-                        .map(|notification| notification.video_released)
-                        // order by the newest video released!
-                        .sorted_by(|a_released, b_released| b_released.cmp(a_released))
-                        .next()
-                })
-                .unwrap_or(item_a.mtime);
-
-            let b_time = notifications
-                .items
-                .get(&item_b.id)
-                .and_then(|notifs| {
-                    notifs
-                        .values()
-                        // take the video released date of the notification
-                        .map(|notification| notification.video_released)
-                        // order by the newest video released!
-                        .sorted_by(|a_released, b_released| b_released.cmp(a_released))
-                        .next()
-                })
-                .unwrap_or(item_b.mtime);
-
-            b_time.cmp(&a_time)
-        })
-        .take(CATALOG_PREVIEW_SIZE)
-        .map(|(library_item, notifications)| Item {
+        .collect::<Vec<_>>();
+    if candidates.len() > CATALOG_PREVIEW_SIZE {
+        candidates.select_nth_unstable_by(CATALOG_PREVIEW_SIZE, |(_, _, a), (_, _, b)| b.cmp(a));
+        candidates.truncate(CATALOG_PREVIEW_SIZE);
+    }
+    candidates.sort_unstable_by(|(_, _, a), (_, _, b)| b.cmp(a));
+    let next_cw_items = candidates
+        .into_iter()
+        .map(|(library_item, notifications, _)| Item {
             library_item: library_item.clone(),
             notifications,
         })
