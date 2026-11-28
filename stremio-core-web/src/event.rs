@@ -1,5 +1,4 @@
 use serde::Deserialize;
-use stremio_core::runtime::msg::{Action, Event};
 use stremio_core::types::resource::Stream;
 
 #[derive(Deserialize)]
@@ -20,10 +19,4 @@ pub enum UIEvent {
     StreamClicked {
         stream: Box<Stream>,
     },
-}
-
-pub enum WebEvent {
-    CoreAction(Box<Action>),
-    CoreEvent(Box<Event>),
-    UIEvent(UIEvent),
 }

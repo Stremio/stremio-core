@@ -32,7 +32,6 @@ pub fn serialize_local_search(local_search: &LocalSearch) -> JsValue {
     <JsValue as JsValueSerdeExt>::from_serde(&model::LocalSearch {
         items: local_search
             .search_results
-            .to_owned()
             .iter()
             .map(|Searchable { name, .. }| model::LocalSearchItem {
                 query: name,
