@@ -5,7 +5,6 @@ use futures::{future, Future, FutureExt, TryFutureExt};
 use gloo_utils::format::JsValueSerdeExt;
 use http::{Method, Request};
 use once_cell::sync::Lazy;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -55,10 +54,6 @@ extern "C" {
 static INSTALLATION_ID: Lazy<RwLock<Option<String>>> = Lazy::new(Default::default);
 static VISIT_ID: Lazy<String> = Lazy::new(|| hex::encode(WebEnv::random_buffer(10)));
 static ANALYTICS: Lazy<Analytics<WebEnv>> = Lazy::new(Default::default);
-static PLAYER_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^/player/([^/]*)(?:/([^/]*)/([^/]*)/([^/]*)/([^/]*)/([^/]*))?$")
-        .expect("Player Regex failed to build")
-});
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -556,25 +551,14 @@ fn sanitize_location_path(path: &str) -> String {
                 .query()
                 .map(|query| format!("?{}", query))
                 .unwrap_or_default();
-            let path = match PLAYER_REGEX.captures(url.path()) {
-                Some(captures) => {
-                    match (
-                        captures.get(3),
-                        captures.get(4),
-                        captures.get(5),
-                        captures.get(6),
-                    ) {
-                        (Some(match_3), Some(match_4), Some(match_5), Some(match_6)) => {
-                            format!(
-                                "/player/***/***/{cap_3}/{cap_4}/{cap_5}/{cap_6}",
-                                cap_3 = match_3.as_str(),
-                                cap_4 = match_4.as_str(),
-                                cap_5 = match_5.as_str(),
-                                cap_6 = match_6.as_str(),
-                            )
-                        }
-                        _ => "/player/***".to_owned(),
-                    }
+            let player_segments = url
+                .path()
+                .strip_prefix("/player/")
+                .map(|path| path.split('/').collect::<Vec<_>>());
+            let path = match player_segments.as_deref() {
+                Some([_]) => "/player/***".to_owned(),
+                Some([_, _, cap_3, cap_4, cap_5, cap_6]) => {
+                    format!("/player/***/***/{cap_3}/{cap_4}/{cap_5}/{cap_6}")
                 }
                 _ => url.path().to_owned(),
             };

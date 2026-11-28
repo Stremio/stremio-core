@@ -15,7 +15,7 @@ std = []
 wasm = ["env", "dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:gloo-utils", "dep:tracing-wasm", "dep:console_error_panic_hook", "dep:js-sys", "dep:web-sys", "getrandom?/js"]
 # Enable's the wasm Env. impl
 # (this means that `wasm` feature is a superset of this one)
-env = ["dep:http", "dep:regex", "dep:hex", "dep:getrandom", "dep:serde_path_to_error"]
+env = ["dep:http", "dep:hex", "dep:getrandom", "dep:serde_path_to_error"]
 
 # enable TRACE level of logging in the crate using `tracing`.
 log-trace = []
@@ -35,8 +35,6 @@ url = { version = "2.4.*", features = ["serde"] }
 
 chrono = "0.4.*"
 semver = { version = "1", features = ["serde"] }
-# used for Env impl
-regex = {version = "1.8", optional = true }
 # used for Env impl
 hex = { version = "0.4", optional = true }
 either = "1.6.*"

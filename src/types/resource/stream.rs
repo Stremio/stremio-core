@@ -230,16 +230,16 @@ impl Stream {
 
     fn archive_urls_with_ftp_proxy(
         streaming_server_url: &Url,
-        urls: Vec<ArchiveUrl>,
+        urls: &[ArchiveUrl],
     ) -> Result<Vec<ArchiveUrl>, EnvError> {
-        urls.into_iter()
+        urls.iter()
             .map(|archive_url| {
-                Self::ftp_url_handler(Some(streaming_server_url), archive_url.url).map(|url| {
-                    ArchiveUrl {
+                Self::ftp_url_handler(Some(streaming_server_url), archive_url.url.clone()).map(
+                    |url| ArchiveUrl {
                         url,
                         bytes: archive_url.bytes,
-                    }
-                })
+                    },
+                )
             })
             .collect()
     }
@@ -250,7 +250,7 @@ impl Stream {
         &self,
         streaming_server_url: Option<&Url>,
     ) -> Result<Stream<ConvertedStreamSource>, EnvError> {
-        match (streaming_server_url, self.source.to_owned()) {
+        match (streaming_server_url, &self.source) {
             (
                 Some(streaming_server_url),
                 StreamSource::Rar {
@@ -270,8 +270,8 @@ impl Stream {
                 let payload = ArchiveStreamBody {
                     urls: Self::archive_urls_with_ftp_proxy(streaming_server_url, urls)?,
                     options: ArchiveStreamOptions {
-                        file_idx,
-                        file_must_include,
+                        file_idx: *file_idx,
+                        file_must_include: file_must_include.clone(),
                     },
                 };
 
@@ -303,8 +303,8 @@ impl Stream {
                 let payload = ArchiveStreamBody {
                     urls: Self::archive_urls_with_ftp_proxy(streaming_server_url, urls)?,
                     options: ArchiveStreamOptions {
-                        file_idx,
-                        file_must_include,
+                        file_idx: *file_idx,
+                        file_must_include: file_must_include.clone(),
                     },
                 };
 
@@ -336,8 +336,8 @@ impl Stream {
                 let payload = ArchiveStreamBody {
                     urls: Self::archive_urls_with_ftp_proxy(streaming_server_url, urls)?,
                     options: ArchiveStreamOptions {
-                        file_idx,
-                        file_must_include,
+                        file_idx: *file_idx,
+                        file_must_include: file_must_include.clone(),
                     },
                 };
 
@@ -369,8 +369,8 @@ impl Stream {
                 let payload = ArchiveStreamBody {
                     urls: Self::archive_urls_with_ftp_proxy(streaming_server_url, urls)?,
                     options: ArchiveStreamOptions {
-                        file_idx,
-                        file_must_include,
+                        file_idx: *file_idx,
+                        file_must_include: file_must_include.clone(),
                     },
                 };
 
@@ -398,8 +398,8 @@ impl Stream {
                 let payload = ArchiveStreamBody {
                     urls: Self::archive_urls_with_ftp_proxy(streaming_server_url, urls)?,
                     options: ArchiveStreamOptions {
-                        file_idx,
-                        file_must_include,
+                        file_idx: *file_idx,
+                        file_must_include: file_must_include.clone(),
                     },
                 };
 
@@ -422,8 +422,10 @@ impl Stream {
                 }
 
                 let servers = servers
-                    .into_iter()
-                    .map(|server_url| Self::ftp_url_handler(Some(streaming_server_url), server_url))
+                    .iter()
+                    .map(|server_url| {
+                        Self::ftp_url_handler(Some(streaming_server_url), server_url.clone())
+                    })
                     .collect::<Result<Vec<_>, _>>()?;
 
                 let mut stream_url = streaming_server_url
@@ -432,11 +434,12 @@ impl Stream {
 
                 let payload = StreamSource::Nzb {
                     url: url
-                        .map(|url| Self::ftp_url_handler(Some(streaming_server_url), url))
+                        .as_ref()
+                        .map(|url| Self::ftp_url_handler(Some(streaming_server_url), url.clone()))
                         .transpose()?,
                     urls: urls
-                        .into_iter()
-                        .map(|url| Self::ftp_url_handler(Some(streaming_server_url), url))
+                        .iter()
+                        .map(|url| Self::ftp_url_handler(Some(streaming_server_url), url.clone()))
                         .collect::<Result<Vec<_>, _>>()?,
                     servers,
                 };
@@ -467,7 +470,7 @@ impl Stream {
             // as it's not part of the current scope
             // This keeps the `magnet:` urls working until we get the the streaming url
             (streaming_server_url, StreamSource::Url { url }) if url.scheme() != "magnet" => {
-                let url = Self::ftp_url_handler(streaming_server_url, url)?;
+                let url = Self::ftp_url_handler(streaming_server_url, url.clone())?;
 
                 // If proxy headers are set and streaming server is available, build the proxied streaming url from streaming server url
                 // Otherwise return the url
@@ -505,16 +508,17 @@ impl Stream {
                         streaming_url.set_query(url.query());
                         streaming_url
                     }
-                    _ => url.to_owned(),
+                    _ => url,
                 };
 
                 Ok(self.to_converted(ConvertedStreamSource::Url { url }))
             }
             // Magnet URL stream source handling
             // we keep the magnet url and return None for Steaming url later on
-            (_streaming_server_url, StreamSource::Url { url: streaming_url }) => {
-                Ok(self.to_converted(ConvertedStreamSource::Url { url: streaming_url }))
-            }
+            (_streaming_server_url, StreamSource::Url { url: streaming_url }) => Ok(self
+                .to_converted(ConvertedStreamSource::Url {
+                    url: streaming_url.clone(),
+                })),
             (Some(streaming_server_url), StreamSource::YouTube { yt_id }) => {
                 Ok(self.to_converted(ConvertedStreamSource::YouTube {
                     url: {
@@ -527,13 +531,13 @@ impl Stream {
                             })?;
                             path.push("yt");
                             path.push(
-                                &utf8_percent_encode(&yt_id, URI_COMPONENT_ENCODE_SET).to_string(),
+                                &utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET).to_string(),
                             );
                         }
 
                         url
                     },
-                    yt_id,
+                    yt_id: yt_id.clone(),
                 }))
             }
             (None, StreamSource::YouTube { .. }) => Err(EnvError::Other(
@@ -588,17 +592,19 @@ impl Stream {
                 Ok(self.to_converted(ConvertedStreamSource::Torrent {
                     // this needs to change once conversion of torrents is also moved to core
                     url: streaming_url,
-                    info_hash: InfoHash::new(info_hash),
-                    file_idx,
-                    announce,
-                    file_must_include,
+                    info_hash: InfoHash::new(*info_hash),
+                    file_idx: *file_idx,
+                    announce: announce.clone(),
+                    file_must_include: file_must_include.clone(),
                 }))
             }
             (None, StreamSource::Torrent { .. }) => Err(EnvError::Other(
                 "Can't play Torrents because streaming server is not running".into(),
             )),
             (_, StreamSource::PlayerFrame { player_frame_url }) => {
-                Ok(self.to_converted(ConvertedStreamSource::PlayerFrame { player_frame_url }))
+                Ok(self.to_converted(ConvertedStreamSource::PlayerFrame {
+                    player_frame_url: player_frame_url.clone(),
+                }))
             }
             (
                 _,
@@ -609,10 +615,10 @@ impl Stream {
                     webos_url,
                 },
             ) => Ok(self.to_converted(ConvertedStreamSource::External {
-                external_url,
-                android_tv_url,
-                tizen_url,
-                webos_url,
+                external_url: external_url.clone(),
+                android_tv_url: android_tv_url.clone(),
+                tizen_url: tizen_url.clone(),
+                webos_url: webos_url.clone(),
             })),
         }
     }
@@ -1053,22 +1059,7 @@ pub(crate) fn build_magnet_uri(
     announce: &[String],
     name: Option<&String>,
 ) -> String {
-    let trackers = announce
-        .iter()
-        .map(|tracker| {
-            tracker
-                .strip_prefix("tracker:")
-                .unwrap_or(tracker)
-                .strip_prefix("dht:")
-                .unwrap_or(tracker)
-        })
-        .map(|tracker| utf8_percent_encode(tracker, URI_COMPONENT_ENCODE_SET).to_string())
-        .collect::<Vec<String>>();
-    let trackers = if !trackers.is_empty() {
-        format!("&tr={}", trackers.join("&tr="))
-    } else {
-        String::new()
-    };
+    let trackers = magnet_trackers(announce);
 
     let dn = if let Some(name) = name {
         format!(
@@ -1085,7 +1076,26 @@ pub(crate) fn build_magnet_uri(
     )
 }
 
-fn get_magnet_url(converted: &Stream<ConvertedStreamSource>) -> Option<Url> {
+fn magnet_trackers(announce: &[String]) -> String {
+    announce
+        .iter()
+        .map(|tracker| {
+            tracker
+                .strip_prefix("tracker:")
+                .unwrap_or(tracker)
+                .strip_prefix("dht:")
+                .unwrap_or(tracker)
+        })
+        .map(|tracker| {
+            format!(
+                "&tr={}",
+                utf8_percent_encode(tracker, URI_COMPONENT_ENCODE_SET)
+            )
+        })
+        .collect()
+}
+
+pub(crate) fn get_magnet_url(converted: &Stream<ConvertedStreamSource>) -> Option<Url> {
     match &converted.source {
         ConvertedStreamSource::Url { url } if url.scheme() == "magnet" => Magnet::new(url.as_str())
             .as_ref()
@@ -1097,25 +1107,37 @@ fn get_magnet_url(converted: &Stream<ConvertedStreamSource>) -> Option<Url> {
             info_hash,
             announce,
             ..
-        } => Magnet::new(&build_magnet_uri(
-            info_hash.as_ref(),
-            announce,
-            converted.name.as_ref(),
-        ))
-        .ok()
-        .and_then(|magnet| magnet.to_string().parse::<Url>().ok()),
+        } => {
+            let dn = converted
+                .name
+                .as_ref()
+                .map(|name| {
+                    format!(
+                        "&dn={}",
+                        utf8_percent_encode(name, URI_COMPONENT_ENCODE_SET)
+                    )
+                })
+                .unwrap_or_default();
+            format!(
+                "magnet:?xt=urn:btih:{hash}{dn}{trackers}",
+                hash = hex::encode(info_hash.as_ref()),
+                trackers = magnet_trackers(announce),
+            )
+            .parse()
+            .ok()
+        }
         _ => None,
     }
 }
 
-fn get_m3u_data_uri(streaming_url: &Url) -> String {
+pub(crate) fn get_m3u_data_uri(streaming_url: &Url) -> String {
     format!(
         "data:application/octet-stream;charset=utf-8;base64,{}",
         BASE64.encode(format!("#EXTM3U\n#EXTINF:0\n{streaming_url}"))
     )
 }
 
-fn get_download_url(
+pub(crate) fn get_download_url(
     converted: &Stream<ConvertedStreamSource>,
     streaming_server_url: Option<&Url>,
 ) -> Option<Url> {
@@ -1176,7 +1198,7 @@ pub fn get_download_url_from_source(stream: &Stream) -> Option<Url> {
     }
 }
 
-fn get_streaming_url(converted: &Stream<ConvertedStreamSource>) -> Option<Url> {
+pub(crate) fn get_streaming_url(converted: &Stream<ConvertedStreamSource>) -> Option<Url> {
     match &converted.source {
         ConvertedStreamSource::Url { url } if url.scheme() == "magnet" => None,
         ConvertedStreamSource::Url { url: streaming_url } => Some(streaming_url.to_owned()),
